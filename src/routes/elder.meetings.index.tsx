@@ -10,9 +10,9 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { listElderMeetings, createElderMeeting } from "@/server/elder.functions";
+import { listElderMeetings, createElderMeeting, updateElderMeeting, deleteElderMeeting } from "@/server/elder.functions";
 
 export const Route = createFileRoute("/elder/meetings/")({
   component: ElderMeetingsList,
