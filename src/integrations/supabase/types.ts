@@ -281,6 +281,405 @@ export type Database = {
           },
         ]
       }
+      elder_action_items: {
+        Row: {
+          assignee_id: string | null
+          completed: boolean
+          created_at: string
+          created_by: string | null
+          due_date: string | null
+          executive_session: boolean
+          google_task_id: string | null
+          google_task_pushed_at: string | null
+          google_task_pushed_by: string | null
+          id: string
+          meeting_id: string | null
+          notes: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          completed?: boolean
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          executive_session?: boolean
+          google_task_id?: string | null
+          google_task_pushed_at?: string | null
+          google_task_pushed_by?: string | null
+          id?: string
+          meeting_id?: string | null
+          notes?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          completed?: boolean
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          executive_session?: boolean
+          google_task_id?: string | null
+          google_task_pushed_at?: string | null
+          google_task_pushed_by?: string | null
+          id?: string
+          meeting_id?: string | null
+          notes?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elder_action_items_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "elder_meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      elder_agenda_items: {
+        Row: {
+          body: string | null
+          created_at: string
+          created_by: string | null
+          executive_session: boolean
+          id: string
+          meeting_id: string
+          owner_id: string | null
+          position: number
+          section_key: string
+          source: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          executive_session?: boolean
+          id?: string
+          meeting_id: string
+          owner_id?: string | null
+          position?: number
+          section_key: string
+          source?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          executive_session?: boolean
+          id?: string
+          meeting_id?: string
+          owner_id?: string | null
+          position?: number
+          section_key?: string
+          source?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elder_agenda_items_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "elder_meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      elder_email_settings: {
+        Row: {
+          briefing_enabled: boolean
+          briefing_send_hour: number
+          id: string
+          recap_enabled: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          briefing_enabled?: boolean
+          briefing_send_hour?: number
+          id?: string
+          recap_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          briefing_enabled?: boolean
+          briefing_send_hour?: number
+          id?: string
+          recap_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      elder_joint_deacon_items: {
+        Row: {
+          body: string | null
+          created_at: string
+          created_by: string | null
+          executive_session: boolean
+          id: string
+          meeting_id: string
+          position: number
+          sub_section: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          executive_session?: boolean
+          id?: string
+          meeting_id: string
+          position?: number
+          sub_section: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          executive_session?: boolean
+          id?: string
+          meeting_id?: string
+          position?: number
+          sub_section?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elder_joint_deacon_items_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "elder_meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      elder_meeting_archive: {
+        Row: {
+          action_items: Json
+          agenda: Json
+          attendees: Json
+          created_at: string
+          id: string
+          imported_by: string | null
+          meeting_date: string
+          meeting_type: string
+          raw_text: string | null
+          source_url: string | null
+          title: string | null
+        }
+        Insert: {
+          action_items?: Json
+          agenda?: Json
+          attendees?: Json
+          created_at?: string
+          id?: string
+          imported_by?: string | null
+          meeting_date: string
+          meeting_type?: string
+          raw_text?: string | null
+          source_url?: string | null
+          title?: string | null
+        }
+        Update: {
+          action_items?: Json
+          agenda?: Json
+          attendees?: Json
+          created_at?: string
+          id?: string
+          imported_by?: string | null
+          meeting_date?: string
+          meeting_type?: string
+          raw_text?: string | null
+          source_url?: string | null
+          title?: string | null
+        }
+        Relationships: []
+      }
+      elder_meeting_attendees: {
+        Row: {
+          attendee_kind: string
+          created_at: string
+          id: string
+          meeting_id: string
+          present: boolean
+          user_id: string
+        }
+        Insert: {
+          attendee_kind: string
+          created_at?: string
+          id?: string
+          meeting_id: string
+          present?: boolean
+          user_id: string
+        }
+        Update: {
+          attendee_kind?: string
+          created_at?: string
+          id?: string
+          meeting_id?: string
+          present?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elder_meeting_attendees_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "elder_meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      elder_meetings: {
+        Row: {
+          agenda: Json
+          briefing_sent_at: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          location: string | null
+          meeting_date: string
+          meeting_type: string
+          notes: string | null
+          recap_sent_at: string | null
+          start_time: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          agenda?: Json
+          briefing_sent_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          location?: string | null
+          meeting_date: string
+          meeting_type?: string
+          notes?: string | null
+          recap_sent_at?: string | null
+          start_time?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          agenda?: Json
+          briefing_sent_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          location?: string | null
+          meeting_date?: string
+          meeting_type?: string
+          notes?: string | null
+          recap_sent_at?: string | null
+          start_time?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      elder_next_meeting_seed: {
+        Row: {
+          body: string | null
+          consumed_meeting_id: string | null
+          created_at: string
+          created_by: string | null
+          executive_session: boolean
+          id: string
+          section_key: string
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          consumed_meeting_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          executive_session?: boolean
+          id?: string
+          section_key?: string
+          title: string
+        }
+        Update: {
+          body?: string | null
+          consumed_meeting_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          executive_session?: boolean
+          id?: string
+          section_key?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elder_next_meeting_seed_consumed_meeting_id_fkey"
+            columns: ["consumed_meeting_id"]
+            isOneToOne: false
+            referencedRelation: "elder_meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      elder_section_notes: {
+        Row: {
+          created_at: string
+          executive_session: boolean
+          id: string
+          meeting_id: string
+          notes: string | null
+          section_key: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          executive_session?: boolean
+          id?: string
+          meeting_id: string
+          notes?: string | null
+          section_key: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          executive_session?: boolean
+          id?: string
+          meeting_id?: string
+          notes?: string | null
+          section_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elder_section_notes_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "elder_meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_checklist_items: {
         Row: {
           created_at: string
@@ -471,6 +870,87 @@ export type Database = {
           },
         ]
       }
+      member_interviews: {
+        Row: {
+          archived: boolean
+          assigned_elder_ids: string[]
+          candidate_name: string
+          created_at: string
+          created_by: string | null
+          executive_session: boolean
+          id: string
+          notes: string | null
+          scheduled_for: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          archived?: boolean
+          assigned_elder_ids?: string[]
+          candidate_name: string
+          created_at?: string
+          created_by?: string | null
+          executive_session?: boolean
+          id?: string
+          notes?: string | null
+          scheduled_for?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          archived?: boolean
+          assigned_elder_ids?: string[]
+          candidate_name?: string
+          created_at?: string
+          created_by?: string | null
+          executive_session?: boolean
+          id?: string
+          notes?: string | null
+          scheduled_for?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      membership_followups: {
+        Row: {
+          assigned_elder_id: string | null
+          created_at: string
+          created_by: string | null
+          executive_session: boolean
+          id: string
+          last_contact_date: string | null
+          notes: string | null
+          person_name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_elder_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          executive_session?: boolean
+          id?: string
+          last_contact_date?: string | null
+          notes?: string | null
+          person_name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_elder_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          executive_session?: boolean
+          id?: string
+          last_contact_date?: string | null
+          notes?: string | null
+          person_name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mission_trips: {
         Row: {
           church_name: string
@@ -536,6 +1016,83 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      pastoral_care_entries: {
+        Row: {
+          assigned_elder_id: string | null
+          created_at: string
+          created_by: string | null
+          date_added: string
+          executive_session: boolean
+          id: string
+          notes: string | null
+          person_name: string
+          resolved_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_elder_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_added?: string
+          executive_session?: boolean
+          id?: string
+          notes?: string | null
+          person_name: string
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_elder_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_added?: string
+          executive_session?: boolean
+          id?: string
+          notes?: string | null
+          person_name?: string
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pastoral_care_updates: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          entry_id: string
+          executive_session: boolean
+          id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          entry_id: string
+          executive_session?: boolean
+          id?: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          entry_id?: string
+          executive_session?: boolean
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pastoral_care_updates_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "pastoral_care_entries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -683,6 +1240,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_any_elder_access: { Args: { _user_id: string }; Returns: boolean }
       has_any_role: {
         Args: {
           _roles: Database["public"]["Enums"]["app_role"][]
@@ -697,9 +1255,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_full_elder: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "core" | "meeting" | "extended"
+      app_role: "core" | "meeting" | "extended" | "elder" | "elder_candidate"
       readiness: "green" | "yellow" | "red"
       sub_calendar: "forest_hills_main" | "coah_lm" | "youth" | "general"
       trip_status:
@@ -836,7 +1395,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["core", "meeting", "extended"],
+      app_role: ["core", "meeting", "extended", "elder", "elder_candidate"],
       readiness: ["green", "yellow", "red"],
       sub_calendar: ["forest_hills_main", "coah_lm", "youth", "general"],
       trip_status: [
