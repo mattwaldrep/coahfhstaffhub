@@ -26,6 +26,9 @@ export type ParsedMetrics = {
 };
 
 export async function parseMetricsPdf(file: File | Blob): Promise<ParsedMetrics> {
+  const pdfjs = await import("pdfjs-dist");
+  const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?worker&url")).default;
+  pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
   const buf = await file.arrayBuffer();
   const doc = await pdfjs.getDocument({ data: buf }).promise;
 
