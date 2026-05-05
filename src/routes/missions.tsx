@@ -15,7 +15,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, ExternalLink, Mail, Phone } from "lucide-react";
+import { Plus, Trash2, ExternalLink, Mail, Phone, Upload, FileText, X as XIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/missions")({
