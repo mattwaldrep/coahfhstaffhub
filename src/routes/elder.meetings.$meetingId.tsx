@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, Lock, Unlock, ChevronLeft, Check, Square } from "lucide-react";
 import { toast } from "sonner";
+import { PastoralCareList } from "@/components/pastoral/PastoralCareList";
 
 export const Route = createFileRoute("/elder/meetings/$meetingId")({
   component: MeetingDetail,
