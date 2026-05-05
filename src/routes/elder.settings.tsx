@@ -171,3 +171,50 @@ function PcoCard() {
     </div>
   );
 }
+
+function FieldPicker({
+  label, value, onChange, fields, loading, error, onReload,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  fields: Array<{ id: string; name: string; tab: string | null; data_type: string | null }> | null;
+  loading: boolean;
+  error: string | null;
+  onReload: () => void;
+}) {
+  const groups = (fields ?? []).reduce<Record<string, typeof fields extends null ? never : NonNullable<typeof fields>>>((acc, f) => {
+    const key = f.tab ?? "Other";
+    (acc[key] ||= [] as any).push(f);
+    return acc;
+  }, {} as any);
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">{label}</Label>
+        <button type="button" onClick={onReload} className="text-[11px] text-muted-foreground hover:text-foreground underline">
+          {loading ? "Loading…" : "Reload"}
+        </button>
+      </div>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="h-8 text-sm">
+          <SelectValue placeholder={loading ? "Loading fields…" : "Select a field"} />
+        </SelectTrigger>
+        <SelectContent>
+          {Object.entries(groups).map(([tab, items]) => (
+            <div key={tab}>
+              <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">{tab}</div>
+              {items.map((f) => (
+                <SelectItem key={f.id} value={f.id}>
+                  {f.name} <span className="text-muted-foreground">· {f.data_type ?? "?"}</span>
+                </SelectItem>
+              ))}
+            </div>
+          ))}
+        </SelectContent>
+      </Select>
+      {error && <p className="text-[11px] text-destructive">{error}</p>}
+    </div>
+  );
+}
