@@ -142,14 +142,15 @@ function BudgetTab({ year }: { year: number }) {
       if (amount === Number(existing.amount)) return;
       const { error } = await supabase.from("budget_actuals").update({ amount }).eq("id", existing.id);
       if (error) return toast.error(error.message);
+      setActuals((prev) => prev.map((a) => (a.id === existing.id ? { ...a, amount } : a)));
     } else {
       if (amount === 0) return;
-      const { error } = await supabase.from("budget_actuals").insert({
+      const { data, error } = await supabase.from("budget_actuals").insert({
         category_id: catId, fiscal_year: year, month, amount,
-      });
+      }).select().single();
       if (error) return toast.error(error.message);
+      if (data) setActuals((prev) => [...prev, data as Actual]);
     }
-    load();
   }
 
   return (
