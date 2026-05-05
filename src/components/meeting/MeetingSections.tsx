@@ -508,12 +508,12 @@ export function LastWeekEventsSection({ meetingId }: { meetingId: string }) {
 }
 
 export function UpcomingEventsSection({ meetingId }: { meetingId: string }) {
-  const rangeStart = useMemo(() => startOfDay(new Date()), []);
-  const rangeEnd = useMemo(() => addDays(rangeStart, 60), [rangeStart]);
+  const rangeStart = useMemo(() => new Date(), []);
+  const rangeEnd = useMemo(() => addDays(rangeStart, 90), [rangeStart]);
   return (
     <StandingSection
       title="Upcoming Events"
-      subtitle="Next 60 days across all sub-calendars."
+      subtitle="Next 90 days across all sub-calendars."
       defaultOpen={false}
     >
       <EventList
