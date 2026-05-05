@@ -247,24 +247,30 @@ function CalendarBody() {
     };
   }, [cursor, view]);
 
+  const formIdRef = useRef<string | undefined>(undefined);
+  useEffect(() => { formIdRef.current = form.id; }, [form.id]);
+
   useEffect(() => {
     load();
     const ch = supabase
       .channel("calendar_events")
       .on("postgres_changes", { event: "*", schema: "public", table: "calendar_events" }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "event_checklist_items" }, () => {
-        if (form.id) loadChecklist(form.id);
+      .on("postgres_changes", { event: "*", schema: "public", table: "event_checklist_items" }, (payload: any) => {
+        const eid = formIdRef.current;
+        if (!eid) return;
+        const row = payload.new ?? payload.old;
+        if (row?.event_id === eid) loadChecklist(eid);
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [range.start.getTime(), range.end.getTime()]);
 
   async function load() {
-    // Fetch events that could overlap the range (recurring may have started earlier)
+    // Fetch events overlapping range, plus any recurring (which may have started earlier)
     const { data } = await supabase
       .from("calendar_events")
       .select("*")
-      .or(`start_at.lte.${range.end.toISOString()},rrule.not.is.null`)
+      .or(`and(start_at.gte.${range.start.toISOString()},start_at.lte.${range.end.toISOString()}),rrule.not.is.null`)
       .order("start_at", { ascending: true });
     setEvents(data ?? []);
   }
