@@ -211,14 +211,33 @@ function SectionCard({ section, meetingId, items, note, isFullElder, reload, men
         <RichTextEditor
           value={notes}
           onChange={setNotes}
-          placeholder="Section notes…"
+          placeholder="Section notes… (type @ to assign a task)"
           minHeight={96}
+          mentionUsers={mentionUsers}
           onBlur={async (html) => {
-            if ((note?.notes ?? "") === html) return;
-            try {
-              await saveSectionNotes({ data: { meeting_id: meetingId, section_key: section.key, notes: html, executive_session: isExec } });
-            } catch (e: any) {
-              toast.error(e.message ?? "Failed");
+            if ((note?.notes ?? "") === html) {
+              // Even if unchanged, still try to materialize any new mentions (idempotent via dedup)
+            } else {
+              try {
+                await saveSectionNotes({ data: { meeting_id: meetingId, section_key: section.key, notes: html, executive_session: isExec } });
+              } catch (e: any) {
+                toast.error(e.message ?? "Failed");
+                return;
+              }
+            }
+            const mentions = extractMentions(html);
+            if (mentions.length > 0) {
+              try {
+                const res: any = await createActionsFromMentions({
+                  data: { meeting_id: meetingId, executive_session: isExec, mentions },
+                });
+                if (res?.created > 0) {
+                  toast.success(`Created ${res.created} action item${res.created === 1 ? "" : "s"} from mentions`);
+                  reload();
+                }
+              } catch (e: any) {
+                toast.error(e.message ?? "Failed to create action items");
+              }
             }
           }}
         />
