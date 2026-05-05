@@ -308,12 +308,12 @@ function JointSubSection({ sub, meetingId, items, reload }: any) {
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
-            {it.body && <div className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{it.body}</div>}
+            {it.body && <RichTextView html={it.body} className="mt-1 text-xs text-muted-foreground" />}
           </div>
         ))}
         <div className="space-y-2">
           <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} className="h-8 text-sm" />
-          <Textarea placeholder="Notes (optional)" value={body} onChange={(e) => setBody(e.target.value)} rows={2} className="text-sm" />
+          <RichTextEditor value={body} onChange={setBody} placeholder="Notes (optional)" minHeight={72} />
           <Button size="sm" variant="outline" onClick={add}><Plus className="w-3 h-3 mr-1" /> Add</Button>
         </div>
       </div>
