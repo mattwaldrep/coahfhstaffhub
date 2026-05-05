@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { pushActionItemToGoogleTasks, pushActionItemsBulk } from "@/server/google-tasks.functions";
+import { pushActionItemToGoogleTasks, pushActionItemsBulk, autoPushIfEnabled } from "@/server/google-tasks.functions";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
