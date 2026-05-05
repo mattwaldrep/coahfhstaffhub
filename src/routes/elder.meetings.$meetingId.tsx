@@ -160,7 +160,7 @@ function StandardSections({ meetingId, agenda, sectionNotes, isFullElder, reload
   );
 }
 
-function SectionCard({ section, meetingId, items, note, isFullElder, reload }: any) {
+function SectionCard({ section, meetingId, items, note, isFullElder, reload, mentionUsers }: any) {
   const [adding, setAdding] = useState("");
   const [notes, setNotes] = useState(note?.notes ?? "");
   const isExec = section.key === "executive";
