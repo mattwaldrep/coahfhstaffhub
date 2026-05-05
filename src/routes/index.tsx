@@ -49,10 +49,19 @@ function HomePage() {
   );
 }
 
+type Headline = {
+  avg_total_attendance?: number;
+  avg_weekly_giving?: number;
+  avg_community_groups?: number;
+};
+
 function Dashboard() {
   const { user } = useAuth();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [actions, setActions] = useState<ActionItem[]>([]);
+  const [headline, setHeadline] = useState<Headline | null>(null);
+  const [prevHeadline, setPrevHeadline] = useState<Headline | null>(null);
+  const [statsRange, setStatsRange] = useState<string | null>(null);
 
   useEffect(() => {
     const now = new Date().toISOString();
@@ -71,6 +80,22 @@ function Dashboard() {
       .order("due_date", { ascending: true, nullsFirst: false })
       .limit(50)
       .then(({ data }) => setActions((data ?? []) as ActionItem[]));
+    // Latest trends report (current + previous month) for KPI cards
+    supabase
+      .from("finance_reports")
+      .select("parsed_metrics,fiscal_year,month,created_at")
+      .eq("report_type", "trends")
+      .order("created_at", { ascending: false })
+      .limit(10)
+      .then(({ data }) => {
+        const rows = (data ?? []) as Array<{ parsed_metrics: any; fiscal_year: number; month: number }>;
+        const withMetrics = rows.filter((r) => r.parsed_metrics?.headline);
+        if (withMetrics[0]) {
+          setHeadline(withMetrics[0].parsed_metrics.headline as Headline);
+          setStatsRange((withMetrics[0].parsed_metrics.range as string) ?? null);
+        }
+        if (withMetrics[1]) setPrevHeadline(withMetrics[1].parsed_metrics.headline as Headline);
+      });
   }, []);
 
   const todayStr = format(new Date(), "yyyy-MM-dd");
