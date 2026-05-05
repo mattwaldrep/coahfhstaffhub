@@ -373,14 +373,21 @@ function EventList({
     [events, rangeStart.getTime(), rangeEnd.getTime()],
   );
 
+  const SUB_CAL_LABELS: Record<string, string> = {
+    forest_hills_main: "Forest Hills Main",
+    coah_lm: "COAH LM",
+    youth: "Youth",
+  };
+  const labelFor = (s: string) => SUB_CAL_LABELS[s] ?? s;
+
   const categories = useMemo(() => {
     const s = new Set<string>();
-    occurrences.forEach((o) => s.add(o.category || "Uncategorized"));
+    occurrences.forEach((o) => s.add(o.sub_calendar || "other"));
     return Array.from(s).sort();
   }, [occurrences]);
 
   const visible = useMemo(
-    () => occurrences.filter((o) => !excluded.has(o.category || "Uncategorized")),
+    () => occurrences.filter((o) => !excluded.has(o.sub_calendar || "other")),
     [occurrences, excluded],
   );
 
@@ -427,7 +434,7 @@ function EventList({
                     : "bg-transparent border-border text-muted-foreground line-through",
                 )}
               >
-                {c}
+                {labelFor(c)}
               </button>
             );
           })}
@@ -501,12 +508,12 @@ export function LastWeekEventsSection({ meetingId }: { meetingId: string }) {
 }
 
 export function UpcomingEventsSection({ meetingId }: { meetingId: string }) {
-  const rangeStart = useMemo(() => startOfDay(new Date()), []);
-  const rangeEnd = useMemo(() => addDays(rangeStart, 60), [rangeStart]);
+  const rangeStart = useMemo(() => new Date(), []);
+  const rangeEnd = useMemo(() => addDays(rangeStart, 90), [rangeStart]);
   return (
     <StandingSection
       title="Upcoming Events"
-      subtitle="Next 60 days across all sub-calendars."
+      subtitle="Next 90 days across all sub-calendars."
       defaultOpen={false}
     >
       <EventList
