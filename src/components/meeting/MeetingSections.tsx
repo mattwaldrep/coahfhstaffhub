@@ -315,15 +315,33 @@ function EventList({
   rangeStart,
   rangeEnd,
   emptyText,
+  showCategoryFilter = false,
+  filterStorageKey,
 }: {
   meetingId: string;
   rangeStart: Date;
   rangeEnd: Date;
   emptyText: string;
+  showCategoryFilter?: boolean;
+  filterStorageKey?: string;
 }) {
   const [events, setEvents] = useState<EventRowLike[]>([]);
   const [eventNotes, setEventNotes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [excluded, setExcluded] = useState<Set<string>>(() => {
+    if (!filterStorageKey || typeof window === "undefined") return new Set();
+    try {
+      const raw = localStorage.getItem(filterStorageKey);
+      return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  useEffect(() => {
+    if (!filterStorageKey || typeof window === "undefined") return;
+    localStorage.setItem(filterStorageKey, JSON.stringify(Array.from(excluded)));
+  }, [excluded, filterStorageKey]);
 
   useEffect(() => {
     (async () => {
@@ -353,6 +371,26 @@ function EventList({
     [events, rangeStart.getTime(), rangeEnd.getTime()],
   );
 
+  const categories = useMemo(() => {
+    const s = new Set<string>();
+    occurrences.forEach((o) => s.add(o.category || "Uncategorized"));
+    return Array.from(s).sort();
+  }, [occurrences]);
+
+  const visible = useMemo(
+    () => occurrences.filter((o) => !excluded.has(o.category || "Uncategorized")),
+    [occurrences, excluded],
+  );
+
+  function toggleCat(cat: string) {
+    setExcluded((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  }
+
   async function saveNote(eventId: string, occDate: Date, val: string) {
     const iso = format(occDate, "yyyy-MM-dd");
     setEventNotes((prev) => ({ ...prev, [`${eventId}__${iso}`]: val }));
@@ -365,41 +403,80 @@ function EventList({
   }
 
   if (loading) return <div className="text-sm text-muted-foreground py-4">Loading…</div>;
-  if (occurrences.length === 0)
-    return <div className="text-sm text-muted-foreground py-4">{emptyText}</div>;
 
   return (
-    <ul className="divide-y divide-border">
-      {occurrences.map((o) => {
-        const iso = format(o.occurrence_date, "yyyy-MM-dd");
-        const key = `${o.id}__${iso}`;
-        return (
-          <li key={key} className="py-3 first:pt-0 last:pb-0">
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="text-xs font-mono text-muted-foreground">
-                {format(o.occurrence_date, "EEE MMM d")}
-                {!o.all_day && ` · ${format(o.occurrence_date, "h:mma").toLowerCase()}`}
-              </span>
-              <span className="text-sm font-medium">{o.title}</span>
-              {o.leader_name && (
-                <span className="text-xs text-muted-foreground">— {o.leader_name}</span>
-              )}
-              {o.category && (
-                <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                  {o.category}
-                </span>
-              )}
-            </div>
-            <Input
-              value={eventNotes[key] ?? ""}
-              onChange={(e) => saveNote(o.id, o.occurrence_date, e.target.value)}
-              placeholder="Discussion note…"
-              className="mt-2 h-8 text-xs"
-            />
-          </li>
-        );
-      })}
-    </ul>
+    <div className="space-y-3">
+      {showCategoryFilter && categories.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground mr-1">
+            Filter
+          </span>
+          {categories.map((c) => {
+            const on = !excluded.has(c);
+            return (
+              <button
+                key={c}
+                type="button"
+                onClick={() => toggleCat(c)}
+                className={cn(
+                  "text-[11px] px-2 py-0.5 rounded-full border transition-colors",
+                  on
+                    ? "bg-primary/15 border-primary/30 text-foreground"
+                    : "bg-transparent border-border text-muted-foreground line-through",
+                )}
+              >
+                {c}
+              </button>
+            );
+          })}
+          {excluded.size > 0 && (
+            <button
+              type="button"
+              onClick={() => setExcluded(new Set())}
+              className="text-[11px] text-muted-foreground hover:text-foreground underline ml-1"
+            >
+              reset
+            </button>
+          )}
+        </div>
+      )}
+
+      {visible.length === 0 ? (
+        <div className="text-sm text-muted-foreground py-2">{emptyText}</div>
+      ) : (
+        <ul className="divide-y divide-border">
+          {visible.map((o) => {
+            const iso = format(o.occurrence_date, "yyyy-MM-dd");
+            const key = `${o.id}__${iso}`;
+            return (
+              <li key={key} className="py-3 first:pt-0 last:pb-0">
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="text-xs font-mono text-muted-foreground">
+                    {format(o.occurrence_date, "EEE MMM d")}
+                    {!o.all_day && ` · ${format(o.occurrence_date, "h:mma").toLowerCase()}`}
+                  </span>
+                  <span className="text-sm font-medium">{o.title}</span>
+                  {o.leader_name && (
+                    <span className="text-xs text-muted-foreground">— {o.leader_name}</span>
+                  )}
+                  {o.category && (
+                    <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                      {o.category}
+                    </span>
+                  )}
+                </div>
+                <Input
+                  value={eventNotes[key] ?? ""}
+                  onChange={(e) => saveNote(o.id, o.occurrence_date, e.target.value)}
+                  placeholder="Discussion note…"
+                  className="mt-2 h-8 text-xs"
+                />
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -434,7 +511,9 @@ export function UpcomingEventsSection({ meetingId }: { meetingId: string }) {
         meetingId={meetingId}
         rangeStart={rangeStart}
         rangeEnd={rangeEnd}
-        emptyText="No upcoming events."
+        emptyText="No events match the current filter."
+        showCategoryFilter
+        filterStorageKey="meeting:upcoming-events:excluded-categories"
       />
     </StandingSection>
   );
