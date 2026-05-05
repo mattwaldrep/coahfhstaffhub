@@ -1,10 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { AlertTriangle, ArrowUpRight, CalendarDays, CheckCircle2, Circle } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, CalendarDays, CheckCircle2, Circle, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -22,6 +23,7 @@ interface ActionItem {
   title: string;
   due_date: string | null;
   completed: boolean;
+  assignee_id: string | null;
 }
 
 const SUB_CAL_LABEL: Record<string, string> = {
@@ -62,12 +64,16 @@ function Dashboard() {
       .then(({ data }) => setEvents(data ?? []));
     supabase
       .from("action_items")
-      .select("id,title,due_date,completed")
+      .select("id,title,due_date,completed,assignee_id")
       .eq("completed", false)
       .order("due_date", { ascending: true, nullsFirst: false })
-      .limit(8)
-      .then(({ data }) => setActions(data ?? []));
+      .limit(50)
+      .then(({ data }) => setActions((data ?? []) as ActionItem[]));
   }, []);
+
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const myActions = user ? actions.filter((a) => a.assignee_id === user.id).slice(0, 8) : [];
+  const overdueAll = actions.filter((a) => a.due_date && a.due_date < todayStr);
 
   const today = format(new Date(), "EEEE, MMM d");
   const greeting = (user?.email ?? "").split("@")[0];
@@ -126,26 +132,39 @@ function Dashboard() {
         {/* Right column */}
         <div className="col-span-12 lg:col-span-4 space-y-4">
           <div className="bg-surface border border-border rounded-2xl p-6 shadow-card">
-            <h2 className="text-lg font-display font-semibold mb-3">Open Action Items</h2>
-            {actions.length === 0 ? (
-              <EmptyRow message="No open action items. Nice." />
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-display font-semibold">My Action Items</h2>
+              {overdueAll.length > 0 && (
+                <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-destructive/15 text-destructive font-semibold inline-flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> {overdueAll.length} overdue
+                </span>
+              )}
+            </div>
+            {myActions.length === 0 ? (
+              <EmptyRow message="Nothing assigned to you. Nice." />
             ) : (
               <ul className="space-y-3">
-                {actions.map((a) => (
-                  <li key={a.id} className="flex items-start gap-3 text-sm">
-                    <Circle className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-                    <div className="flex-1">
-                      <div className="text-foreground">{a.title}</div>
-                      {a.due_date && (
-                        <div className="text-xs text-muted-foreground">
-                          Due {formatDistanceToNow(new Date(a.due_date), { addSuffix: true })}
-                        </div>
-                      )}
-                    </div>
-                  </li>
-                ))}
+                {myActions.map((a) => {
+                  const overdue = a.due_date && a.due_date < todayStr;
+                  return (
+                    <li key={a.id} className="flex items-start gap-3 text-sm">
+                      <Circle className={cn("w-4 h-4 mt-0.5 shrink-0", overdue ? "text-destructive" : "text-muted-foreground")} />
+                      <div className="flex-1">
+                        <div className="text-foreground">{a.title}</div>
+                        {a.due_date && (
+                          <div className={cn("text-xs", overdue ? "text-destructive font-medium" : "text-muted-foreground")}>
+                            Due {formatDistanceToNow(new Date(a.due_date), { addSuffix: true })}
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
+            <Link to="/meeting" className="text-xs text-muted-foreground hover:text-foreground mt-3 inline-flex items-center gap-1">
+              View all in Meeting <ArrowUpRight className="w-3 h-3" />
+            </Link>
           </div>
 
           <div className="bg-surface border border-border rounded-2xl p-6 shadow-card">

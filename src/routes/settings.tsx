@@ -1,16 +1,22 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle2, ExternalLink, Plug, Unplug } from "lucide-react";
 import { toast } from "sonner";
+import { getGoogleAuthUrl, getGoogleConnection, disconnectGoogle } from "@/server/google-tasks.functions";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,
+  validateSearch: (s: Record<string, unknown>) => ({
+    google: typeof s.google === "string" ? s.google : undefined,
+    msg: typeof s.msg === "string" ? s.msg : undefined,
+  }),
 });
 
 function SettingsPage() {
@@ -110,7 +116,85 @@ function SettingsPage() {
             </Button>
           </div>
         </form>
+
+        <GoogleTasksCard />
       </div>
     </AppShell>
+  );
+}
+
+function GoogleTasksCard() {
+  const search = useSearch({ from: "/settings" });
+  const getUrl = useServerFn(getGoogleAuthUrl);
+  const getConn = useServerFn(getGoogleConnection);
+  const disconnect = useServerFn(disconnectGoogle);
+  const [conn, setConn] = useState<{ connected: boolean; updated_at?: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    getConn().then((r: any) => setConn(r)).catch(() => setConn({ connected: false }));
+  }, [getConn]);
+
+  useEffect(() => {
+    if (search.google === "connected") toast.success("Google Tasks connected");
+    if (search.google === "error") toast.error(`Google connection failed: ${search.msg ?? ""}`);
+  }, [search.google, search.msg]);
+
+  async function connect() {
+    setBusy(true);
+    try {
+      const { url } = await getUrl({ data: { origin: window.location.origin } });
+      window.location.href = url;
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to start OAuth");
+      setBusy(false);
+    }
+  }
+  async function unlink() {
+    setBusy(true);
+    try {
+      await disconnect();
+      setConn({ connected: false });
+      toast.success("Google Tasks disconnected");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="bg-surface border border-border rounded-2xl p-6 space-y-4">
+      <div>
+        <h2 className="font-display font-semibold flex items-center gap-2">
+          Google Tasks
+          {conn?.connected && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
+        </h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          Connect your Google account so action items assigned to you can be pushed straight into your Google Tasks list.
+        </p>
+      </div>
+      {conn === null ? (
+        <div className="text-xs text-muted-foreground flex items-center gap-2">
+          <Loader2 className="w-3 h-3 animate-spin" /> Checking…
+        </div>
+      ) : conn.connected ? (
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <span className="text-sm text-muted-foreground">Connected. Tasks push to your default list.</span>
+          <Button variant="outline" size="sm" onClick={unlink} disabled={busy}>
+            <Unplug className="w-4 h-4 mr-1.5" /> Disconnect
+          </Button>
+        </div>
+      ) : (
+        <Button onClick={connect} disabled={busy}>
+          {busy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plug className="w-4 h-4 mr-2" />}
+          Connect Google Tasks
+        </Button>
+      )}
+      <div className="text-[11px] text-muted-foreground border-t border-border pt-3">
+        Your refresh token is encrypted at rest and only used to push tasks you've been assigned. Disconnect any time.
+        <a href="https://myaccount.google.com/permissions" target="_blank" rel="noreferrer" className="ml-1 underline inline-flex items-center gap-0.5">
+          Manage Google access <ExternalLink className="w-2.5 h-2.5" />
+        </a>
+      </div>
+    </div>
   );
 }
