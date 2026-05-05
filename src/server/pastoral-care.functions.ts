@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { fetchCareList, setFieldDatum, pcoPing, invalidateCareListCache } from "./pco.server";
 
 async function getTier(supabase: any, userId: string): Promise<"elder" | "candidate" | null> {
   const { data } = await supabase
@@ -21,105 +22,184 @@ async function assertAccess(supabase: any, userId: string) {
   return tier;
 }
 
-// Pastoral care
-export const listPastoralCare = createServerFn({ method: "GET" })
+// ---- PCO config ----------------------------------------------------------
+
+export const getPcoConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAccess(context.supabase, context.userId);
     const { data, error } = await context.supabase
-      .from("pastoral_care_entries")
+      .from("elder_pco_config")
       .select("*")
-      .order("date_added", { ascending: false });
-    if (error) throw new Error(error.message);
-    return data ?? [];
-  });
-
-export const upsertPastoralEntry = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d) =>
-    z
-      .object({
-        id: z.string().uuid().optional(),
-        person_name: z.string().min(1).max(200),
-        notes: z.string().max(10000).nullable().optional(),
-        assigned_elder_id: z.string().uuid().nullable().optional(),
-        status: z.enum(["active", "monitoring", "resolved"]).optional(),
-        executive_session: z.boolean().optional(),
-      })
-      .parse(d),
-  )
-  .handler(async ({ data, context }) => {
-    const tier = await assertAccess(context.supabase, context.userId);
-    if (data.executive_session && tier !== "elder") throw new Error("Forbidden");
-    if (data.id) {
-      const { id, ...patch } = data;
-      const next: any = { ...patch };
-      if (patch.status === "resolved") next.resolved_at = new Date().toISOString();
-      const { error } = await supabaseAdmin.from("pastoral_care_entries").update(next).eq("id", id);
-      if (error) throw new Error(error.message);
-      return { id };
-    }
-    const { data: created, error } = await supabaseAdmin
-      .from("pastoral_care_entries")
-      .insert({ ...data, created_by: context.userId })
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    return { id: created.id };
-  });
-
-export const deletePastoralEntry = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    const tier = await assertAccess(context.supabase, context.userId);
-    const { data: row } = await supabaseAdmin
-      .from("pastoral_care_entries")
-      .select("executive_session")
-      .eq("id", data.id)
+      .order("updated_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
-    if (row?.executive_session && tier !== "elder") throw new Error("Forbidden");
-    const { error } = await supabaseAdmin.from("pastoral_care_entries").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
-    return { ok: true };
+    return data;
   });
 
-export const addPastoralUpdate = createServerFn({ method: "POST" })
+export const savePcoConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z
       .object({
-        entry_id: z.string().uuid(),
-        body: z.string().min(1).max(10000),
-        executive_session: z.boolean().optional(),
+        list_id: z.string().min(1).max(50),
+        assigned_elder_field_id: z.string().min(1).max(50),
+        spiritual_health_field_id: z.string().min(1).max(50),
       })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
     const tier = await assertAccess(context.supabase, context.userId);
-    if (data.executive_session && tier !== "elder") throw new Error("Forbidden");
-    const { error } = await supabaseAdmin
-      .from("pastoral_care_updates")
-      .insert({ ...data, author_id: context.userId });
-    if (error) throw new Error(error.message);
+    if (tier !== "elder") throw new Error("Forbidden: full elder required");
+    const { data: existing } = await supabaseAdmin
+      .from("elder_pco_config")
+      .select("id")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const payload = { ...data, updated_by: context.userId, updated_at: new Date().toISOString() };
+    if (existing?.id) {
+      const { error } = await supabaseAdmin.from("elder_pco_config").update(payload).eq("id", existing.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabaseAdmin.from("elder_pco_config").insert(payload);
+      if (error) throw new Error(error.message);
+    }
+    invalidateCareListCache();
     return { ok: true };
   });
 
-export const listPastoralUpdates = createServerFn({ method: "POST" })
+export const pingPco = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ entry_id: z.string().uuid() }).parse(d))
+  .handler(async ({ context }) => {
+    const tier = await assertAccess(context.supabase, context.userId);
+    if (tier !== "elder") throw new Error("Forbidden");
+    return pcoPing();
+  });
+
+// ---- Care list -----------------------------------------------------------
+
+export const listCareList = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ refresh: z.boolean().optional() }).parse(d ?? {}))
+  .handler(async ({ data, context }) => {
+    await assertAccess(context.supabase, context.userId);
+    const { data: cfg } = await context.supabase
+      .from("elder_pco_config")
+      .select("*")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!cfg?.list_id || !cfg?.assigned_elder_field_id || !cfg?.spiritual_health_field_id) {
+      return { configured: false, people: [], fields: null };
+    }
+    const people = await fetchCareList({
+      list_id: cfg.list_id,
+      field_ids: [cfg.assigned_elder_field_id, cfg.spiritual_health_field_id],
+      bypass_cache: data.refresh === true,
+    });
+    return {
+      configured: true,
+      fields: {
+        assigned_elder: cfg.assigned_elder_field_id,
+        spiritual_health: cfg.spiritual_health_field_id,
+      },
+      people,
+    };
+  });
+
+export const updateSpiritualHealth = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        person_id: z.string().min(1).max(50),
+        datum_id: z.string().min(1).max(50).nullable().optional(),
+        value: z.string().max(500),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const tier = await assertAccess(context.supabase, context.userId);
+    if (tier !== "elder") throw new Error("Forbidden: full elder required");
+    const { data: cfg } = await context.supabase
+      .from("elder_pco_config")
+      .select("spiritual_health_field_id")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!cfg?.spiritual_health_field_id) throw new Error("PCO not configured");
+    await setFieldDatum({
+      person_id: data.person_id,
+      field_definition_id: cfg.spiritual_health_field_id,
+      datum_id: data.datum_id ?? null,
+      value: data.value,
+    });
+    return { ok: true };
+  });
+
+// ---- Notes ---------------------------------------------------------------
+
+export const listPcoNotes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ pco_person_id: z.string().min(1).max(50) }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAccess(context.supabase, context.userId);
     const { data: rows, error } = await context.supabase
-      .from("pastoral_care_updates")
+      .from("pco_pastoral_notes")
       .select("*")
-      .eq("entry_id", data.entry_id)
+      .eq("pco_person_id", data.pco_person_id)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return rows ?? [];
   });
 
-// Archive
+export const addPcoNote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        pco_person_id: z.string().min(1).max(50),
+        body: z.string().min(1).max(10000),
+        executive_session: z.boolean().optional(),
+        meeting_id: z.string().uuid().nullable().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const tier = await assertAccess(context.supabase, context.userId);
+    if (data.executive_session && tier !== "elder") throw new Error("Forbidden");
+    const { error } = await supabaseAdmin.from("pco_pastoral_notes").insert({
+      pco_person_id: data.pco_person_id,
+      body: data.body,
+      executive_session: !!data.executive_session,
+      meeting_id: data.meeting_id ?? null,
+      author_id: context.userId,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deletePcoNote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const tier = await assertAccess(context.supabase, context.userId);
+    const { data: row } = await supabaseAdmin
+      .from("pco_pastoral_notes")
+      .select("executive_session, author_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!row) throw new Error("Not found");
+    if (row.executive_session && tier !== "elder") throw new Error("Forbidden");
+    const { error } = await supabaseAdmin.from("pco_pastoral_notes").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---- Archive (unchanged) -------------------------------------------------
+
 export const listArchive = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
