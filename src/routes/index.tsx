@@ -224,11 +224,7 @@ function Dashboard() {
             </p>
           </div>
 
-          <div className="bg-surface border border-border rounded-2xl p-6 shadow-card">
-            <h2 className="text-lg font-display font-semibold mb-3">Reports</h2>
-            <ReportRow label="Weekly Metrics" reportType="trends" />
-            <ReportRow label="Monthly Finance" reportType="finance" />
-          </div>
+          <MetricsStatusCard connected={!!metricsSession} error={metricsErr} weeks={headline?.weeks ?? 0} />
         </div>
       </div>
     </>
