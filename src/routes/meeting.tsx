@@ -467,6 +467,58 @@ function MeetingPage() {
   );
 }
 
+function FinalizeButton({
+  meeting,
+  setMeeting,
+}: {
+  meeting: Meeting | null;
+  setMeeting: (m: Meeting) => void;
+}) {
+  const finalize = useServerFn(finalizeMeeting);
+  const sendRecap = useServerFn(sendMeetingRecap);
+  const [busy, setBusy] = useState(false);
+  if (!meeting) return null;
+
+  const isCompleted = meeting.status === "completed";
+  const recapSent = !!meeting.recap_sent_at;
+
+  async function handle() {
+    if (!meeting) return;
+    setBusy(true);
+    try {
+      if (!isCompleted) {
+        await finalize({ data: { meetingId: meeting.id } });
+        setMeeting({ ...meeting, status: "completed", completed_at: new Date().toISOString() });
+      }
+      const result = await sendRecap({ data: { meetingId: meeting.id } });
+      setMeeting({
+        ...meeting,
+        status: "completed",
+        recap_sent_at: new Date().toISOString(),
+        completed_at: meeting.completed_at ?? new Date().toISOString(),
+      });
+      toast.success(`Recap sent to ${result.recipients} staff`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Button onClick={handle} disabled={busy} variant={recapSent ? "outline" : "default"}>
+      {busy ? (
+        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+      ) : recapSent ? (
+        <MailCheck className="w-4 h-4 mr-2" />
+      ) : (
+        <Send className="w-4 h-4 mr-2" />
+      )}
+      {recapSent ? "Resend recap" : isCompleted ? "Send recap" : "Finalize & send recap"}
+    </Button>
+  );
+}
+
 function applyChange<T extends { id: string }>(
   prev: T[],
   payload: { eventType: string; new: any; old: any },
