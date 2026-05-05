@@ -132,26 +132,39 @@ function Dashboard() {
         {/* Right column */}
         <div className="col-span-12 lg:col-span-4 space-y-4">
           <div className="bg-surface border border-border rounded-2xl p-6 shadow-card">
-            <h2 className="text-lg font-display font-semibold mb-3">Open Action Items</h2>
-            {actions.length === 0 ? (
-              <EmptyRow message="No open action items. Nice." />
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-display font-semibold">My Action Items</h2>
+              {overdueAll.length > 0 && (
+                <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-destructive/15 text-destructive font-semibold inline-flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> {overdueAll.length} overdue
+                </span>
+              )}
+            </div>
+            {myActions.length === 0 ? (
+              <EmptyRow message="Nothing assigned to you. Nice." />
             ) : (
               <ul className="space-y-3">
-                {actions.map((a) => (
-                  <li key={a.id} className="flex items-start gap-3 text-sm">
-                    <Circle className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-                    <div className="flex-1">
-                      <div className="text-foreground">{a.title}</div>
-                      {a.due_date && (
-                        <div className="text-xs text-muted-foreground">
-                          Due {formatDistanceToNow(new Date(a.due_date), { addSuffix: true })}
-                        </div>
-                      )}
-                    </div>
-                  </li>
-                ))}
+                {myActions.map((a) => {
+                  const overdue = a.due_date && a.due_date < todayStr;
+                  return (
+                    <li key={a.id} className="flex items-start gap-3 text-sm">
+                      <Circle className={cn("w-4 h-4 mt-0.5 shrink-0", overdue ? "text-destructive" : "text-muted-foreground")} />
+                      <div className="flex-1">
+                        <div className="text-foreground">{a.title}</div>
+                        {a.due_date && (
+                          <div className={cn("text-xs", overdue ? "text-destructive font-medium" : "text-muted-foreground")}>
+                            Due {formatDistanceToNow(new Date(a.due_date), { addSuffix: true })}
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
+            <Link to="/meeting" className="text-xs text-muted-foreground hover:text-foreground mt-3 inline-flex items-center gap-1">
+              View all in Meeting <ArrowUpRight className="w-3 h-3" />
+            </Link>
           </div>
 
           <div className="bg-surface border border-border rounded-2xl p-6 shadow-card">
