@@ -14,6 +14,11 @@ import { Plus, Calendar as CalendarIcon, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { listElderMeetings, createElderMeeting, updateElderMeeting, deleteElderMeeting } from "@/server/elder.functions";
 
+function parseLocalDate(s: string) {
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, (m ?? 1) - 1, d ?? 1);
+}
+
 export const Route = createFileRoute("/elder/meetings/")({
   component: ElderMeetingsList,
 });
@@ -130,7 +135,7 @@ function MeetingRow({ m, reload }: { m: any; reload: () => void }) {
   }
 
   async function remove() {
-    if (!confirm(`Delete meeting on ${format(new Date(m.meeting_date), "MMM d, yyyy")}? This cannot be undone.`)) return;
+    if (!confirm(`Delete meeting on ${format(parseLocalDate(m.meeting_date), "MMM d, yyyy")}? This cannot be undone.`)) return;
     try {
       await deleteElderMeeting({ data: { id: m.id } });
       toast.success("Meeting deleted");
@@ -149,7 +154,7 @@ function MeetingRow({ m, reload }: { m: any; reload: () => void }) {
           className="flex-1 min-w-0"
         >
           <div className="text-sm font-medium">{m.title ?? "Elder Meeting"}</div>
-          <div className="text-xs text-muted-foreground">{format(new Date(m.meeting_date), "EEEE, MMM d, yyyy")}</div>
+          <div className="text-xs text-muted-foreground">{format(parseLocalDate(m.meeting_date), "EEEE, MMM d, yyyy")}</div>
         </Link>
         <div className="flex items-center gap-2">
           {m.meeting_type === "joint" && (
