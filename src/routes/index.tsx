@@ -227,6 +227,21 @@ function Dashboard() {
   );
 }
 
+function fmtNum(n?: number) {
+  if (n === undefined || n === null || !Number.isFinite(n)) return "—";
+  return Math.round(n).toLocaleString();
+}
+function fmtMoney(n?: number) {
+  if (n === undefined || n === null || !Number.isFinite(n)) return "—";
+  return `$${Math.round(n).toLocaleString()}`;
+}
+function deltaHint(curr?: number, prev?: number, fallback = "") {
+  if (curr === undefined || prev === undefined || !prev) return fallback;
+  const pct = ((curr - prev) / prev) * 100;
+  const sign = pct >= 0 ? "+" : "";
+  return `${sign}${pct.toFixed(1)}% vs prev`;
+}
+
 function Stat({ label, value, hint, accent }: { label: string; value: string; hint: string; accent?: boolean }) {
   return (
     <div className="bg-surface border border-border rounded-2xl p-5 shadow-card">
