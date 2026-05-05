@@ -185,6 +185,7 @@ export const updateElderMeeting = createServerFn({ method: "POST" })
       .object({
         id: z.string().uuid(),
         title: z.string().max(200).optional(),
+        meeting_date: z.string().optional(),
         location: z.string().max(200).nullable().optional(),
         start_time: z.string().nullable().optional(),
         notes: z.string().nullable().optional(),
