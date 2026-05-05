@@ -27,10 +27,15 @@ import {
   Trash2,
   Send,
   Loader2,
+  CalendarIcon,
+  X,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { pushActionItemToGoogleTasks } from "@/server/google-tasks.functions";
+import { pushActionItemToGoogleTasks, pushActionItemsBulk } from "@/server/google-tasks.functions";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { expandEvents, type EventRowLike } from "@/lib/calendar-expand";
 import { parseMetricsPdf, type ParsedMetrics } from "@/lib/parse-metrics-pdf";
