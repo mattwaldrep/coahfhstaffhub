@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Lock, MessageSquarePlus, RefreshCw, Search, Trash2, Link as LinkIcon } from "lucide-react";
+import { Lock, MessageSquarePlus, RefreshCw, Search, Trash2, Link as LinkIcon, X, ArrowUpDown } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
@@ -16,6 +16,20 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 
 const HEALTH_OPTIONS = ["Thriving", "Healthy", "Watch", "Struggling", "Crisis", "Unknown"];
+// Severity ranking — higher = more urgent (used for "by health (urgent first)")
+const HEALTH_SEVERITY: Record<string, number> = {
+  Crisis: 5, Struggling: 4, Watch: 3, Unknown: 2, Healthy: 1, Thriving: 0,
+};
+
+type SortKey =
+  | "name_asc"
+  | "name_desc"
+  | "health_urgent"
+  | "health_thriving"
+  | "notes_most"
+  | "notes_recent"
+  | "notes_stale";
+
 
 type Person = {
   id: string;
@@ -38,10 +52,13 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"all" | "health">("all");
-  const [healthFilter, setHealthFilter] = useState<string>("");
   const [search, setSearch] = useState("");
+  const [healthFilter, setHealthFilter] = useState<Set<string>>(new Set());
+  const [elderFilter, setElderFilter] = useState<string>("all"); // "all" | "unassigned" | elder name
+  const [notesFilter, setNotesFilter] = useState<"any" | "with" | "without">("any");
+  const [sort, setSort] = useState<SortKey>("health_urgent");
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [latestNote, setLatestNote] = useState<Record<string, string>>({}); // pco_person_id -> ISO date
 
   const load = useCallback(async (refresh = false) => {
     refresh ? setRefreshing(true) : setLoading(true);
@@ -60,34 +77,38 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
 
   useEffect(() => { load(false); }, [load]);
 
-  // Refresh note counts whenever the people list changes
+  // Refresh note counts and last-note date whenever the people list changes
+  const refreshNoteMeta = useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return;
+    const { data } = await supabase
+      .from("pco_pastoral_notes")
+      .select("pco_person_id, created_at")
+      .in("pco_person_id", ids)
+      .order("created_at", { ascending: false });
+    const c: Record<string, number> = {};
+    const last: Record<string, string> = {};
+    for (const r of (data ?? []) as any[]) {
+      c[r.pco_person_id] = (c[r.pco_person_id] ?? 0) + 1;
+      if (!last[r.pco_person_id]) last[r.pco_person_id] = r.created_at;
+    }
+    setCounts(c);
+    setLatestNote(last);
+  }, []);
+
   useEffect(() => {
-    if (people.length === 0) return;
-    (async () => {
-      const ids = people.map((p) => p.id);
-      const { data } = await supabase
-        .from("pco_pastoral_notes")
-        .select("pco_person_id")
-        .in("pco_person_id", ids);
-      const c: Record<string, number> = {};
-      for (const r of (data ?? []) as any[]) {
-        c[r.pco_person_id] = (c[r.pco_person_id] ?? 0) + 1;
-      }
-      setCounts(c);
-    })();
-  }, [people]);
+    refreshNoteMeta(people.map((p) => p.id));
+  }, [people, refreshNoteMeta]);
 
   // Realtime
   useEffect(() => {
     const ch = supabase
       .channel("pco-pastoral-notes")
       .on("postgres_changes", { event: "*", schema: "public", table: "pco_pastoral_notes" }, () => {
-        // bump expanded view by re-rendering; expanded panel listens itself too
-        setCounts((prev) => ({ ...prev }));
+        refreshNoteMeta(people.map((p) => p.id));
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, []);
+  }, [people, refreshNoteMeta]);
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
@@ -105,17 +126,85 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
     );
   }
 
-  const filtered = people.filter((p) => {
-    if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
-    if (filter === "health" && healthFilter) {
-      const v = fields ? p.fields[fields.spiritual_health]?.value : null;
-      if ((v ?? "Unknown") !== healthFilter) return false;
+  const elderOptions = useMemo(() => {
+    if (!fields) return [] as string[];
+    const set = new Set<string>();
+    for (const p of people) {
+      const v = p.fields[fields.assigned_elder]?.value;
+      if (v && v.trim()) set.add(v.trim());
     }
-    return true;
-  });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [people, fields]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return people.filter((p) => {
+      if (q && !p.name.toLowerCase().includes(q)) return false;
+
+      const health = (fields ? p.fields[fields.spiritual_health]?.value : null) ?? "Unknown";
+      if (healthFilter.size > 0 && !healthFilter.has(health)) return false;
+
+      const elderVal = (fields ? p.fields[fields.assigned_elder]?.value : null)?.trim() || "";
+      if (elderFilter === "unassigned" && elderVal) return false;
+      if (elderFilter !== "all" && elderFilter !== "unassigned" && elderVal !== elderFilter) return false;
+
+      const noteCount = counts[p.id] ?? 0;
+      if (notesFilter === "with" && noteCount === 0) return false;
+      if (notesFilter === "without" && noteCount > 0) return false;
+
+      return true;
+    });
+  }, [people, fields, search, healthFilter, elderFilter, notesFilter, counts]);
+
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    const healthOf = (p: Person) =>
+      (fields ? p.fields[fields.spiritual_health]?.value : null) ?? "Unknown";
+    arr.sort((a, b) => {
+      switch (sort) {
+        case "name_asc": return a.name.localeCompare(b.name);
+        case "name_desc": return b.name.localeCompare(a.name);
+        case "health_urgent":
+          return (HEALTH_SEVERITY[healthOf(b)] ?? 0) - (HEALTH_SEVERITY[healthOf(a)] ?? 0)
+            || a.name.localeCompare(b.name);
+        case "health_thriving":
+          return (HEALTH_SEVERITY[healthOf(a)] ?? 0) - (HEALTH_SEVERITY[healthOf(b)] ?? 0)
+            || a.name.localeCompare(b.name);
+        case "notes_most":
+          return (counts[b.id] ?? 0) - (counts[a.id] ?? 0) || a.name.localeCompare(b.name);
+        case "notes_recent": {
+          const la = latestNote[a.id] ? new Date(latestNote[a.id]).getTime() : 0;
+          const lb = latestNote[b.id] ? new Date(latestNote[b.id]).getTime() : 0;
+          return lb - la || a.name.localeCompare(b.name);
+        }
+        case "notes_stale": {
+          // No notes first, then oldest last note
+          const la = latestNote[a.id] ? new Date(latestNote[a.id]).getTime() : 0;
+          const lb = latestNote[b.id] ? new Date(latestNote[b.id]).getTime() : 0;
+          return la - lb || a.name.localeCompare(b.name);
+        }
+      }
+    });
+    return arr;
+  }, [filtered, sort, counts, latestNote, fields]);
+
+  const toggleHealth = (h: string) => {
+    setHealthFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(h)) next.delete(h); else next.add(h);
+      return next;
+    });
+  };
+
+  const activeFilterCount =
+    (search ? 1 : 0) + healthFilter.size + (elderFilter !== "all" ? 1 : 0) + (notesFilter !== "any" ? 1 : 0);
+
+  const clearAll = () => {
+    setSearch(""); setHealthFilter(new Set()); setElderFilter("all"); setNotesFilter("any");
+  };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         {variant === "page" && (
           <div className="flex items-center gap-2">
@@ -125,39 +214,103 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
             </span>
           </div>
         )}
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-2 ml-auto flex-wrap">
           <div className="relative">
             <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search…"
+              placeholder="Search by name…"
               className="h-8 text-sm pl-7 w-48"
             />
           </div>
-          <Select value={filter === "all" ? "all" : healthFilter || "__pick"} onValueChange={(v) => {
-            if (v === "all") { setFilter("all"); setHealthFilter(""); }
-            else { setFilter("health"); setHealthFilter(v); }
-          }}>
-            <SelectTrigger className="h-8 w-40 text-xs"><SelectValue placeholder="Filter" /></SelectTrigger>
+
+          <Select value={elderFilter} onValueChange={setElderFilter}>
+            <SelectTrigger className="h-8 w-40 text-xs">
+              <SelectValue placeholder="Assigned elder" />
+            </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All people</SelectItem>
-              {HEALTH_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+              <SelectItem value="all">All elders</SelectItem>
+              <SelectItem value="unassigned">Unassigned</SelectItem>
+              {elderOptions.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Button size="sm" variant="outline" onClick={() => load(true)} disabled={refreshing}>
+
+          <Select value={notesFilter} onValueChange={(v) => setNotesFilter(v as any)}>
+            <SelectTrigger className="h-8 w-32 text-xs">
+              <SelectValue placeholder="Notes" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="any">Any notes</SelectItem>
+              <SelectItem value="with">Has notes</SelectItem>
+              <SelectItem value="without">No notes</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+            <SelectTrigger className="h-8 w-48 text-xs">
+              <ArrowUpDown className="w-3 h-3 mr-1" />
+              <SelectValue placeholder="Sort" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="health_urgent">Health · urgent first</SelectItem>
+              <SelectItem value="health_thriving">Health · thriving first</SelectItem>
+              <SelectItem value="name_asc">Name · A → Z</SelectItem>
+              <SelectItem value="name_desc">Name · Z → A</SelectItem>
+              <SelectItem value="notes_recent">Most recent note</SelectItem>
+              <SelectItem value="notes_stale">Stalest (no/oldest note)</SelectItem>
+              <SelectItem value="notes_most">Most notes</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Button size="sm" variant="outline" onClick={() => load(true)} disabled={refreshing} title="Refresh from Planning Center">
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
           </Button>
         </div>
       </div>
 
+      {/* Health quick-filter chips */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Health</span>
+        {HEALTH_OPTIONS.map((h) => {
+          const active = healthFilter.has(h);
+          const count = people.filter((p) => ((fields ? p.fields[fields.spiritual_health]?.value : null) ?? "Unknown") === h).length;
+          return (
+            <button
+              key={h}
+              type="button"
+              onClick={() => toggleHealth(h)}
+              className={`text-[11px] px-2 py-0.5 rounded-full border transition ${
+                active
+                  ? "bg-[oklch(0.55_0.15_280)]/15 border-[oklch(0.55_0.15_280)]/40 text-[oklch(0.55_0.15_280)]"
+                  : "bg-background border-border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {h} <span className="opacity-60">{count}</span>
+            </button>
+          );
+        })}
+        {activeFilterCount > 0 && (
+          <button
+            onClick={clearAll}
+            className="text-[11px] inline-flex items-center gap-1 text-muted-foreground hover:text-foreground ml-2"
+          >
+            <X className="w-3 h-3" /> Clear filters
+          </button>
+        )}
+        <span className="text-[11px] text-muted-foreground ml-auto">
+          {sorted.length} of {people.length}
+        </span>
+      </div>
+
       <div className="bg-surface border border-border rounded-2xl divide-y divide-border">
-        {filtered.length === 0 && (
+        {sorted.length === 0 && (
           <div className="p-6 text-sm text-muted-foreground">No people match.</div>
         )}
-        {filtered.map((p) => {
+        {sorted.map((p) => {
           const health = fields ? p.fields[fields.spiritual_health]?.value : null;
           const elder = fields ? p.fields[fields.assigned_elder]?.value : null;
+          const last = latestNote[p.id];
           return (
             <div key={p.id}>
               <div
@@ -169,6 +322,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
                   <div className="text-xs text-muted-foreground truncate">
                     {elder ? `Assigned: ${elder}` : "Unassigned"}
                     {counts[p.id] ? ` · ${counts[p.id]} note${counts[p.id] === 1 ? "" : "s"}` : ""}
+                    {last ? ` · last ${format(new Date(last), "MMM d")}` : ""}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
