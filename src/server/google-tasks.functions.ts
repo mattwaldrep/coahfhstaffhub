@@ -18,6 +18,16 @@ export const getGoogleAuthUrl = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { id } = getOAuthEnv();
     const redirectUri = `${data.origin}/api/google/oauth-callback`;
+
+    // Create a single-use state nonce bound to this user, server-side
+    const state = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, "");
+    const { error: stateErr } = await supabaseAdmin.from("oauth_states").insert({
+      state,
+      user_id: context.userId,
+      provider: "google_tasks",
+    });
+    if (stateErr) throw new Error("Failed to initialize OAuth state");
+
     const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
     url.searchParams.set("client_id", id);
     url.searchParams.set("redirect_uri", redirectUri);
@@ -25,7 +35,7 @@ export const getGoogleAuthUrl = createServerFn({ method: "POST" })
     url.searchParams.set("scope", GOOGLE_SCOPE);
     url.searchParams.set("access_type", "offline");
     url.searchParams.set("prompt", "consent");
-    url.searchParams.set("state", context.userId);
+    url.searchParams.set("state", state);
     return { url: url.toString(), redirectUri };
   });
 
