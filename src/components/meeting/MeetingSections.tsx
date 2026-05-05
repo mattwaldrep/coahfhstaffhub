@@ -38,7 +38,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { expandEvents, type EventRowLike } from "@/lib/calendar-expand";
-import { parseMetricsPdf, type ParsedMetrics } from "@/lib/parse-metrics-pdf";
+import { fetchWeeksInRange, summarizeWeeks, type WeeklyMetric, type MetricsHeadline } from "@/integrations/metrics/client";
+import { useMetricsSession } from "@/integrations/metrics/use-session";
 import { cn } from "@/lib/utils";
 
 /* ---------- shared collapsible card ---------- */
