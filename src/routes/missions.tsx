@@ -193,13 +193,43 @@ function Body() {
 
 
 
+  async function uploadItinerary(file: File) {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${form.id ?? "new"}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("mission-trips").upload(path, file, { upsert: true });
+      if (error) { toast.error(error.message); return; }
+      setForm((f) => ({ ...f, itinerary_file_path: path, itinerary_file_name: file.name }));
+      toast.success("Itinerary uploaded");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function openItinerary(path: string) {
+    const { data, error } = await supabase.storage.from("mission-trips").createSignedUrl(path, 60);
+    if (error) { toast.error(error.message); return; }
+    window.open(data.signedUrl, "_blank");
+  }
+
+  function clearItinerary() {
+    setForm((f) => ({ ...f, itinerary_file_path: null, itinerary_file_name: null }));
+  }
+
+  const filteredTrips = useMemo(
+    () => statusFilter === "all" ? trips : trips.filter((t) => t.status === statusFilter),
+    [trips, statusFilter],
+  );
+
   const byStatus = useMemo(() => {
     const m: Record<Status, Trip[]> = {
       not_started: [], tbc: [], pre_trip: [], in_field: [], complete: [], cancelled: [],
     };
-    for (const t of trips) m[t.status]?.push(t);
+    for (const t of filteredTrips) m[t.status]?.push(t);
     return m;
-  }, [trips]);
+  }, [filteredTrips]);
 
   return (
     <>
