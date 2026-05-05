@@ -33,6 +33,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { pushActionItemToGoogleTasks } from "@/server/google-tasks.functions";
 import { toast } from "sonner";
 import { expandEvents, type EventRowLike } from "@/lib/calendar-expand";
+import { parseMetricsPdf, type ParsedMetrics } from "@/lib/parse-metrics-pdf";
 import { cn } from "@/lib/utils";
 
 /* ---------- shared collapsible card ---------- */
@@ -597,27 +598,33 @@ type TrendsReport = {
   file_name: string;
   created_at: string;
   uploaded_by: string | null;
+  parsed_metrics: ParsedMetrics | null;
 };
 
 export function ReviewTrendsSection({ meetingId, meetingDate }: { meetingId: string; meetingDate: string }) {
   const { user, hasRole } = useAuth();
   const canUpload = hasRole("core");
   const [reports, setReports] = useState<TrendsReport[]>([]);
+  const [prevReports, setPrevReports] = useState<TrendsReport[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [reparsing, setReparsing] = useState<string | null>(null);
 
   const md = new Date(meetingDate + "T12:00");
   const fy = md.getFullYear();
   const month = md.getMonth() + 1;
+  const prev = new Date(fy, month - 2, 1);
+  const prevFy = prev.getFullYear();
+  const prevMonth = prev.getMonth() + 1;
 
   async function load() {
-    const { data } = await supabase
-      .from("finance_reports")
-      .select("*")
-      .eq("report_type", "trends")
-      .eq("fiscal_year", fy)
-      .eq("month", month)
-      .order("created_at", { ascending: false });
-    setReports((data ?? []) as TrendsReport[]);
+    const [{ data: cur }, { data: pr }] = await Promise.all([
+      supabase.from("finance_reports").select("*").eq("report_type", "trends")
+        .eq("fiscal_year", fy).eq("month", month).order("created_at", { ascending: false }),
+      supabase.from("finance_reports").select("*").eq("report_type", "trends")
+        .eq("fiscal_year", prevFy).eq("month", prevMonth).order("created_at", { ascending: false }).limit(1),
+    ]);
+    setReports((cur ?? []) as TrendsReport[]);
+    setPrevReports((pr ?? []) as TrendsReport[]);
   }
 
   useEffect(() => {
@@ -632,6 +639,16 @@ export function ReviewTrendsSection({ meetingId, meetingDate }: { meetingId: str
       const path = `trends/${fy}/${String(month).padStart(2, "0")}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("finance-reports").upload(path, file);
       if (upErr) throw upErr;
+
+      let parsed: ParsedMetrics | null = null;
+      if (/pdf/i.test(file.type) || /\.pdf$/i.test(file.name)) {
+        try {
+          parsed = await parseMetricsPdf(file);
+        } catch (e) {
+          console.warn("PDF parse failed", e);
+        }
+      }
+
       const { error } = await supabase.from("finance_reports").insert({
         fiscal_year: fy,
         month,
@@ -641,14 +658,33 @@ export function ReviewTrendsSection({ meetingId, meetingDate }: { meetingId: str
         mime_type: file.type,
         uploaded_by: user?.id,
         report_type: "trends",
+        parsed_metrics: parsed as never,
       });
       if (error) throw error;
-      toast.success("Trends report uploaded");
+      toast.success(parsed ? "Trends report uploaded & parsed" : "Trends report uploaded");
       load();
     } catch (err: any) {
       toast.error(err.message ?? "Upload failed");
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function reparse(r: TrendsReport) {
+    setReparsing(r.id);
+    try {
+      const { data, error } = await supabase.storage.from("finance-reports").download(r.file_path);
+      if (error) throw error;
+      const parsed = await parseMetricsPdf(data);
+      const { error: upErr } = await supabase.from("finance_reports")
+        .update({ parsed_metrics: parsed as never }).eq("id", r.id);
+      if (upErr) throw upErr;
+      toast.success("Re-parsed");
+      load();
+    } catch (err: any) {
+      toast.error(err.message ?? "Parse failed");
+    } finally {
+      setReparsing(null);
     }
   }
 
@@ -667,12 +703,15 @@ export function ReviewTrendsSection({ meetingId, meetingDate }: { meetingId: str
     load();
   }
 
+  const current = reports[0] ?? null;
+  const previous = prevReports[0] ?? null;
+
   return (
     <StandingSection
       title="Review Trends"
       subtitle="Church metrics + this week's exported report."
     >
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm">
             <a href="https://churchmetrics.lovable.app/" target="_blank" rel="noreferrer">
@@ -684,7 +723,7 @@ export function ReviewTrendsSection({ meetingId, meetingDate }: { meetingId: str
             <label className="inline-flex">
               <input
                 type="file"
-                accept=".pdf,.xlsx,.xls,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                accept=".pdf,application/pdf"
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
@@ -702,39 +741,34 @@ export function ReviewTrendsSection({ meetingId, meetingDate }: { meetingId: str
           )}
         </div>
 
-        {reports.length === 0 ? (
+        {current ? (
+          <ReportCard
+            r={current}
+            previous={previous}
+            onDownload={download}
+            onRemove={canUpload ? remove : undefined}
+            onReparse={canUpload ? reparse : undefined}
+            reparsing={reparsing === current.id}
+            monthLabel={format(md, "MMMM yyyy")}
+            previousMonthLabel={format(prev, "MMMM yyyy")}
+          />
+        ) : (
           <div className="text-xs text-muted-foreground italic">
             No trends report uploaded for {format(md, "MMMM yyyy")} yet.
           </div>
-        ) : (
-          <div className="space-y-1.5">
-            {reports.map((r) => (
-              <div
-                key={r.id}
-                className="flex items-center gap-2 bg-background/40 rounded-lg px-3 py-2"
-              >
-                <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-medium truncate">{r.label || r.file_name}</div>
-                  <div className="text-[10px] text-muted-foreground">
-                    Uploaded {format(new Date(r.created_at), "MMM d, h:mma")}
-                  </div>
-                </div>
-                <button onClick={() => download(r)} className="opacity-60 hover:opacity-100" title="Download">
-                  <Download className="w-3.5 h-3.5" />
-                </button>
-                {canUpload && (
-                  <button
-                    onClick={() => remove(r)}
-                    className="opacity-60 hover:opacity-100 text-destructive"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
+        )}
+
+        {reports.length > 1 && (
+          <details className="text-xs">
+            <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+              {reports.length - 1} earlier upload{reports.length - 1 === 1 ? "" : "s"} this month
+            </summary>
+            <div className="mt-2 space-y-1.5">
+              {reports.slice(1).map((r) => (
+                <FileRow key={r.id} r={r} onDownload={download} onRemove={canUpload ? remove : undefined} />
+              ))}
+            </div>
+          </details>
         )}
 
         <NotesField meetingId={meetingId} sectionKey="review_trends" placeholder="Trend takeaways…" />
@@ -742,6 +776,301 @@ export function ReviewTrendsSection({ meetingId, meetingDate }: { meetingId: str
     </StandingSection>
   );
 }
+
+function FileRow({
+  r, onDownload, onRemove,
+}: {
+  r: TrendsReport;
+  onDownload: (r: TrendsReport) => void;
+  onRemove?: (r: TrendsReport) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 bg-background/40 rounded-lg px-3 py-2">
+      <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+      <div className="min-w-0 flex-1">
+        <button onClick={() => onDownload(r)} className="text-xs font-medium truncate hover:underline text-left">
+          {r.label || r.file_name}
+        </button>
+        <div className="text-[10px] text-muted-foreground">
+          Uploaded {format(new Date(r.created_at), "MMM d, h:mma")}
+        </div>
+      </div>
+      <button onClick={() => onDownload(r)} className="opacity-60 hover:opacity-100" title="Download">
+        <Download className="w-3.5 h-3.5" />
+      </button>
+      {onRemove && (
+        <button onClick={() => onRemove(r)} className="opacity-60 hover:opacity-100 text-destructive" title="Delete">
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+function ReportCard({
+  r, previous, onDownload, onRemove, onReparse, reparsing, monthLabel, previousMonthLabel,
+}: {
+  r: TrendsReport;
+  previous: TrendsReport | null;
+  onDownload: (r: TrendsReport) => void;
+  onRemove?: (r: TrendsReport) => void;
+  onReparse?: (r: TrendsReport) => void;
+  reparsing: boolean;
+  monthLabel: string;
+  previousMonthLabel: string;
+}) {
+  const m = r.parsed_metrics;
+  const pm = previous?.parsed_metrics ?? null;
+
+  return (
+    <div className="bg-background/40 border border-border rounded-xl overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-border/60">
+        <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+        <div className="min-w-0 flex-1">
+          <button onClick={() => onDownload(r)} className="text-sm font-medium truncate hover:underline text-left block">
+            {r.label || r.file_name}
+          </button>
+          <div className="text-[10px] text-muted-foreground">
+            {m?.range ?? `Uploaded ${format(new Date(r.created_at), "MMM d, h:mma")}`}
+          </div>
+        </div>
+        <button onClick={() => onDownload(r)} className="opacity-60 hover:opacity-100" title="Download / open">
+          <Download className="w-3.5 h-3.5" />
+        </button>
+        {onReparse && (
+          <button onClick={() => onReparse(r)} disabled={reparsing} className="opacity-60 hover:opacity-100" title="Re-parse PDF">
+            {reparsing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+          </button>
+        )}
+        {onRemove && (
+          <button onClick={() => onRemove(r)} className="opacity-60 hover:opacity-100 text-destructive" title="Delete">
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
+
+      {!m ? (
+        <div className="px-3 py-3 text-xs text-muted-foreground italic">
+          No extracted stats. {onReparse ? "Click the parse button above to extract." : ""}
+        </div>
+      ) : (
+        <div className="p-3 space-y-4">
+          <HeadlineTiles m={m} pm={pm} previousMonthLabel={previousMonthLabel} monthLabel={monthLabel} />
+
+          {m.ratios.length > 0 && (
+            <Block title="Key ratios">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {m.ratios.map((r) => (
+                  <div key={r.label} className="bg-surface rounded-md px-2 py-1.5">
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{r.label}</div>
+                    <div className="text-sm font-semibold tabular-nums">{r.value}</div>
+                  </div>
+                ))}
+              </div>
+            </Block>
+          )}
+
+          {m.period_comparison.length > 0 && (
+            <Block title="Period comparison">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      <th className="text-left font-normal py-1">Metric</th>
+                      <th className="text-right font-normal py-1">Current</th>
+                      <th className="text-right font-normal py-1">Previous</th>
+                      <th className="text-right font-normal py-1">Change</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {m.period_comparison.map((row) => {
+                      const pos = /^\+/.test(row.change);
+                      const neg = /^-/.test(row.change);
+                      return (
+                        <tr key={row.metric} className="border-t border-border/40">
+                          <td className="py-1">{row.metric}</td>
+                          <td className="text-right tabular-nums font-medium">{row.current}</td>
+                          <td className="text-right tabular-nums text-muted-foreground">{row.previous}</td>
+                          <td className={cn("text-right tabular-nums", pos && "text-emerald-600", neg && "text-destructive")}>
+                            {row.change}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Block>
+          )}
+
+          {m.goals.length > 0 && (
+            <Block title="Goal progress">
+              <div className="space-y-1.5">
+                {m.goals.map((g) => {
+                  const pct = parseInt(g.progress, 10);
+                  const declining = /declin/i.test(g.trajectory);
+                  const onTrack = /on track/i.test(g.trajectory);
+                  return (
+                    <div key={g.goal} className="bg-surface rounded-md px-2.5 py-2">
+                      <div className="flex items-baseline justify-between gap-2 mb-1">
+                        <div className="text-xs font-medium capitalize">{g.goal}</div>
+                        <div className="text-[11px] text-muted-foreground tabular-nums">
+                          {g.actual} / {g.target}
+                        </div>
+                      </div>
+                      <div className="h-1.5 bg-background rounded-full overflow-hidden">
+                        <div
+                          className={cn(
+                            "h-full rounded-full",
+                            declining ? "bg-destructive" : onTrack ? "bg-emerald-500" : "bg-primary",
+                          )}
+                          style={{ width: `${Math.min(100, Math.max(0, isFinite(pct) ? pct : 0))}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between mt-1 text-[10px]">
+                        <span className="text-muted-foreground">{g.progress}</span>
+                        <span className={cn(declining && "text-destructive", onTrack && "text-emerald-600")}>
+                          {g.trajectory}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Block>
+          )}
+
+          {m.weekly.length > 0 && (
+            <Block title="Recent weekly data">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      <th className="text-left font-normal py-1">Week</th>
+                      <th className="text-right font-normal py-1">Total</th>
+                      <th className="text-right font-normal py-1">Sanc.</th>
+                      <th className="text-right font-normal py-1">Kids</th>
+                      <th className="text-right font-normal py-1">Giving</th>
+                      <th className="text-right font-normal py-1">CG</th>
+                      <th className="text-right font-normal py-1">Prayer</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {m.weekly.map((w) => (
+                      <tr key={w.week} className="border-t border-border/40">
+                        <td className="py-1">{w.week}</td>
+                        <td className="text-right tabular-nums">{w.total}</td>
+                        <td className="text-right tabular-nums">{w.sanctuary}</td>
+                        <td className="text-right tabular-nums">{w.kids}</td>
+                        <td className="text-right tabular-nums">{w.giving}</td>
+                        <td className="text-right tabular-nums">{w.cg}</td>
+                        <td className="text-right tabular-nums">{w.prayer}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Block>
+          )}
+
+          {m.insights.length > 0 && (
+            <Block title="Leadership insights">
+              <ul className="space-y-1 text-xs text-muted-foreground list-disc list-inside marker:text-primary/60">
+                {m.insights.map((line, i) => (
+                  <li key={i} className="text-foreground/80">{line}</li>
+                ))}
+              </ul>
+            </Block>
+          )}
+
+          {m.milestones.length > 0 && (
+            <Block title="Milestones (YTD)">
+              <div className="flex flex-wrap gap-2">
+                {m.milestones.map((ms) => (
+                  <span key={ms.label} className="text-xs bg-surface rounded-md px-2 py-1">
+                    <span className="font-semibold tabular-nums mr-1">{ms.count}</span>
+                    <span className="text-muted-foreground">{ms.label}</span>
+                  </span>
+                ))}
+              </div>
+            </Block>
+          )}
+
+          {previous && (
+            <div className="text-[10px] text-muted-foreground pt-1 border-t border-border/40">
+              Previous month ({previousMonthLabel}) values shown in tile deltas above.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Block({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">{title}</div>
+      {children}
+    </div>
+  );
+}
+
+function HeadlineTiles({
+  m, pm, previousMonthLabel, monthLabel,
+}: {
+  m: ParsedMetrics;
+  pm: ParsedMetrics | null;
+  previousMonthLabel: string;
+  monthLabel: string;
+}) {
+  const tiles: { label: string; key: keyof ParsedMetrics["headline"]; format: (n: number) => string }[] = [
+    { label: "Avg Total", key: "avg_total_attendance", format: (n) => String(n) },
+    { label: "Avg Sanctuary", key: "avg_sanctuary", format: (n) => String(n) },
+    { label: "Avg Kids", key: "avg_kids", format: (n) => String(n) },
+    { label: "Avg Giving", key: "avg_weekly_giving", format: (n) => `$${n.toLocaleString()}` },
+    { label: "Avg CG", key: "avg_community_groups", format: (n) => String(n) },
+    { label: "Prayer", key: "prayer_interactions", format: (n) => String(n) },
+    { label: "First Step", key: "first_step_cards", format: (n) => String(n) },
+    { label: "Next Step", key: "next_step_cards", format: (n) => String(n) },
+    { label: "QR Scans", key: "qr_scans", format: (n) => String(n) },
+    { label: "Volunteers", key: "volunteers_added", format: (n) => String(n) },
+  ];
+
+  return (
+    <div>
+      <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium mb-2">
+        {monthLabel} headline {pm && <span className="text-muted-foreground/70 normal-case tracking-normal">· vs {previousMonthLabel}</span>}
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+        {tiles.map((t) => {
+          const val = m.headline[t.key];
+          if (val == null) return null;
+          const prevVal = pm?.headline[t.key];
+          let delta: number | null = null;
+          if (typeof prevVal === "number" && prevVal > 0 && typeof val === "number") {
+            delta = ((val - prevVal) / prevVal) * 100;
+          }
+          return (
+            <div key={t.key} className="bg-surface rounded-md px-2 py-1.5">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{t.label}</div>
+              <div className="text-sm font-semibold tabular-nums">{t.format(val)}</div>
+              {delta !== null && (
+                <div className={cn(
+                  "text-[10px] tabular-nums",
+                  delta > 0 ? "text-emerald-600" : delta < 0 ? "text-destructive" : "text-muted-foreground",
+                )}>
+                  {delta > 0 ? "+" : ""}{delta.toFixed(1)}% vs prev
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 
 /* ---------- 9. Review Tasks ---------- */
 

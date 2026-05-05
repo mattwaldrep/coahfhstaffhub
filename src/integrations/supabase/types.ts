@@ -329,6 +329,7 @@ export type Database = {
           label: string | null
           mime_type: string | null
           month: number
+          parsed_metrics: Json | null
           report_type: string
           uploaded_by: string | null
         }
@@ -341,6 +342,7 @@ export type Database = {
           label?: string | null
           mime_type?: string | null
           month: number
+          parsed_metrics?: Json | null
           report_type?: string
           uploaded_by?: string | null
         }
@@ -353,6 +355,7 @@ export type Database = {
           label?: string | null
           mime_type?: string | null
           month?: number
+          parsed_metrics?: Json | null
           report_type?: string
           uploaded_by?: string | null
         }
