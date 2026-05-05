@@ -289,6 +289,66 @@ export type Database = {
           },
         ]
       }
+      mission_trips: {
+        Row: {
+          church_name: string
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          id: string
+          itinerary_link: string | null
+          leader_email: string | null
+          leader_name: string | null
+          leader_phone: string | null
+          notes: string | null
+          position: number
+          primary_focus: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["trip_status"]
+          steps: Json
+          team_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          church_name: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          itinerary_link?: string | null
+          leader_email?: string | null
+          leader_name?: string | null
+          leader_phone?: string | null
+          notes?: string | null
+          position?: number
+          primary_focus?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["trip_status"]
+          steps?: Json
+          team_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          church_name?: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          itinerary_link?: string | null
+          leader_email?: string | null
+          leader_name?: string | null
+          leader_phone?: string | null
+          notes?: string | null
+          position?: number
+          primary_focus?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["trip_status"]
+          steps?: Json
+          team_number?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -415,6 +475,13 @@ export type Database = {
       app_role: "core" | "meeting" | "extended"
       readiness: "green" | "yellow" | "red"
       sub_calendar: "forest_hills_main" | "coah_lm" | "youth" | "general"
+      trip_status:
+        | "not_started"
+        | "tbc"
+        | "pre_trip"
+        | "in_field"
+        | "complete"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -545,6 +612,14 @@ export const Constants = {
       app_role: ["core", "meeting", "extended"],
       readiness: ["green", "yellow", "red"],
       sub_calendar: ["forest_hills_main", "coah_lm", "youth", "general"],
+      trip_status: [
+        "not_started",
+        "tbc",
+        "pre_trip",
+        "in_field",
+        "complete",
+        "cancelled",
+      ],
     },
   },
 } as const
