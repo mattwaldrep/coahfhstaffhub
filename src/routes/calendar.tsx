@@ -12,7 +12,8 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-import { RRule, type Frequency } from "rrule";
+import rrulePkg, { type Frequency } from "rrule";
+const { RRule } = rrulePkg;
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
