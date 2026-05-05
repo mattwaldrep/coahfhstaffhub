@@ -204,13 +204,112 @@ function ReadinessDot({ r }: { r: "green" | "yellow" | "red" }) {
   return <span className={`inline-block w-1.5 h-1.5 rounded-full ${color} ml-1`} />;
 }
 
-function ReportRow({ label, status }: { label: string; status: string }) {
+function ReportRow({ label, reportType }: { label: string; reportType: "trends" | "finance" }) {
+  const { user } = useAuth();
+  const [latest, setLatest] = useState<{ id: string; file_path: string; file_name: string; created_at: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const load = useCallback(async () => {
+    const now = new Date();
+    const { data } = await supabase
+      .from("finance_reports")
+      .select("id,file_path,file_name,created_at")
+      .eq("report_type", reportType)
+      .eq("fiscal_year", now.getFullYear())
+      .eq("month", now.getMonth() + 1)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    setLatest((data?.[0] as any) ?? null);
+  }, [reportType]);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function handleFile(file: File) {
+    setUploading(true);
+    try {
+      const now = new Date();
+      const fy = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const ext = file.name.split(".").pop();
+      const folder = reportType === "trends" ? "trends/" : "";
+      const path = `${folder}${fy}/${String(month).padStart(2, "0")}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("finance-reports").upload(path, file);
+      if (upErr) throw upErr;
+
+      let parsed: unknown = null;
+      if (reportType === "trends" && (/pdf/i.test(file.type) || /\.pdf$/i.test(file.name))) {
+        try { parsed = await parseMetricsPdf(file); } catch (e) { console.warn(e); }
+      }
+
+      const { error } = await supabase.from("finance_reports").insert({
+        fiscal_year: fy,
+        month,
+        label: `${label} — ${format(now, "MMM d, yyyy")}`,
+        file_path: path,
+        file_name: file.name,
+        mime_type: file.type,
+        uploaded_by: user?.id,
+        report_type: reportType,
+        parsed_metrics: parsed as never,
+      });
+      if (error) throw error;
+      toast.success(`${label} uploaded`);
+      load();
+    } catch (err: any) {
+      toast.error(err.message ?? "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function open() {
+    if (!latest) return;
+    const { data, error } = await supabase.storage
+      .from("finance-reports")
+      .createSignedUrl(latest.file_path, 60);
+    if (error) return toast.error(error.message);
+    window.open(data.signedUrl, "_blank");
+  }
+
   return (
     <div className="flex items-center justify-between py-2 text-sm">
       <span>{label}</span>
-      <span className="text-xs text-muted-foreground flex items-center gap-1">
-        {status} <ArrowUpRight className="w-3 h-3" />
-      </span>
+      <input
+        ref={inputRef}
+        type="file"
+        className="hidden"
+        accept=".pdf,.csv,.xlsx,.xls,application/pdf"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) handleFile(f);
+          e.target.value = "";
+        }}
+      />
+      {latest ? (
+        <button
+          type="button"
+          onClick={open}
+          className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+          title={latest.file_name}
+        >
+          <FileText className="w-3 h-3" /> {format(new Date(latest.created_at), "MMM d")}
+          <ArrowUpRight className="w-3 h-3" />
+        </button>
+      ) : (
+        <button
+          type="button"
+          disabled={uploading}
+          onClick={() => inputRef.current?.click()}
+          className="text-xs text-muted-foreground hover:text-primary inline-flex items-center gap-1 disabled:opacity-60"
+        >
+          {uploading ? (
+            <><Loader2 className="w-3 h-3 animate-spin" /> Uploading…</>
+          ) : (
+            <>Not uploaded <Upload className="w-3 h-3" /></>
+          )}
+        </button>
+      )}
     </div>
   );
 }
