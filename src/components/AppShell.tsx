@@ -2,12 +2,13 @@ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Home, CalendarDays, Users, Settings as SettingsIcon, ClipboardList, X } from "lucide-react";
+import { Sparkles, Home, CalendarDays, Users, Settings as SettingsIcon, ClipboardList, X, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { to: "/", label: "Home", icon: Home },
   { to: "/meeting", label: "Meeting", icon: ClipboardList },
+  { to: "/sunday-review", label: "Sunday Review", icon: ClipboardCheck },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/missions", label: "Missions", icon: Users },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
