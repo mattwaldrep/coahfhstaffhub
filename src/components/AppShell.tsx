@@ -1,120 +1,215 @@
-import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState, useRef } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Home, CalendarDays, Users, Settings as SettingsIcon, ClipboardList, X, ClipboardCheck } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Sparkles, X, Send, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
-const NAV = [
-  { to: "/", label: "Home", icon: Home },
-  { to: "/meeting", label: "Meeting", icon: ClipboardList },
-  { to: "/sunday-review", label: "Sunday Review", icon: ClipboardCheck },
-  { to: "/calendar", label: "Calendar", icon: CalendarDays },
-  { to: "/missions", label: "Missions", icon: Users },
-  { to: "/settings", label: "Settings", icon: SettingsIcon },
-];
+type Msg = { role: "user" | "assistant"; content: string };
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { pathname } = useLocation();
   const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
   const [aiOpen, setAiOpen] = useState(false);
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<Msg[]>([]);
+  const [sending, setSending] = useState(false);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
   }, [loading, user, navigate]);
 
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages, sending]);
+
   if (loading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
-        Loading…
-      </div>
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>
     );
   }
 
   const initials = (user.email ?? "??").slice(0, 2).toUpperCase();
 
+  const send = async () => {
+    const text = input.trim();
+    if (!text || sending) return;
+    setInput("");
+    const next: Msg[] = [...messages, { role: "user", content: text }];
+    setMessages(next);
+    setSending(true);
+
+    try {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ messages: next }),
+      });
+
+      if (!resp.ok || !resp.body) {
+        if (resp.status === 429) toast.error("Rate limit hit — try again in a moment.");
+        else if (resp.status === 402) toast.error("AI credits exhausted. Add funds in workspace settings.");
+        else toast.error("AI request failed.");
+        setSending(false);
+        return;
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let assistantContent = "";
+      let added = false;
+
+      const pushChunk = (chunk: string) => {
+        assistantContent += chunk;
+        setMessages((prev) => {
+          if (!added) {
+            added = true;
+            return [...prev, { role: "assistant", content: assistantContent }];
+          }
+          return prev.map((m, i) =>
+            i === prev.length - 1 ? { ...m, content: assistantContent } : m,
+          );
+        });
+      };
+
+      let done = false;
+      while (!done) {
+        const { done: d, value } = await reader.read();
+        if (d) break;
+        buffer += decoder.decode(value, { stream: true });
+        let idx: number;
+        while ((idx = buffer.indexOf("\n")) !== -1) {
+          let line = buffer.slice(0, idx);
+          buffer = buffer.slice(idx + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (!line || line.startsWith(":")) continue;
+          if (!line.startsWith("data: ")) continue;
+          const json = line.slice(6).trim();
+          if (json === "[DONE]") {
+            done = true;
+            break;
+          }
+          try {
+            const parsed = JSON.parse(json);
+            const delta = parsed.choices?.[0]?.delta?.content;
+            if (delta) pushChunk(delta);
+          } catch {
+            buffer = line + "\n" + buffer;
+            break;
+          }
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("AI request failed.");
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-md">
-        <nav className="container mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <Link to="/" className="font-display font-bold text-lg tracking-tight">
-              COAH Staff Hub
-            </Link>
-            <ul className="hidden md:flex items-center gap-6 text-sm">
-              {NAV.map((n) => {
-                const active = pathname === n.to || (n.to !== "/" && pathname.startsWith(n.to));
-                return (
-                  <li key={n.to}>
-                    <Link
-                      to={n.to}
-                      className={cn(
-                        "transition-colors",
-                        active ? "text-foreground font-medium" : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      {n.label}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => signOut()}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              Sign out
-            </button>
-            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
-              {initials}
-            </div>
-          </div>
-        </nav>
-      </header>
-
-      <main className="container mx-auto px-6 py-10">{children}</main>
-
-      {/* AI Assistant FAB */}
-      <button
-        onClick={() => setAiOpen(true)}
-        aria-label="Open AI assistant"
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
-      >
-        <Sparkles className="w-6 h-6" />
-      </button>
-
-      {aiOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setAiOpen(false)}>
-          <div className="absolute inset-0 bg-foreground/10 backdrop-blur-sm" />
-          <aside
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-md bg-surface border-l border-border shadow-xl flex flex-col"
-          >
-            <div className="flex items-center justify-between p-4 border-b border-border">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                <h2 className="font-display font-semibold">Ask the Hub</h2>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background text-foreground">
+        <AppSidebar />
+        <SidebarInset className="flex flex-col min-w-0">
+          <header className="h-14 sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/85 backdrop-blur px-4">
+            <SidebarTrigger />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => signOut()}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Sign out
+              </button>
+              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
+                {initials}
               </div>
-              <Button variant="ghost" size="icon" onClick={() => setAiOpen(false)}>
-                <X className="w-4 h-4" />
-              </Button>
             </div>
-            <div className="flex-1 p-6 text-sm text-muted-foreground">
-              The AI assistant will read across meetings, calendar, missions, and reports to answer your questions. Coming online with the AI module.
-            </div>
-            <div className="p-4 border-t border-border">
-              <input
-                disabled
-                placeholder="Ask anything about the hub…"
-                className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-border outline-none"
-              />
-            </div>
-          </aside>
-        </div>
-      )}
-    </div>
+          </header>
+
+          <main className="flex-1 px-6 py-8 overflow-x-hidden">{children}</main>
+        </SidebarInset>
+
+        {/* AI Assistant FAB */}
+        <button
+          onClick={() => setAiOpen(true)}
+          aria-label="Open AI assistant"
+          className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 transition-transform z-40"
+        >
+          <Sparkles className="w-6 h-6" />
+        </button>
+
+        {aiOpen && (
+          <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setAiOpen(false)}>
+            <div className="absolute inset-0 bg-foreground/10 backdrop-blur-sm" />
+            <aside
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-md bg-surface border-l border-border shadow-xl flex flex-col"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  <h2 className="font-display font-semibold">Ask the Hub</h2>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setAiOpen(false)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+
+              <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+                {messages.length === 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    Ask anything about meetings, the calendar, or Sunday Reviews. The assistant has live context across the hub.
+                  </div>
+                )}
+                {messages.map((m, i) => (
+                  <div
+                    key={i}
+                    className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap ${
+                      m.role === "user"
+                        ? "ml-auto bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground"
+                    }`}
+                  >
+                    {m.content || "…"}
+                  </div>
+                ))}
+                {sending && messages[messages.length - 1]?.role === "user" && (
+                  <div className="bg-muted rounded-2xl px-3 py-2 text-sm w-fit">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  </div>
+                )}
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  send();
+                }}
+                className="p-3 border-t border-border flex gap-2"
+              >
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Ask anything…"
+                  className="flex-1 bg-background rounded-lg px-3 py-2 text-sm border border-border outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                <Button type="submit" size="icon" disabled={!input.trim() || sending}>
+                  <Send className="w-4 h-4" />
+                </Button>
+              </form>
+            </aside>
+          </div>
+        )}
+      </div>
+    </SidebarProvider>
   );
 }
