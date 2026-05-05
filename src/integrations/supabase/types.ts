@@ -621,6 +621,7 @@ export type Database = {
       user_integrations: {
         Row: {
           access_token: string | null
+          auto_push: boolean
           created_at: string
           expires_at: string | null
           id: string
@@ -632,6 +633,7 @@ export type Database = {
         }
         Insert: {
           access_token?: string | null
+          auto_push?: boolean
           created_at?: string
           expires_at?: string | null
           id?: string
@@ -643,6 +645,7 @@ export type Database = {
         }
         Update: {
           access_token?: string | null
+          auto_push?: boolean
           created_at?: string
           expires_at?: string | null
           id?: string

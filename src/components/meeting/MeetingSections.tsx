@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { pushActionItemToGoogleTasks, pushActionItemsBulk } from "@/server/google-tasks.functions";
+import { pushActionItemToGoogleTasks, pushActionItemsBulk, autoPushIfEnabled } from "@/server/google-tasks.functions";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -926,6 +926,12 @@ export function ReviewTasksSection() {
   }
   async function reassign(id: string, assignee_id: string | null) {
     await supabase.from("action_items").update({ assignee_id }).eq("id", id);
+    if (assignee_id) {
+      try {
+        const r: any = await autoPushIfEnabled({ data: { actionItemId: id } });
+        if (r?.pushed) toast.success("Sent to assignee's Google Tasks");
+      } catch {}
+    }
   }
   async function setDue(id: string, due_date: string | null) {
     setActions((prev) => prev.map((a) => (a.id === id ? { ...a, due_date } : a)));

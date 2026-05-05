@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, CheckCircle2, ExternalLink, Plug, Unplug } from "lucide-react";
 import { toast } from "sonner";
-import { getGoogleAuthUrl, getGoogleConnection, disconnectGoogle } from "@/server/google-tasks.functions";
+import { getGoogleAuthUrl, getGoogleConnection, disconnectGoogle, setGoogleAutoPush } from "@/server/google-tasks.functions";
+import { Switch } from "@/components/ui/switch";
 import { metricsClient } from "@/integrations/metrics/client";
 import { useMetricsSession } from "@/integrations/metrics/use-session";
 import { BarChart3 } from "lucide-react";
@@ -210,8 +211,23 @@ function GoogleTasksCard() {
   const getUrl = useServerFn(getGoogleAuthUrl);
   const getConn = useServerFn(getGoogleConnection);
   const disconnect = useServerFn(disconnectGoogle);
-  const [conn, setConn] = useState<{ connected: boolean; updated_at?: string } | null>(null);
+  const setAutoPush = useServerFn(setGoogleAutoPush);
+  const [conn, setConn] = useState<{ connected: boolean; updated_at?: string; auto_push?: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [autoBusy, setAutoBusy] = useState(false);
+
+  async function toggleAutoPush(v: boolean) {
+    setAutoBusy(true);
+    try {
+      await setAutoPush({ data: { autoPush: v } });
+      setConn((c) => (c ? { ...c, auto_push: v } : c));
+      toast.success(v ? "Auto-send enabled" : "Auto-send disabled");
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to update");
+    } finally {
+      setAutoBusy(false);
+    }
+  }
 
   useEffect(() => {
     getConn().then((r: any) => setConn(r)).catch(() => setConn({ connected: false }));
@@ -259,11 +275,26 @@ function GoogleTasksCard() {
           <Loader2 className="w-3 h-3 animate-spin" /> Checking…
         </div>
       ) : conn.connected ? (
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <span className="text-sm text-muted-foreground">Connected. Tasks push to your default list.</span>
-          <Button variant="outline" size="sm" onClick={unlink} disabled={busy}>
-            <Unplug className="w-4 h-4 mr-1.5" /> Disconnect
-          </Button>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <span className="text-sm text-muted-foreground">Connected. Tasks push to your default list.</span>
+            <Button variant="outline" size="sm" onClick={unlink} disabled={busy}>
+              <Unplug className="w-4 h-4 mr-1.5" /> Disconnect
+            </Button>
+          </div>
+          <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
+            <div>
+              <div className="text-sm font-medium">Auto-send on assignment</div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                When a task is assigned to you, send it to your Google Tasks immediately.
+              </p>
+            </div>
+            <Switch
+              checked={!!conn.auto_push}
+              onCheckedChange={toggleAutoPush}
+              disabled={autoBusy}
+            />
+          </div>
         </div>
       ) : (
         <Button onClick={connect} disabled={busy}>

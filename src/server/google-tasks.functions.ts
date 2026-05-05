@@ -34,11 +34,69 @@ export const getGoogleConnection = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data } = await supabaseAdmin
       .from("user_integrations")
-      .select("provider, scope, expires_at, created_at, updated_at")
+      .select("provider, scope, expires_at, created_at, updated_at, auto_push")
       .eq("user_id", context.userId)
       .eq("provider", "google_tasks")
       .maybeSingle();
-    return data ? { connected: true, ...data } : { connected: false };
+    return data ? { connected: true, ...data } : { connected: false, auto_push: false };
+  });
+
+export const setGoogleAutoPush = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ autoPush: z.boolean() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await supabaseAdmin
+      .from("user_integrations")
+      .update({ auto_push: data.autoPush })
+      .eq("user_id", context.userId)
+      .eq("provider", "google_tasks");
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const autoPushIfEnabled = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ actionItemId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: item } = await supabaseAdmin
+      .from("action_items")
+      .select("*")
+      .eq("id", data.actionItemId)
+      .maybeSingle();
+    if (!item || !item.assignee_id || item.google_task_pushed_at) return { pushed: false };
+
+    const { data: integ } = await supabaseAdmin
+      .from("user_integrations")
+      .select("auto_push")
+      .eq("user_id", item.assignee_id)
+      .eq("provider", "google_tasks")
+      .maybeSingle();
+    if (!integ?.auto_push) return { pushed: false };
+
+    try {
+      const accessToken = await ensureAccessToken(item.assignee_id);
+      const body: Record<string, any> = { title: item.title };
+      if (item.notes) body.notes = item.notes;
+      if (item.due_date) body.due = `${item.due_date}T00:00:00.000Z`;
+      const res = await fetch("https://tasks.googleapis.com/tasks/v1/lists/@default/tasks", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(`Google Tasks API error: ${JSON.stringify(result)}`);
+      await supabaseAdmin
+        .from("action_items")
+        .update({
+          google_task_id: result.id,
+          google_task_pushed_at: new Date().toISOString(),
+          google_task_pushed_by: context.userId,
+        })
+        .eq("id", item.id);
+      return { pushed: true, taskId: result.id };
+    } catch (e: any) {
+      return { pushed: false, error: e.message ?? "Failed" };
+    }
   });
 
 export const disconnectGoogle = createServerFn({ method: "POST" })
