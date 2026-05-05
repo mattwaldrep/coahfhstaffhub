@@ -52,10 +52,13 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"all" | "health">("all");
-  const [healthFilter, setHealthFilter] = useState<string>("");
   const [search, setSearch] = useState("");
+  const [healthFilter, setHealthFilter] = useState<Set<string>>(new Set());
+  const [elderFilter, setElderFilter] = useState<string>("all"); // "all" | "unassigned" | elder name
+  const [notesFilter, setNotesFilter] = useState<"any" | "with" | "without">("any");
+  const [sort, setSort] = useState<SortKey>("health_urgent");
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [latestNote, setLatestNote] = useState<Record<string, string>>({}); // pco_person_id -> ISO date
 
   const load = useCallback(async (refresh = false) => {
     refresh ? setRefreshing(true) : setLoading(true);
