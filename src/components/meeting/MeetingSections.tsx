@@ -29,6 +29,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { pushActionItemToGoogleTasks } from "@/server/google-tasks.functions";
 import { toast } from "sonner";
 import { expandEvents, type EventRowLike } from "@/lib/calendar-expand";
 import { cn } from "@/lib/utils";
@@ -717,7 +719,46 @@ type OpenAction = {
   due_date: string | null;
   meeting_id: string | null;
   created_at: string;
+  google_task_pushed_at: string | null;
 };
+
+function PushToGoogleTasksButton({ actionItemId, pushedAt }: { actionItemId: string; pushedAt: string | null }) {
+  const push = useServerFn(pushActionItemToGoogleTasks);
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(!!pushedAt);
+  async function go() {
+    setBusy(true);
+    try {
+      await push({ data: { actionItemId } });
+      setDone(true);
+      toast.success("Pushed to Google Tasks");
+    } catch (e: any) {
+      const msg = String(e.message ?? "");
+      if (msg.includes("has not connected")) {
+        toast.error("Assignee hasn't connected Google Tasks", {
+          description: "They can link their Google account in Settings → Integrations.",
+        });
+      } else {
+        toast.error(msg || "Failed to push");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <button
+      onClick={go}
+      disabled={busy}
+      className={cn(
+        "p-1 transition-colors",
+        done ? "text-emerald-600" : "text-muted-foreground hover:text-primary",
+      )}
+      title={done ? "Pushed to Google Tasks" : "Push to assignee's Google Tasks"}
+    >
+      {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+    </button>
+  );
+}
 
 type ProfileLite = { id: string; full_name: string | null; email: string | null };
 
@@ -730,7 +771,7 @@ export function ReviewTasksSection() {
     const [{ data: a }, { data: p }] = await Promise.all([
       supabase
         .from("action_items")
-        .select("id,title,assignee_id,due_date,meeting_id,created_at")
+        .select("id,title,assignee_id,due_date,meeting_id,created_at,google_task_pushed_at")
         .eq("completed", false)
         .order("created_at", { ascending: true }),
       supabase.from("profiles").select("id,full_name,email"),
@@ -837,17 +878,7 @@ export function ReviewTasksSection() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <button
-                      onClick={() =>
-                        toast.info("Google Tasks integration coming soon", {
-                          description: "We'll wire this up once Google Tasks OAuth is connected.",
-                        })
-                      }
-                      className="text-muted-foreground hover:text-primary p-1"
-                      title="Push to Google Tasks"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                    </button>
+                    <PushToGoogleTasksButton actionItemId={a.id} pushedAt={(a as any).google_task_pushed_at ?? null} />
                   </li>
                 ))}
               </ul>
