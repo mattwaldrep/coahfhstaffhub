@@ -275,13 +275,42 @@ function GoogleTasksCard() {
           <Loader2 className="w-3 h-3 animate-spin" /> Checking…
         </div>
       ) : conn.connected ? (
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <span className="text-sm text-muted-foreground">Connected. Tasks push to your default list.</span>
-          <Button variant="outline" size="sm" onClick={unlink} disabled={busy}>
-            <Unplug className="w-4 h-4 mr-1.5" /> Disconnect
-          </Button>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <span className="text-sm text-muted-foreground">Connected. Tasks push to your default list.</span>
+            <Button variant="outline" size="sm" onClick={unlink} disabled={busy}>
+              <Unplug className="w-4 h-4 mr-1.5" /> Disconnect
+            </Button>
+          </div>
+          <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
+            <div>
+              <div className="text-sm font-medium">Auto-send on assignment</div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                When a task is assigned to you, send it to your Google Tasks immediately.
+              </p>
+            </div>
+            <Switch
+              checked={!!conn.auto_push}
+              onCheckedChange={toggleAutoPush}
+              disabled={autoBusy}
+            />
+          </div>
         </div>
       ) : (
+        <Button onClick={connect} disabled={busy}>
+          {busy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plug className="w-4 h-4 mr-2" />}
+          Connect Google Tasks
+        </Button>
+      )}
+      <div className="text-[11px] text-muted-foreground border-t border-border pt-3">
+        Your refresh token is encrypted at rest and only used to push tasks you've been assigned. Disconnect any time.
+        <a href="https://myaccount.google.com/permissions" target="_blank" rel="noreferrer" className="ml-1 underline inline-flex items-center gap-0.5">
+          Manage Google access <ExternalLink className="w-2.5 h-2.5" />
+        </a>
+      </div>
+    </div>
+  );
+}
         <Button onClick={connect} disabled={busy}>
           {busy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plug className="w-4 h-4 mr-2" />}
           Connect Google Tasks
