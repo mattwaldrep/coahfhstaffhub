@@ -59,7 +59,7 @@ function ElderOverview() {
     if (!careFields) return [] as CarePerson[];
     return care
       .map((p) => ({ p, h: (p.fields[careFields.spiritual_health]?.value ?? "").trim() }))
-      .filter(({ h }) => URGENT_HEALTH.has(h))
+      .filter(({ h }) => h && !HEALTHY_HEALTH.has(h))
       .sort((a, b) => (URGENT_RANK[b.h] ?? 0) - (URGENT_RANK[a.h] ?? 0) || a.p.name.localeCompare(b.p.name))
       .map(({ p }) => p);
   }, [care, careFields]);
