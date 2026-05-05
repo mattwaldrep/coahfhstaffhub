@@ -20,6 +20,9 @@ import {
   UserCog,
   Wallet,
   Settings as SettingsIcon,
+  Crown,
+  HeartHandshake,
+  ScrollText,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
@@ -30,8 +33,15 @@ const PRIMARY = [
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
 ];
 
+const ELDER_ITEMS = [
+  { to: "/elder", label: "Overview", icon: Crown, exact: true },
+  { to: "/elder/meetings", label: "Meetings", icon: ClipboardList },
+  { to: "/elder/pastoral-care", label: "Pastoral Care", icon: HeartHandshake },
+  { to: "/elder/archive", label: "Archive", icon: ScrollText },
+];
+
 export function AppSidebar() {
-  const { hasRole } = useAuth();
+  const { hasRole, hasElderAccess } = useAuth();
   const SECONDARY = [
     { to: "/missions", label: "Missions", icon: Users },
     ...(hasRole("core") ? [{ to: "/finance", label: "Finance", icon: Wallet }] : []),
@@ -78,6 +88,12 @@ export function AppSidebar() {
           {!collapsed && <SidebarGroupLabel>Workspace</SidebarGroupLabel>}
           <SidebarGroupContent>{renderItems(PRIMARY)}</SidebarGroupContent>
         </SidebarGroup>
+        {hasElderAccess && (
+          <SidebarGroup>
+            {!collapsed && <SidebarGroupLabel>Elder Hub</SidebarGroupLabel>}
+            <SidebarGroupContent>{renderItems(ELDER_ITEMS)}</SidebarGroupContent>
+          </SidebarGroup>
+        )}
         <SidebarGroup>
           {!collapsed && <SidebarGroupLabel>More</SidebarGroupLabel>}
           <SidebarGroupContent>{renderItems(SECONDARY)}</SidebarGroupContent>
