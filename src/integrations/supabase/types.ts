@@ -262,46 +262,55 @@ export type Database = {
       }
       sunday_reviews: {
         Row: {
-          attendance: number | null
+          confession_notes: string | null
+          confession_rating: number | null
+          connect_notes: string | null
+          connect_rating: number | null
           created_at: string
-          first_time_guests: number | null
-          follow_ups: string | null
-          giving: number | null
-          highlights: string | null
           id: string
-          lowlights: string | null
-          prayer_needs: string | null
+          opportunities: string | null
+          sermon_notes: string | null
+          sermon_rating: number | null
+          service_date: string
           submitted_by: string | null
           updated_at: string
-          week_of: string
+          wins: string | null
+          worship_notes: string | null
+          worship_rating: number | null
         }
         Insert: {
-          attendance?: number | null
+          confession_notes?: string | null
+          confession_rating?: number | null
+          connect_notes?: string | null
+          connect_rating?: number | null
           created_at?: string
-          first_time_guests?: number | null
-          follow_ups?: string | null
-          giving?: number | null
-          highlights?: string | null
           id?: string
-          lowlights?: string | null
-          prayer_needs?: string | null
+          opportunities?: string | null
+          sermon_notes?: string | null
+          sermon_rating?: number | null
+          service_date: string
           submitted_by?: string | null
           updated_at?: string
-          week_of: string
+          wins?: string | null
+          worship_notes?: string | null
+          worship_rating?: number | null
         }
         Update: {
-          attendance?: number | null
+          confession_notes?: string | null
+          confession_rating?: number | null
+          connect_notes?: string | null
+          connect_rating?: number | null
           created_at?: string
-          first_time_guests?: number | null
-          follow_ups?: string | null
-          giving?: number | null
-          highlights?: string | null
           id?: string
-          lowlights?: string | null
-          prayer_needs?: string | null
+          opportunities?: string | null
+          sermon_notes?: string | null
+          sermon_rating?: number | null
+          service_date?: string
           submitted_by?: string | null
           updated_at?: string
-          week_of?: string
+          wins?: string | null
+          worship_notes?: string | null
+          worship_rating?: number | null
         }
         Relationships: []
       }
