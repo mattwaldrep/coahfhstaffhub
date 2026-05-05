@@ -49,10 +49,19 @@ function HomePage() {
   );
 }
 
+type Headline = {
+  avg_total_attendance?: number;
+  avg_weekly_giving?: number;
+  avg_community_groups?: number;
+};
+
 function Dashboard() {
   const { user } = useAuth();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [actions, setActions] = useState<ActionItem[]>([]);
+  const [headline, setHeadline] = useState<Headline | null>(null);
+  const [prevHeadline, setPrevHeadline] = useState<Headline | null>(null);
+  const [statsRange, setStatsRange] = useState<string | null>(null);
 
   useEffect(() => {
     const now = new Date().toISOString();
@@ -71,6 +80,22 @@ function Dashboard() {
       .order("due_date", { ascending: true, nullsFirst: false })
       .limit(50)
       .then(({ data }) => setActions((data ?? []) as ActionItem[]));
+    // Latest trends report (current + previous month) for KPI cards
+    supabase
+      .from("finance_reports")
+      .select("parsed_metrics,fiscal_year,month,created_at")
+      .eq("report_type", "trends")
+      .order("created_at", { ascending: false })
+      .limit(10)
+      .then(({ data }) => {
+        const rows = (data ?? []) as Array<{ parsed_metrics: any; fiscal_year: number; month: number }>;
+        const withMetrics = rows.filter((r) => r.parsed_metrics?.headline);
+        if (withMetrics[0]) {
+          setHeadline(withMetrics[0].parsed_metrics.headline as Headline);
+          setStatsRange((withMetrics[0].parsed_metrics.range as string) ?? null);
+        }
+        if (withMetrics[1]) setPrevHeadline(withMetrics[1].parsed_metrics.headline as Headline);
+      });
   }, []);
 
   const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -92,10 +117,23 @@ function Dashboard() {
       <div className="grid grid-cols-12 gap-6">
         {/* KPI cards */}
         <div className="col-span-12 lg:col-span-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Stat label="Attendance" value="—" hint="vs 4-wk avg" />
-          <Stat label="Giving" value="—" hint="last 4 weeks" accent />
-          <Stat label="CG Participation" value="—" hint="active members" />
-          <Stat label="Active Missions" value="0" hint="teams deployed" />
+          <Stat
+            label="Attendance"
+            value={fmtNum(headline?.avg_total_attendance)}
+            hint={deltaHint(headline?.avg_total_attendance, prevHeadline?.avg_total_attendance, "vs prev period")}
+          />
+          <Stat
+            label="Giving"
+            value={fmtMoney(headline?.avg_weekly_giving)}
+            hint={deltaHint(headline?.avg_weekly_giving, prevHeadline?.avg_weekly_giving, "avg / week")}
+            accent
+          />
+          <Stat
+            label="CG Participation"
+            value={fmtNum(headline?.avg_community_groups)}
+            hint={deltaHint(headline?.avg_community_groups, prevHeadline?.avg_community_groups, "avg groups")}
+          />
+          <Stat label="Active Missions" value="0" hint={statsRange ?? "teams deployed"} />
 
           <div className="col-span-2 lg:col-span-4 bg-surface border border-border rounded-2xl p-6 shadow-card">
             <div className="flex items-center justify-between mb-4">
@@ -187,6 +225,21 @@ function Dashboard() {
       </div>
     </>
   );
+}
+
+function fmtNum(n?: number) {
+  if (n === undefined || n === null || !Number.isFinite(n)) return "—";
+  return Math.round(n).toLocaleString();
+}
+function fmtMoney(n?: number) {
+  if (n === undefined || n === null || !Number.isFinite(n)) return "—";
+  return `$${Math.round(n).toLocaleString()}`;
+}
+function deltaHint(curr?: number, prev?: number, fallback = "") {
+  if (curr === undefined || prev === undefined || !prev) return fallback;
+  const pct = ((curr - prev) / prev) * 100;
+  const sign = pct >= 0 ? "+" : "";
+  return `${sign}${pct.toFixed(1)}% vs prev`;
 }
 
 function Stat({ label, value, hint, accent }: { label: string; value: string; hint: string; accent?: boolean }) {
