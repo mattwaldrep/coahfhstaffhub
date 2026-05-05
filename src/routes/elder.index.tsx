@@ -11,8 +11,8 @@ export const Route = createFileRoute("/elder/")({
   component: ElderOverview,
 });
 
-const URGENT_HEALTH = new Set(["Crisis", "Struggling", "Watch"]);
-const URGENT_RANK: Record<string, number> = { Crisis: 3, Struggling: 2, Watch: 1 };
+const HEALTHY_HEALTH = new Set(["Healthy", "Thriving"]);
+const URGENT_RANK: Record<string, number> = { Crisis: 4, Struggling: 3, Watch: 2, Unknown: 1 };
 
 type CarePerson = {
   id: string;
