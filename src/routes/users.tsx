@@ -86,6 +86,16 @@ function Body() {
     }
   }
 
+  async function changeElderTier(userId: string, tier: ElderTier) {
+    try {
+      await setUserElderTier({ data: { userId, tier } });
+      toast.success("Elder tier updated");
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed");
+    }
+  }
+
   async function invite(e: React.FormEvent) {
     e.preventDefault();
     try {
