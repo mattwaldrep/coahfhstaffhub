@@ -126,7 +126,7 @@ export const listArchive = createServerFn({ method: "GET" })
     await assertAccess(context.supabase, context.userId);
     const { data, error } = await context.supabase
       .from("elder_meeting_archive")
-      .select("id, meeting_date, meeting_type, title, summary, attendees, source")
+      .select("id, meeting_date, meeting_type, title, attendees, source_url")
       .order("meeting_date", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
@@ -156,10 +156,11 @@ export const importArchiveBatch = createServerFn({ method: "POST" })
             meeting_date: z.string(),
             meeting_type: z.string().optional(),
             title: z.string().optional(),
-            summary: z.string().optional(),
-            body: z.string().optional(),
-            attendees: z.array(z.string()).optional(),
-            source: z.string().optional(),
+            raw_text: z.string().optional(),
+            agenda: z.any().optional(),
+            action_items: z.any().optional(),
+            attendees: z.any().optional(),
+            source_url: z.string().optional(),
           }),
         ),
       })
@@ -168,9 +169,18 @@ export const importArchiveBatch = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const tier = await getTier(context.supabase, context.userId);
     if (tier !== "elder") throw new Error("Forbidden: full elder required");
-    const { error } = await supabaseAdmin
-      .from("elder_meeting_archive")
-      .insert(data.entries.map((e) => ({ ...e, imported_by: context.userId })));
+    const rows = data.entries.map((e) => ({
+      meeting_date: e.meeting_date,
+      meeting_type: e.meeting_type ?? "standard",
+      title: e.title ?? null,
+      raw_text: e.raw_text ?? null,
+      source_url: e.source_url ?? null,
+      agenda: (e.agenda ?? []) as any,
+      action_items: (e.action_items ?? []) as any,
+      attendees: (e.attendees ?? []) as any,
+      imported_by: context.userId,
+    }));
+    const { error } = await supabaseAdmin.from("elder_meeting_archive").insert(rows);
     if (error) throw new Error(error.message);
-    return { ok: true, count: data.entries.length };
+    return { ok: true, count: rows.length };
   });
