@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { Loader2, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/sunday-review")({
   component: SundayReviewPage,
@@ -14,57 +15,91 @@ export const Route = createFileRoute("/sunday-review")({
 
 type Review = {
   id: string;
-  week_of: string;
-  attendance: number | null;
-  giving: number | null;
-  first_time_guests: number | null;
-  highlights: string | null;
-  lowlights: string | null;
-  prayer_needs: string | null;
-  follow_ups: string | null;
+  service_date: string;
+  worship_rating: number | null;
+  worship_notes: string | null;
+  confession_rating: number | null;
+  confession_notes: string | null;
+  connect_rating: number | null;
+  connect_notes: string | null;
+  sermon_rating: number | null;
+  sermon_notes: string | null;
+  wins: string | null;
+  opportunities: string | null;
 };
 
+const SECTIONS = [
+  { key: "worship", label: "Musical worship" },
+  { key: "confession", label: "Call & confession" },
+  { key: "connect", label: "Connect moment / core values / ministry highlight" },
+  { key: "sermon", label: "Sermon" },
+] as const;
+
+const ratingSchema = z.number().int().min(1).max(5).nullable();
+const notesSchema = z.string().max(4000).nullable();
+
 const schema = z.object({
-  week_of: z.string().min(1, "Pick a Sunday"),
-  attendance: z.coerce.number().int().min(0).max(10000).nullable(),
-  giving: z.coerce.number().min(0).max(10_000_000).nullable(),
-  first_time_guests: z.coerce.number().int().min(0).max(1000).nullable(),
-  highlights: z.string().max(4000).optional().nullable(),
-  lowlights: z.string().max(4000).optional().nullable(),
-  prayer_needs: z.string().max(4000).optional().nullable(),
-  follow_ups: z.string().max(4000).optional().nullable(),
+  service_date: z.string().min(1, "Pick a service date"),
+  worship_rating: ratingSchema,
+  worship_notes: notesSchema,
+  confession_rating: ratingSchema,
+  confession_notes: notesSchema,
+  connect_rating: ratingSchema,
+  connect_notes: notesSchema,
+  sermon_rating: ratingSchema,
+  sermon_notes: notesSchema,
+  wins: notesSchema,
+  opportunities: notesSchema,
 });
 
 function lastSundayISO() {
   const d = new Date();
-  const day = d.getDay();
-  d.setDate(d.getDate() - day); // back to Sunday
+  d.setDate(d.getDate() - d.getDay());
   return d.toISOString().slice(0, 10);
 }
+
+type FormState = {
+  service_date: string;
+  worship_rating: number | null;
+  worship_notes: string;
+  confession_rating: number | null;
+  confession_notes: string;
+  connect_rating: number | null;
+  connect_notes: string;
+  sermon_rating: number | null;
+  sermon_notes: string;
+  wins: string;
+  opportunities: string;
+};
+
+const emptyForm = (): FormState => ({
+  service_date: lastSundayISO(),
+  worship_rating: null,
+  worship_notes: "",
+  confession_rating: null,
+  confession_notes: "",
+  connect_rating: null,
+  connect_notes: "",
+  sermon_rating: null,
+  sermon_notes: "",
+  wins: "",
+  opportunities: "",
+});
 
 function SundayReviewPage() {
   const { user } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    week_of: lastSundayISO(),
-    attendance: "",
-    giving: "",
-    first_time_guests: "",
-    highlights: "",
-    lowlights: "",
-    prayer_needs: "",
-    follow_ups: "",
-  });
+  const [form, setForm] = useState<FormState>(emptyForm());
 
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("sunday_reviews")
       .select("*")
-      .order("week_of", { ascending: false })
-      .limit(12);
+      .order("service_date", { ascending: false })
+      .limit(20);
     if (error) toast.error(error.message);
     setReviews((data ?? []) as Review[]);
     setLoading(false);
@@ -85,35 +120,21 @@ function SundayReviewPage() {
     };
   }, []);
 
-  // Pre-fill form when an existing entry matches selected week
-  useEffect(() => {
-    const match = reviews.find((r) => r.week_of === form.week_of);
-    if (match) {
-      setForm((f) => ({
-        ...f,
-        attendance: match.attendance?.toString() ?? "",
-        giving: match.giving?.toString() ?? "",
-        first_time_guests: match.first_time_guests?.toString() ?? "",
-        highlights: match.highlights ?? "",
-        lowlights: match.lowlights ?? "",
-        prayer_needs: match.prayer_needs ?? "",
-        follow_ups: match.follow_ups ?? "",
-      }));
-    }
-  }, [form.week_of, reviews]);
-
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     const parsed = schema.safeParse({
-      week_of: form.week_of,
-      attendance: form.attendance === "" ? null : form.attendance,
-      giving: form.giving === "" ? null : form.giving,
-      first_time_guests: form.first_time_guests === "" ? null : form.first_time_guests,
-      highlights: form.highlights || null,
-      lowlights: form.lowlights || null,
-      prayer_needs: form.prayer_needs || null,
-      follow_ups: form.follow_ups || null,
+      service_date: form.service_date,
+      worship_rating: form.worship_rating,
+      worship_notes: form.worship_notes || null,
+      confession_rating: form.confession_rating,
+      confession_notes: form.confession_notes || null,
+      connect_rating: form.connect_rating,
+      connect_notes: form.connect_notes || null,
+      sermon_rating: form.sermon_rating,
+      sermon_notes: form.sermon_notes || null,
+      wins: form.wins || null,
+      opportunities: form.opportunities || null,
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Invalid input");
@@ -122,159 +143,137 @@ function SundayReviewPage() {
     setSaving(true);
     const { error } = await supabase
       .from("sunday_reviews")
-      .upsert(
-        { ...parsed.data, submitted_by: user.id },
-        { onConflict: "week_of" },
-      );
+      .insert({ ...parsed.data, submitted_by: user.id });
     setSaving(false);
-    if (error) toast.error(error.message);
-    else toast.success("Sunday Review saved");
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Review submitted");
+      setForm(emptyForm());
+    }
   };
-
-  const trends = useMemo(() => {
-    const sorted = [...reviews].sort((a, b) => a.week_of.localeCompare(b.week_of));
-    const last = sorted[sorted.length - 1];
-    const prev = sorted[sorted.length - 2];
-    return {
-      attendance: delta(last?.attendance, prev?.attendance),
-      giving: delta(last?.giving, prev?.giving),
-      guests: delta(last?.first_time_guests, prev?.first_time_guests),
-    };
-  }, [reviews]);
 
   return (
     <AppShell>
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <header className="mb-8">
           <p className="text-xs uppercase tracking-wider text-muted-foreground">Weekly</p>
-          <h1 className="text-3xl font-display font-bold mt-1">Sunday Review</h1>
+          <h1 className="text-3xl font-display font-bold mt-1">Worship Service Review</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Capture this Sunday's pulse. Submissions feed Tuesday's meeting agenda and the home dashboard trends.
+            Reflect on Sunday's service. Submissions feed Tuesday's meeting agenda.
           </p>
         </header>
 
-        <div className="grid lg:grid-cols-3 gap-4 mb-8">
-          <TrendCard label="Attendance" value={trends.attendance} />
-          <TrendCard label="Giving" value={trends.giving} prefix="$" />
-          <TrendCard label="First-time Guests" value={trends.guests} />
-        </div>
-
         <div className="grid lg:grid-cols-5 gap-6">
-          <form onSubmit={submit} className="lg:col-span-3 bg-surface border border-border rounded-2xl p-6 space-y-4">
-            <h2 className="font-display font-semibold text-lg">New / edit submission</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Week of (Sunday)">
-                <input
-                  type="date"
-                  value={form.week_of}
-                  onChange={(e) => setForm((f) => ({ ...f, week_of: e.target.value }))}
-                  className={inputCls}
-                  required
-                />
-              </Field>
-              <Field label="Attendance">
-                <input
-                  type="number"
-                  min={0}
-                  value={form.attendance}
-                  onChange={(e) => setForm((f) => ({ ...f, attendance: e.target.value }))}
-                  className={inputCls}
-                />
-              </Field>
-              <Field label="Giving (USD)">
-                <input
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  value={form.giving}
-                  onChange={(e) => setForm((f) => ({ ...f, giving: e.target.value }))}
-                  className={inputCls}
-                />
-              </Field>
-              <Field label="First-time guests">
-                <input
-                  type="number"
-                  min={0}
-                  value={form.first_time_guests}
-                  onChange={(e) => setForm((f) => ({ ...f, first_time_guests: e.target.value }))}
-                  className={inputCls}
-                />
-              </Field>
-            </div>
-            <Field label="Highlights">
+          <form
+            onSubmit={submit}
+            className="lg:col-span-3 bg-surface border border-border rounded-2xl p-6 space-y-6"
+          >
+            <Field label="Date of service">
+              <input
+                type="date"
+                value={form.service_date}
+                onChange={(e) => setForm((f) => ({ ...f, service_date: e.target.value }))}
+                className={inputCls}
+                required
+              />
+            </Field>
+
+            {SECTIONS.map((s) => (
+              <div key={s.key} className="space-y-3">
+                <div>
+                  <div className="text-sm font-medium">How was the {s.label.toLowerCase()}?</div>
+                  <RatingScale
+                    value={form[`${s.key}_rating` as const] as number | null}
+                    onChange={(v) =>
+                      setForm((f) => ({ ...f, [`${s.key}_rating`]: v }) as FormState)
+                    }
+                  />
+                </div>
+                <Field label="Any thoughts to share?">
+                  <textarea
+                    rows={2}
+                    value={form[`${s.key}_notes` as const] as string}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, [`${s.key}_notes`]: e.target.value }) as FormState)
+                    }
+                    className={inputCls}
+                    maxLength={4000}
+                  />
+                </Field>
+              </div>
+            ))}
+
+            <Field label="Wins?">
               <textarea
                 rows={3}
-                value={form.highlights}
-                onChange={(e) => setForm((f) => ({ ...f, highlights: e.target.value }))}
+                value={form.wins}
+                onChange={(e) => setForm((f) => ({ ...f, wins: e.target.value }))}
                 className={inputCls}
                 maxLength={4000}
               />
             </Field>
-            <Field label="Lowlights / friction">
+
+            <Field label="Opportunities for improvement?">
               <textarea
                 rows={3}
-                value={form.lowlights}
-                onChange={(e) => setForm((f) => ({ ...f, lowlights: e.target.value }))}
+                value={form.opportunities}
+                onChange={(e) => setForm((f) => ({ ...f, opportunities: e.target.value }))}
                 className={inputCls}
                 maxLength={4000}
               />
             </Field>
-            <Field label="Prayer needs">
-              <textarea
-                rows={2}
-                value={form.prayer_needs}
-                onChange={(e) => setForm((f) => ({ ...f, prayer_needs: e.target.value }))}
-                className={inputCls}
-                maxLength={4000}
-              />
-            </Field>
-            <Field label="Follow-ups for Tuesday">
-              <textarea
-                rows={2}
-                value={form.follow_ups}
-                onChange={(e) => setForm((f) => ({ ...f, follow_ups: e.target.value }))}
-                className={inputCls}
-                maxLength={4000}
-              />
-            </Field>
+
             <div className="flex justify-end">
               <Button type="submit" disabled={saving}>
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Save review
+                Submit review
               </Button>
             </div>
           </form>
 
           <aside className="lg:col-span-2 bg-surface border border-border rounded-2xl p-6">
-            <h2 className="font-display font-semibold text-lg mb-4">Recent weeks</h2>
+            <h2 className="font-display font-semibold text-lg mb-4">Recent submissions</h2>
             {loading ? (
               <div className="text-sm text-muted-foreground">Loading…</div>
             ) : reviews.length === 0 ? (
               <div className="text-sm text-muted-foreground">No submissions yet.</div>
             ) : (
               <ul className="space-y-3">
-                {reviews.map((r) => (
-                  <li
-                    key={r.id}
-                    className="border border-border rounded-lg p-3 hover:bg-muted/30 transition-colors cursor-pointer"
-                    onClick={() => setForm((f) => ({ ...f, week_of: r.week_of }))}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="font-medium text-sm">
-                        {new Date(r.week_of + "T00:00").toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                        })}
+                {reviews.map((r) => {
+                  const ratings = [r.worship_rating, r.confession_rating, r.connect_rating, r.sermon_rating].filter(
+                    (n): n is number => typeof n === "number",
+                  );
+                  const avg = ratings.length
+                    ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
+                    : "—";
+                  return (
+                    <li key={r.id} className="border border-border rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium text-sm">
+                          {new Date(r.service_date + "T00:00").toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </div>
+                        <div className="text-xs text-muted-foreground">avg {avg}/5</div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {r.attendance ?? "—"} att · ${r.giving?.toLocaleString() ?? "—"}
-                      </div>
-                    </div>
-                    {r.highlights && (
-                      <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{r.highlights}</div>
-                    )}
-                  </li>
-                ))}
+                      {r.wins && (
+                        <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          <span className="font-medium text-foreground">Wins: </span>
+                          {r.wins}
+                        </div>
+                      )}
+                      {r.opportunities && (
+                        <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          <span className="font-medium text-foreground">Opps: </span>
+                          {r.opportunities}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </aside>
@@ -296,38 +295,39 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function delta(current: number | null | undefined, previous: number | null | undefined) {
-  if (current == null) return { current: null as number | null, pct: null as number | null };
-  if (previous == null || previous === 0) return { current, pct: null };
-  return { current, pct: ((current - previous) / previous) * 100 };
-}
-
-function TrendCard({
-  label,
+function RatingScale({
   value,
-  prefix = "",
+  onChange,
 }: {
-  label: string;
-  value: { current: number | null; pct: number | null };
-  prefix?: string;
+  value: number | null;
+  onChange: (v: number | null) => void;
 }) {
-  const Icon = value.pct == null ? Minus : value.pct >= 0 ? TrendingUp : TrendingDown;
-  const tone =
-    value.pct == null
-      ? "text-muted-foreground"
-      : value.pct >= 0
-        ? "text-emerald-600"
-        : "text-amber-600";
   return (
-    <div className="bg-surface border border-border rounded-2xl p-5">
-      <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="text-3xl font-display font-bold mt-2">
-        {value.current == null ? "—" : `${prefix}${value.current.toLocaleString()}`}
-      </div>
-      <div className={`flex items-center gap-1 text-xs mt-2 ${tone}`}>
-        <Icon className="w-3 h-3" />
-        {value.pct == null ? "vs last week" : `${value.pct >= 0 ? "+" : ""}${value.pct.toFixed(1)}% vs last week`}
-      </div>
+    <div className="flex items-center gap-2 mt-2">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => onChange(value === n ? null : n)}
+          className={cn(
+            "w-10 h-10 rounded-full border text-sm font-medium transition-colors",
+            value === n
+              ? "bg-primary text-primary-foreground border-primary"
+              : "border-border hover:bg-muted",
+          )}
+        >
+          {n}
+        </button>
+      ))}
+      {value != null && (
+        <button
+          type="button"
+          onClick={() => onChange(null)}
+          className="text-xs text-muted-foreground hover:text-foreground ml-2"
+        >
+          Clear
+        </button>
+      )}
     </div>
   );
 }
