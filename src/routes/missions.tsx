@@ -345,6 +345,31 @@ function Body() {
                 <Input value={form.itinerary_link ?? ""} onChange={(e) => setForm({ ...form, itinerary_link: e.target.value })} placeholder="https://…" />
               </div>
               <div className="space-y-2 col-span-2">
+                <Label>Itinerary file</Label>
+                {form.itinerary_file_path ? (
+                  <div className="flex items-center gap-2 text-sm bg-background/60 border border-border rounded-lg px-3 py-2">
+                    <FileText className="w-4 h-4 text-muted-foreground" />
+                    <button type="button" onClick={() => openItinerary(form.itinerary_file_path!)} className="flex-1 text-left truncate hover:underline">
+                      {form.itinerary_file_name ?? "View file"}
+                    </button>
+                    <button type="button" onClick={clearItinerary} className="text-muted-foreground hover:text-foreground">
+                      <XIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex items-center justify-center gap-2 text-sm text-muted-foreground border border-dashed border-border rounded-lg px-3 py-3 cursor-pointer hover:bg-background/40">
+                    <Upload className="w-4 h-4" />
+                    {uploading ? "Uploading…" : "Upload PDF or document"}
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadItinerary(f); }}
+                    />
+                  </label>
+                )}
+              </div>
+              <div className="space-y-2 col-span-2">
                 <Label>Notes</Label>
                 <Textarea rows={3} value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
               </div>
