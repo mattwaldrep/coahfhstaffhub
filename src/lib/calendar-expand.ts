@@ -1,4 +1,5 @@
-import { RRule } from "rrule";
+import pkg from "rrule";
+const { RRule } = pkg;
 import { format } from "date-fns";
 
 export type EventRowLike = {
