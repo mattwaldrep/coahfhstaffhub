@@ -69,27 +69,7 @@ function ElderMeetingsList() {
         {loading && <div className="p-6 text-sm text-muted-foreground">Loading…</div>}
         {!loading && rows.length === 0 && <div className="p-6 text-sm text-muted-foreground">No meetings yet.</div>}
         {rows.map((m) => (
-          <Link
-            key={m.id}
-            to="/elder/meetings/$meetingId"
-            params={{ meetingId: m.id }}
-            className="flex items-center justify-between px-4 py-3 hover:bg-background/40"
-          >
-            <div>
-              <div className="text-sm font-medium">{m.title ?? "Elder Meeting"}</div>
-              <div className="text-xs text-muted-foreground">{format(new Date(m.meeting_date), "EEEE, MMM d, yyyy")}</div>
-            </div>
-            <div className="flex items-center gap-2">
-              {m.meeting_type === "joint" && (
-                <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-[oklch(0.55_0.15_280)]/15 text-[oklch(0.55_0.15_280)]">
-                  Joint
-                </span>
-              )}
-              <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                {m.status}
-              </span>
-            </div>
-          </Link>
+          <MeetingRow key={m.id} m={m} reload={load} />
         ))}
       </div>
 
