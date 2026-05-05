@@ -184,7 +184,7 @@ function CalendarBody() {
       end_at: form.end_at ? new Date(form.end_at).toISOString() : null,
       leader_name: form.leader_name || null,
       location: form.location || null,
-      readiness: form.readiness as EventRow["readiness"],
+      readiness: form.readiness as "green" | "yellow" | "red",
       description: form.description || null,
     };
     const { error } = form.id
