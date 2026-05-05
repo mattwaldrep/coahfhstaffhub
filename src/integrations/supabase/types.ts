@@ -120,6 +120,77 @@ export type Database = {
         }
         Relationships: []
       }
+      budget_actuals: {
+        Row: {
+          amount: number
+          category_id: string
+          created_at: string
+          fiscal_year: number
+          id: string
+          month: number
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          category_id: string
+          created_at?: string
+          fiscal_year: number
+          id?: string
+          month: number
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category_id?: string
+          created_at?: string
+          fiscal_year?: number
+          id?: string
+          month?: number
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_actuals_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "budget_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_categories: {
+        Row: {
+          annual_budget: number
+          created_at: string
+          fiscal_year: number
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          annual_budget?: number
+          created_at?: string
+          fiscal_year: number
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          annual_budget?: number
+          created_at?: string
+          fiscal_year?: number
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       calendar_events: {
         Row: {
           all_day: boolean
@@ -238,6 +309,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      finance_reports: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          fiscal_year: number
+          id: string
+          label: string | null
+          mime_type: string | null
+          month: number
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          fiscal_year: number
+          id?: string
+          label?: string | null
+          mime_type?: string | null
+          month: number
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          fiscal_year?: number
+          id?: string
+          label?: string | null
+          mime_type?: string | null
+          month?: number
+          uploaded_by?: string | null
+        }
+        Relationships: []
       }
       meetings: {
         Row: {
