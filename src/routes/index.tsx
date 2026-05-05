@@ -125,20 +125,20 @@ function Dashboard() {
           <Stat
             label="Attendance"
             value={fmtNum(headline?.avg_total_attendance)}
-            hint={deltaHint(headline?.avg_total_attendance, prevHeadline?.avg_total_attendance, "vs prev period")}
+            hint={deltaHint(headline?.avg_total_attendance, prevHeadline?.avg_total_attendance, statsRange ?? "latest week")}
           />
           <Stat
             label="Giving"
             value={fmtMoney(headline?.avg_weekly_giving)}
-            hint={deltaHint(headline?.avg_weekly_giving, prevHeadline?.avg_weekly_giving, "avg / week")}
+            hint={deltaHint(headline?.avg_weekly_giving, prevHeadline?.avg_weekly_giving, statsRange ?? "latest week")}
             accent
           />
           <Stat
             label="CG Participation"
             value={fmtNum(headline?.avg_community_groups)}
-            hint={deltaHint(headline?.avg_community_groups, prevHeadline?.avg_community_groups, "avg groups")}
+            hint={deltaHint(headline?.avg_community_groups, prevHeadline?.avg_community_groups, statsRange ?? "latest week")}
           />
-          <Stat label="Active Missions" value="0" hint={statsRange ?? "teams deployed"} />
+          <Stat label="Active Missions" value="0" hint="teams deployed" />
 
           <div className="col-span-2 lg:col-span-4 bg-surface border border-border rounded-2xl p-6 shadow-card">
             <div className="flex items-center justify-between mb-4">
