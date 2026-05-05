@@ -6,6 +6,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
 import { Sparkles, X, Send, Loader2, RotateCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const CHAT_STORAGE_KEY = "coah-ai-chat-v1";
 
