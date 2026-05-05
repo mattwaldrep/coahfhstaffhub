@@ -247,6 +247,24 @@ function Body() {
         )}
       </div>
 
+      <div className="flex flex-wrap items-center gap-1.5 mb-4">
+        <button
+          onClick={() => setStatusFilter("all")}
+          className={`text-xs px-3 py-1 rounded-full border transition ${statusFilter === "all" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+        >All ({trips.length})</button>
+        {COLUMNS.map((c) => {
+          const count = trips.filter((t) => t.status === c.value).length;
+          const on = statusFilter === c.value;
+          return (
+            <button
+              key={c.value}
+              onClick={() => setStatusFilter(c.value)}
+              className={`text-xs px-3 py-1 rounded-full border transition ${on ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+            >{c.label} ({count})</button>
+          );
+        })}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {COLUMNS.map((col) => (
           <div key={col.value} className="bg-surface border border-border rounded-2xl p-3 flex flex-col min-h-[20rem]">
