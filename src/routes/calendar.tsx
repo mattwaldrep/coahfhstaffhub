@@ -406,6 +406,49 @@ function CalendarBody() {
     load();
   }
 
+  async function saveOccurrenceOnly() {
+    if (!form.id || !editingOccurrence) return;
+    const toStart = (raw: string, allDay: boolean) => {
+      if (!raw) return new Date();
+      if (allDay) {
+        const datePart = raw.slice(0, 10);
+        return new Date(`${datePart}T12:00:00Z`);
+      }
+      return new Date(raw);
+    };
+    const startDate = toStart(form.start_at, form.all_day);
+    const endDate = form.end_at ? toStart(form.end_at, form.all_day) : null;
+    // 1) Insert one-off event with modifications (no rrule)
+    const { error: insertErr } = await supabase.from("calendar_events").insert({
+      title: form.title,
+      sub_calendar: form.sub_calendar as "general",
+      start_at: startDate.toISOString(),
+      end_at: endDate ? endDate.toISOString() : null,
+      all_day: form.all_day,
+      category: form.category || null,
+      leader_name: form.leader_name || null,
+      location: form.location || null,
+      readiness: form.readiness as "green" | "yellow" | "red",
+      description: form.description || null,
+      pco_registration: form.pco_registration,
+      rrule: null,
+      recurrence_end_date: null,
+    });
+    if (insertErr) { toast.error(insertErr.message); return; }
+    // 2) Add original occurrence date to excluded_dates on the series
+    const iso = format(editingOccurrence, "yyyy-MM-dd");
+    const ev = events.find((x) => x.id === form.id);
+    const next = Array.from(new Set([...(ev?.excluded_dates ?? []), iso]));
+    const { error: updErr } = await supabase
+      .from("calendar_events")
+      .update({ excluded_dates: next })
+      .eq("id", form.id);
+    if (updErr) { toast.error(updErr.message); return; }
+    toast.success("Occurrence updated");
+    setOpen(false);
+    load();
+  }
+
   async function addChecklistItem() {
     if (!form.id || !newItem.trim()) return;
     const { error } = await supabase
