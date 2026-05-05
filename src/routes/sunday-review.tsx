@@ -143,7 +143,7 @@ function SundayReviewPage() {
     setSaving(true);
     const { error } = await supabase
       .from("sunday_reviews")
-      .insert({ ...parsed.data, submitted_by: user.id });
+      .upsert({ ...parsed.data, submitted_by: user.id }, { onConflict: "service_date,submitted_by" });
     setSaving(false);
     if (error) {
       toast.error(error.message);

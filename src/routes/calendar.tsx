@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   addMonths,
   addWeeks,
@@ -247,24 +247,30 @@ function CalendarBody() {
     };
   }, [cursor, view]);
 
+  const formIdRef = useRef<string | undefined>(undefined);
+  useEffect(() => { formIdRef.current = form.id; }, [form.id]);
+
   useEffect(() => {
     load();
     const ch = supabase
       .channel("calendar_events")
       .on("postgres_changes", { event: "*", schema: "public", table: "calendar_events" }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "event_checklist_items" }, () => {
-        if (form.id) loadChecklist(form.id);
+      .on("postgres_changes", { event: "*", schema: "public", table: "event_checklist_items" }, (payload: any) => {
+        const eid = formIdRef.current;
+        if (!eid) return;
+        const row = payload.new ?? payload.old;
+        if (row?.event_id === eid) loadChecklist(eid);
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [range.start.getTime(), range.end.getTime()]);
 
   async function load() {
-    // Fetch events that could overlap the range (recurring may have started earlier)
+    // Fetch events overlapping range, plus any recurring (which may have started earlier)
     const { data } = await supabase
       .from("calendar_events")
       .select("*")
-      .or(`start_at.lte.${range.end.toISOString()},rrule.not.is.null`)
+      .or(`and(start_at.gte.${range.start.toISOString()},start_at.lte.${range.end.toISOString()}),rrule.not.is.null`)
       .order("start_at", { ascending: true });
     setEvents(data ?? []);
   }
@@ -339,13 +345,24 @@ function CalendarBody() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const startDate = new Date(form.start_at);
+    // For all-day events, normalize to UTC noon on the picked date so the calendar
+    // day is stable across timezones. For timed events, use the local datetime as-is.
+    const toStart = (raw: string, allDay: boolean) => {
+      if (!raw) return new Date();
+      if (allDay) {
+        const datePart = raw.slice(0, 10); // YYYY-MM-DD
+        return new Date(`${datePart}T12:00:00Z`);
+      }
+      return new Date(raw);
+    };
+    const startDate = toStart(form.start_at, form.all_day);
+    const endDate = form.end_at ? toStart(form.end_at, form.all_day) : null;
     const rrule = buildRRule(form, startDate);
     const payload = {
       title: form.title,
       sub_calendar: form.sub_calendar as "general",
       start_at: startDate.toISOString(),
-      end_at: form.end_at ? new Date(form.end_at).toISOString() : null,
+      end_at: endDate ? endDate.toISOString() : null,
       all_day: form.all_day,
       category: form.category || null,
       leader_name: form.leader_name || null,

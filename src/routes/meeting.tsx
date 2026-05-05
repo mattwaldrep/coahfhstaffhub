@@ -71,7 +71,10 @@ function MeetingPage() {
       if (!m) {
         const { data: created, error } = await supabase
           .from("meetings")
-          .insert({ meeting_date: date, title: "Weekly Staff Meeting", created_by: user.id })
+          .upsert(
+            { meeting_date: date, title: "Weekly Staff Meeting", created_by: user.id },
+            { onConflict: "meeting_date" },
+          )
           .select()
           .single();
         if (error) {
@@ -187,6 +190,7 @@ function MeetingPage() {
   // Web Speech transcription
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const listeningRef = useRef(false);
 
   const toggleTranscription = useCallback(() => {
     if (!meeting) return;
@@ -196,7 +200,8 @@ function MeetingPage() {
       toast.error("Speech recognition not supported in this browser. Try Chrome.");
       return;
     }
-    if (listening) {
+    if (listeningRef.current) {
+      listeningRef.current = false;
       recognitionRef.current?.stop();
       setListening(false);
       return;
@@ -216,15 +221,19 @@ function MeetingPage() {
     };
     rec.onerror = (e: any) => {
       toast.error(`Transcription error: ${e.error}`);
+      listeningRef.current = false;
       setListening(false);
     };
     rec.onend = () => {
-      if (listening) rec.start();
+      if (listeningRef.current) {
+        try { rec.start(); } catch { /* ignore */ }
+      }
     };
     rec.start();
     recognitionRef.current = rec;
+    listeningRef.current = true;
     setListening(true);
-  }, [listening, meeting]);
+  }, [meeting]);
 
   useEffect(() => {
     return () => {
