@@ -21,10 +21,6 @@ import {
 import {
   ChevronDown,
   ExternalLink,
-  Upload,
-  Download,
-  FileText,
-  Trash2,
   Send,
   Loader2,
   CalendarIcon,
