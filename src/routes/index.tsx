@@ -240,7 +240,7 @@ function deltaHint(curr?: number, prev?: number, fallback = "") {
   if (curr === undefined || prev === undefined || !prev) return fallback;
   const pct = ((curr - prev) / prev) * 100;
   const sign = pct >= 0 ? "+" : "";
-  return `${sign}${pct.toFixed(1)}% vs prev`;
+  return `${sign}${pct.toFixed(1)}% vs prev week`;
 }
 
 function Stat({ label, value, hint, accent }: { label: string; value: string; hint: string; accent?: boolean }) {
