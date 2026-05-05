@@ -2,10 +2,14 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import Mention from "@tiptap/extension-mention";
+import { ReactRenderer } from "@tiptap/react";
+import tippy, { type Instance as TippyInstance } from "tippy.js";
 import { useEffect } from "react";
 import {
   Bold, Italic, Strikethrough, List, ListOrdered, Quote, Link as LinkIcon, Undo, Redo, Heading2,
 } from "lucide-react";
+import { MentionList, type MentionUser } from "./mention-list";
 
 type Props = {
   value: string;
@@ -14,15 +18,115 @@ type Props = {
   placeholder?: string;
   className?: string;
   minHeight?: number;
+  /** When provided, enables @-mention with this user list. */
+  mentionUsers?: MentionUser[];
 };
 
-export function RichTextEditor({ value, onChange, onBlur, placeholder, className, minHeight = 96 }: Props) {
+/** Pull all mention assignments out of an HTML string produced by this editor. */
+export function extractMentions(html: string): { assignee_id: string; title: string }[] {
+  if (!html || !html.includes("data-mention-id")) return [];
+  if (typeof window === "undefined") return [];
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const out: { assignee_id: string; title: string }[] = [];
+  // Walk through text nodes & mention spans in order, grouping by paragraph/list-item
+  doc.querySelectorAll("p, li, blockquote, h2, h3").forEach((block) => {
+    const mentions = block.querySelectorAll<HTMLElement>("[data-mention-id]");
+    mentions.forEach((m) => {
+      const id = m.getAttribute("data-mention-id");
+      if (!id) return;
+      // Capture text after the mention until next mention or end of block
+      let task = "";
+      let node: Node | null = m.nextSibling;
+      while (node) {
+        if (node instanceof HTMLElement && node.hasAttribute("data-mention-id")) break;
+        task += node.textContent ?? "";
+        node = node.nextSibling;
+      }
+      task = task.replace(/\s+/g, " ").trim();
+      // Strip leading punctuation
+      task = task.replace(/^[:\-–—,;.\s]+/, "").trim();
+      if (task) out.push({ assignee_id: id, title: task.slice(0, 500) });
+    });
+  });
+  return out;
+}
+
+export function RichTextEditor({
+  value, onChange, onBlur, placeholder, className, minHeight = 96, mentionUsers,
+}: Props) {
+  const extensions = [
+    StarterKit.configure({ heading: { levels: [2, 3] } }),
+    Link.configure({ openOnClick: false, autolink: true, HTMLAttributes: { class: "underline text-[oklch(0.55_0.15_280)]" } }),
+    Placeholder.configure({ placeholder: placeholder ?? "Write…" }),
+  ];
+
+  if (mentionUsers) {
+    extensions.push(
+      Mention.configure({
+        HTMLAttributes: {
+          class:
+            "inline-block px-1 rounded bg-[oklch(0.55_0.15_280)]/15 text-[oklch(0.55_0.15_280)] font-medium",
+        },
+        renderHTML({ options, node }) {
+          return [
+            "span",
+            {
+              ...options.HTMLAttributes,
+              "data-mention-id": node.attrs.id,
+              "data-mention-label": node.attrs.label ?? node.attrs.id,
+            },
+            `@${node.attrs.label ?? node.attrs.id}`,
+          ];
+        },
+        suggestion: {
+          items: ({ query }) => {
+            const q = query.toLowerCase();
+            return mentionUsers
+              .filter((u) => u.name.toLowerCase().includes(q) || (u.email ?? "").toLowerCase().includes(q))
+              .slice(0, 8);
+          },
+          render: () => {
+            let component: ReactRenderer | null = null;
+            let popup: TippyInstance[] = [];
+            return {
+              onStart: (props: any) => {
+                component = new ReactRenderer(MentionList, { props, editor: props.editor });
+                if (!props.clientRect) return;
+                popup = tippy("body", {
+                  getReferenceClientRect: props.clientRect,
+                  appendTo: () => document.body,
+                  content: component.element,
+                  showOnCreate: true,
+                  interactive: true,
+                  trigger: "manual",
+                  placement: "bottom-start",
+                });
+              },
+              onUpdate: (props: any) => {
+                component?.updateProps(props);
+                if (!props.clientRect) return;
+                popup[0]?.setProps({ getReferenceClientRect: props.clientRect });
+              },
+              onKeyDown: (props: any) => {
+                if (props.event.key === "Escape") {
+                  popup[0]?.hide();
+                  return true;
+                }
+                return (component?.ref as any)?.onKeyDown?.(props) ?? false;
+              },
+              onExit: () => {
+                popup[0]?.destroy();
+                component?.destroy();
+              },
+            };
+          },
+        },
+      }),
+    );
+  }
+
   const editor = useEditor({
-    extensions: [
-      StarterKit.configure({ heading: { levels: [2, 3] } }),
-      Link.configure({ openOnClick: false, autolink: true, HTMLAttributes: { class: "underline text-[oklch(0.55_0.15_280)]" } }),
-      Placeholder.configure({ placeholder: placeholder ?? "Write…" }),
-    ],
+    extensions,
     content: value || "",
     editorProps: {
       attributes: {
@@ -35,7 +139,6 @@ export function RichTextEditor({ value, onChange, onBlur, placeholder, className
     onBlur: ({ editor }) => onBlur?.(editor.getHTML()),
   });
 
-  // Keep editor content in sync when external value changes (e.g. realtime update)
   useEffect(() => {
     if (!editor) return;
     const current = editor.getHTML();
@@ -88,6 +191,9 @@ export function RichTextEditor({ value, onChange, onBlur, placeholder, className
         <span className="w-px h-4 bg-border mx-1" />
         <Btn title="Undo" onClick={() => editor.chain().focus().undo().run()}><Undo className="w-3.5 h-3.5" /></Btn>
         <Btn title="Redo" onClick={() => editor.chain().focus().redo().run()}><Redo className="w-3.5 h-3.5" /></Btn>
+        {mentionUsers && (
+          <span className="text-[10px] text-muted-foreground ml-2">Type @ to assign a task</span>
+        )}
       </div>
       <EditorContent editor={editor} />
     </div>
@@ -98,7 +204,7 @@ export function RichTextEditor({ value, onChange, onBlur, placeholder, className
 export function RichTextView({ html, className }: { html: string; className?: string }) {
   return (
     <div
-      className={`prose prose-sm max-w-none [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_a]:text-[oklch(0.55_0.15_280)] [&_a]:underline ${className ?? ""}`}
+      className={`prose prose-sm max-w-none [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_a]:text-[oklch(0.55_0.15_280)] [&_a]:underline [&_[data-mention-id]]:text-[oklch(0.55_0.15_280)] [&_[data-mention-id]]:font-medium ${className ?? ""}`}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
