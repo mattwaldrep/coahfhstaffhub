@@ -1,0 +1,1 @@
+ALTER TABLE public.user_integrations ADD COLUMN IF NOT EXISTS auto_push boolean NOT NULL DEFAULT false;
