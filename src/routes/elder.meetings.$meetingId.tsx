@@ -284,7 +284,7 @@ function AgendaItemRow({ item, isFullElder, reload }: any) {
   );
 }
 
-function JointSections({ meetingId, items, reload }: any) {
+function JointSections({ meetingId, items, reload, mentionUsers }: any) {
   return (
     <div className="space-y-4">
       {JOINT_SUBSECTIONS.map((s) => {
@@ -296,6 +296,7 @@ function JointSections({ meetingId, items, reload }: any) {
             meetingId={meetingId}
             items={subItems}
             reload={reload}
+            mentionUsers={mentionUsers}
           />
         );
       })}
@@ -303,7 +304,7 @@ function JointSections({ meetingId, items, reload }: any) {
   );
 }
 
-function JointSubSection({ sub, meetingId, items, reload }: any) {
+function JointSubSection({ sub, meetingId, items, reload, mentionUsers }: any) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
 
@@ -311,8 +312,21 @@ function JointSubSection({ sub, meetingId, items, reload }: any) {
     if (!title.trim()) return;
     try {
       await upsertJointItem({
-        data: { meeting_id: meetingId, sub_section: sub.key, title: title.trim(), body: body.trim() || null },
+        data: { meeting_id: meetingId, sub_section: sub.key, title: title.trim(), body: body || null },
       });
+      const mentions = extractMentions(body);
+      if (mentions.length > 0) {
+        try {
+          const res: any = await createActionsFromMentions({
+            data: { meeting_id: meetingId, mentions },
+          });
+          if (res?.created > 0) {
+            toast.success(`Created ${res.created} action item${res.created === 1 ? "" : "s"} from mentions`);
+          }
+        } catch (e: any) {
+          toast.error(e.message ?? "Failed to create action items");
+        }
+      }
       setTitle(""); setBody("");
       reload();
     } catch (e: any) {
@@ -340,7 +354,7 @@ function JointSubSection({ sub, meetingId, items, reload }: any) {
         ))}
         <div className="space-y-2">
           <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} className="h-8 text-sm" />
-          <RichTextEditor value={body} onChange={setBody} placeholder="Notes (optional)" minHeight={72} />
+          <RichTextEditor value={body} onChange={setBody} placeholder="Notes (optional · type @ to assign a task)" minHeight={72} mentionUsers={mentionUsers} />
           <Button size="sm" variant="outline" onClick={add}><Plus className="w-3 h-3 mr-1" /> Add</Button>
         </div>
       </div>
