@@ -211,8 +211,23 @@ function GoogleTasksCard() {
   const getUrl = useServerFn(getGoogleAuthUrl);
   const getConn = useServerFn(getGoogleConnection);
   const disconnect = useServerFn(disconnectGoogle);
-  const [conn, setConn] = useState<{ connected: boolean; updated_at?: string } | null>(null);
+  const setAutoPush = useServerFn(setGoogleAutoPush);
+  const [conn, setConn] = useState<{ connected: boolean; updated_at?: string; auto_push?: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [autoBusy, setAutoBusy] = useState(false);
+
+  async function toggleAutoPush(v: boolean) {
+    setAutoBusy(true);
+    try {
+      await setAutoPush({ data: { autoPush: v } });
+      setConn((c) => (c ? { ...c, auto_push: v } : c));
+      toast.success(v ? "Auto-send enabled" : "Auto-send disabled");
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to update");
+    } finally {
+      setAutoBusy(false);
+    }
+  }
 
   useEffect(() => {
     getConn().then((r: any) => setConn(r)).catch(() => setConn({ connected: false }));
