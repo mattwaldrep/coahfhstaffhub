@@ -18,6 +18,9 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as FinanceRouteImport } from './routes/finance'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiGoogleOauthCallbackRouteImport } from './routes/api/google.oauth-callback'
+import { Route as ApiPublicHooksSundayReviewNudgeRouteImport } from './routes/api/public/hooks.sunday-review-nudge'
+import { Route as ApiPublicHooksActionItemsDigestRouteImport } from './routes/api/public/hooks.action-items-digest'
 
 const UsersRoute = UsersRouteImport.update({
   id: '/users',
@@ -64,6 +67,23 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGoogleOauthCallbackRoute = ApiGoogleOauthCallbackRouteImport.update({
+  id: '/api/google/oauth-callback',
+  path: '/api/google/oauth-callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksSundayReviewNudgeRoute =
+  ApiPublicHooksSundayReviewNudgeRouteImport.update({
+    id: '/api/public/hooks/sunday-review-nudge',
+    path: '/api/public/hooks/sunday-review-nudge',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksActionItemsDigestRoute =
+  ApiPublicHooksActionItemsDigestRouteImport.update({
+    id: '/api/public/hooks/action-items-digest',
+    path: '/api/public/hooks/action-items-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -75,6 +95,9 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/sunday-review': typeof SundayReviewRoute
   '/users': typeof UsersRoute
+  '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
+  '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
+  '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -86,6 +109,9 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/sunday-review': typeof SundayReviewRoute
   '/users': typeof UsersRoute
+  '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
+  '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
+  '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -98,6 +124,9 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/sunday-review': typeof SundayReviewRoute
   '/users': typeof UsersRoute
+  '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
+  '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
+  '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,6 +140,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sunday-review'
     | '/users'
+    | '/api/google/oauth-callback'
+    | '/api/public/hooks/action-items-digest'
+    | '/api/public/hooks/sunday-review-nudge'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -122,6 +154,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sunday-review'
     | '/users'
+    | '/api/google/oauth-callback'
+    | '/api/public/hooks/action-items-digest'
+    | '/api/public/hooks/sunday-review-nudge'
   id:
     | '__root__'
     | '/'
@@ -133,6 +168,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sunday-review'
     | '/users'
+    | '/api/google/oauth-callback'
+    | '/api/public/hooks/action-items-digest'
+    | '/api/public/hooks/sunday-review-nudge'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -145,6 +183,9 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SundayReviewRoute: typeof SundayReviewRoute
   UsersRoute: typeof UsersRoute
+  ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
+  ApiPublicHooksActionItemsDigestRoute: typeof ApiPublicHooksActionItemsDigestRoute
+  ApiPublicHooksSundayReviewNudgeRoute: typeof ApiPublicHooksSundayReviewNudgeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -212,6 +253,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/google/oauth-callback': {
+      id: '/api/google/oauth-callback'
+      path: '/api/google/oauth-callback'
+      fullPath: '/api/google/oauth-callback'
+      preLoaderRoute: typeof ApiGoogleOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/sunday-review-nudge': {
+      id: '/api/public/hooks/sunday-review-nudge'
+      path: '/api/public/hooks/sunday-review-nudge'
+      fullPath: '/api/public/hooks/sunday-review-nudge'
+      preLoaderRoute: typeof ApiPublicHooksSundayReviewNudgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/action-items-digest': {
+      id: '/api/public/hooks/action-items-digest'
+      path: '/api/public/hooks/action-items-digest'
+      fullPath: '/api/public/hooks/action-items-digest'
+      preLoaderRoute: typeof ApiPublicHooksActionItemsDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -225,16 +287,10 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SundayReviewRoute: SundayReviewRoute,
   UsersRoute: UsersRoute,
+  ApiGoogleOauthCallbackRoute: ApiGoogleOauthCallbackRoute,
+  ApiPublicHooksActionItemsDigestRoute: ApiPublicHooksActionItemsDigestRoute,
+  ApiPublicHooksSundayReviewNudgeRoute: ApiPublicHooksSundayReviewNudgeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

@@ -4,7 +4,9 @@ import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Plus, Check, Trash2, Loader2 } from "lucide-react";
+import { Mic, MicOff, Plus, Check, Trash2, Loader2, Send, MailCheck } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { finalizeMeeting, sendMeetingRecap } from "@/server/meeting.functions";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -49,6 +51,8 @@ type Meeting = {
   notes: string | null;
   transcript: string | null;
   status: string;
+  recap_sent_at?: string | null;
+  completed_at?: string | null;
 };
 
 function todayISO() {
@@ -275,6 +279,7 @@ function MeetingPage() {
               {listening ? <MicOff className="w-4 h-4 mr-2" /> : <Mic className="w-4 h-4 mr-2" />}
               {listening ? "Stop transcription" : "Start transcription"}
             </Button>
+            <FinalizeButton meeting={meeting} setMeeting={setMeeting} />
           </div>
         </header>
 
