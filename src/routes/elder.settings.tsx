@@ -48,9 +48,25 @@ function PcoCard() {
   const [listId, setListId] = useState("");
   const [elderField, setElderField] = useState("");
   const [healthField, setHealthField] = useState("");
+  const [fields, setFields] = useState<Array<{ id: string; name: string; tab: string | null; data_type: string | null }> | null>(null);
+  const [loadingFields, setLoadingFields] = useState(false);
+  const [fieldsError, setFieldsError] = useState<string | null>(null);
   const [status, setStatus] = useState<{ ok: boolean; me?: string; error?: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [pinging, setPinging] = useState(false);
+
+  async function loadFields() {
+    setLoadingFields(true);
+    setFieldsError(null);
+    try {
+      const f: any = await listPcoFieldDefinitions();
+      setFields(f);
+    } catch (e: any) {
+      setFieldsError(e.message ?? "Failed to load fields");
+    } finally {
+      setLoadingFields(false);
+    }
+  }
 
   useEffect(() => {
     (async () => {
