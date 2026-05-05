@@ -311,17 +311,3 @@ function GoogleTasksCard() {
     </div>
   );
 }
-        <Button onClick={connect} disabled={busy}>
-          {busy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plug className="w-4 h-4 mr-2" />}
-          Connect Google Tasks
-        </Button>
-      )}
-      <div className="text-[11px] text-muted-foreground border-t border-border pt-3">
-        Your refresh token is encrypted at rest and only used to push tasks you've been assigned. Disconnect any time.
-        <a href="https://myaccount.google.com/permissions" target="_blank" rel="noreferrer" className="ml-1 underline inline-flex items-center gap-0.5">
-          Manage Google access <ExternalLink className="w-2.5 h-2.5" />
-        </a>
-      </div>
-    </div>
-  );
-}
