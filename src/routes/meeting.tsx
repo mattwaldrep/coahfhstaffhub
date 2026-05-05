@@ -71,7 +71,10 @@ function MeetingPage() {
       if (!m) {
         const { data: created, error } = await supabase
           .from("meetings")
-          .insert({ meeting_date: date, title: "Weekly Staff Meeting", created_by: user.id })
+          .upsert(
+            { meeting_date: date, title: "Weekly Staff Meeting", created_by: user.id },
+            { onConflict: "meeting_date" },
+          )
           .select()
           .single();
         if (error) {
