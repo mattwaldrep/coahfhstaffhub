@@ -107,3 +107,97 @@ function ElderMeetingsList() {
     </div>
   );
 }
+
+function MeetingRow({ m, reload }: { m: any; reload: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [date, setDate] = useState(m.meeting_date);
+  const [title, setTitle] = useState(m.title ?? "");
+  const [saving, setSaving] = useState(false);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await updateElderMeeting({ data: { id: m.id, meeting_date: date, title: title || undefined } });
+      toast.success("Meeting updated");
+      setEditing(false);
+      reload();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function remove() {
+    if (!confirm(`Delete meeting on ${format(new Date(m.meeting_date), "MMM d, yyyy")}? This cannot be undone.`)) return;
+    try {
+      await deleteElderMeeting({ data: { id: m.id } });
+      toast.success("Meeting deleted");
+      reload();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed");
+    }
+  }
+
+  return (
+    <>
+      <div className="flex items-center justify-between px-4 py-3 hover:bg-background/40 group">
+        <Link
+          to="/elder/meetings/$meetingId"
+          params={{ meetingId: m.id }}
+          className="flex-1 min-w-0"
+        >
+          <div className="text-sm font-medium">{m.title ?? "Elder Meeting"}</div>
+          <div className="text-xs text-muted-foreground">{format(new Date(m.meeting_date), "EEEE, MMM d, yyyy")}</div>
+        </Link>
+        <div className="flex items-center gap-2">
+          {m.meeting_type === "joint" && (
+            <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-[oklch(0.55_0.15_280)]/15 text-[oklch(0.55_0.15_280)]">
+              Joint
+            </span>
+          )}
+          <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-muted text-muted-foreground">
+            {m.status}
+          </span>
+          <button
+            title="Reschedule"
+            onClick={() => setEditing(true)}
+            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground p-1"
+          >
+            <CalendarIcon className="w-4 h-4" />
+          </button>
+          <button
+            title="Delete meeting"
+            onClick={remove}
+            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive p-1"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      <Dialog open={editing} onOpenChange={setEditing}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reschedule meeting</DialogTitle>
+            <DialogDescription>Update the date or title for this meeting.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={save} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Date</Label>
+              <Input type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Title</Label>
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
