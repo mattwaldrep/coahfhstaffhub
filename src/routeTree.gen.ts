@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SundayReviewRouteImport } from './routes/sunday-review'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as MissionsRouteImport } from './routes/missions'
 import { Route as MeetingRouteImport } from './routes/meeting'
@@ -16,6 +17,11 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SundayReviewRoute = SundayReviewRouteImport.update({
+  id: '/sunday-review',
+  path: '/sunday-review',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/meeting': typeof MeetingRoute
   '/missions': typeof MissionsRoute
   '/settings': typeof SettingsRoute
+  '/sunday-review': typeof SundayReviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/meeting': typeof MeetingRoute
   '/missions': typeof MissionsRoute
   '/settings': typeof SettingsRoute
+  '/sunday-review': typeof SundayReviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +79,7 @@ export interface FileRoutesById {
   '/meeting': typeof MeetingRoute
   '/missions': typeof MissionsRoute
   '/settings': typeof SettingsRoute
+  '/sunday-review': typeof SundayReviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,8 +90,16 @@ export interface FileRouteTypes {
     | '/meeting'
     | '/missions'
     | '/settings'
+    | '/sunday-review'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/calendar' | '/login' | '/meeting' | '/missions' | '/settings'
+  to:
+    | '/'
+    | '/calendar'
+    | '/login'
+    | '/meeting'
+    | '/missions'
+    | '/settings'
+    | '/sunday-review'
   id:
     | '__root__'
     | '/'
@@ -91,6 +108,7 @@ export interface FileRouteTypes {
     | '/meeting'
     | '/missions'
     | '/settings'
+    | '/sunday-review'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -100,10 +118,18 @@ export interface RootRouteChildren {
   MeetingRoute: typeof MeetingRoute
   MissionsRoute: typeof MissionsRoute
   SettingsRoute: typeof SettingsRoute
+  SundayReviewRoute: typeof SundayReviewRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sunday-review': {
+      id: '/sunday-review'
+      path: '/sunday-review'
+      fullPath: '/sunday-review'
+      preLoaderRoute: typeof SundayReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -156,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   MeetingRoute: MeetingRoute,
   MissionsRoute: MissionsRoute,
   SettingsRoute: SettingsRoute,
+  SundayReviewRoute: SundayReviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

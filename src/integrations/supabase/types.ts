@@ -260,6 +260,51 @@ export type Database = {
         }
         Relationships: []
       }
+      sunday_reviews: {
+        Row: {
+          attendance: number | null
+          created_at: string
+          first_time_guests: number | null
+          follow_ups: string | null
+          giving: number | null
+          highlights: string | null
+          id: string
+          lowlights: string | null
+          prayer_needs: string | null
+          submitted_by: string | null
+          updated_at: string
+          week_of: string
+        }
+        Insert: {
+          attendance?: number | null
+          created_at?: string
+          first_time_guests?: number | null
+          follow_ups?: string | null
+          giving?: number | null
+          highlights?: string | null
+          id?: string
+          lowlights?: string | null
+          prayer_needs?: string | null
+          submitted_by?: string | null
+          updated_at?: string
+          week_of: string
+        }
+        Update: {
+          attendance?: number | null
+          created_at?: string
+          first_time_guests?: number | null
+          follow_ups?: string | null
+          giving?: number | null
+          highlights?: string | null
+          id?: string
+          lowlights?: string | null
+          prayer_needs?: string | null
+          submitted_by?: string | null
+          updated_at?: string
+          week_of?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
