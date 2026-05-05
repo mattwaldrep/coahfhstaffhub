@@ -180,12 +180,8 @@ function Body() {
     if (error) toast.error(error.message);
   }
 
-  async function toggleStep(trip: Trip, key: string) {
-    if (!canEdit) return;
-    const next = { ...(trip.steps ?? {}), [key]: !trip.steps?.[key] };
-    const { error } = await supabase.from("mission_trips").update({ steps: next }).eq("id", trip.id);
-    if (error) toast.error(error.message);
-  }
+
+
 
   const byStatus = useMemo(() => {
     const m: Record<Status, Trip[]> = {
