@@ -26,6 +26,7 @@ import { Route as ElderSettingsRouteImport } from './routes/elder.settings'
 import { Route as ElderPastoralCareRouteImport } from './routes/elder.pastoral-care'
 import { Route as ElderMeetingsRouteImport } from './routes/elder.meetings'
 import { Route as ElderArchiveRouteImport } from './routes/elder.archive'
+import { Route as ElderMeetingsIndexRouteImport } from './routes/elder.meetings.index'
 import { Route as ElderMeetingsMeetingIdRouteImport } from './routes/elder.meetings.$meetingId'
 import { Route as ApiGoogleOauthCallbackRouteImport } from './routes/api/google.oauth-callback'
 import { Route as ApiPublicHooksSundayReviewNudgeRouteImport } from './routes/api/public/hooks.sunday-review-nudge'
@@ -116,6 +117,11 @@ const ElderArchiveRoute = ElderArchiveRouteImport.update({
   path: '/archive',
   getParentRoute: () => ElderRoute,
 } as any)
+const ElderMeetingsIndexRoute = ElderMeetingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ElderMeetingsRoute,
+} as any)
 const ElderMeetingsMeetingIdRoute = ElderMeetingsMeetingIdRouteImport.update({
   id: '/$meetingId',
   path: '/$meetingId',
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/elder/': typeof ElderIndexRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
+  '/elder/meetings/': typeof ElderMeetingsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
 }
@@ -175,12 +182,12 @@ export interface FileRoutesByTo {
   '/sunday-review': typeof SundayReviewRoute
   '/users': typeof UsersRoute
   '/elder/archive': typeof ElderArchiveRoute
-  '/elder/meetings': typeof ElderMeetingsRouteWithChildren
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/elder': typeof ElderIndexRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
+  '/elder/meetings': typeof ElderMeetingsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
 }
@@ -205,6 +212,7 @@ export interface FileRoutesById {
   '/elder/': typeof ElderIndexRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
+  '/elder/meetings/': typeof ElderMeetingsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
 }
@@ -230,6 +238,7 @@ export interface FileRouteTypes {
     | '/elder/'
     | '/api/google/oauth-callback'
     | '/elder/meetings/$meetingId'
+    | '/elder/meetings/'
     | '/api/public/hooks/action-items-digest'
     | '/api/public/hooks/sunday-review-nudge'
   fileRoutesByTo: FileRoutesByTo
@@ -246,12 +255,12 @@ export interface FileRouteTypes {
     | '/sunday-review'
     | '/users'
     | '/elder/archive'
-    | '/elder/meetings'
     | '/elder/pastoral-care'
     | '/elder/settings'
     | '/elder'
     | '/api/google/oauth-callback'
     | '/elder/meetings/$meetingId'
+    | '/elder/meetings'
     | '/api/public/hooks/action-items-digest'
     | '/api/public/hooks/sunday-review-nudge'
   id:
@@ -275,6 +284,7 @@ export interface FileRouteTypes {
     | '/elder/'
     | '/api/google/oauth-callback'
     | '/elder/meetings/$meetingId'
+    | '/elder/meetings/'
     | '/api/public/hooks/action-items-digest'
     | '/api/public/hooks/sunday-review-nudge'
   fileRoutesById: FileRoutesById
@@ -418,6 +428,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ElderArchiveRouteImport
       parentRoute: typeof ElderRoute
     }
+    '/elder/meetings/': {
+      id: '/elder/meetings/'
+      path: '/'
+      fullPath: '/elder/meetings/'
+      preLoaderRoute: typeof ElderMeetingsIndexRouteImport
+      parentRoute: typeof ElderMeetingsRoute
+    }
     '/elder/meetings/$meetingId': {
       id: '/elder/meetings/$meetingId'
       path: '/$meetingId'
@@ -451,10 +468,12 @@ declare module '@tanstack/react-router' {
 
 interface ElderMeetingsRouteChildren {
   ElderMeetingsMeetingIdRoute: typeof ElderMeetingsMeetingIdRoute
+  ElderMeetingsIndexRoute: typeof ElderMeetingsIndexRoute
 }
 
 const ElderMeetingsRouteChildren: ElderMeetingsRouteChildren = {
   ElderMeetingsMeetingIdRoute: ElderMeetingsMeetingIdRoute,
+  ElderMeetingsIndexRoute: ElderMeetingsIndexRoute,
 }
 
 const ElderMeetingsRouteWithChildren = ElderMeetingsRoute._addFileChildren(
