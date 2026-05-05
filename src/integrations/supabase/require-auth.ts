@@ -39,8 +39,8 @@ function createRequestSupabase(token: string) {
 }
 
 export const requireSupabaseAuth = createMiddleware({ type: "function" })
-  .client(async ({ next, headers }) => {
-    const mergedHeaders = new Headers(headers ?? undefined);
+  .client(async ({ next }) => {
+    const mergedHeaders = new Headers();
 
     if (!mergedHeaders.has("authorization")) {
       const {
