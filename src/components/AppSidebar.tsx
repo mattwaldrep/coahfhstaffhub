@@ -50,7 +50,7 @@ export function AppSidebar() {
       {items.map((item) => (
         <SidebarMenuItem key={item.to}>
           <SidebarMenuButton asChild isActive={isActive(item.to, item.exact)} tooltip={item.label}>
-            <Link to={item.to} className="flex items-center gap-2">
+            <Link to={item.to} className="flex items-center gap-2 text-inherit">
               <item.icon className="h-4 w-4 shrink-0" />
               {!collapsed && <span>{item.label}</span>}
             </Link>
@@ -61,7 +61,10 @@ export function AppSidebar() {
   );
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar
+      collapsible="icon"
+      className="[&_[data-sidebar=content]]:bg-sidebar [&_[data-sidebar=content]]:text-sidebar-foreground [&_[data-sidebar=group-label]]:text-sidebar-foreground/70 [&_[data-sidebar=menu-button]]:text-sidebar-foreground [&_[data-sidebar=menu-button][data-active=true]]:bg-sidebar-accent [&_[data-sidebar=menu-button][data-active=true]]:text-sidebar-accent-foreground [&_[data-sidebar=menu-button]:hover]:bg-sidebar-accent [&_[data-sidebar=menu-button]:hover]:text-sidebar-accent-foreground"
+    >
       <SidebarHeader className="px-3 py-3 border-b border-sidebar-border">
         <Link to="/" className="flex items-center gap-2 font-display font-bold tracking-tight">
           <div className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-xs">
