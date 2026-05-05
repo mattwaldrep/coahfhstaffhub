@@ -10,6 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Loader2, CheckCircle2, ExternalLink, Plug, Unplug } from "lucide-react";
 import { toast } from "sonner";
 import { getGoogleAuthUrl, getGoogleConnection, disconnectGoogle } from "@/server/google-tasks.functions";
+import { metricsClient } from "@/integrations/metrics/client";
+import { useMetricsSession } from "@/integrations/metrics/use-session";
+import { BarChart3 } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,
