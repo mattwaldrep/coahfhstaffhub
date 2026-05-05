@@ -75,6 +75,51 @@ export type Database = {
           },
         ]
       }
+      agenda_items: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          meeting_id: string
+          notes: string | null
+          owner_id: string | null
+          owner_name: string | null
+          position: number
+          source: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          meeting_id: string
+          notes?: string | null
+          owner_id?: string | null
+          owner_name?: string | null
+          position?: number
+          source?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          meeting_id?: string
+          notes?: string | null
+          owner_id?: string | null
+          owner_name?: string | null
+          position?: number
+          source?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       calendar_events: {
         Row: {
           created_at: string
