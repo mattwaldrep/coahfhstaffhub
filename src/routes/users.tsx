@@ -15,7 +15,7 @@ import {
 import { Plus, Trash2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import {
-  listUsers, setUserRole, inviteUser, removeUser,
+  listUsers, setUserRole, inviteUser, removeUser, setUserElderTier,
 } from "@/server/users.functions";
 
 export const Route = createFileRoute("/users")({
@@ -28,7 +28,14 @@ const ROLE_OPTIONS = [
   { value: "extended", label: "Extended", desc: "Read-only across most modules" },
 ] as const;
 
+const ELDER_OPTIONS = [
+  { value: "none", label: "—" },
+  { value: "elder_candidate", label: "Candidate" },
+  { value: "elder", label: "Full Elder" },
+] as const;
+
 type Role = typeof ROLE_OPTIONS[number]["value"];
+type ElderTier = typeof ELDER_OPTIONS[number]["value"];
 
 type Row = {
   id: string;
@@ -36,7 +43,7 @@ type Row = {
   full_name: string | null;
   avatar_url: string | null;
   created_at: string;
-  roles: Role[];
+  roles: string[];
 };
 
 function UsersPage() {
