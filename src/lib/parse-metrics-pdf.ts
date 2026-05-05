@@ -2,7 +2,6 @@
 // Extracts headline numbers, key ratios, period comparison, weekly rows, milestones, and goals.
 
 import * as pdfjs from "pdfjs-dist";
-// @ts-expect-error - vite worker import
 import PdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?worker&url";
 
 pdfjs.GlobalWorkerOptions.workerSrc = PdfWorker;
