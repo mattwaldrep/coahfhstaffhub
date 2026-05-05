@@ -1,13 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
-import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { AlertTriangle, ArrowUpRight, CalendarDays, CheckCircle2, Circle, AlertCircle, Upload, Loader2, FileText } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, CalendarDays, CheckCircle2, Circle, AlertCircle, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { parseMetricsPdf } from "@/lib/parse-metrics-pdf";
+import { fetchRecentWeeks, summarizeWeeks, type MetricsHeadline } from "@/integrations/metrics/client";
+import { useMetricsSession } from "@/integrations/metrics/use-session";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -49,19 +49,15 @@ function HomePage() {
   );
 }
 
-type Headline = {
-  avg_total_attendance?: number;
-  avg_weekly_giving?: number;
-  avg_community_groups?: number;
-};
-
 function Dashboard() {
   const { user } = useAuth();
+  const metricsSession = useMetricsSession();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [actions, setActions] = useState<ActionItem[]>([]);
-  const [headline, setHeadline] = useState<Headline | null>(null);
-  const [prevHeadline, setPrevHeadline] = useState<Headline | null>(null);
+  const [headline, setHeadline] = useState<MetricsHeadline | null>(null);
+  const [prevHeadline, setPrevHeadline] = useState<MetricsHeadline | null>(null);
   const [statsRange, setStatsRange] = useState<string | null>(null);
+  const [metricsErr, setMetricsErr] = useState<string | null>(null);
 
   useEffect(() => {
     const now = new Date().toISOString();
@@ -80,23 +76,34 @@ function Dashboard() {
       .order("due_date", { ascending: true, nullsFirst: false })
       .limit(50)
       .then(({ data }) => setActions((data ?? []) as ActionItem[]));
-    // Latest trends report (current + previous month) for KPI cards
-    supabase
-      .from("finance_reports")
-      .select("parsed_metrics,fiscal_year,month,created_at")
-      .eq("report_type", "trends")
-      .order("created_at", { ascending: false })
-      .limit(10)
-      .then(({ data }) => {
-        const rows = (data ?? []) as Array<{ parsed_metrics: any; fiscal_year: number; month: number }>;
-        const withMetrics = rows.filter((r) => r.parsed_metrics?.headline);
-        if (withMetrics[0]) {
-          setHeadline(withMetrics[0].parsed_metrics.headline as Headline);
-          setStatsRange((withMetrics[0].parsed_metrics.range as string) ?? null);
-        }
-        if (withMetrics[1]) setPrevHeadline(withMetrics[1].parsed_metrics.headline as Headline);
-      });
   }, []);
+
+  // Live metrics from Church Metrics — last 4 weeks vs preceding 4 weeks
+  useEffect(() => {
+    if (!metricsSession) {
+      setHeadline(null);
+      setPrevHeadline(null);
+      setStatsRange(null);
+      return;
+    }
+    setMetricsErr(null);
+    fetchRecentWeeks(8)
+      .then((rows) => {
+        const recent = rows.slice(0, 4);
+        const prior = rows.slice(4, 8);
+        setHeadline(recent.length ? summarizeWeeks(recent) : null);
+        setPrevHeadline(prior.length ? summarizeWeeks(prior) : null);
+        if (recent.length) {
+          const start = recent[recent.length - 1].week_start_date;
+          const end = recent[0].week_start_date;
+          setStatsRange(`${format(new Date(start + "T12:00"), "MMM d")} – ${format(new Date(end + "T12:00"), "MMM d")}`);
+        } else {
+          setStatsRange(null);
+        }
+      })
+      .catch((e) => setMetricsErr(e.message ?? "Failed to load metrics"));
+  }, [metricsSession]);
+
 
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const myActions = user ? actions.filter((a) => a.assignee_id === user.id).slice(0, 8) : [];
@@ -216,11 +223,7 @@ function Dashboard() {
             </p>
           </div>
 
-          <div className="bg-surface border border-border rounded-2xl p-6 shadow-card">
-            <h2 className="text-lg font-display font-semibold mb-3">Reports</h2>
-            <ReportRow label="Weekly Metrics" reportType="trends" />
-            <ReportRow label="Monthly Finance" reportType="finance" />
-          </div>
+          <MetricsStatusCard connected={!!metricsSession} error={metricsErr} weeks={headline?.weeks ?? 0} />
         </div>
       </div>
     </>
@@ -257,111 +260,26 @@ function ReadinessDot({ r }: { r: "green" | "yellow" | "red" }) {
   return <span className={`inline-block w-1.5 h-1.5 rounded-full ${color} ml-1`} />;
 }
 
-function ReportRow({ label, reportType }: { label: string; reportType: "trends" | "finance" }) {
-  const { user } = useAuth();
-  const [latest, setLatest] = useState<{ id: string; file_path: string; file_name: string; created_at: string } | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const load = useCallback(async () => {
-    const now = new Date();
-    const { data } = await supabase
-      .from("finance_reports")
-      .select("id,file_path,file_name,created_at")
-      .eq("report_type", reportType)
-      .eq("fiscal_year", now.getFullYear())
-      .eq("month", now.getMonth() + 1)
-      .order("created_at", { ascending: false })
-      .limit(1);
-    setLatest((data?.[0] as any) ?? null);
-  }, [reportType]);
-
-  useEffect(() => { load(); }, [load]);
-
-  async function handleFile(file: File) {
-    setUploading(true);
-    try {
-      const now = new Date();
-      const fy = now.getFullYear();
-      const month = now.getMonth() + 1;
-      const ext = file.name.split(".").pop();
-      const folder = reportType === "trends" ? "trends/" : "";
-      const path = `${folder}${fy}/${String(month).padStart(2, "0")}/${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("finance-reports").upload(path, file);
-      if (upErr) throw upErr;
-
-      let parsed: unknown = null;
-      if (reportType === "trends" && (/pdf/i.test(file.type) || /\.pdf$/i.test(file.name))) {
-        try { parsed = await parseMetricsPdf(file); } catch (e) { console.warn(e); }
-      }
-
-      const { error } = await supabase.from("finance_reports").insert({
-        fiscal_year: fy,
-        month,
-        label: `${label} — ${format(now, "MMM d, yyyy")}`,
-        file_path: path,
-        file_name: file.name,
-        mime_type: file.type,
-        uploaded_by: user?.id,
-        report_type: reportType,
-        parsed_metrics: parsed as never,
-      });
-      if (error) throw error;
-      toast.success(`${label} uploaded`);
-      load();
-    } catch (err: any) {
-      toast.error(err.message ?? "Upload failed");
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  async function open() {
-    if (!latest) return;
-    const { data, error } = await supabase.storage
-      .from("finance-reports")
-      .createSignedUrl(latest.file_path, 60);
-    if (error) return toast.error(error.message);
-    window.open(data.signedUrl, "_blank");
-  }
-
+function MetricsStatusCard({ connected, error, weeks }: { connected: boolean; error: string | null; weeks: number }) {
   return (
-    <div className="flex items-center justify-between py-2 text-sm">
-      <span>{label}</span>
-      <input
-        ref={inputRef}
-        type="file"
-        className="hidden"
-        accept=".pdf,.csv,.xlsx,.xls,application/pdf"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) handleFile(f);
-          e.target.value = "";
-        }}
-      />
-      {latest ? (
-        <button
-          type="button"
-          onClick={open}
-          className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-          title={latest.file_name}
-        >
-          <FileText className="w-3 h-3" /> {format(new Date(latest.created_at), "MMM d")}
-          <ArrowUpRight className="w-3 h-3" />
-        </button>
+    <div className="bg-surface border border-border rounded-2xl p-6 shadow-card">
+      <h2 className="text-lg font-display font-semibold mb-3">Church Metrics</h2>
+      {connected ? (
+        error ? (
+          <p className="text-sm text-destructive">{error}</p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Live · {weeks} week{weeks === 1 ? "" : "s"} loaded.{" "}
+            <a href="https://churchmetrics.lovable.app/" target="_blank" rel="noreferrer" className="underline inline-flex items-center gap-0.5">
+              Open <ArrowUpRight className="w-3 h-3" />
+            </a>
+          </p>
+        )
       ) : (
-        <button
-          type="button"
-          disabled={uploading}
-          onClick={() => inputRef.current?.click()}
-          className="text-xs text-muted-foreground hover:text-primary inline-flex items-center gap-1 disabled:opacity-60"
-        >
-          {uploading ? (
-            <><Loader2 className="w-3 h-3 animate-spin" /> Uploading…</>
-          ) : (
-            <>Not uploaded <Upload className="w-3 h-3" /></>
-          )}
-        </button>
+        <p className="text-sm text-muted-foreground">
+          Not connected.{" "}
+          <Link to="/settings" className="underline">Connect in Settings</Link> to see live attendance and giving here.
+        </p>
       )}
     </div>
   );
