@@ -1,0 +1,1 @@
+ALTER TABLE public.finance_reports ADD COLUMN IF NOT EXISTS parsed_metrics jsonb;
