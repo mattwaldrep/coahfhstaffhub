@@ -155,9 +155,10 @@ function Body() {
 
       <div className="bg-surface border border-border rounded-2xl overflow-hidden">
         <div className="grid grid-cols-12 px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
-          <div className="col-span-5">User</div>
-          <div className="col-span-3">Role</div>
-          <div className="col-span-3">Joined</div>
+          <div className="col-span-4">User</div>
+          <div className="col-span-2">Role</div>
+          <div className="col-span-3">Elder access</div>
+          <div className="col-span-2">Joined</div>
           <div className="col-span-1 text-right">·</div>
         </div>
         {loading && <div className="p-6 text-sm text-muted-foreground">Loading…</div>}
@@ -165,11 +166,16 @@ function Body() {
           <div className="p-6 text-sm text-muted-foreground">No users yet.</div>
         )}
         {rows.map((r) => {
-          const current = (r.roles[0] ?? "extended") as Role;
+          const staffRole = (r.roles.find((x) => ["core","meeting","extended"].includes(x)) ?? "extended") as Role;
+          const elderTier: ElderTier = r.roles.includes("elder")
+            ? "elder"
+            : r.roles.includes("elder_candidate")
+            ? "elder_candidate"
+            : "none";
           const isSelf = r.id === user?.id;
           return (
             <div key={r.id} className="grid grid-cols-12 items-center px-4 py-3 border-b border-border last:border-0 hover:bg-background/40">
-              <div className="col-span-5 flex items-center gap-3 min-w-0">
+              <div className="col-span-4 flex items-center gap-3 min-w-0">
                 <div className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xs font-medium shrink-0">
                   {(r.full_name ?? r.email ?? "?").slice(0, 1).toUpperCase()}
                 </div>
@@ -180,9 +186,9 @@ function Body() {
                   <div className="text-[11px] text-muted-foreground truncate">{r.email}</div>
                 </div>
               </div>
-              <div className="col-span-3">
-                <Select value={current} onValueChange={(v) => changeRole(r.id, v as Role)}>
-                  <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
+              <div className="col-span-2">
+                <Select value={staffRole} onValueChange={(v) => changeRole(r.id, v as Role)}>
+                  <SelectTrigger className="h-8 w-28"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {ROLE_OPTIONS.map((o) => (
                       <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
@@ -190,7 +196,17 @@ function Body() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="col-span-3 text-xs text-muted-foreground">
+              <div className="col-span-3">
+                <Select value={elderTier} onValueChange={(v) => changeElderTier(r.id, v as ElderTier)}>
+                  <SelectTrigger className="h-8 w-36"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {ELDER_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="col-span-2 text-xs text-muted-foreground">
                 {format(new Date(r.created_at), "MMM d, yyyy")}
               </div>
               <div className="col-span-1 flex justify-end">
