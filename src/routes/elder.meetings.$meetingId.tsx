@@ -22,7 +22,7 @@ export const Route = createFileRoute("/elder/meetings/$meetingId")({
 const STANDARD_SECTIONS = [
   { key: "opening", label: "Opening / Prayer" },
   { key: "follow_up", label: "Last Meeting Follow-up" },
-  { key: "pastoral", label: "Pastoral Care" },
+  { key: "pastoral", label: "Pastoral Care", isPastoral: true },
   { key: "new_business", label: "New Business" },
   { key: "executive", label: "Executive Session", execHint: true },
   { key: "closing", label: "Closing / Prayer" },
