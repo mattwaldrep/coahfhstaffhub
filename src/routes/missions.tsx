@@ -161,6 +161,8 @@ function Body() {
       team_number: form.team_number || null,
       status: form.status,
       itinerary_link: form.itinerary_link || null,
+      itinerary_file_path: form.itinerary_file_path,
+      itinerary_file_name: form.itinerary_file_name,
       notes: form.notes || null,
       steps: form.steps,
     };
