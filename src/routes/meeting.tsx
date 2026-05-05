@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import {
   StandingSection,
   DevotionalSection,
-  LeadLikeJesusSection,
   SundayReviewSection,
   LastWeekEventsSection,
   UpcomingEventsSection,
