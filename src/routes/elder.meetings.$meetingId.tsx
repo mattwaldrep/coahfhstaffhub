@@ -42,6 +42,11 @@ function MeetingDetail() {
   const { isFullElder } = useAuth();
   const [data, setData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mentionUsers, setMentionUsers] = useState<MentionUser[]>([]);
+
+  useEffect(() => {
+    listMentionableUsers().then((u: any) => setMentionUsers(u as MentionUser[])).catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     try {
