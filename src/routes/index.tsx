@@ -63,12 +63,16 @@ function Dashboard() {
       .then(({ data }) => setEvents(data ?? []));
     supabase
       .from("action_items")
-      .select("id,title,due_date,completed")
+      .select("id,title,due_date,completed,assignee_id")
       .eq("completed", false)
       .order("due_date", { ascending: true, nullsFirst: false })
-      .limit(8)
-      .then(({ data }) => setActions(data ?? []));
+      .limit(50)
+      .then(({ data }) => setActions((data ?? []) as ActionItem[]));
   }, []);
+
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const myActions = user ? actions.filter((a) => a.assignee_id === user.id).slice(0, 8) : [];
+  const overdueAll = actions.filter((a) => a.due_date && a.due_date < todayStr);
 
   const today = format(new Date(), "EEEE, MMM d");
   const greeting = (user?.email ?? "").split("@")[0];
