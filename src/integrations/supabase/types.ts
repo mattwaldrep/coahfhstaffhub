@@ -21,6 +21,9 @@ export type Database = {
           created_at: string
           created_by: string | null
           due_date: string | null
+          google_task_id: string | null
+          google_task_pushed_at: string | null
+          google_task_pushed_by: string | null
           id: string
           meeting_id: string | null
           notes: string | null
@@ -33,6 +36,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           due_date?: string | null
+          google_task_id?: string | null
+          google_task_pushed_at?: string | null
+          google_task_pushed_by?: string | null
           id?: string
           meeting_id?: string | null
           notes?: string | null
@@ -45,6 +51,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           due_date?: string | null
+          google_task_id?: string | null
+          google_task_pushed_at?: string | null
+          google_task_pushed_by?: string | null
           id?: string
           meeting_id?: string | null
           notes?: string | null
@@ -415,6 +424,7 @@ export type Database = {
           id: string
           meeting_date: string
           notes: string | null
+          recap_sent_at: string | null
           status: string
           title: string
           transcript: string | null
@@ -428,6 +438,7 @@ export type Database = {
           id?: string
           meeting_date: string
           notes?: string | null
+          recap_sent_at?: string | null
           status?: string
           title?: string
           transcript?: string | null
@@ -441,6 +452,7 @@ export type Database = {
           id?: string
           meeting_date?: string
           notes?: string | null
+          recap_sent_at?: string | null
           status?: string
           title?: string
           transcript?: string | null
@@ -463,6 +475,8 @@ export type Database = {
           created_by: string | null
           end_date: string | null
           id: string
+          itinerary_file_name: string | null
+          itinerary_file_path: string | null
           itinerary_link: string | null
           leader_email: string | null
           leader_name: string | null
@@ -482,6 +496,8 @@ export type Database = {
           created_by?: string | null
           end_date?: string | null
           id?: string
+          itinerary_file_name?: string | null
+          itinerary_file_path?: string | null
           itinerary_link?: string | null
           leader_email?: string | null
           leader_name?: string | null
@@ -501,6 +517,8 @@ export type Database = {
           created_by?: string | null
           end_date?: string | null
           id?: string
+          itinerary_file_name?: string | null
+          itinerary_file_path?: string | null
           itinerary_link?: string | null
           leader_email?: string | null
           leader_name?: string | null
@@ -594,6 +612,42 @@ export type Database = {
           wins?: string | null
           worship_notes?: string | null
           worship_rating?: number | null
+        }
+        Relationships: []
+      }
+      user_integrations: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          provider: string
+          refresh_token: string
+          scope: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          provider: string
+          refresh_token: string
+          scope?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          provider?: string
+          refresh_token?: string
+          scope?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
