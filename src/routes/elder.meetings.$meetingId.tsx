@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  getElderMeeting, upsertAgendaItem, deleteAgendaItem, setAgendaExecutive,
+  getElderMeeting, upsertAgendaItem, deleteAgendaItem, setAgendaExecutive, setAgendaCarryToNext,
   saveSectionNotes, createElderAction, updateElderAction, deleteElderAction,
   upsertJointItem, deleteJointItem, updateElderMeeting,
   listMentionableUsers, createActionsFromMentions,
@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RichTextEditor, RichTextView, extractMentions } from "@/components/ui/rich-text-editor";
 import type { MentionUser } from "@/components/ui/mention-list";
-import { Plus, Trash2, Lock, Unlock, ChevronLeft, Check, Square } from "lucide-react";
+import { Plus, Trash2, Lock, Unlock, ChevronLeft, Check, Square, Bookmark } from "lucide-react";
 import { toast } from "sonner";
 import { PastoralCareList } from "@/components/pastoral/PastoralCareList";
 
@@ -247,17 +247,44 @@ function SectionCard({ section, meetingId, items, note, isFullElder, reload, men
 }
 
 function AgendaItemRow({ item, isFullElder, reload }: any) {
+  const isNewBusiness = item.section_key === "new_business";
+  const willCarry = isNewBusiness || !!item.carry_to_next;
   return (
     <div className="flex items-start gap-2 group">
       <div className="flex-1 min-w-0">
         <div className="text-sm">{item.title}</div>
         {item.body && <div className="text-xs text-muted-foreground mt-0.5">{item.body}</div>}
-        {item.source && (
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
-            {item.source === "carryover" ? "Carried over" : item.source}
-          </div>
-        )}
+        <div className="flex gap-2 mt-0.5">
+          {item.source && (
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              {item.source === "carryover" ? "Carried over" : item.source}
+            </div>
+          )}
+          {willCarry && (
+            <div className="text-[10px] uppercase tracking-wider text-primary">
+              {isNewBusiness ? "Auto-carries to next" : "Will carry to next"}
+            </div>
+          )}
+        </div>
       </div>
+      <button
+        title={
+          isNewBusiness
+            ? "New Business always carries to next meeting"
+            : item.carry_to_next
+              ? "Don't carry to next meeting"
+              : "Carry to next meeting follow-up"
+        }
+        disabled={isNewBusiness}
+        onClick={async () => {
+          if (isNewBusiness) return;
+          await setAgendaCarryToNext({ data: { id: item.id, carry: !item.carry_to_next } });
+          reload();
+        }}
+        className={`opacity-0 group-hover:opacity-100 ${willCarry ? "!opacity-100 text-primary" : "text-muted-foreground hover:text-foreground"} ${isNewBusiness ? "cursor-default" : ""}`}
+      >
+        <Bookmark className={`w-3.5 h-3.5 ${willCarry ? "fill-current" : ""}`} />
+      </button>
       {isFullElder && (
         <button
           title={item.executive_session ? "Make standard" : "Mark Executive"}

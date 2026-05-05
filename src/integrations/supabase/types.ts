@@ -343,6 +343,7 @@ export type Database = {
       elder_agenda_items: {
         Row: {
           body: string | null
+          carry_to_next: boolean
           created_at: string
           created_by: string | null
           executive_session: boolean
@@ -358,6 +359,7 @@ export type Database = {
         }
         Insert: {
           body?: string | null
+          carry_to_next?: boolean
           created_at?: string
           created_by?: string | null
           executive_session?: boolean
@@ -373,6 +375,7 @@ export type Database = {
         }
         Update: {
           body?: string | null
+          carry_to_next?: boolean
           created_at?: string
           created_by?: string | null
           executive_session?: boolean

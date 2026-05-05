@@ -1,0 +1,1 @@
+ALTER TABLE public.elder_agenda_items ADD COLUMN IF NOT EXISTS carry_to_next boolean NOT NULL DEFAULT false;
