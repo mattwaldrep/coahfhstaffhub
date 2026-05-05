@@ -283,7 +283,6 @@ function MeetingPage() {
         ) : (
           <div className="space-y-3">
             <DevotionalSection meetingId={meeting.id} />
-            <LeadLikeJesusSection meetingId={meeting.id} />
 
             <SectionDivider label="Recurring Agenda Items" />
 
