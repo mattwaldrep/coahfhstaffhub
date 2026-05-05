@@ -122,45 +122,63 @@ export type Database = {
       }
       calendar_events: {
         Row: {
+          all_day: boolean
+          category: string | null
           created_at: string
           created_by: string | null
           description: string | null
           end_at: string | null
+          excluded_dates: string[]
           id: string
           leader_id: string | null
           leader_name: string | null
           location: string | null
+          pco_registration: boolean
           readiness: Database["public"]["Enums"]["readiness"] | null
+          recurrence_end_date: string | null
+          rrule: string | null
           start_at: string
           sub_calendar: Database["public"]["Enums"]["sub_calendar"]
           title: string
           updated_at: string
         }
         Insert: {
+          all_day?: boolean
+          category?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           end_at?: string | null
+          excluded_dates?: string[]
           id?: string
           leader_id?: string | null
           leader_name?: string | null
           location?: string | null
+          pco_registration?: boolean
           readiness?: Database["public"]["Enums"]["readiness"] | null
+          recurrence_end_date?: string | null
+          rrule?: string | null
           start_at: string
           sub_calendar?: Database["public"]["Enums"]["sub_calendar"]
           title: string
           updated_at?: string
         }
         Update: {
+          all_day?: boolean
+          category?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           end_at?: string | null
+          excluded_dates?: string[]
           id?: string
           leader_id?: string | null
           leader_name?: string | null
           location?: string | null
+          pco_registration?: boolean
           readiness?: Database["public"]["Enums"]["readiness"] | null
+          recurrence_end_date?: string | null
+          rrule?: string | null
           start_at?: string
           sub_calendar?: Database["public"]["Enums"]["sub_calendar"]
           title?: string
@@ -179,6 +197,44 @@ export type Database = {
             columns: ["leader_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_checklist_items: {
+        Row: {
+          created_at: string
+          done: boolean
+          event_id: string
+          id: string
+          label: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          done?: boolean
+          event_id: string
+          id?: string
+          label: string
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          done?: boolean
+          event_id?: string
+          id?: string
+          label?: string
+          position?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_checklist_items_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
             referencedColumns: ["id"]
           },
         ]
