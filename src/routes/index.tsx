@@ -87,16 +87,14 @@ function Dashboard() {
       return;
     }
     setMetricsErr(null);
-    fetchRecentWeeks(8)
+    fetchRecentWeeks(2)
       .then((rows) => {
-        const recent = rows.slice(0, 4);
-        const prior = rows.slice(4, 8);
-        setHeadline(recent.length ? summarizeWeeks(recent) : null);
-        setPrevHeadline(prior.length ? summarizeWeeks(prior) : null);
-        if (recent.length) {
-          const start = recent[recent.length - 1].week_start_date;
-          const end = recent[0].week_start_date;
-          setStatsRange(`${format(new Date(start + "T12:00"), "MMM d")} – ${format(new Date(end + "T12:00"), "MMM d")}`);
+        const latest = rows.slice(0, 1);
+        const prev = rows.slice(1, 2);
+        setHeadline(latest.length ? summarizeWeeks(latest) : null);
+        setPrevHeadline(prev.length ? summarizeWeeks(prev) : null);
+        if (latest.length) {
+          setStatsRange(`Week of ${format(new Date(latest[0].week_start_date + "T12:00"), "MMM d")}`);
         } else {
           setStatsRange(null);
         }
