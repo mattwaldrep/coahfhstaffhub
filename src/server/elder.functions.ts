@@ -288,6 +288,19 @@ export const setAgendaExecutive = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const setAgendaCarryToNext = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid(), carry: z.boolean() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertElderAccess(context.supabase, context.userId);
+    const { error } = await supabaseAdmin
+      .from("elder_agenda_items")
+      .update({ carry_to_next: data.carry })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // ---------- Section notes ----------
 
 export const saveSectionNotes = createServerFn({ method: "POST" })
