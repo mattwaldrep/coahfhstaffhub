@@ -82,8 +82,12 @@ function Body() {
   async function invite(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await inviteUser({ data: { email, role, fullName: fullName || undefined } });
-      toast.success(`Invite sent to ${email}`);
+      const result = await inviteUser({ data: { email, role, fullName: fullName || undefined } });
+      if ((result as any)?.alreadyExisted) {
+        toast.success(`${email} already had an account — role updated to ${role}.`);
+      } else {
+        toast.success(`Invite sent to ${email}`);
+      }
       setOpen(false);
       setEmail(""); setFullName(""); setRole("extended");
       load();

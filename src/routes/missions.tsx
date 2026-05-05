@@ -387,7 +387,8 @@ function TripCard({
             value={trip.status}
             onClick={(e) => e.stopPropagation()}
             onChange={(e) => onMove(e.target.value as Status)}
-            className="ml-auto text-[10px] bg-transparent border border-border rounded px-1 py-0.5 opacity-0 group-hover:opacity-100 transition"
+            aria-label="Move trip to status"
+            className="ml-auto text-[10px] bg-transparent border border-border rounded px-1 py-0.5 text-muted-foreground hover:text-foreground"
           >
             {COLUMNS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
           </select>

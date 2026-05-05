@@ -75,11 +75,34 @@ export const inviteUser = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertCore(context.supabase, context.userId);
+    // Check if a user with this email already exists
+    const { data: existingProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .ilike("email", data.email)
+      .maybeSingle();
+
+    if (existingProfile?.id) {
+      // Already a user — just (re)assign the role
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", existingProfile.id);
+      const { error: roleErr } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: existingProfile.id, role: data.role });
+      if (roleErr) throw new Error(roleErr.message);
+      return { ok: true, alreadyExisted: true };
+    }
+
     const { data: invited, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       data.email,
       { data: { full_name: data.fullName ?? data.email } },
     );
-    if (error) throw new Error(error.message);
+    if (error) {
+      // Friendlier error if the user already exists in auth but not in profiles
+      if (/already.*registered|already.*exists/i.test(error.message)) {
+        throw new Error("A user with that email already exists. Adjust their role from the list instead.");
+      }
+      throw new Error(error.message);
+    }
     const newId = invited.user?.id;
     if (newId) {
       await supabaseAdmin.from("user_roles").delete().eq("user_id", newId);

@@ -4,8 +4,10 @@ import { useAuth } from "@/lib/auth-context";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
-import { Sparkles, X, Send, Loader2 } from "lucide-react";
+import { Sparkles, X, Send, Loader2, RotateCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+
+const CHAT_STORAGE_KEY = "coah-ai-chat-v1";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -14,9 +16,24 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [aiOpen, setAiOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const [messages, setMessages] = useState<Msg[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = sessionStorage.getItem(CHAT_STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as Msg[]) : [];
+    } catch {
+      return [];
+    }
+  });
   const [sending, setSending] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+    } catch { /* ignore quota */ }
+  }, [messages]);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
@@ -34,14 +51,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const initials = (user.email ?? "??").slice(0, 2).toUpperCase();
 
-  const send = async () => {
-    const text = input.trim();
-    if (!text || sending) return;
-    setInput("");
-    const next: Msg[] = [...messages, { role: "user", content: text }];
-    setMessages(next);
+  const runSend = async (history: Msg[]) => {
     setSending(true);
-
+    setLastError(null);
     try {
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
       const resp = await fetch(url, {
@@ -50,14 +62,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: next }),
+        body: JSON.stringify({ messages: history }),
       });
 
       if (!resp.ok || !resp.body) {
-        if (resp.status === 429) toast.error("Rate limit hit — try again in a moment.");
-        else if (resp.status === 402) toast.error("AI credits exhausted. Add funds in workspace settings.");
-        else toast.error("AI request failed.");
-        setSending(false);
+        let msg = "AI request failed.";
+        if (resp.status === 429) msg = "Rate limit hit — try again in a moment.";
+        else if (resp.status === 402) msg = "AI credits exhausted. Add funds in workspace settings.";
+        toast.error(msg);
+        setLastError(msg);
         return;
       }
 
@@ -109,10 +122,38 @@ export function AppShell({ children }: { children: ReactNode }) {
       }
     } catch (e) {
       console.error(e);
-      toast.error("AI request failed.");
+      const msg = "AI request failed.";
+      toast.error(msg);
+      setLastError(msg);
     } finally {
       setSending(false);
     }
+  };
+
+  const send = async () => {
+    const text = input.trim();
+    if (!text || sending) return;
+    setInput("");
+    const next: Msg[] = [...messages, { role: "user", content: text }];
+    setMessages(next);
+    await runSend(next);
+  };
+
+  const retry = async () => {
+    if (sending || messages.length === 0) return;
+    // Drop trailing assistant message if any (failed or partial), then resend the conversation
+    const trimmed = messages[messages.length - 1]?.role === "assistant"
+      ? messages.slice(0, -1)
+      : messages;
+    setMessages(trimmed);
+    await runSend(trimmed);
+  };
+
+  const clearChat = () => {
+    if (sending) return;
+    setMessages([]);
+    setLastError(null);
+    try { sessionStorage.removeItem(CHAT_STORAGE_KEY); } catch { /* ignore */ }
   };
 
   return (
@@ -138,14 +179,16 @@ export function AppShell({ children }: { children: ReactNode }) {
           <main className="flex-1 px-6 py-8 overflow-x-hidden">{children}</main>
         </SidebarInset>
 
-        {/* AI Assistant FAB */}
-        <button
-          onClick={() => setAiOpen(true)}
-          aria-label="Open AI assistant"
-          className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 transition-transform z-40"
-        >
-          <Sparkles className="w-6 h-6" />
-        </button>
+        {/* AI Assistant FAB — smaller on mobile to avoid overlapping content */}
+        {!aiOpen && (
+          <button
+            onClick={() => setAiOpen(true)}
+            aria-label="Open AI assistant"
+            className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 transition-transform z-40"
+          >
+            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
+        )}
 
         {aiOpen && (
           <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setAiOpen(false)}>
@@ -159,9 +202,23 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <Sparkles className="w-5 h-5 text-primary" />
                   <h2 className="font-display font-semibold">Ask the Hub</h2>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setAiOpen(false)}>
-                  <X className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  {messages.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={clearChat}
+                      disabled={sending}
+                      title="Clear conversation"
+                      aria-label="Clear conversation"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon" onClick={() => setAiOpen(false)} aria-label="Close">
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
 
               <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -185,6 +242,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {sending && messages[messages.length - 1]?.role === "user" && (
                   <div className="bg-muted rounded-2xl px-3 py-2 text-sm w-fit">
                     <Loader2 className="w-4 h-4 animate-spin" />
+                  </div>
+                )}
+                {lastError && !sending && (
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-destructive">{lastError}</span>
+                    <Button variant="outline" size="sm" className="h-7" onClick={retry}>
+                      <RotateCw className="w-3 h-3 mr-1.5" /> Retry
+                    </Button>
                   </div>
                 )}
               </div>
