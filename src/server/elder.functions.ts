@@ -543,3 +543,79 @@ async function ensureAccessTokenInline(userId: string): Promise<string> {
 }
 
 void pushActionItemToGoogleTasks;
+
+// ---------- Mentions ----------
+
+/** Users available for @-mention: anyone with elder or elder_candidate role. */
+export const listMentionableUsers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertElderAccess(context.supabase, context.userId);
+    const { data: roles } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id, role")
+      .in("role", ["elder", "elder_candidate"]);
+    const ids = Array.from(new Set((roles ?? []).map((r: any) => r.user_id)));
+    if (ids.length === 0) return [];
+    const { data: profs } = await supabaseAdmin
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", ids);
+    return (profs ?? []).map((p: any) => ({
+      id: p.id,
+      name: (p.full_name ?? p.email ?? "Unknown").trim(),
+      email: p.email ?? null,
+    }));
+  });
+
+/** Create action items for a list of mentions, deduping against existing ones for the same meeting/assignee/title. */
+export const createActionsFromMentions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        meeting_id: z.string().uuid(),
+        executive_session: z.boolean().optional(),
+        mentions: z
+          .array(
+            z.object({
+              assignee_id: z.string().uuid(),
+              title: z.string().min(1).max(500),
+            }),
+          )
+          .max(50),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const tier = await assertElderAccess(context.supabase, context.userId);
+    if (data.executive_session && tier !== "elder") throw new Error("Forbidden");
+
+    if (data.mentions.length === 0) return { created: 0 };
+
+    // Pull existing action items for this meeting to dedup
+    const { data: existing } = await supabaseAdmin
+      .from("elder_action_items")
+      .select("title, assignee_id")
+      .eq("meeting_id", data.meeting_id);
+    const have = new Set(
+      (existing ?? []).map((r: any) => `${r.assignee_id ?? ""}::${(r.title ?? "").trim().toLowerCase()}`),
+    );
+
+    const rows = data.mentions
+      .filter((m) => !have.has(`${m.assignee_id}::${m.title.trim().toLowerCase()}`))
+      .map((m) => ({
+        meeting_id: data.meeting_id,
+        title: m.title.trim(),
+        assignee_id: m.assignee_id,
+        executive_session: !!data.executive_session,
+        created_by: context.userId,
+      }));
+
+    if (rows.length === 0) return { created: 0 };
+
+    const { error } = await supabaseAdmin.from("elder_action_items").insert(rows);
+    if (error) throw new Error(error.message);
+    return { created: rows.length };
+  });
+
