@@ -15,7 +15,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, ExternalLink, Mail, Phone } from "lucide-react";
+import { Plus, Trash2, ExternalLink, Mail, Phone, Upload, FileText, X as XIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/missions")({
@@ -60,6 +60,8 @@ type Trip = {
   team_number: string | null;
   status: Status;
   itinerary_link: string | null;
+  itinerary_file_path: string | null;
+  itinerary_file_name: string | null;
   notes: string | null;
   steps: Record<string, boolean>;
   position: number;
@@ -78,6 +80,8 @@ const emptyForm = (): Form => ({
   team_number: "",
   status: "not_started",
   itinerary_link: "",
+  itinerary_file_path: null,
+  itinerary_file_name: null,
   notes: "",
   steps: Object.fromEntries(STEPS.map((s) => [s.key, false])),
 });
@@ -96,6 +100,8 @@ function Body() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Form>(emptyForm());
+  const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     load();
@@ -134,6 +140,8 @@ function Body() {
       team_number: t.team_number ?? "",
       status: t.status,
       itinerary_link: t.itinerary_link ?? "",
+      itinerary_file_path: t.itinerary_file_path ?? null,
+      itinerary_file_name: t.itinerary_file_name ?? null,
       notes: t.notes ?? "",
       steps: { ...Object.fromEntries(STEPS.map((s) => [s.key, false])), ...(t.steps ?? {}) },
     });
@@ -153,6 +161,8 @@ function Body() {
       team_number: form.team_number || null,
       status: form.status,
       itinerary_link: form.itinerary_link || null,
+      itinerary_file_path: form.itinerary_file_path,
+      itinerary_file_name: form.itinerary_file_name,
       notes: form.notes || null,
       steps: form.steps,
     };
@@ -183,13 +193,43 @@ function Body() {
 
 
 
+  async function uploadItinerary(file: File) {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${form.id ?? "new"}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("mission-trips").upload(path, file, { upsert: true });
+      if (error) { toast.error(error.message); return; }
+      setForm((f) => ({ ...f, itinerary_file_path: path, itinerary_file_name: file.name }));
+      toast.success("Itinerary uploaded");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function openItinerary(path: string) {
+    const { data, error } = await supabase.storage.from("mission-trips").createSignedUrl(path, 60);
+    if (error) { toast.error(error.message); return; }
+    window.open(data.signedUrl, "_blank");
+  }
+
+  function clearItinerary() {
+    setForm((f) => ({ ...f, itinerary_file_path: null, itinerary_file_name: null }));
+  }
+
+  const filteredTrips = useMemo(
+    () => statusFilter === "all" ? trips : trips.filter((t) => t.status === statusFilter),
+    [trips, statusFilter],
+  );
+
   const byStatus = useMemo(() => {
     const m: Record<Status, Trip[]> = {
       not_started: [], tbc: [], pre_trip: [], in_field: [], complete: [], cancelled: [],
     };
-    for (const t of trips) m[t.status]?.push(t);
+    for (const t of filteredTrips) m[t.status]?.push(t);
     return m;
-  }, [trips]);
+  }, [filteredTrips]);
 
   return (
     <>
@@ -205,6 +245,24 @@ function Body() {
             <Plus className="w-4 h-4 mr-1.5" /> New trip
           </Button>
         )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1.5 mb-4">
+        <button
+          onClick={() => setStatusFilter("all")}
+          className={`text-xs px-3 py-1 rounded-full border transition ${statusFilter === "all" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+        >All ({trips.length})</button>
+        {COLUMNS.map((c) => {
+          const count = trips.filter((t) => t.status === c.value).length;
+          const on = statusFilter === c.value;
+          return (
+            <button
+              key={c.value}
+              onClick={() => setStatusFilter(c.value)}
+              className={`text-xs px-3 py-1 rounded-full border transition ${on ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+            >{c.label} ({count})</button>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -285,6 +343,31 @@ function Body() {
               <div className="space-y-2 col-span-2">
                 <Label>Itinerary link</Label>
                 <Input value={form.itinerary_link ?? ""} onChange={(e) => setForm({ ...form, itinerary_link: e.target.value })} placeholder="https://…" />
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label>Itinerary file</Label>
+                {form.itinerary_file_path ? (
+                  <div className="flex items-center gap-2 text-sm bg-background/60 border border-border rounded-lg px-3 py-2">
+                    <FileText className="w-4 h-4 text-muted-foreground" />
+                    <button type="button" onClick={() => openItinerary(form.itinerary_file_path!)} className="flex-1 text-left truncate hover:underline">
+                      {form.itinerary_file_name ?? "View file"}
+                    </button>
+                    <button type="button" onClick={clearItinerary} className="text-muted-foreground hover:text-foreground">
+                      <XIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex items-center justify-center gap-2 text-sm text-muted-foreground border border-dashed border-border rounded-lg px-3 py-3 cursor-pointer hover:bg-background/40">
+                    <Upload className="w-4 h-4" />
+                    {uploading ? "Uploading…" : "Upload PDF or document"}
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadItinerary(f); }}
+                    />
+                  </label>
+                )}
               </div>
               <div className="space-y-2 col-span-2">
                 <Label>Notes</Label>
