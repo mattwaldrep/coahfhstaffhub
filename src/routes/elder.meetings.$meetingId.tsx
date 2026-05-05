@@ -7,11 +7,13 @@ import {
   getElderMeeting, upsertAgendaItem, deleteAgendaItem, setAgendaExecutive,
   saveSectionNotes, createElderAction, updateElderAction, deleteElderAction,
   upsertJointItem, deleteJointItem, updateElderMeeting,
+  listMentionableUsers, createActionsFromMentions,
 } from "@/server/elder.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { RichTextEditor, RichTextView } from "@/components/ui/rich-text-editor";
+import { RichTextEditor, RichTextView, extractMentions } from "@/components/ui/rich-text-editor";
+import type { MentionUser } from "@/components/ui/mention-list";
 import { Plus, Trash2, Lock, Unlock, ChevronLeft, Check, Square } from "lucide-react";
 import { toast } from "sonner";
 import { PastoralCareList } from "@/components/pastoral/PastoralCareList";
@@ -40,6 +42,11 @@ function MeetingDetail() {
   const { isFullElder } = useAuth();
   const [data, setData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mentionUsers, setMentionUsers] = useState<MentionUser[]>([]);
+
+  useEffect(() => {
+    listMentionableUsers().then((u: any) => setMentionUsers(u as MentionUser[])).catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -104,9 +111,9 @@ function MeetingDetail() {
       </div>
 
       {isJoint ? (
-        <JointSections meetingId={meetingId} items={data.jointItems} reload={load} />
+        <JointSections meetingId={meetingId} items={data.jointItems} reload={load} mentionUsers={mentionUsers} />
       ) : (
-        <StandardSections meetingId={meetingId} agenda={data.agenda} sectionNotes={data.sectionNotes} isFullElder={isFullElder} reload={load} />
+        <StandardSections meetingId={meetingId} agenda={data.agenda} sectionNotes={data.sectionNotes} isFullElder={isFullElder} reload={load} mentionUsers={mentionUsers} />
       )}
 
       <ActionItemsBlock meetingId={meetingId} items={data.actionItems} isFullElder={isFullElder} reload={load} />
@@ -114,7 +121,7 @@ function MeetingDetail() {
   );
 }
 
-function StandardSections({ meetingId, agenda, sectionNotes, isFullElder, reload }: any) {
+function StandardSections({ meetingId, agenda, sectionNotes, isFullElder, reload, mentionUsers }: any) {
   return (
     <div className="space-y-4">
       {STANDARD_SECTIONS.map((s) => {
@@ -145,6 +152,7 @@ function StandardSections({ meetingId, agenda, sectionNotes, isFullElder, reload
             note={note}
             isFullElder={isFullElder}
             reload={reload}
+            mentionUsers={mentionUsers}
           />
         );
       })}
@@ -152,7 +160,7 @@ function StandardSections({ meetingId, agenda, sectionNotes, isFullElder, reload
   );
 }
 
-function SectionCard({ section, meetingId, items, note, isFullElder, reload }: any) {
+function SectionCard({ section, meetingId, items, note, isFullElder, reload, mentionUsers }: any) {
   const [adding, setAdding] = useState("");
   const [notes, setNotes] = useState(note?.notes ?? "");
   const isExec = section.key === "executive";
@@ -203,14 +211,33 @@ function SectionCard({ section, meetingId, items, note, isFullElder, reload }: a
         <RichTextEditor
           value={notes}
           onChange={setNotes}
-          placeholder="Section notes…"
+          placeholder="Section notes… (type @ to assign a task)"
           minHeight={96}
+          mentionUsers={mentionUsers}
           onBlur={async (html) => {
-            if ((note?.notes ?? "") === html) return;
-            try {
-              await saveSectionNotes({ data: { meeting_id: meetingId, section_key: section.key, notes: html, executive_session: isExec } });
-            } catch (e: any) {
-              toast.error(e.message ?? "Failed");
+            if ((note?.notes ?? "") === html) {
+              // Even if unchanged, still try to materialize any new mentions (idempotent via dedup)
+            } else {
+              try {
+                await saveSectionNotes({ data: { meeting_id: meetingId, section_key: section.key, notes: html, executive_session: isExec } });
+              } catch (e: any) {
+                toast.error(e.message ?? "Failed");
+                return;
+              }
+            }
+            const mentions = extractMentions(html);
+            if (mentions.length > 0) {
+              try {
+                const res: any = await createActionsFromMentions({
+                  data: { meeting_id: meetingId, executive_session: isExec, mentions },
+                });
+                if (res?.created > 0) {
+                  toast.success(`Created ${res.created} action item${res.created === 1 ? "" : "s"} from mentions`);
+                  reload();
+                }
+              } catch (e: any) {
+                toast.error(e.message ?? "Failed to create action items");
+              }
             }
           }}
         />
@@ -257,7 +284,7 @@ function AgendaItemRow({ item, isFullElder, reload }: any) {
   );
 }
 
-function JointSections({ meetingId, items, reload }: any) {
+function JointSections({ meetingId, items, reload, mentionUsers }: any) {
   return (
     <div className="space-y-4">
       {JOINT_SUBSECTIONS.map((s) => {
@@ -269,6 +296,7 @@ function JointSections({ meetingId, items, reload }: any) {
             meetingId={meetingId}
             items={subItems}
             reload={reload}
+            mentionUsers={mentionUsers}
           />
         );
       })}
@@ -276,7 +304,7 @@ function JointSections({ meetingId, items, reload }: any) {
   );
 }
 
-function JointSubSection({ sub, meetingId, items, reload }: any) {
+function JointSubSection({ sub, meetingId, items, reload, mentionUsers }: any) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
 
@@ -284,8 +312,21 @@ function JointSubSection({ sub, meetingId, items, reload }: any) {
     if (!title.trim()) return;
     try {
       await upsertJointItem({
-        data: { meeting_id: meetingId, sub_section: sub.key, title: title.trim(), body: body.trim() || null },
+        data: { meeting_id: meetingId, sub_section: sub.key, title: title.trim(), body: body || null },
       });
+      const mentions = extractMentions(body);
+      if (mentions.length > 0) {
+        try {
+          const res: any = await createActionsFromMentions({
+            data: { meeting_id: meetingId, mentions },
+          });
+          if (res?.created > 0) {
+            toast.success(`Created ${res.created} action item${res.created === 1 ? "" : "s"} from mentions`);
+          }
+        } catch (e: any) {
+          toast.error(e.message ?? "Failed to create action items");
+        }
+      }
       setTitle(""); setBody("");
       reload();
     } catch (e: any) {
@@ -313,7 +354,7 @@ function JointSubSection({ sub, meetingId, items, reload }: any) {
         ))}
         <div className="space-y-2">
           <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} className="h-8 text-sm" />
-          <RichTextEditor value={body} onChange={setBody} placeholder="Notes (optional)" minHeight={72} />
+          <RichTextEditor value={body} onChange={setBody} placeholder="Notes (optional · type @ to assign a task)" minHeight={72} mentionUsers={mentionUsers} />
           <Button size="sm" variant="outline" onClick={add}><Plus className="w-3 h-3 mr-1" /> Add</Button>
         </div>
       </div>
