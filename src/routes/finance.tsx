@@ -281,6 +281,7 @@ function ReportsTab({ year }: { year: number }) {
   async function load() {
     const { data } = await supabase.from("finance_reports").select("*")
       .eq("fiscal_year", year)
+      .eq("report_type", "finance")
       .order("month", { ascending: true })
       .order("created_at", { ascending: false });
     setReports((data ?? []) as Report[]);
@@ -299,6 +300,7 @@ function ReportsTab({ year }: { year: number }) {
         fiscal_year: year, month, label: label || null,
         file_path: path, file_name: file.name, mime_type: file.type,
         uploaded_by: user?.id,
+        report_type: "finance",
       });
       if (error) throw error;
       toast.success("Report uploaded");
