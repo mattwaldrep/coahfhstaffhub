@@ -345,13 +345,24 @@ function CalendarBody() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const startDate = new Date(form.start_at);
+    // For all-day events, normalize to UTC noon on the picked date so the calendar
+    // day is stable across timezones. For timed events, use the local datetime as-is.
+    const toStart = (raw: string, allDay: boolean) => {
+      if (!raw) return new Date();
+      if (allDay) {
+        const datePart = raw.slice(0, 10); // YYYY-MM-DD
+        return new Date(`${datePart}T12:00:00Z`);
+      }
+      return new Date(raw);
+    };
+    const startDate = toStart(form.start_at, form.all_day);
+    const endDate = form.end_at ? toStart(form.end_at, form.all_day) : null;
     const rrule = buildRRule(form, startDate);
     const payload = {
       title: form.title,
       sub_calendar: form.sub_calendar as "general",
       start_at: startDate.toISOString(),
-      end_at: form.end_at ? new Date(form.end_at).toISOString() : null,
+      end_at: endDate ? endDate.toISOString() : null,
       all_day: form.all_day,
       category: form.category || null,
       leader_name: form.leader_name || null,
