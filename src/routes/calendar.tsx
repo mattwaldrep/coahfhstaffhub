@@ -179,7 +179,7 @@ function CalendarBody() {
     e.preventDefault();
     const payload = {
       title: form.title,
-      sub_calendar: form.sub_calendar as EventRow["sub_calendar"],
+      sub_calendar: form.sub_calendar as "general",
       start_at: new Date(form.start_at).toISOString(),
       end_at: form.end_at ? new Date(form.end_at).toISOString() : null,
       leader_name: form.leader_name || null,
