@@ -33,6 +33,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { pushActionItemToGoogleTasks } from "@/server/google-tasks.functions";
 import { toast } from "sonner";
 import { expandEvents, type EventRowLike } from "@/lib/calendar-expand";
+import { parseMetricsPdf, type ParsedMetrics } from "@/lib/parse-metrics-pdf";
 import { cn } from "@/lib/utils";
 
 /* ---------- shared collapsible card ---------- */
