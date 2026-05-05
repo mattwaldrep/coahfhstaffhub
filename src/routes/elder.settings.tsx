@@ -134,17 +134,27 @@ function PcoCard() {
             Open the list in PCO People — the URL ends in <code>/lists/&lt;id&gt;</code>.
           </p>
         </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">Assigned Elder field ID</Label>
-          <Input value={elderField} onChange={(e) => setElderField(e.target.value)} placeholder="e.g. 7890" className="h-8 text-sm" />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">Spiritual Health field ID</Label>
-          <Input value={healthField} onChange={(e) => setHealthField(e.target.value)} placeholder="e.g. 7891" className="h-8 text-sm" />
-          <p className="text-[11px] text-muted-foreground">
-            Field IDs are visible in PCO under Settings → People → Tabs &amp; Fields. Click a field to see its numeric ID in the URL.
-          </p>
-        </div>
+        <FieldPicker
+          label="Assigned Elder field"
+          value={elderField}
+          onChange={setElderField}
+          fields={fields}
+          loading={loadingFields}
+          error={fieldsError}
+          onReload={loadFields}
+        />
+        <FieldPicker
+          label="Spiritual Health field"
+          value={healthField}
+          onChange={setHealthField}
+          fields={fields}
+          loading={loadingFields}
+          error={fieldsError}
+          onReload={loadFields}
+        />
+        <p className="text-[11px] text-muted-foreground">
+          Fields are loaded directly from your Planning Center account. If a field is missing, create it in PCO under Settings → People → Tabs &amp; Fields, then click Reload.
+        </p>
       </div>
 
       <div className="flex justify-end">
