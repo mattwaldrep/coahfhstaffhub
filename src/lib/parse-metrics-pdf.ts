@@ -1,11 +1,6 @@
 // Browser-side parser for the Church Metrics PDF report.
 // Extracts headline numbers, key ratios, period comparison, weekly rows, milestones, and goals.
 
-import * as pdfjs from "pdfjs-dist";
-import PdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?worker&url";
-
-pdfjs.GlobalWorkerOptions.workerSrc = PdfWorker;
-
 export type ParsedMetrics = {
   generated_at?: string;
   range?: string;
