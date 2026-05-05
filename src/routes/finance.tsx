@@ -300,6 +300,7 @@ function ReportsTab({ year }: { year: number }) {
         fiscal_year: year, month, label: label || null,
         file_path: path, file_name: file.name, mime_type: file.type,
         uploaded_by: user?.id,
+        report_type: "finance",
       });
       if (error) throw error;
       toast.success("Report uploaded");
