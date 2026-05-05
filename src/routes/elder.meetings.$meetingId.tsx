@@ -200,20 +200,19 @@ function SectionCard({ section, meetingId, items, note, isFullElder, reload }: a
           />
           <Button size="sm" variant="outline" onClick={add}><Plus className="w-3 h-3" /></Button>
         </div>
-        <Textarea
-          placeholder="Section notes…"
+        <RichTextEditor
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          onBlur={async () => {
-            if ((note?.notes ?? "") === notes) return;
+          onChange={setNotes}
+          placeholder="Section notes…"
+          minHeight={96}
+          onBlur={async (html) => {
+            if ((note?.notes ?? "") === html) return;
             try {
-              await saveSectionNotes({ data: { meeting_id: meetingId, section_key: section.key, notes, executive_session: isExec } });
+              await saveSectionNotes({ data: { meeting_id: meetingId, section_key: section.key, notes: html, executive_session: isExec } });
             } catch (e: any) {
               toast.error(e.message ?? "Failed");
             }
           }}
-          rows={3}
-          className="text-sm"
         />
       </div>
     </div>
