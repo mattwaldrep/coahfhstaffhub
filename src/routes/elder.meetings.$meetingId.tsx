@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor, RichTextView } from "@/components/ui/rich-text-editor";
 import { Plus, Trash2, Lock, Unlock, ChevronLeft, Check, Square } from "lucide-react";
 import { toast } from "sonner";
 import { PastoralCareList } from "@/components/pastoral/PastoralCareList";
