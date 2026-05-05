@@ -127,6 +127,31 @@ export async function setFieldDatum(opts: {
   invalidateCareListCache();
 }
 
+export type PcoFieldDef = { id: string; name: string; tab: string | null; data_type: string | null };
+
+export async function listFieldDefinitions(): Promise<PcoFieldDef[]> {
+  const out: PcoFieldDef[] = [];
+  let next: string | null = `/field_definitions?include=tab&per_page=100`;
+  while (next) {
+    const json: any = await pcoFetch(next);
+    const tabs: any[] = (json.included ?? []).filter((i: any) => i.type === "Tab");
+    for (const f of json.data ?? []) {
+      if (f.attributes?.deleted_at) continue;
+      const tabId = f.relationships?.tab?.data?.id;
+      const tab = tabs.find((t) => t.id === tabId);
+      out.push({
+        id: String(f.id),
+        name: f.attributes?.name ?? "(unnamed)",
+        tab: tab?.attributes?.name ?? null,
+        data_type: f.attributes?.data_type ?? null,
+      });
+    }
+    next = json.links?.next ?? null;
+  }
+  out.sort((a, b) => (a.tab ?? "").localeCompare(b.tab ?? "") || a.name.localeCompare(b.name));
+  return out;
+}
+
 export async function pcoPing(): Promise<{ ok: boolean; me?: string; error?: string }> {
   try {
     const json: any = await pcoFetch(`/me`);

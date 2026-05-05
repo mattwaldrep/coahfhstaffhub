@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
-import { getPcoConfig, savePcoConfig, pingPco } from "@/server/pastoral-care.functions";
+import { getPcoConfig, savePcoConfig, pingPco, listPcoFieldDefinitions } from "@/server/pastoral-care.functions";
 
 export const Route = createFileRoute("/elder/settings")({
   component: ElderSettings,
@@ -47,9 +48,25 @@ function PcoCard() {
   const [listId, setListId] = useState("");
   const [elderField, setElderField] = useState("");
   const [healthField, setHealthField] = useState("");
+  const [fields, setFields] = useState<Array<{ id: string; name: string; tab: string | null; data_type: string | null }> | null>(null);
+  const [loadingFields, setLoadingFields] = useState(false);
+  const [fieldsError, setFieldsError] = useState<string | null>(null);
   const [status, setStatus] = useState<{ ok: boolean; me?: string; error?: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [pinging, setPinging] = useState(false);
+
+  async function loadFields() {
+    setLoadingFields(true);
+    setFieldsError(null);
+    try {
+      const f: any = await listPcoFieldDefinitions();
+      setFields(f);
+    } catch (e: any) {
+      setFieldsError(e.message ?? "Failed to load fields");
+    } finally {
+      setLoadingFields(false);
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -61,6 +78,7 @@ function PcoCard() {
         setHealthField(c?.spiritual_health_field_id ?? "");
       } catch { /* noop */ }
     })();
+    loadFields();
   }, []);
 
   async function ping() {
@@ -116,17 +134,27 @@ function PcoCard() {
             Open the list in PCO People — the URL ends in <code>/lists/&lt;id&gt;</code>.
           </p>
         </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">Assigned Elder field ID</Label>
-          <Input value={elderField} onChange={(e) => setElderField(e.target.value)} placeholder="e.g. 7890" className="h-8 text-sm" />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">Spiritual Health field ID</Label>
-          <Input value={healthField} onChange={(e) => setHealthField(e.target.value)} placeholder="e.g. 7891" className="h-8 text-sm" />
-          <p className="text-[11px] text-muted-foreground">
-            Field IDs are visible in PCO under Settings → People → Tabs &amp; Fields. Click a field to see its numeric ID in the URL.
-          </p>
-        </div>
+        <FieldPicker
+          label="Assigned Elder field"
+          value={elderField}
+          onChange={setElderField}
+          fields={fields}
+          loading={loadingFields}
+          error={fieldsError}
+          onReload={loadFields}
+        />
+        <FieldPicker
+          label="Spiritual Health field"
+          value={healthField}
+          onChange={setHealthField}
+          fields={fields}
+          loading={loadingFields}
+          error={fieldsError}
+          onReload={loadFields}
+        />
+        <p className="text-[11px] text-muted-foreground">
+          Fields are loaded directly from your Planning Center account. If a field is missing, create it in PCO under Settings → People → Tabs &amp; Fields, then click Reload.
+        </p>
       </div>
 
       <div className="flex justify-end">
@@ -140,6 +168,53 @@ function PcoCard() {
           Last updated {new Date(cfg.updated_at).toLocaleString()}
         </div>
       )}
+    </div>
+  );
+}
+
+function FieldPicker({
+  label, value, onChange, fields, loading, error, onReload,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  fields: Array<{ id: string; name: string; tab: string | null; data_type: string | null }> | null;
+  loading: boolean;
+  error: string | null;
+  onReload: () => void;
+}) {
+  const groups = (fields ?? []).reduce<Record<string, typeof fields extends null ? never : NonNullable<typeof fields>>>((acc, f) => {
+    const key = f.tab ?? "Other";
+    (acc[key] ||= [] as any).push(f);
+    return acc;
+  }, {} as any);
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">{label}</Label>
+        <button type="button" onClick={onReload} className="text-[11px] text-muted-foreground hover:text-foreground underline">
+          {loading ? "Loading…" : "Reload"}
+        </button>
+      </div>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="h-8 text-sm">
+          <SelectValue placeholder={loading ? "Loading fields…" : "Select a field"} />
+        </SelectTrigger>
+        <SelectContent>
+          {Object.entries(groups).map(([tab, items]) => (
+            <div key={tab}>
+              <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">{tab}</div>
+              {items.map((f) => (
+                <SelectItem key={f.id} value={f.id}>
+                  {f.name} <span className="text-muted-foreground">· {f.data_type ?? "?"}</span>
+                </SelectItem>
+              ))}
+            </div>
+          ))}
+        </SelectContent>
+      </Select>
+      {error && <p className="text-[11px] text-destructive">{error}</p>}
     </div>
   );
 }
