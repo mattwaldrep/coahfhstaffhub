@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { AlertTriangle, ArrowUpRight, CalendarDays, CheckCircle2, Circle, AlertCircle } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, CalendarDays, CheckCircle2, Circle, AlertCircle, Upload, Loader2, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { parseMetricsPdf } from "@/lib/parse-metrics-pdf";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
