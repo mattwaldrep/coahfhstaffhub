@@ -111,9 +111,9 @@ function MeetingDetail() {
       </div>
 
       {isJoint ? (
-        <JointSections meetingId={meetingId} items={data.jointItems} reload={load} />
+        <JointSections meetingId={meetingId} items={data.jointItems} reload={load} mentionUsers={mentionUsers} />
       ) : (
-        <StandardSections meetingId={meetingId} agenda={data.agenda} sectionNotes={data.sectionNotes} isFullElder={isFullElder} reload={load} />
+        <StandardSections meetingId={meetingId} agenda={data.agenda} sectionNotes={data.sectionNotes} isFullElder={isFullElder} reload={load} mentionUsers={mentionUsers} />
       )}
 
       <ActionItemsBlock meetingId={meetingId} items={data.actionItems} isFullElder={isFullElder} reload={load} />
