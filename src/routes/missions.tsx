@@ -138,6 +138,8 @@ function Body() {
       team_number: t.team_number ?? "",
       status: t.status,
       itinerary_link: t.itinerary_link ?? "",
+      itinerary_file_path: t.itinerary_file_path ?? null,
+      itinerary_file_name: t.itinerary_file_name ?? null,
       notes: t.notes ?? "",
       steps: { ...Object.fromEntries(STEPS.map((s) => [s.key, false])), ...(t.steps ?? {}) },
     });
