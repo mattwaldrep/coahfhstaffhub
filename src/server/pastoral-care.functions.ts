@@ -78,6 +78,14 @@ export const pingPco = createServerFn({ method: "GET" })
     return pcoPing();
   });
 
+export const listPcoFieldDefinitions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const tier = await assertAccess(context.supabase, context.userId);
+    if (tier !== "elder") throw new Error("Forbidden");
+    return listFieldDefinitions();
+  });
+
 // ---- Care list -----------------------------------------------------------
 
 export const listCareList = createServerFn({ method: "POST" })
