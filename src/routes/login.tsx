@@ -19,6 +19,7 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pendingConfirmEmail, setPendingConfirmEmail] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && user) navigate({ to: "/" });
@@ -29,7 +30,7 @@ function LoginPage() {
     setBusy(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -38,17 +39,51 @@ function LoginPage() {
           },
         });
         if (error) throw error;
-        toast.success("Account created. Check your email to confirm.");
+        // If a session was returned immediately (auto-confirm), go home.
+        if (data.session) {
+          navigate({ to: "/" });
+        } else {
+          setPendingConfirmEmail(email);
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         navigate({ to: "/" });
       }
     } catch (err: any) {
-      toast.error(err.message ?? "Authentication failed");
+      const msg = err.message ?? "Authentication failed";
+      if (/email not confirmed/i.test(msg)) {
+        toast.error("Please confirm your email first — check your inbox.");
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setBusy(false);
     }
+  }
+
+  if (pendingConfirmEmail) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="w-full max-w-md text-center space-y-4">
+          <div className="font-display font-bold text-2xl tracking-tight">COAH Forest Hills Staff Hub</div>
+          <div className="bg-surface border border-border rounded-2xl p-6 shadow-soft space-y-3">
+            <h1 className="font-display font-semibold text-lg">Check your email</h1>
+            <p className="text-sm text-muted-foreground">
+              We sent a confirmation link to <span className="text-foreground font-medium">{pendingConfirmEmail}</span>.
+              Click the link to activate your account, then sign in.
+            </p>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => { setPendingConfirmEmail(null); setMode("signin"); setPassword(""); }}
+            >
+              Back to sign in
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -56,7 +91,7 @@ function LoginPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="font-display font-bold text-2xl tracking-tight">
-            COAH Staff Hub
+            COAH Forest Hills Staff Hub
           </Link>
           <p className="text-sm text-muted-foreground mt-2">
             {mode === "signin" ? "Sign in to continue" : "Create your account"}
