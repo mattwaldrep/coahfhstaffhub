@@ -115,6 +115,14 @@ function LoginPage() {
           <Button type="submit" className="w-full" disabled={busy}>
             {busy ? "…" : mode === "signin" ? "Sign in" : "Create account"}
           </Button>
+          {mode === "signin" && (
+            <Link
+              to="/forgot-password"
+              className="block text-center text-xs text-muted-foreground hover:text-foreground"
+            >
+              Forgot your password?
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
