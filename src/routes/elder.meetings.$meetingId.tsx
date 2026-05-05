@@ -102,7 +102,7 @@ function MeetingDetail() {
       </div>
 
       {isJoint ? (
-        <JointSections meetingId={meetingId} items={data.jointItems} isFullElder={isFullElder} reload={load} />
+        <JointSections meetingId={meetingId} items={data.jointItems} reload={load} />
       ) : (
         <StandardSections meetingId={meetingId} agenda={data.agenda} sectionNotes={data.sectionNotes} isFullElder={isFullElder} reload={load} />
       )}
@@ -241,7 +241,7 @@ function AgendaItemRow({ item, isFullElder, reload }: any) {
   );
 }
 
-function JointSections({ meetingId, items, isFullElder, reload }: any) {
+function JointSections({ meetingId, items, reload }: any) {
   return (
     <div className="space-y-4">
       {JOINT_SUBSECTIONS.map((s) => {
@@ -252,7 +252,6 @@ function JointSections({ meetingId, items, isFullElder, reload }: any) {
             sub={s}
             meetingId={meetingId}
             items={subItems}
-            isFullElder={isFullElder}
             reload={reload}
           />
         );
@@ -261,7 +260,7 @@ function JointSections({ meetingId, items, isFullElder, reload }: any) {
   );
 }
 
-function JointSubSection({ sub, meetingId, items, isFullElder, reload }: any) {
+function JointSubSection({ sub, meetingId, items, reload }: any) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
 
@@ -304,7 +303,6 @@ function JointSubSection({ sub, meetingId, items, isFullElder, reload }: any) {
       </div>
     </div>
   );
-  void isFullElder;
 }
 
 function ActionItemsBlock({ meetingId, items, isFullElder, reload }: any) {
