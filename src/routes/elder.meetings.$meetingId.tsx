@@ -118,6 +118,21 @@ function StandardSections({ meetingId, agenda, sectionNotes, isFullElder, reload
     <div className="space-y-4">
       {STANDARD_SECTIONS.map((s) => {
         if (s.key === "executive" && !isFullElder) return null;
+        if ((s as any).isPastoral) {
+          return (
+            <div key={s.key} className="bg-surface border border-border rounded-2xl">
+              <div className="px-4 py-3 border-b border-border font-medium text-sm flex items-center justify-between">
+                <span>Pastoral Care</span>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Synced from Planning Center
+                </span>
+              </div>
+              <div className="p-4">
+                <PastoralCareList meetingId={meetingId} variant="meeting" />
+              </div>
+            </div>
+          );
+        }
         const items = agenda.filter((a: any) => a.section_key === s.key);
         const note = sectionNotes.find((n: any) => n.section_key === s.key);
         return (
