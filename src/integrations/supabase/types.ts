@@ -320,6 +320,7 @@ export type Database = {
           label: string | null
           mime_type: string | null
           month: number
+          report_type: string
           uploaded_by: string | null
         }
         Insert: {
@@ -331,6 +332,7 @@ export type Database = {
           label?: string | null
           mime_type?: string | null
           month: number
+          report_type?: string
           uploaded_by?: string | null
         }
         Update: {
@@ -342,7 +344,65 @@ export type Database = {
           label?: string | null
           mime_type?: string | null
           month?: number
+          report_type?: string
           uploaded_by?: string | null
+        }
+        Relationships: []
+      }
+      meeting_event_notes: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          meeting_id: string
+          notes: string | null
+          occurrence_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          meeting_id: string
+          notes?: string | null
+          occurrence_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          meeting_id?: string
+          notes?: string | null
+          occurrence_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      meeting_section_notes: {
+        Row: {
+          created_at: string
+          id: string
+          meeting_id: string
+          notes: string | null
+          section_key: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meeting_id: string
+          notes?: string | null
+          section_key: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meeting_id?: string
+          notes?: string | null
+          section_key?: string
+          updated_at?: string
         }
         Relationships: []
       }
