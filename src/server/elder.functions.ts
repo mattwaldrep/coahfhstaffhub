@@ -81,8 +81,8 @@ export const createElderMeeting = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertElderAccess(context.supabase, context.userId);
 
-    // Pull carry-forward: open action items + seed items
-    const [openActions, seedItems] = await Promise.all([
+    // Pull carry-forward sources: open action items, seed items, and prior meeting agenda
+    const [openActions, seedItems, priorMeeting] = await Promise.all([
       supabaseAdmin
         .from("elder_action_items")
         .select("id, title, executive_session")
@@ -91,7 +91,27 @@ export const createElderMeeting = createServerFn({ method: "POST" })
         .from("elder_next_meeting_seed")
         .select("*")
         .is("consumed_meeting_id", null),
+      supabaseAdmin
+        .from("elder_meetings")
+        .select("id")
+        .eq("meeting_type", data.meeting_type)
+        .lte("meeting_date", data.meeting_date)
+        .order("meeting_date", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
+
+    let priorAgenda: any[] = [];
+    if (priorMeeting.data?.id) {
+      const { data: pa } = await supabaseAdmin
+        .from("elder_agenda_items")
+        .select("title, body, executive_session, section_key, carry_to_next, position")
+        .eq("meeting_id", priorMeeting.data.id)
+        .or("section_key.eq.new_business,carry_to_next.eq.true")
+        .order("position", { ascending: true });
+      priorAgenda = pa ?? [];
+    }
 
     const { data: created, error } = await supabaseAdmin
       .from("elder_meetings")
@@ -129,18 +149,30 @@ export const createElderMeeting = createServerFn({ method: "POST" })
         );
     }
 
-    // Also add carryover summaries from open action items into Last Meeting Follow-up section
-    if (openActions.data && openActions.data.length) {
-      const carryInserts = openActions.data.map((a, i) => ({
+    // Build follow-up section from open action items + prior new business / flagged items
+    const followUpInserts: any[] = [];
+    const seenTitles = new Set<string>();
+    const pushFollowUp = (row: { title: string; body?: string | null; executive_session?: boolean }) => {
+      const key = (row.title || "").trim().toLowerCase();
+      if (!key || seenTitles.has(key)) return;
+      seenTitles.add(key);
+      followUpInserts.push({
         meeting_id: created.id,
         section_key: "follow_up",
-        position: i,
-        title: a.title,
-        executive_session: a.executive_session,
+        position: followUpInserts.length,
+        title: row.title,
+        body: row.body ?? null,
+        executive_session: row.executive_session ?? false,
         source: "carryover",
         created_by: context.userId,
-      }));
-      await supabaseAdmin.from("elder_agenda_items").insert(carryInserts);
+      });
+    };
+    (openActions.data ?? []).forEach((a) => pushFollowUp({ title: a.title, executive_session: a.executive_session }));
+    priorAgenda.forEach((a) =>
+      pushFollowUp({ title: a.title, body: a.body, executive_session: a.executive_session }),
+    );
+    if (followUpInserts.length) {
+      await supabaseAdmin.from("elder_agenda_items").insert(followUpInserts);
     }
 
     return created;
