@@ -5,9 +5,10 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { AlertTriangle, ArrowUpRight, CalendarDays, CheckCircle2, Circle, AlertCircle, Upload, Loader2, FileText } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, CalendarDays, CheckCircle2, Circle, AlertCircle, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { parseMetricsPdf } from "@/lib/parse-metrics-pdf";
+import { fetchRecentWeeks, summarizeWeeks, type MetricsHeadline } from "@/integrations/metrics/client";
+import { useMetricsSession } from "@/integrations/metrics/use-session";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
