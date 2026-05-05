@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  getElderMeeting, upsertAgendaItem, deleteAgendaItem, setAgendaExecutive,
+  getElderMeeting, upsertAgendaItem, deleteAgendaItem, setAgendaExecutive, setAgendaCarryToNext,
   saveSectionNotes, createElderAction, updateElderAction, deleteElderAction,
   upsertJointItem, deleteJointItem, updateElderMeeting,
   listMentionableUsers, createActionsFromMentions,
