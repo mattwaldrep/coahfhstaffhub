@@ -16,9 +16,24 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [aiOpen, setAiOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const [messages, setMessages] = useState<Msg[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = sessionStorage.getItem(CHAT_STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as Msg[]) : [];
+    } catch {
+      return [];
+    }
+  });
   const [sending, setSending] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+    } catch { /* ignore quota */ }
+  }, [messages]);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
