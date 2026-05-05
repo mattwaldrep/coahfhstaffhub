@@ -4,8 +4,10 @@ import { useAuth } from "@/lib/auth-context";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
-import { Sparkles, X, Send, Loader2 } from "lucide-react";
+import { Sparkles, X, Send, Loader2, RotateCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+
+const CHAT_STORAGE_KEY = "coah-ai-chat-v1";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
