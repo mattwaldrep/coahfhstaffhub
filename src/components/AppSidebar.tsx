@@ -17,8 +17,10 @@ import {
   ClipboardList,
   ClipboardCheck,
   Users,
+  UserCog,
   Settings as SettingsIcon,
 } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 const PRIMARY = [
   { to: "/", label: "Home", icon: Home, exact: true },
@@ -27,12 +29,13 @@ const PRIMARY = [
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
 ];
 
-const SECONDARY = [
-  { to: "/missions", label: "Missions", icon: Users },
-  { to: "/settings", label: "Settings", icon: SettingsIcon },
-];
-
 export function AppSidebar() {
+  const { hasRole } = useAuth();
+  const SECONDARY = [
+    { to: "/missions", label: "Missions", icon: Users },
+    ...(hasRole("core") ? [{ to: "/users", label: "Users", icon: UserCog }] : []),
+    { to: "/settings", label: "Settings", icon: SettingsIcon },
+  ];
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
