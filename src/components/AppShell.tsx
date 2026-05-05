@@ -179,14 +179,16 @@ export function AppShell({ children }: { children: ReactNode }) {
           <main className="flex-1 px-6 py-8 overflow-x-hidden">{children}</main>
         </SidebarInset>
 
-        {/* AI Assistant FAB */}
-        <button
-          onClick={() => setAiOpen(true)}
-          aria-label="Open AI assistant"
-          className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 transition-transform z-40"
-        >
-          <Sparkles className="w-6 h-6" />
-        </button>
+        {/* AI Assistant FAB — smaller on mobile to avoid overlapping content */}
+        {!aiOpen && (
+          <button
+            onClick={() => setAiOpen(true)}
+            aria-label="Open AI assistant"
+            className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 transition-transform z-40"
+          >
+            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
+        )}
 
         {aiOpen && (
           <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setAiOpen(false)}>
@@ -200,9 +202,23 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <Sparkles className="w-5 h-5 text-primary" />
                   <h2 className="font-display font-semibold">Ask the Hub</h2>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setAiOpen(false)}>
-                  <X className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  {messages.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={clearChat}
+                      disabled={sending}
+                      title="Clear conversation"
+                      aria-label="Clear conversation"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon" onClick={() => setAiOpen(false)} aria-label="Close">
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
 
               <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -226,6 +242,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {sending && messages[messages.length - 1]?.role === "user" && (
                   <div className="bg-muted rounded-2xl px-3 py-2 text-sm w-fit">
                     <Loader2 className="w-4 h-4 animate-spin" />
+                  </div>
+                )}
+                {lastError && !sending && (
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-destructive">{lastError}</span>
+                    <Button variant="outline" size="sm" className="h-7" onClick={retry}>
+                      <RotateCw className="w-3 h-3 mr-1.5" /> Retry
+                    </Button>
                   </div>
                 )}
               </div>
