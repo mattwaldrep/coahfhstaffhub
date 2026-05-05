@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { listElderMeetings } from "@/server/elder.functions";
-import { listPastoralCare } from "@/server/pastoral-care.functions";
+import { listCareList } from "@/server/pastoral-care.functions";
 import { CalendarDays, HeartHandshake, ScrollText } from "lucide-react";
 
 export const Route = createFileRoute("/elder/")({
