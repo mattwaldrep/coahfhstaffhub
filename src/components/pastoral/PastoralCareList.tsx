@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Lock, MessageSquarePlus, RefreshCw, Search, Trash2, Link as LinkIcon } from "lucide-react";
+import { Lock, MessageSquarePlus, RefreshCw, Search, Trash2, Link as LinkIcon, X, ArrowUpDown } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
@@ -16,6 +16,20 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 
 const HEALTH_OPTIONS = ["Thriving", "Healthy", "Watch", "Struggling", "Crisis", "Unknown"];
+// Severity ranking — higher = more urgent (used for "by health (urgent first)")
+const HEALTH_SEVERITY: Record<string, number> = {
+  Crisis: 5, Struggling: 4, Watch: 3, Unknown: 2, Healthy: 1, Thriving: 0,
+};
+
+type SortKey =
+  | "name_asc"
+  | "name_desc"
+  | "health_urgent"
+  | "health_thriving"
+  | "notes_most"
+  | "notes_recent"
+  | "notes_stale";
+
 
 type Person = {
   id: string;
