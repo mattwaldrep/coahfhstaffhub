@@ -104,12 +104,11 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
     const ch = supabase
       .channel("pco-pastoral-notes")
       .on("postgres_changes", { event: "*", schema: "public", table: "pco_pastoral_notes" }, () => {
-        // bump expanded view by re-rendering; expanded panel listens itself too
-        setCounts((prev) => ({ ...prev }));
+        refreshNoteMeta(people.map((p) => p.id));
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, []);
+  }, [people, refreshNoteMeta]);
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
