@@ -60,6 +60,8 @@ type Trip = {
   team_number: string | null;
   status: Status;
   itinerary_link: string | null;
+  itinerary_file_path: string | null;
+  itinerary_file_name: string | null;
   notes: string | null;
   steps: Record<string, boolean>;
   position: number;
