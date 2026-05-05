@@ -156,34 +156,27 @@ export function NotesField({
 export function DevotionalSection({ meetingId }: { meetingId: string }) {
   return (
     <StandingSection
-      title="Devotional"
-      subtitle="Open the meeting in the Word."
+      title="Devotional — Lead Like Jesus"
+      subtitle="Read the latest post together, then capture takeaways."
     >
-      <NotesField
-        meetingId={meetingId}
-        sectionKey="devotional"
-        placeholder="Passage, key thoughts, who shared…"
-        rows={4}
-      />
+      <div className="space-y-3">
+        <Button asChild variant="outline" size="sm">
+          <a href="https://leadlikejesus.com/blog/" target="_blank" rel="noreferrer">
+            <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+            Open Lead Like Jesus blog
+          </a>
+        </Button>
+        <NotesField
+          meetingId={meetingId}
+          sectionKey="devotional"
+          placeholder="Post title, key thoughts, discussion…"
+          rows={4}
+        />
+      </div>
     </StandingSection>
   );
 }
 
-export function LeadLikeJesusSection({ meetingId }: { meetingId: string }) {
-  return (
-    <StandingSection
-      title="Lead Like Jesus"
-      subtitle="Leadership reflection."
-    >
-      <NotesField
-        meetingId={meetingId}
-        sectionKey="lead_like_jesus"
-        placeholder="Reading, takeaways, discussion…"
-        rows={4}
-      />
-    </StandingSection>
-  );
-}
 
 /* ---------- 4. Sunday Review ---------- */
 
