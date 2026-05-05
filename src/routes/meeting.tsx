@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import {
   StandingSection,
   DevotionalSection,
-  LeadLikeJesusSection,
   SundayReviewSection,
   LastWeekEventsSection,
   UpcomingEventsSection,
@@ -284,7 +283,6 @@ function MeetingPage() {
         ) : (
           <div className="space-y-3">
             <DevotionalSection meetingId={meeting.id} />
-            <LeadLikeJesusSection meetingId={meeting.id} />
 
             <SectionDivider label="Recurring Agenda Items" />
 
