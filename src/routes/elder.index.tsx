@@ -11,8 +11,8 @@ export const Route = createFileRoute("/elder/")({
   component: ElderOverview,
 });
 
-const URGENT_HEALTH = new Set(["Crisis", "Struggling", "Watch"]);
-const URGENT_RANK: Record<string, number> = { Crisis: 3, Struggling: 2, Watch: 1 };
+const HEALTHY_HEALTH = new Set(["Healthy", "Thriving"]);
+const URGENT_RANK: Record<string, number> = { Crisis: 4, Struggling: 3, Watch: 2, Unknown: 1 };
 
 type CarePerson = {
   id: string;
@@ -59,7 +59,7 @@ function ElderOverview() {
     if (!careFields) return [] as CarePerson[];
     return care
       .map((p) => ({ p, h: (p.fields[careFields.spiritual_health]?.value ?? "").trim() }))
-      .filter(({ h }) => URGENT_HEALTH.has(h))
+      .filter(({ h }) => h && !HEALTHY_HEALTH.has(h))
       .sort((a, b) => (URGENT_RANK[b.h] ?? 0) - (URGENT_RANK[a.h] ?? 0) || a.p.name.localeCompare(b.p.name))
       .map(({ p }) => p);
   }, [care, careFields]);
