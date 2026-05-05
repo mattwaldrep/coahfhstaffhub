@@ -15,8 +15,8 @@ function ElderOverview() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([listElderMeetings(), listPastoralCare()])
-      .then(([m, c]) => { setMeetings(m as any[]); setCare(c as any[]); })
+    Promise.all([listElderMeetings(), listCareList({ data: {} })])
+      .then(([m, c]: any[]) => { setMeetings(m as any[]); setCare((c?.people ?? []) as any[]); })
       .catch(() => { /* surfaced elsewhere */ })
       .finally(() => setLoading(false));
   }, []);
@@ -25,7 +25,7 @@ function ElderOverview() {
 
   const upcoming = meetings.filter((m) => new Date(m.meeting_date) >= new Date()).slice(0, 3);
   const recent = meetings.filter((m) => new Date(m.meeting_date) < new Date()).slice(0, 3);
-  const activeCare = care.filter((c) => c.status !== "resolved").slice(0, 5);
+  const topCare = care.slice(0, 5);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -37,9 +37,9 @@ function ElderOverview() {
       </Card>
 
       <Card title="Pastoral care" icon={HeartHandshake} cta={{ to: "/elder/pastoral-care", label: "Open list" }}>
-        {activeCare.length === 0 && <Empty text="No active entries." />}
-        {activeCare.map((c) => (
-          <Row key={c.id} to="/elder/pastoral-care" title={c.person_name} sub={c.status} tag={c.executive_session ? "Exec" : undefined} />
+        {topCare.length === 0 && <Empty text="No people on the care list." />}
+        {topCare.map((p) => (
+          <Row key={p.id} to="/elder/pastoral-care" title={p.name} sub="View details" />
         ))}
       </Card>
 
