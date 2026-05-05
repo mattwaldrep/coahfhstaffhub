@@ -304,12 +304,13 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
       </div>
 
       <div className="bg-surface border border-border rounded-2xl divide-y divide-border">
-        {filtered.length === 0 && (
+        {sorted.length === 0 && (
           <div className="p-6 text-sm text-muted-foreground">No people match.</div>
         )}
-        {filtered.map((p) => {
+        {sorted.map((p) => {
           const health = fields ? p.fields[fields.spiritual_health]?.value : null;
           const elder = fields ? p.fields[fields.assigned_elder]?.value : null;
+          const last = latestNote[p.id];
           return (
             <div key={p.id}>
               <div
@@ -321,6 +322,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
                   <div className="text-xs text-muted-foreground truncate">
                     {elder ? `Assigned: ${elder}` : "Unassigned"}
                     {counts[p.id] ? ` · ${counts[p.id]} note${counts[p.id] === 1 ? "" : "s"}` : ""}
+                    {last ? ` · last ${format(new Date(last), "MMM d")}` : ""}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
