@@ -735,7 +735,7 @@ function HeadlineTiles({ m, pm }: { m: MetricsHeadline; pm: MetricsHeadline | nu
             delta = ((val - prevVal) / prevVal) * 100;
           }
           return (
-            <div key={t.key} className="bg-surface rounded-md px-2 py-1.5">
+            <div key={String(t.key)} className="bg-surface rounded-md px-2 py-1.5">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{t.label}</div>
               <div className="text-sm font-semibold tabular-nums">{t.fmt(val)}</div>
               {delta !== null && (
