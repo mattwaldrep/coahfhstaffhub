@@ -373,14 +373,21 @@ function EventList({
     [events, rangeStart.getTime(), rangeEnd.getTime()],
   );
 
+  const SUB_CAL_LABELS: Record<string, string> = {
+    forest_hills_main: "Forest Hills Main",
+    coah_lm: "COAH LM",
+    youth: "Youth",
+  };
+  const labelFor = (s: string) => SUB_CAL_LABELS[s] ?? s;
+
   const categories = useMemo(() => {
     const s = new Set<string>();
-    occurrences.forEach((o) => s.add(o.category || "Uncategorized"));
+    occurrences.forEach((o) => s.add(o.sub_calendar || "other"));
     return Array.from(s).sort();
   }, [occurrences]);
 
   const visible = useMemo(
-    () => occurrences.filter((o) => !excluded.has(o.category || "Uncategorized")),
+    () => occurrences.filter((o) => !excluded.has(o.sub_calendar || "other")),
     [occurrences, excluded],
   );
 
