@@ -87,16 +87,14 @@ function Dashboard() {
       return;
     }
     setMetricsErr(null);
-    fetchRecentWeeks(8)
+    fetchRecentWeeks(2)
       .then((rows) => {
-        const recent = rows.slice(0, 4);
-        const prior = rows.slice(4, 8);
-        setHeadline(recent.length ? summarizeWeeks(recent) : null);
-        setPrevHeadline(prior.length ? summarizeWeeks(prior) : null);
-        if (recent.length) {
-          const start = recent[recent.length - 1].week_start_date;
-          const end = recent[0].week_start_date;
-          setStatsRange(`${format(new Date(start + "T12:00"), "MMM d")} – ${format(new Date(end + "T12:00"), "MMM d")}`);
+        const latest = rows.slice(0, 1);
+        const prev = rows.slice(1, 2);
+        setHeadline(latest.length ? summarizeWeeks(latest) : null);
+        setPrevHeadline(prev.length ? summarizeWeeks(prev) : null);
+        if (latest.length) {
+          setStatsRange(`Week of ${format(new Date(latest[0].week_start_date + "T12:00"), "MMM d")}`);
         } else {
           setStatsRange(null);
         }
@@ -127,20 +125,20 @@ function Dashboard() {
           <Stat
             label="Attendance"
             value={fmtNum(headline?.avg_total_attendance)}
-            hint={deltaHint(headline?.avg_total_attendance, prevHeadline?.avg_total_attendance, "vs prev period")}
+            hint={deltaHint(headline?.avg_total_attendance, prevHeadline?.avg_total_attendance, statsRange ?? "latest week")}
           />
           <Stat
             label="Giving"
             value={fmtMoney(headline?.avg_weekly_giving)}
-            hint={deltaHint(headline?.avg_weekly_giving, prevHeadline?.avg_weekly_giving, "avg / week")}
+            hint={deltaHint(headline?.avg_weekly_giving, prevHeadline?.avg_weekly_giving, statsRange ?? "latest week")}
             accent
           />
           <Stat
             label="CG Participation"
             value={fmtNum(headline?.avg_community_groups)}
-            hint={deltaHint(headline?.avg_community_groups, prevHeadline?.avg_community_groups, "avg groups")}
+            hint={deltaHint(headline?.avg_community_groups, prevHeadline?.avg_community_groups, statsRange ?? "latest week")}
           />
-          <Stat label="Active Missions" value="0" hint={statsRange ?? "teams deployed"} />
+          <Stat label="Active Missions" value="0" hint="teams deployed" />
 
           <div className="col-span-2 lg:col-span-4 bg-surface border border-border rounded-2xl p-6 shadow-card">
             <div className="flex items-center justify-between mb-4">
@@ -242,7 +240,7 @@ function deltaHint(curr?: number, prev?: number, fallback = "") {
   if (curr === undefined || prev === undefined || !prev) return fallback;
   const pct = ((curr - prev) / prev) * 100;
   const sign = pct >= 0 ? "+" : "";
-  return `${sign}${pct.toFixed(1)}% vs prev`;
+  return `${sign}${pct.toFixed(1)}% vs prev week`;
 }
 
 function Stat({ label, value, hint, accent }: { label: string; value: string; hint: string; accent?: boolean }) {

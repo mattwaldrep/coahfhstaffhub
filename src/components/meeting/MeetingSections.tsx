@@ -619,18 +619,22 @@ function LiveTrendsCard({ meetingDate }: { meetingDate: string }) {
   const session = useMetricsSession();
   const [rows, setRows] = useState<WeeklyMetric[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [windowWeeks, setWindowWeeks] = useState<2 | 4 | 8 | 12>(4);
+  const [compare, setCompare] = useState(true);
+  const [showTable, setShowTable] = useState(true);
 
   useEffect(() => {
     if (!session) { setRows(null); return; }
     const end = meetingDate;
     const startD = new Date(meetingDate + "T12:00");
-    startD.setDate(startD.getDate() - 7 * 8);
+    // fetch enough weeks for window + comparison period
+    startD.setDate(startD.getDate() - 7 * (windowWeeks * 2 + 2));
     const start = format(startD, "yyyy-MM-dd");
     setErr(null);
     fetchWeeksInRange(start, end)
       .then(setRows)
       .catch((e: any) => setErr(e.message ?? "Failed to load metrics"));
-  }, [session, meetingDate]);
+  }, [session, meetingDate, windowWeeks]);
 
   if (!session) {
     return (
@@ -652,46 +656,76 @@ function LiveTrendsCard({ meetingDate }: { meetingDate: string }) {
     return <div className="text-xs text-muted-foreground italic">No weekly metrics found in this window.</div>;
   }
 
-  const recent = rows.slice(0, 4);
-  const prior = rows.slice(4, 8);
+  const recent = rows.slice(0, windowWeeks);
+  const prior = rows.slice(windowWeeks, windowWeeks * 2);
   const m = summarizeWeeks(recent);
-  const pm = prior.length ? summarizeWeeks(prior) : null;
+  const pm = compare && prior.length ? summarizeWeeks(prior) : null;
 
   return (
     <div className="bg-background/40 border border-border rounded-xl p-3 space-y-4">
+      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="uppercase tracking-wider text-muted-foreground font-medium">Window</span>
+        {[2, 4, 8, 12].map((n) => (
+          <button
+            key={n}
+            type="button"
+            onClick={() => setWindowWeeks(n as 2 | 4 | 8 | 12)}
+            className={cn(
+              "px-2 py-0.5 rounded-md border transition-colors",
+              windowWeeks === n
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-surface border-border hover:bg-surface/70 text-muted-foreground",
+            )}
+          >
+            {n}w
+          </button>
+        ))}
+        <span className="mx-1 h-3 w-px bg-border" />
+        <label className="inline-flex items-center gap-1 cursor-pointer text-muted-foreground">
+          <input type="checkbox" className="accent-primary" checked={compare} onChange={(e) => setCompare(e.target.checked)} />
+          Compare vs prior {windowWeeks}w
+        </label>
+        <label className="inline-flex items-center gap-1 cursor-pointer text-muted-foreground">
+          <input type="checkbox" className="accent-primary" checked={showTable} onChange={(e) => setShowTable(e.target.checked)} />
+          Weekly table
+        </label>
+      </div>
+
       <HeadlineTiles m={m} pm={pm} />
 
-      <div>
-        <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium mb-2">Recent weeks</div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                <th className="text-left font-normal py-1">Week</th>
-                <th className="text-right font-normal py-1">Total</th>
-                <th className="text-right font-normal py-1">Sanc.</th>
-                <th className="text-right font-normal py-1">Kids</th>
-                <th className="text-right font-normal py-1">Giving</th>
-                <th className="text-right font-normal py-1">CG</th>
-                <th className="text-right font-normal py-1">Prayer</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recent.map((w) => (
-                <tr key={w.id} className="border-t border-border/40">
-                  <td className="py-1">{w.week_label || format(new Date(w.week_start_date + "T12:00"), "MMM d")}</td>
-                  <td className="text-right tabular-nums">{fmtN(w.total_attendance)}</td>
-                  <td className="text-right tabular-nums">{fmtN(w.sanctuary_attendance)}</td>
-                  <td className="text-right tabular-nums">{fmtN(w.kids_attendance)}</td>
-                  <td className="text-right tabular-nums">{fmtMoneyN(w.internal_giving)}</td>
-                  <td className="text-right tabular-nums">{fmtN(w.community_group_attendance)}</td>
-                  <td className="text-right tabular-nums">{fmtN(w.prayer_count)}</td>
+      {showTable && (
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium mb-2">Recent weeks</div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <th className="text-left font-normal py-1">Week</th>
+                  <th className="text-right font-normal py-1">Total</th>
+                  <th className="text-right font-normal py-1">Sanc.</th>
+                  <th className="text-right font-normal py-1">Kids</th>
+                  <th className="text-right font-normal py-1">Giving</th>
+                  <th className="text-right font-normal py-1">CG</th>
+                  <th className="text-right font-normal py-1">Prayer</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {recent.map((w) => (
+                  <tr key={w.id} className="border-t border-border/40">
+                    <td className="py-1">{w.week_label || format(new Date(w.week_start_date + "T12:00"), "MMM d")}</td>
+                    <td className="text-right tabular-nums">{fmtN(w.total_attendance)}</td>
+                    <td className="text-right tabular-nums">{fmtN(w.sanctuary_attendance)}</td>
+                    <td className="text-right tabular-nums">{fmtN(w.kids_attendance)}</td>
+                    <td className="text-right tabular-nums">{fmtMoneyN(w.internal_giving)}</td>
+                    <td className="text-right tabular-nums">{fmtN(w.community_group_attendance)}</td>
+                    <td className="text-right tabular-nums">{fmtN(w.prayer_count)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
