@@ -60,7 +60,7 @@ export const setUserRole = createServerFn({ method: "POST" })
       .from("user_roles")
       .delete()
       .eq("user_id", data.userId)
-      .in("role", STAFF_ROLES as unknown as string[]);
+      .in("role", [...STAFF_ROLES]);
     const { error } = await supabaseAdmin
       .from("user_roles")
       .insert({ user_id: data.userId, role: data.role });
@@ -84,7 +84,7 @@ export const setUserElderTier = createServerFn({ method: "POST" })
       .from("user_roles")
       .delete()
       .eq("user_id", data.userId)
-      .in("role", ELDER_ROLES as unknown as string[]);
+      .in("role", [...ELDER_ROLES]);
     if (data.tier !== "none") {
       const { error } = await supabaseAdmin
         .from("user_roles")
