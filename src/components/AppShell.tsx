@@ -51,14 +51,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const initials = (user.email ?? "??").slice(0, 2).toUpperCase();
 
-  const send = async () => {
-    const text = input.trim();
-    if (!text || sending) return;
-    setInput("");
-    const next: Msg[] = [...messages, { role: "user", content: text }];
-    setMessages(next);
+  const runSend = async (history: Msg[]) => {
     setSending(true);
-
+    setLastError(null);
     try {
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
       const resp = await fetch(url, {
@@ -67,14 +62,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: next }),
+        body: JSON.stringify({ messages: history }),
       });
 
       if (!resp.ok || !resp.body) {
-        if (resp.status === 429) toast.error("Rate limit hit — try again in a moment.");
-        else if (resp.status === 402) toast.error("AI credits exhausted. Add funds in workspace settings.");
-        else toast.error("AI request failed.");
-        setSending(false);
+        let msg = "AI request failed.";
+        if (resp.status === 429) msg = "Rate limit hit — try again in a moment.";
+        else if (resp.status === 402) msg = "AI credits exhausted. Add funds in workspace settings.";
+        toast.error(msg);
+        setLastError(msg);
         return;
       }
 
@@ -126,10 +122,38 @@ export function AppShell({ children }: { children: ReactNode }) {
       }
     } catch (e) {
       console.error(e);
-      toast.error("AI request failed.");
+      const msg = "AI request failed.";
+      toast.error(msg);
+      setLastError(msg);
     } finally {
       setSending(false);
     }
+  };
+
+  const send = async () => {
+    const text = input.trim();
+    if (!text || sending) return;
+    setInput("");
+    const next: Msg[] = [...messages, { role: "user", content: text }];
+    setMessages(next);
+    await runSend(next);
+  };
+
+  const retry = async () => {
+    if (sending || messages.length === 0) return;
+    // Drop trailing assistant message if any (failed or partial), then resend the conversation
+    const trimmed = messages[messages.length - 1]?.role === "assistant"
+      ? messages.slice(0, -1)
+      : messages;
+    setMessages(trimmed);
+    await runSend(trimmed);
+  };
+
+  const clearChat = () => {
+    if (sending) return;
+    setMessages([]);
+    setLastError(null);
+    try { sessionStorage.removeItem(CHAT_STORAGE_KEY); } catch { /* ignore */ }
   };
 
   return (
