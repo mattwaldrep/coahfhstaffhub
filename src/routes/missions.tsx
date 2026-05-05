@@ -80,6 +80,8 @@ const emptyForm = (): Form => ({
   team_number: "",
   status: "not_started",
   itinerary_link: "",
+  itinerary_file_path: null,
+  itinerary_file_name: null,
   notes: "",
   steps: Object.fromEntries(STEPS.map((s) => [s.key, false])),
 });
