@@ -642,6 +642,33 @@ export type Database = {
           },
         ]
       }
+      elder_pco_config: {
+        Row: {
+          assigned_elder_field_id: string | null
+          id: string
+          list_id: string | null
+          spiritual_health_field_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          assigned_elder_field_id?: string | null
+          id?: string
+          list_id?: string | null
+          spiritual_health_field_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          assigned_elder_field_id?: string | null
+          id?: string
+          list_id?: string | null
+          spiritual_health_field_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       elder_section_notes: {
         Row: {
           created_at: string
@@ -1017,82 +1044,35 @@ export type Database = {
         }
         Relationships: []
       }
-      pastoral_care_entries: {
-        Row: {
-          assigned_elder_id: string | null
-          created_at: string
-          created_by: string | null
-          date_added: string
-          executive_session: boolean
-          id: string
-          notes: string | null
-          person_name: string
-          resolved_at: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          assigned_elder_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          date_added?: string
-          executive_session?: boolean
-          id?: string
-          notes?: string | null
-          person_name: string
-          resolved_at?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          assigned_elder_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          date_added?: string
-          executive_session?: boolean
-          id?: string
-          notes?: string | null
-          person_name?: string
-          resolved_at?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      pastoral_care_updates: {
+      pco_pastoral_notes: {
         Row: {
           author_id: string | null
           body: string
           created_at: string
-          entry_id: string
           executive_session: boolean
           id: string
+          meeting_id: string | null
+          pco_person_id: string
         }
         Insert: {
           author_id?: string | null
           body: string
           created_at?: string
-          entry_id: string
           executive_session?: boolean
           id?: string
+          meeting_id?: string | null
+          pco_person_id: string
         }
         Update: {
           author_id?: string | null
           body?: string
           created_at?: string
-          entry_id?: string
           executive_session?: boolean
           id?: string
+          meeting_id?: string | null
+          pco_person_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "pastoral_care_updates_entry_id_fkey"
-            columns: ["entry_id"]
-            isOneToOne: false
-            referencedRelation: "pastoral_care_entries"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {
