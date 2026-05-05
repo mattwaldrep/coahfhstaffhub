@@ -633,7 +633,7 @@ function LiveTrendsCard({ meetingDate }: { meetingDate: string }) {
     setErr(null);
     fetchWeeksInRange(start, end)
       .then(setRows)
-      .catch((e) => setErr(e.message ?? "Failed to load metrics"));
+      .catch((e: any) => setErr(e.message ?? "Failed to load metrics"));
   }, [session, meetingDate]);
 
   if (!session) {
