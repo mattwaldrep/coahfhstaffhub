@@ -281,6 +281,7 @@ function ReportsTab({ year }: { year: number }) {
   async function load() {
     const { data } = await supabase.from("finance_reports").select("*")
       .eq("fiscal_year", year)
+      .eq("report_type", "finance")
       .order("month", { ascending: true })
       .order("created_at", { ascending: false });
     setReports((data ?? []) as Report[]);
