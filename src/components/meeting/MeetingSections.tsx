@@ -490,18 +490,20 @@ function EventList({
 }
 
 export function LastWeekEventsSection({ meetingId }: { meetingId: string }) {
-  const rangeEnd = useMemo(() => startOfDay(new Date()), []);
-  const rangeStart = useMemo(() => subDays(rangeEnd, 7), [rangeEnd]);
+  const rangeEnd = useMemo(() => new Date(), []);
+  const rangeStart = useMemo(() => subDays(startOfDay(rangeEnd), 14), [rangeEnd]);
   return (
     <StandingSection
       title="Last Week's Events"
-      subtitle="Events from the previous 7 days — review and discuss."
+      subtitle="Events from the previous 14 days — review and discuss."
     >
       <EventList
         meetingId={meetingId}
         rangeStart={rangeStart}
         rangeEnd={rangeEnd}
-        emptyText="No events in the past week."
+        emptyText="No events match the current filter."
+        showCategoryFilter
+        filterStorageKey="meeting:last-week-events:excluded-categories"
       />
     </StandingSection>
   );
