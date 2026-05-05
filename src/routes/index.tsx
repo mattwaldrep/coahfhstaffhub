@@ -117,10 +117,23 @@ function Dashboard() {
       <div className="grid grid-cols-12 gap-6">
         {/* KPI cards */}
         <div className="col-span-12 lg:col-span-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Stat label="Attendance" value="—" hint="vs 4-wk avg" />
-          <Stat label="Giving" value="—" hint="last 4 weeks" accent />
-          <Stat label="CG Participation" value="—" hint="active members" />
-          <Stat label="Active Missions" value="0" hint="teams deployed" />
+          <Stat
+            label="Attendance"
+            value={fmtNum(headline?.avg_total_attendance)}
+            hint={deltaHint(headline?.avg_total_attendance, prevHeadline?.avg_total_attendance, "vs prev period")}
+          />
+          <Stat
+            label="Giving"
+            value={fmtMoney(headline?.avg_weekly_giving)}
+            hint={deltaHint(headline?.avg_weekly_giving, prevHeadline?.avg_weekly_giving, "avg / week")}
+            accent
+          />
+          <Stat
+            label="CG Participation"
+            value={fmtNum(headline?.avg_community_groups)}
+            hint={deltaHint(headline?.avg_community_groups, prevHeadline?.avg_community_groups, "avg groups")}
+          />
+          <Stat label="Active Missions" value="0" hint={statsRange ?? "teams deployed"} />
 
           <div className="col-span-2 lg:col-span-4 bg-surface border border-border rounded-2xl p-6 shadow-card">
             <div className="flex items-center justify-between mb-4">
