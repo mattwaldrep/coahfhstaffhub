@@ -121,7 +121,7 @@ function MeetingDetail() {
   );
 }
 
-function StandardSections({ meetingId, agenda, sectionNotes, isFullElder, reload }: any) {
+function StandardSections({ meetingId, agenda, sectionNotes, isFullElder, reload, mentionUsers }: any) {
   return (
     <div className="space-y-4">
       {STANDARD_SECTIONS.map((s) => {
@@ -152,6 +152,7 @@ function StandardSections({ meetingId, agenda, sectionNotes, isFullElder, reload
             note={note}
             isFullElder={isFullElder}
             reload={reload}
+            mentionUsers={mentionUsers}
           />
         );
       })}
