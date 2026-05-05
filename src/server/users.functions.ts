@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-const ROLES = ["core", "meeting", "extended"] as const;
+const ROLES = ["core", "meeting", "extended", "elder", "elder_candidate"] as const;
 type Role = (typeof ROLES)[number];
 
 async function assertCore(supabase: any, userId: string) {
@@ -36,16 +36,17 @@ export const listUsers = createServerFn({ method: "GET" })
     }));
   });
 
+const STAFF_ROLES = ["core", "meeting", "extended"] as const;
+const ELDER_ROLES = ["elder", "elder_candidate"] as const;
+
 export const setUserRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
-    z.object({ userId: z.string().uuid(), role: z.enum(ROLES) }).parse(d),
+    z.object({ userId: z.string().uuid(), role: z.enum(STAFF_ROLES) }).parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertCore(context.supabase, context.userId);
-    // Prevent removing the last core
     if (data.userId === context.userId) {
-      // Allow user to change others; if changing self away from core, ensure another core exists
       const { count } = await supabaseAdmin
         .from("user_roles")
         .select("user_id", { count: "exact", head: true })
@@ -54,11 +55,42 @@ export const setUserRole = createServerFn({ method: "POST" })
         throw new Error("Cannot remove the last core admin");
       }
     }
-    await supabaseAdmin.from("user_roles").delete().eq("user_id", data.userId);
+    // Remove only staff roles, preserve elder roles
+    await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("user_id", data.userId)
+      .in("role", [...STAFF_ROLES]);
     const { error } = await supabaseAdmin
       .from("user_roles")
       .insert({ user_id: data.userId, role: data.role });
     if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const setUserElderTier = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        userId: z.string().uuid(),
+        tier: z.enum(["none", "elder", "elder_candidate"]),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCore(context.supabase, context.userId);
+    await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("user_id", data.userId)
+      .in("role", [...ELDER_ROLES]);
+    if (data.tier !== "none") {
+      const { error } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: data.userId, role: data.tier });
+      if (error) throw new Error(error.message);
+    }
     return { ok: true };
   });
 
