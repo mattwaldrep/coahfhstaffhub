@@ -54,7 +54,7 @@ export function extractMentions(html: string): { assignee_id: string; title: str
 export function RichTextEditor({
   value, onChange, onBlur, placeholder, className, minHeight = 96, mentionUsers,
 }: Props) {
-  const extensions = [
+  const extensions: any[] = [
     StarterKit.configure({ heading: { levels: [2, 3] } }),
     Link.configure({ openOnClick: false, autolink: true, HTMLAttributes: { class: "underline text-[oklch(0.55_0.15_280)]" } }),
     Placeholder.configure({ placeholder: placeholder ?? "Write…" }),
