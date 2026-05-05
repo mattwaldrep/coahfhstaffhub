@@ -77,22 +77,27 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
 
   useEffect(() => { load(false); }, [load]);
 
-  // Refresh note counts whenever the people list changes
+  // Refresh note counts and last-note date whenever the people list changes
+  const refreshNoteMeta = useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return;
+    const { data } = await supabase
+      .from("pco_pastoral_notes")
+      .select("pco_person_id, created_at")
+      .in("pco_person_id", ids)
+      .order("created_at", { ascending: false });
+    const c: Record<string, number> = {};
+    const last: Record<string, string> = {};
+    for (const r of (data ?? []) as any[]) {
+      c[r.pco_person_id] = (c[r.pco_person_id] ?? 0) + 1;
+      if (!last[r.pco_person_id]) last[r.pco_person_id] = r.created_at;
+    }
+    setCounts(c);
+    setLatestNote(last);
+  }, []);
+
   useEffect(() => {
-    if (people.length === 0) return;
-    (async () => {
-      const ids = people.map((p) => p.id);
-      const { data } = await supabase
-        .from("pco_pastoral_notes")
-        .select("pco_person_id")
-        .in("pco_person_id", ids);
-      const c: Record<string, number> = {};
-      for (const r of (data ?? []) as any[]) {
-        c[r.pco_person_id] = (c[r.pco_person_id] ?? 0) + 1;
-      }
-      setCounts(c);
-    })();
-  }, [people]);
+    refreshNoteMeta(people.map((p) => p.id));
+  }, [people, refreshNoteMeta]);
 
   // Realtime
   useEffect(() => {
