@@ -23,6 +23,7 @@ interface ActionItem {
   title: string;
   due_date: string | null;
   completed: boolean;
+  assignee_id: string | null;
 }
 
 const SUB_CAL_LABEL: Record<string, string> = {
