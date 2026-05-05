@@ -434,7 +434,7 @@ function EventList({
                     : "bg-transparent border-border text-muted-foreground line-through",
                 )}
               >
-                {c}
+                {labelFor(c)}
               </button>
             );
           })}
