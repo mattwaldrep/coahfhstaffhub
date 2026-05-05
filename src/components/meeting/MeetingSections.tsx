@@ -380,22 +380,35 @@ function EventList({
   };
   const labelFor = (s: string) => SUB_CAL_LABELS[s] ?? s;
 
-  const categories = useMemo(() => {
+  const subCalendars = useMemo(() => {
     const s = new Set<string>();
     occurrences.forEach((o) => s.add(o.sub_calendar || "other"));
     return Array.from(s).sort();
   }, [occurrences]);
 
+  const categoryList = useMemo(() => {
+    const s = new Set<string>();
+    occurrences.forEach((o) => {
+      if (o.category && o.category.trim()) s.add(o.category);
+    });
+    return Array.from(s).sort();
+  }, [occurrences]);
+
   const visible = useMemo(
-    () => occurrences.filter((o) => !excluded.has(o.sub_calendar || "other")),
+    () =>
+      occurrences.filter(
+        (o) =>
+          !excluded.has(`sub:${o.sub_calendar || "other"}`) &&
+          !(o.category && excluded.has(`cat:${o.category}`)),
+      ),
     [occurrences, excluded],
   );
 
-  function toggleCat(cat: string) {
+  function toggleKey(key: string) {
     setExcluded((prev) => {
       const next = new Set(prev);
-      if (next.has(cat)) next.delete(cat);
-      else next.add(cat);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }
@@ -413,38 +426,49 @@ function EventList({
 
   if (loading) return <div className="text-sm text-muted-foreground py-4">Loading…</div>;
 
+  function FilterRow({ label, items, prefix }: { label: string; items: string[]; prefix: "sub" | "cat" }) {
+    if (items.length === 0) return null;
+    return (
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground mr-1">
+          {label}
+        </span>
+        {items.map((c) => {
+          const key = `${prefix}:${c}`;
+          const on = !excluded.has(key);
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => toggleKey(key)}
+              className={cn(
+                "text-[11px] px-2 py-0.5 rounded-full border transition-colors",
+                on
+                  ? "bg-primary/15 border-primary/30 text-foreground"
+                  : "bg-transparent border-border text-muted-foreground line-through",
+              )}
+            >
+              {prefix === "sub" ? labelFor(c) : c}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
-      {showCategoryFilter && categories.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[10px] uppercase tracking-wider text-muted-foreground mr-1">
-            Filter
-          </span>
-          {categories.map((c) => {
-            const on = !excluded.has(c);
-            return (
-              <button
-                key={c}
-                type="button"
-                onClick={() => toggleCat(c)}
-                className={cn(
-                  "text-[11px] px-2 py-0.5 rounded-full border transition-colors",
-                  on
-                    ? "bg-primary/15 border-primary/30 text-foreground"
-                    : "bg-transparent border-border text-muted-foreground line-through",
-                )}
-              >
-                {labelFor(c)}
-              </button>
-            );
-          })}
+      {showCategoryFilter && (
+        <div className="space-y-1.5">
+          <FilterRow label="Calendar" items={subCalendars} prefix="sub" />
+          <FilterRow label="Category" items={categoryList} prefix="cat" />
           {excluded.size > 0 && (
             <button
               type="button"
               onClick={() => setExcluded(new Set())}
-              className="text-[11px] text-muted-foreground hover:text-foreground underline ml-1"
+              className="text-[11px] text-muted-foreground hover:text-foreground underline"
             >
-              reset
+              reset filters
             </button>
           )}
         </div>
