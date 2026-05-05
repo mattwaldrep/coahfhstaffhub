@@ -7,6 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Plus, Check, Trash2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import {
+  StandingSection,
+  DevotionalSection,
+  LeadLikeJesusSection,
+  SundayReviewSection,
+  LastWeekEventsSection,
+  UpcomingEventsSection,
+  LinkSection,
+  ReviewTrendsSection,
+  ReviewTasksSection,
+  SectionDivider,
+} from "@/components/meeting/MeetingSections";
 
 export const Route = createFileRoute("/meeting")({
   component: MeetingPage,
@@ -55,7 +67,6 @@ function MeetingPage() {
   const [savingNotes, setSavingNotes] = useState(false);
   const notesTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load or create today's meeting
   useEffect(() => {
     if (!user) return;
     let mounted = true;
@@ -100,7 +111,6 @@ function MeetingPage() {
     };
   }, [user]);
 
-  // Realtime subscriptions
   useEffect(() => {
     if (!meeting) return;
     const channel = supabase
@@ -108,16 +118,12 @@ function MeetingPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "agenda_items", filter: `meeting_id=eq.${meeting.id}` },
-        (payload) => {
-          setAgenda((prev) => applyChange(prev, payload, "position"));
-        },
+        (payload) => setAgenda((prev) => applyChange(prev, payload, "position")),
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "action_items", filter: `meeting_id=eq.${meeting.id}` },
-        (payload) => {
-          setActions((prev) => applyChange(prev, payload));
-        },
+        (payload) => setActions((prev) => applyChange(prev, payload)),
       )
       .on(
         "postgres_changes",
@@ -125,7 +131,6 @@ function MeetingPage() {
         (payload) => {
           const next = payload.new as Meeting;
           setMeeting(next);
-          // Don't clobber the user's local notes draft if they're typing
           if (document.activeElement?.id !== "meeting-notes") {
             setNotesDraft(next.notes ?? "");
           }
@@ -175,7 +180,6 @@ function MeetingPage() {
     await supabase.from("action_items").delete().eq("id", id);
   };
 
-  // Debounced autosave for notes
   const onNotesChange = (val: string) => {
     setNotesDraft(val);
     if (!meeting) return;
@@ -187,15 +191,13 @@ function MeetingPage() {
     }, 600);
   };
 
-  // Web Speech transcription
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<any>(null);
   const listeningRef = useRef(false);
 
   const toggleTranscription = useCallback(() => {
     if (!meeting) return;
-    const SR =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) {
       toast.error("Speech recognition not supported in this browser. Try Chrome.");
       return;
@@ -243,15 +245,21 @@ function MeetingPage() {
 
   return (
     <AppShell>
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <header className="flex items-end justify-between flex-wrap gap-4 mb-8">
           <div>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">
-              {meeting ? new Date(meeting.meeting_date + "T00:00").toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) : ""}
+              {meeting
+                ? new Date(meeting.meeting_date + "T00:00").toLocaleDateString(undefined, {
+                    weekday: "long",
+                    month: "long",
+                    day: "numeric",
+                  })
+                : ""}
             </p>
             <h1 className="text-3xl font-display font-bold mt-1">Weekly Staff Meeting</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Live agenda and notes — every change syncs across the room in real time.
+              Standing agenda — every section syncs across the room in real time.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -271,140 +279,186 @@ function MeetingPage() {
           </div>
         </header>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Agenda */}
-          <section className="lg:col-span-2 bg-surface border border-border rounded-2xl p-6">
-            <h2 className="font-display font-semibold text-lg mb-4">Agenda</h2>
-            <ul className="space-y-2">
-              {agenda.map((item) => (
-                <li
-                  key={item.id}
-                  className="group flex items-start gap-3 p-3 rounded-lg hover:bg-muted/40 transition-colors"
-                >
-                  <button
-                    onClick={() => toggleAgenda(item)}
-                    className={cn(
-                      "mt-0.5 w-5 h-5 rounded border flex items-center justify-center shrink-0",
-                      item.status === "done"
-                        ? "bg-primary border-primary text-primary-foreground"
-                        : "border-border",
-                    )}
-                  >
-                    {item.status === "done" && <Check className="w-3 h-3" />}
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <div className={cn("text-sm", item.status === "done" && "line-through text-muted-foreground")}>
-                      {item.title}
-                    </div>
-                    {item.owner_name && (
-                      <div className="text-xs text-muted-foreground mt-0.5">{item.owner_name}</div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => removeAgenda(item.id)}
-                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
-                    aria-label="Delete"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </li>
-              ))}
-              {agenda.length === 0 && (
-                <li className="text-sm text-muted-foreground py-4">No agenda items yet — add the first one below.</li>
-              )}
-            </ul>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                addAgenda();
-              }}
-              className="mt-4 flex gap-2"
-            >
-              <input
-                value={newAgenda}
-                onChange={(e) => setNewAgenda(e.target.value)}
-                placeholder="Add agenda item…"
-                className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-              />
-              <Button type="submit" size="icon" disabled={!newAgenda.trim()}>
-                <Plus className="w-4 h-4" />
-              </Button>
-            </form>
-          </section>
+        {!meeting ? (
+          <div className="text-sm text-muted-foreground">Loading meeting…</div>
+        ) : (
+          <div className="space-y-3">
+            <DevotionalSection meetingId={meeting.id} />
+            <LeadLikeJesusSection meetingId={meeting.id} />
 
-          {/* Action items */}
-          <section className="bg-surface border border-border rounded-2xl p-6">
-            <h2 className="font-display font-semibold text-lg mb-4">Action Items</h2>
-            <ul className="space-y-2">
-              {actions.map((item) => (
-                <li key={item.id} className="group flex items-start gap-3">
-                  <button
-                    onClick={() => toggleAction(item)}
-                    className={cn(
-                      "mt-0.5 w-5 h-5 rounded border flex items-center justify-center shrink-0",
-                      item.completed
-                        ? "bg-primary border-primary text-primary-foreground"
-                        : "border-border",
-                    )}
-                  >
-                    {item.completed && <Check className="w-3 h-3" />}
-                  </button>
-                  <span className={cn("flex-1 text-sm", item.completed && "line-through text-muted-foreground")}>
-                    {item.title}
-                  </span>
-                  <button
-                    onClick={() => removeAction(item.id)}
-                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </li>
-              ))}
-              {actions.length === 0 && (
-                <li className="text-sm text-muted-foreground py-2">No action items yet.</li>
-              )}
-            </ul>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                addAction();
-              }}
-              className="mt-4 flex gap-2"
-            >
-              <input
-                value={newAction}
-                onChange={(e) => setNewAction(e.target.value)}
-                placeholder="New action item…"
-                className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-              />
-              <Button type="submit" size="icon" disabled={!newAction.trim()}>
-                <Plus className="w-4 h-4" />
-              </Button>
-            </form>
-          </section>
+            <SectionDivider label="Recurring Agenda Items" />
 
-          {/* Notes */}
-          <section className="lg:col-span-2 bg-surface border border-border rounded-2xl p-6">
-            <h2 className="font-display font-semibold text-lg mb-4">Meeting Notes</h2>
-            <textarea
-              id="meeting-notes"
-              value={notesDraft}
-              onChange={(e) => onNotesChange(e.target.value)}
-              placeholder="Type meeting notes here. They auto-save and sync to everyone in the room."
-              className="w-full min-h-[280px] bg-background border border-border rounded-lg p-4 text-sm outline-none focus:ring-2 focus:ring-primary/30 resize-y"
+            <SundayReviewSection meetingId={meeting.id} />
+            <LastWeekEventsSection meetingId={meeting.id} />
+            <LinkSection
+              meetingId={meeting.id}
+              sectionKey="first_step_cards"
+              title="First Step Cards"
+              subtitle="Review new submissions in PCO."
+              href="https://people.planningcenteronline.com/forms/161115"
+              linkLabel="Open First Step form in PCO"
             />
-          </section>
+            <LinkSection
+              meetingId={meeting.id}
+              sectionKey="next_step_cards"
+              title="Next Step Cards"
+              subtitle="Review next-step submissions in PCO."
+              href="https://people.planningcenteronline.com/forms/433638"
+              linkLabel="Open Next Step form in PCO"
+            />
+            <ReviewTrendsSection meetingId={meeting.id} meetingDate={meeting.meeting_date} />
+            <ReviewTasksSection />
 
-          {/* Transcript */}
-          <section className="bg-surface border border-border rounded-2xl p-6">
-            <h2 className="font-display font-semibold text-lg mb-4">Live Transcript</h2>
-            <div className="text-sm text-muted-foreground whitespace-pre-wrap min-h-[280px] max-h-[400px] overflow-y-auto">
-              {meeting?.transcript ?? (
-                <span className="italic">Press “Start transcription” to capture the conversation.</span>
-              )}
-            </div>
-          </section>
-        </div>
+            <SectionDivider label="This Week" />
+
+            {/* Items To Discuss (formerly Agenda) */}
+            <StandingSection
+              title="Items To Discuss"
+              subtitle="Topics specific to this week's meeting."
+              badge={
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-normal">
+                  {agenda.length} {agenda.length === 1 ? "item" : "items"}
+                </span>
+              }
+            >
+              <ul className="space-y-2">
+                {agenda.map((item) => (
+                  <li
+                    key={item.id}
+                    className="group flex items-start gap-3 p-2 rounded-lg hover:bg-muted/40 transition-colors"
+                  >
+                    <button
+                      onClick={() => toggleAgenda(item)}
+                      className={cn(
+                        "mt-0.5 w-5 h-5 rounded border flex items-center justify-center shrink-0",
+                        item.status === "done"
+                          ? "bg-primary border-primary text-primary-foreground"
+                          : "border-border",
+                      )}
+                    >
+                      {item.status === "done" && <Check className="w-3 h-3" />}
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <div className={cn("text-sm", item.status === "done" && "line-through text-muted-foreground")}>
+                        {item.title}
+                      </div>
+                      {item.owner_name && (
+                        <div className="text-xs text-muted-foreground mt-0.5">{item.owner_name}</div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => removeAgenda(item.id)}
+                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                      aria-label="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </li>
+                ))}
+                {agenda.length === 0 && (
+                  <li className="text-sm text-muted-foreground py-2">
+                    No discussion items yet — add one below.
+                  </li>
+                )}
+              </ul>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  addAgenda();
+                }}
+                className="mt-4 flex gap-2"
+              >
+                <input
+                  value={newAgenda}
+                  onChange={(e) => setNewAgenda(e.target.value)}
+                  placeholder="Add discussion item…"
+                  className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                <Button type="submit" size="icon" disabled={!newAgenda.trim()}>
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </form>
+            </StandingSection>
+
+            <UpcomingEventsSection meetingId={meeting.id} />
+
+            <SectionDivider label="Capture" />
+
+            {/* Action Items (this meeting) */}
+            <StandingSection
+              title="New Action Items"
+              subtitle="Tasks created in today's meeting. Open items appear in Review Tasks above."
+              defaultOpen={false}
+            >
+              <ul className="space-y-2">
+                {actions.map((item) => (
+                  <li key={item.id} className="group flex items-start gap-3">
+                    <button
+                      onClick={() => toggleAction(item)}
+                      className={cn(
+                        "mt-0.5 w-5 h-5 rounded border flex items-center justify-center shrink-0",
+                        item.completed
+                          ? "bg-primary border-primary text-primary-foreground"
+                          : "border-border",
+                      )}
+                    >
+                      {item.completed && <Check className="w-3 h-3" />}
+                    </button>
+                    <span className={cn("flex-1 text-sm", item.completed && "line-through text-muted-foreground")}>
+                      {item.title}
+                    </span>
+                    <button
+                      onClick={() => removeAction(item.id)}
+                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </li>
+                ))}
+                {actions.length === 0 && (
+                  <li className="text-sm text-muted-foreground py-2">No action items yet.</li>
+                )}
+              </ul>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  addAction();
+                }}
+                className="mt-4 flex gap-2"
+              >
+                <input
+                  value={newAction}
+                  onChange={(e) => setNewAction(e.target.value)}
+                  placeholder="New action item…"
+                  className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                <Button type="submit" size="icon" disabled={!newAction.trim()}>
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </form>
+            </StandingSection>
+
+            {/* Notes */}
+            <StandingSection title="Meeting Notes" subtitle="General notes for the whole meeting." defaultOpen={false}>
+              <textarea
+                id="meeting-notes"
+                value={notesDraft}
+                onChange={(e) => onNotesChange(e.target.value)}
+                placeholder="Type meeting notes here. They auto-save and sync to everyone in the room."
+                className="w-full min-h-[200px] bg-background border border-border rounded-lg p-4 text-sm outline-none focus:ring-2 focus:ring-primary/30 resize-y"
+              />
+            </StandingSection>
+
+            {/* Transcript */}
+            <StandingSection title="Live Transcript" subtitle="Captured when transcription is on." defaultOpen={false}>
+              <div className="text-sm text-muted-foreground whitespace-pre-wrap min-h-[120px] max-h-[400px] overflow-y-auto">
+                {meeting?.transcript ?? (
+                  <span className="italic">Press “Start transcription” to capture the conversation.</span>
+                )}
+              </div>
+            </StandingSection>
+          </div>
+        )}
       </div>
     </AppShell>
   );
