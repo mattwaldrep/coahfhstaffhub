@@ -65,7 +65,7 @@ export function AppSidebar() {
           <div className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-xs">
             CH
           </div>
-          {!collapsed && <span>COAH Hub</span>}
+          {!collapsed && <span>COAH Forest Hills Staff Hub</span>}
         </Link>
       </SidebarHeader>
       <SidebarContent>
