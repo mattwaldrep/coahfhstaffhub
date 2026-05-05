@@ -790,12 +790,19 @@ function CalendarBody() {
                   </Button>
                 )}
                 {form.id && form.recurs && editingOccurrence && (
-                  <Button type="button" variant="ghost" onClick={skipOccurrence}>
-                    Skip this date
-                  </Button>
+                  <>
+                    <Button type="button" variant="ghost" onClick={skipOccurrence}>
+                      Skip this date
+                    </Button>
+                    <Button type="button" variant="secondary" onClick={saveOccurrenceOnly}>
+                      Save this occurrence only
+                    </Button>
+                  </>
                 )}
               </div>
-              <Button type="submit">{form.id ? "Save changes" : "Add event"}</Button>
+              <Button type="submit">
+                {form.id ? (form.recurs && editingOccurrence ? "Save entire series" : "Save changes") : "Add event"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
