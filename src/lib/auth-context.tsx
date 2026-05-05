@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "core" | "meeting" | "extended";
+export type AppRole = "core" | "meeting" | "extended" | "elder" | "elder_candidate";
 
 interface AuthContextValue {
   session: Session | null;
@@ -12,9 +12,14 @@ interface AuthContextValue {
   signOut: () => Promise<void>;
   hasRole: (role: AppRole) => boolean;
   hasAnyRole: (roles: AppRole[]) => boolean;
+  hasStaffAccess: boolean;
+  hasElderAccess: boolean;
+  isFullElder: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+const STAFF_ROLES: AppRole[] = ["core", "meeting", "extended"];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -43,6 +48,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRoles((data ?? []).map((r) => r.role as AppRole));
   }
 
+  const hasStaffAccess = roles.some((r) => STAFF_ROLES.includes(r));
+  const hasElderAccess = roles.includes("elder") || roles.includes("elder_candidate");
+  const isFullElder = roles.includes("elder");
+
   const value: AuthContextValue = {
     session,
     user: session?.user ?? null,
@@ -53,6 +62,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     hasRole: (r) => roles.includes(r),
     hasAnyRole: (rs) => rs.some((r) => roles.includes(r)),
+    hasStaffAccess,
+    hasElderAccess,
+    isFullElder,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
