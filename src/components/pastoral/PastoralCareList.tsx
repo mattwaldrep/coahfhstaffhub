@@ -187,6 +187,22 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
     setSearch(""); setHealthFilter(new Set()); setElderFilter("all"); setNotesFilter("any");
   };
 
+  if (loading) return <div className="text-sm text-muted-foreground">Loading…</div>;
+
+  if (!configured) {
+    return (
+      <div className="bg-surface border border-border rounded-2xl p-6">
+        <div className="text-sm font-medium">Planning Center isn't configured yet.</div>
+        <p className="text-xs text-muted-foreground mt-1">
+          A full elder needs to set the care list ID and custom field IDs.
+        </p>
+        <Link to="/elder/settings" className="inline-block mt-3 text-xs text-[oklch(0.55_0.15_280)] hover:underline">
+          Open Elder settings →
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3 flex-wrap">
