@@ -50,12 +50,6 @@ function HomePage() {
   );
 }
 
-type Headline = {
-  avg_total_attendance?: number;
-  avg_weekly_giving?: number;
-  avg_community_groups?: number;
-};
-
 function Dashboard() {
   const { user } = useAuth();
   const metricsSession = useMetricsSession();
