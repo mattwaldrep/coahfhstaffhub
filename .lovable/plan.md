@@ -1,87 +1,85 @@
-## Goal
-Restructure the weekly staff meeting around a fixed standing agenda, with each section pulling live data instead of being free-form items.
+# Plan: 7 Feature Upgrades
 
-## New meeting layout
+Tackling items 1, 4, 5, 6, 8, 10, 11 from the previous list. Sequenced by dependency and shared infrastructure.
 
-The meeting page becomes a vertical stack of **standing sections** (always present, in order), followed by the existing free-form agenda for "Items To Discuss," then Action Items + Notes + Transcript.
+## 1. Google Tasks integration (item 1)
 
-Each standing section is a collapsible card with its own live content.
+Replace the placeholder "Push to Google Tasks" toast with a real per-user OAuth flow.
 
-### 1. Devotional
-Simple section with a notes textarea (autosaves to a per-meeting `section_notes` JSON column). No data pull.
+- Add a Google connector via the standard Google connector (Tasks scope: `https://www.googleapis.com/auth/tasks`).
+- Each staff member links their own Google account from **Settings → Integrations** (new section).
+- Store the per-user refresh token in a new `user_integrations` table (user_id, provider, refresh_token, access_token, expires_at). RLS: user can only see/manage their own row.
+- New server function `pushActionItemToGoogleTasks({ actionItemId })`:
+  - Looks up the assignee's stored token, refreshes if needed, POSTs to `tasks/v1/lists/@default/tasks` with title + due_date + notes.
+  - Marks `action_items.google_task_id` (new column) so we don't double-push.
+- "Push to Google Tasks" button on each action item calls the server function. Disabled if assignee hasn't linked their account; tooltip explains.
 
-### 2. Lead Like Jesus
-Same as Devotional — notes-only section.
+## 2. Meeting recap email (item 5)
 
-### 3. Recurring Agenda Items (header / divider)
-Just a visual section break introducing the data-driven items below.
+After a meeting is finalized, send a branded summary email to all staff.
 
-### 4. Sunday Review
-Pulls the most recent `sunday_reviews` row (the prior Sunday). Shows ratings (worship/sermon/connect/confession) as a compact grid + wins / opportunities text. Link to `/sunday-review` for full detail.
+- Add a "Finalize meeting" button on `/meeting` (top right, next to "Save"). Sets `status='completed'`, `completed_at=now()`.
+- On finalize, call new server function `sendMeetingRecap({ meetingId })`:
+  - Gathers: agenda items, all section notes, event notes, new action items (created during this meeting), Sunday review snapshot.
+  - Renders a React Email template (`MeetingRecap`) and enqueues to all `core` + `meeting` role users.
+- Requires email infrastructure setup (auth/transactional). I'll trigger the email-domain setup dialog if no domain exists yet, then scaffold transactional templates.
+- Add a "Resend recap" button visible after finalization.
 
-### 5. Last Week's Events
-Queries `calendar_events` where `start_at` is within the previous 7 days (expanding recurrences the same way `/calendar` does). Lists title, date, leader, sub_calendar. Each row has a "discuss" notes input that saves into the meeting's section notes.
+## 3. Overdue action item surfacing (item 6)
 
-### 6. First Step Cards
-External link card → `https://people.planningcenteronline.com/forms/161115` with a "Open in PCO" button + notes textarea.
+- Add an "Action Items" widget to the home dashboard (`/`) showing:
+  - **My open items** (assignee = current user)
+  - **Overdue across team** (visible to core only)
+- Color-coded: red if past due, amber if due within 3 days.
+- Optional weekly digest email (Monday 8am via pg_cron → server route → reuse transactional email infra). Sends each user their open + overdue items.
 
-### 7. Next Step Cards
-Same pattern → `https://people.planningcenteronline.com/forms/433638`.
+## 4. Sunday Review submission nudge (item 8)
 
-### 8. Review Trends
-- Link button → `https://churchmetrics.lovable.app/`
-- Embedded "this week's metrics report": file uploader (PDF/XLSX) scoped to the meeting. If a report was uploaded for this meeting's week, it shows as a download chip with uploader + timestamp. Reuses existing `finance-reports` storage bucket pattern but stored in a new `meeting_reports` table (or we reuse `finance_reports` with a `report_type` column — see Technical).
-- Notes textarea.
+- pg_cron job every Monday at 7am calls `/api/public/hooks/sunday-review-nudge`.
+- Endpoint checks if a `sunday_reviews` row exists for the prior Sunday. If not, emails all `core` + `meeting` users a short reminder with a link to `/sunday-review`.
+- Verifies a shared secret header to prevent abuse.
 
-### 9. Review Tasks
-Pulls all `action_items` where `completed = false` from ALL meetings (not just today). Groups by `assignee_id` (falls back to "Unassigned"). For each task:
-- Checkbox to mark complete
-- Assignee dropdown (profiles)
-- "Push to Google Tasks" button (stub for now — see Technical)
+## 5. Missions workflow polish (item 10)
 
-### 10. Items To Discuss
-This is the **existing free-form `agenda_items` list** — kept as-is. Renamed in UI from "Agenda" to "Items To Discuss."
+- Confirm `mission_trips.steps` JSON is being rendered as a checklist UI on the missions detail/expanded card. If only stored as raw JSON, build a proper editable step-list with progress bar.
+- Add "itinerary upload" (file → `mission-trips` storage bucket, new) replacing the current text-only `itinerary_link` (keep the link as a fallback).
+- Add status filter chips on `/missions` (not_started / planning / confirmed / completed).
 
-### 11. Upcoming Events
-Queries `calendar_events` for the next 60 days (with recurrence expansion). Same row format as Last Week's Events with per-row notes.
+## 6. Calendar single-occurrence editing (item 11)
 
-### 12. Action Items, Notes, Transcript
-Existing sections — kept at the bottom.
+The `calendar_events.excluded_dates` column already exists. Wire it up properly:
 
-## Technical changes
+- When editing a recurring event in `/calendar`, show a dialog: **Edit this occurrence** vs **Edit all**.
+- "Edit this occurrence" → adds the date to `excluded_dates` on the original event AND inserts a new one-off event with the modifications.
+- "Delete this occurrence" → adds to `excluded_dates` only.
+- Update the recurrence expansion helper (`src/lib/calendar-expand.ts`) to skip dates listed in `excluded_dates` (it likely already does; verify).
 
-**Database (one migration):**
-- New table `meeting_section_notes (meeting_id, section_key, notes, updated_at)` with `UNIQUE(meeting_id, section_key)` — stores per-section devotional/discussion notes. RLS: same as meetings (core + meeting roles).
-- New table `meeting_event_notes (meeting_id, event_id, occurrence_date, notes)` — per-event discussion notes within a meeting (for Last Week / Upcoming sections). RLS: same.
-- Add `assignee_id` lookup-friendly index on `action_items`.
-- `action_items` already has `assignee_id` — good.
-- For Review Trends report: add `report_type text default 'finance'` column to `finance_reports` and reuse the bucket. Filter by `report_type='trends'` for the meeting view.
+## 7. Finance budget vs actuals variance (item 4 — not on your list but tightly tied to #6/#10... actually you said skip 4. Removing.)
 
-**Frontend (`src/routes/meeting.tsx`):**
-- Major rewrite. Break into sub-components in `src/components/meeting/`:
-  - `StandingSection.tsx` (collapsible wrapper)
-  - `NotesSection.tsx` (Devotional, Lead Like Jesus, link sections)
-  - `SundayReviewSection.tsx`
-  - `LastWeekEventsSection.tsx` + `UpcomingEventsSection.tsx` (share recurrence expansion helper extracted from `calendar.tsx` into `src/lib/calendar-expand.ts`)
-  - `ReviewTrendsSection.tsx` (file upload + link)
-  - `ReviewTasksSection.tsx` (cross-meeting open action items, grouped by assignee)
-- Keep existing `agenda_items` list as the "Items To Discuss" section.
-- Keep existing notes/transcript/action items code.
+*(Reread your message — you DID include 4. Keeping it.)*
 
-**Google Tasks push:**
-For this turn, render the "Push to Google Tasks" button as a placeholder that shows a toast ("Google Tasks integration coming soon"). Wiring the actual integration requires per-user OAuth (Google Tasks API), which is a separate feature involving connector setup or custom OAuth — flagged as follow-up, not built now.
+Item 4 was **PCO First/Next Step Cards integration**. Build a small "PCO snapshot" panel inside those meeting sections:
 
-**Recurrence expansion:**
-Extract the existing recurrence/RRULE expansion logic from `calendar.tsx` into a shared helper so both Last Week and Upcoming sections render expanded occurrences correctly.
+- Add a `PCO_API_TOKEN` secret (Personal Access Token from PCO).
+- Server function `getPcoFormCounts({ formId })` hits `https://api.planningcenteronline.com/people/v2/forms/{id}/form_submissions?per_page=1` and returns total count + last 7 days count.
+- Show "X total submissions • Y this week" inside the First Step / Next Step cards with a refresh button.
 
-## Out of scope this turn
-- Actual Google Tasks API integration (button is placeholder)
-- Editing standing agenda structure from the UI (it's hard-coded — these are *standing* items by definition)
-- Backfilling historical meetings with section notes
+## Sequencing
 
-## Files to create/edit
-- migration: section notes + event notes tables, report_type column
-- new: `src/lib/calendar-expand.ts`
-- new: `src/components/meeting/*.tsx` (6 files)
-- edit: `src/routes/meeting.tsx` (restructure)
-- edit: `src/routes/calendar.tsx` (use shared expansion helper)
+I'll work in this order and check in after each major chunk:
+
+1. **Email infrastructure** (prerequisite for #2, #3-digest, #4) — domain setup dialog + transactional scaffolding
+2. **Google Tasks** (#1) — connector + token storage + push function
+3. **Meeting recap email** (#2) — finalize flow + recap template
+4. **Overdue action items dashboard widget + weekly digest** (#3)
+5. **Sunday review nudge cron** (#4)
+6. **PCO integration** (item 4 from your list)
+7. **Missions polish** (#5)
+8. **Calendar single-occurrence editing** (#6)
+
+## Confirmations needed before I start
+
+- **Google Tasks**: OK to add a "Settings → Integrations" page where each staff member links their own Google account?
+- **Email domain**: do you already have a domain you want emails sent from (e.g. `notify@yourchurch.org`)? If not I'll trigger the setup dialog.
+- **PCO**: do you have a PCO Personal Access Token, or should I ask for it when we get to that step?
+- **Weekly digest**: send Monday 8am, or different time?
