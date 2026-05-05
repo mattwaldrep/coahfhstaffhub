@@ -78,6 +78,7 @@ function PcoCard() {
         setHealthField(c?.spiritual_health_field_id ?? "");
       } catch { /* noop */ }
     })();
+    loadFields();
   }, []);
 
   async function ping() {
