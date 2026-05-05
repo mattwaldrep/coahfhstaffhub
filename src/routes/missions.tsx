@@ -100,6 +100,8 @@ function Body() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Form>(emptyForm());
+  const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     load();
