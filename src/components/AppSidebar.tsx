@@ -18,6 +18,7 @@ import {
   ClipboardCheck,
   Users,
   UserCog,
+  Wallet,
   Settings as SettingsIcon,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
@@ -33,6 +34,7 @@ export function AppSidebar() {
   const { hasRole } = useAuth();
   const SECONDARY = [
     { to: "/missions", label: "Missions", icon: Users },
+    ...(hasRole("core") ? [{ to: "/finance", label: "Finance", icon: Wallet }] : []),
     ...(hasRole("core") ? [{ to: "/users", label: "Users", icon: UserCog }] : []),
     { to: "/settings", label: "Settings", icon: SettingsIcon },
   ];
