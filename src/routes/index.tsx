@@ -58,11 +58,13 @@ type Headline = {
 
 function Dashboard() {
   const { user } = useAuth();
+  const metricsSession = useMetricsSession();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [actions, setActions] = useState<ActionItem[]>([]);
-  const [headline, setHeadline] = useState<Headline | null>(null);
-  const [prevHeadline, setPrevHeadline] = useState<Headline | null>(null);
+  const [headline, setHeadline] = useState<MetricsHeadline | null>(null);
+  const [prevHeadline, setPrevHeadline] = useState<MetricsHeadline | null>(null);
   const [statsRange, setStatsRange] = useState<string | null>(null);
+  const [metricsErr, setMetricsErr] = useState<string | null>(null);
 
   useEffect(() => {
     const now = new Date().toISOString();
@@ -81,23 +83,34 @@ function Dashboard() {
       .order("due_date", { ascending: true, nullsFirst: false })
       .limit(50)
       .then(({ data }) => setActions((data ?? []) as ActionItem[]));
-    // Latest trends report (current + previous month) for KPI cards
-    supabase
-      .from("finance_reports")
-      .select("parsed_metrics,fiscal_year,month,created_at")
-      .eq("report_type", "trends")
-      .order("created_at", { ascending: false })
-      .limit(10)
-      .then(({ data }) => {
-        const rows = (data ?? []) as Array<{ parsed_metrics: any; fiscal_year: number; month: number }>;
-        const withMetrics = rows.filter((r) => r.parsed_metrics?.headline);
-        if (withMetrics[0]) {
-          setHeadline(withMetrics[0].parsed_metrics.headline as Headline);
-          setStatsRange((withMetrics[0].parsed_metrics.range as string) ?? null);
-        }
-        if (withMetrics[1]) setPrevHeadline(withMetrics[1].parsed_metrics.headline as Headline);
-      });
   }, []);
+
+  // Live metrics from Church Metrics — last 4 weeks vs preceding 4 weeks
+  useEffect(() => {
+    if (!metricsSession) {
+      setHeadline(null);
+      setPrevHeadline(null);
+      setStatsRange(null);
+      return;
+    }
+    setMetricsErr(null);
+    fetchRecentWeeks(8)
+      .then((rows) => {
+        const recent = rows.slice(0, 4);
+        const prior = rows.slice(4, 8);
+        setHeadline(recent.length ? summarizeWeeks(recent) : null);
+        setPrevHeadline(prior.length ? summarizeWeeks(prior) : null);
+        if (recent.length) {
+          const start = recent[recent.length - 1].week_start_date;
+          const end = recent[0].week_start_date;
+          setStatsRange(`${format(new Date(start + "T12:00"), "MMM d")} – ${format(new Date(end + "T12:00"), "MMM d")}`);
+        } else {
+          setStatsRange(null);
+        }
+      })
+      .catch((e) => setMetricsErr(e.message ?? "Failed to load metrics"));
+  }, [metricsSession]);
+
 
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const myActions = user ? actions.filter((a) => a.assignee_id === user.id).slice(0, 8) : [];
