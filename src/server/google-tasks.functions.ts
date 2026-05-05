@@ -129,3 +129,54 @@ export const pushActionItemToGoogleTasks = createServerFn({ method: "POST" })
 
     return { ok: true, taskId: result.id };
   });
+
+export const pushActionItemsBulk = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ actionItemIds: z.array(z.string().uuid()).min(1).max(100) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const results: { id: string; ok: boolean; error?: string }[] = [];
+    const tokenCache = new Map<string, string>();
+
+    const { data: items, error } = await supabaseAdmin
+      .from("action_items")
+      .select("*")
+      .in("id", data.actionItemIds);
+    if (error) throw new Error(error.message);
+
+    for (const item of items ?? []) {
+      if (item.google_task_pushed_at) {
+        results.push({ id: item.id, ok: false, error: "Already pushed" });
+        continue;
+      }
+      const targetUser = item.assignee_id ?? context.userId;
+      try {
+        let accessToken = tokenCache.get(targetUser);
+        if (!accessToken) {
+          accessToken = await ensureAccessToken(targetUser);
+          tokenCache.set(targetUser, accessToken);
+        }
+        const body: Record<string, any> = { title: item.title };
+        if (item.notes) body.notes = item.notes;
+        if (item.due_date) body.due = `${item.due_date}T00:00:00.000Z`;
+        const res = await fetch("https://tasks.googleapis.com/tasks/v1/lists/@default/tasks", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(`Google Tasks API error: ${JSON.stringify(result)}`);
+        await supabaseAdmin
+          .from("action_items")
+          .update({
+            google_task_id: result.id,
+            google_task_pushed_at: new Date().toISOString(),
+            google_task_pushed_by: context.userId,
+          })
+          .eq("id", item.id);
+        results.push({ id: item.id, ok: true });
+      } catch (e: any) {
+        results.push({ id: item.id, ok: false, error: e.message ?? "Failed" });
+      }
+    }
+    return { results };
+  });
