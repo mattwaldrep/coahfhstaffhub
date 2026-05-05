@@ -1089,16 +1089,24 @@ type OpenAction = {
   google_task_pushed_at: string | null;
 };
 
-function PushToGoogleTasksButton({ actionItemId, pushedAt }: { actionItemId: string; pushedAt: string | null }) {
+function PushToGoogleTasksButton({ actionItemId, pushedAt, onPushed }: {
+  actionItemId: string; pushedAt: string | null; onPushed?: () => void;
+}) {
   const push = useServerFn(pushActionItemToGoogleTasks);
   const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState(!!pushedAt);
+  if (pushedAt) {
+    return (
+      <span className="p-1 text-emerald-600" title={`Pushed ${format(new Date(pushedAt), "MMM d")}`}>
+        <Send className="w-3.5 h-3.5" />
+      </span>
+    );
+  }
   async function go() {
     setBusy(true);
     try {
       await push({ data: { actionItemId } });
-      setDone(true);
       toast.success("Pushed to Google Tasks");
+      onPushed?.();
     } catch (e: any) {
       const msg = String(e.message ?? "");
       if (msg.includes("has not connected")) {
@@ -1116,14 +1124,53 @@ function PushToGoogleTasksButton({ actionItemId, pushedAt }: { actionItemId: str
     <button
       onClick={go}
       disabled={busy}
-      className={cn(
-        "p-1 transition-colors",
-        done ? "text-emerald-600" : "text-muted-foreground hover:text-primary",
-      )}
-      title={done ? "Pushed to Google Tasks" : "Push to assignee's Google Tasks"}
+      className="p-1 text-muted-foreground hover:text-primary transition-colors"
+      title="Push to assignee's Google Tasks"
     >
       {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
     </button>
+  );
+}
+
+function DueDatePicker({ value, onChange }: { value: string | null; onChange: (v: string | null) => void }) {
+  const [open, setOpen] = useState(false);
+  const date = value ? new Date(value + "T12:00") : undefined;
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          className={cn(
+            "inline-flex items-center gap-1 text-[10px] rounded px-1.5 py-0.5 hover:bg-background border border-transparent hover:border-border transition-colors",
+            value ? "text-foreground" : "text-muted-foreground",
+          )}
+          title="Set due date"
+        >
+          <CalendarIcon className="w-3 h-3" />
+          {value ? format(date!, "MMM d") : "Add due date"}
+          {value && (
+            <span
+              role="button"
+              onClick={(e) => { e.stopPropagation(); onChange(null); }}
+              className="ml-0.5 hover:text-destructive"
+            >
+              <X className="w-3 h-3" />
+            </span>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={(d) => {
+            onChange(d ? format(d, "yyyy-MM-dd") : null);
+            setOpen(false);
+          }}
+          initialFocus
+          className={cn("p-3 pointer-events-auto")}
+        />
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -1133,6 +1180,9 @@ export function ReviewTasksSection() {
   const [actions, setActions] = useState<OpenAction[]>([]);
   const [profiles, setProfiles] = useState<ProfileLite[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const pushBulk = useServerFn(pushActionItemsBulk);
 
   async function load() {
     const [{ data: a }, { data: p }] = await Promise.all([
@@ -1168,6 +1218,53 @@ export function ReviewTasksSection() {
   }
   async function reassign(id: string, assignee_id: string | null) {
     await supabase.from("action_items").update({ assignee_id }).eq("id", id);
+  }
+  async function setDue(id: string, due_date: string | null) {
+    setActions((prev) => prev.map((a) => (a.id === id ? { ...a, due_date } : a)));
+    const { error } = await supabase.from("action_items").update({ due_date }).eq("id", id);
+    if (error) toast.error(error.message);
+  }
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const eligible = useMemo(
+    () => actions.filter((a) => !a.google_task_pushed_at && a.assignee_id),
+    [actions],
+  );
+  const allEligibleSelected = eligible.length > 0 && eligible.every((a) => selected.has(a.id));
+
+  function toggleSelectAll() {
+    if (allEligibleSelected) setSelected(new Set());
+    else setSelected(new Set(eligible.map((a) => a.id)));
+  }
+
+  async function pushSelected() {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    try {
+      const { results } = await pushBulk({ data: { actionItemIds: ids } });
+      const ok = results.filter((r) => r.ok).length;
+      const failed = results.length - ok;
+      if (ok > 0) toast.success(`Pushed ${ok} task${ok === 1 ? "" : "s"} to Google Tasks`);
+      if (failed > 0) {
+        const firstErr = results.find((r) => !r.ok)?.error;
+        toast.error(`${failed} failed${firstErr ? `: ${firstErr}` : ""}`);
+      }
+      setSelected(new Set());
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Bulk push failed");
+    } finally {
+      setBulkBusy(false);
+    }
   }
 
   const grouped = useMemo(() => {
@@ -1205,49 +1302,89 @@ export function ReviewTasksSection() {
         </div>
       ) : (
         <div className="space-y-4">
+          {eligible.length > 0 && (
+            <div className="flex items-center justify-between gap-2 bg-background/40 rounded-lg px-3 py-2">
+              <label className="flex items-center gap-2 text-xs cursor-pointer">
+                <Checkbox checked={allEligibleSelected} onCheckedChange={toggleSelectAll} />
+                <span className="text-muted-foreground">
+                  {selected.size > 0
+                    ? `${selected.size} selected`
+                    : `Select all (${eligible.length} ready to push)`}
+                </span>
+              </label>
+              <Button
+                size="sm"
+                disabled={selected.size === 0 || bulkBusy}
+                onClick={pushSelected}
+              >
+                {bulkBusy ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                ) : (
+                  <Send className="w-3.5 h-3.5 mr-1.5" />
+                )}
+                Push {selected.size > 0 ? selected.size : ""} to Google Tasks
+              </Button>
+            </div>
+          )}
+
           {grouped.map(([assigneeId, items]) => (
             <div key={String(assigneeId)} className="space-y-1.5">
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 {nameFor(assigneeId)} ({items.length})
               </div>
               <ul className="space-y-1.5">
-                {items.map((a) => (
-                  <li
-                    key={a.id}
-                    className="flex items-start gap-2 bg-background/40 rounded-lg px-3 py-2"
-                  >
-                    <button
-                      onClick={() => complete(a.id)}
-                      className="mt-0.5 w-4 h-4 rounded border border-border shrink-0 hover:bg-primary/20"
-                      title="Mark complete"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm">{a.title}</div>
-                      {a.due_date && (
-                        <div className="text-[10px] text-muted-foreground mt-0.5">
-                          Due {format(new Date(a.due_date + "T12:00"), "MMM d")}
-                        </div>
-                      )}
-                    </div>
-                    <Select
-                      value={a.assignee_id ?? "unassigned"}
-                      onValueChange={(v) => reassign(a.id, v === "unassigned" ? null : v)}
+                {items.map((a) => {
+                  const canSelect = !a.google_task_pushed_at && !!a.assignee_id;
+                  return (
+                    <li
+                      key={a.id}
+                      className="flex items-start gap-2 bg-background/40 rounded-lg px-3 py-2"
                     >
-                      <SelectTrigger className="h-7 w-[8rem] text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="unassigned">Unassigned</SelectItem>
-                        {profiles.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.full_name || p.email}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <PushToGoogleTasksButton actionItemId={a.id} pushedAt={(a as any).google_task_pushed_at ?? null} />
-                  </li>
-                ))}
+                      <div className="pt-0.5">
+                        {canSelect ? (
+                          <Checkbox
+                            checked={selected.has(a.id)}
+                            onCheckedChange={() => toggleSelect(a.id)}
+                          />
+                        ) : (
+                          <div className="w-4 h-4" />
+                        )}
+                      </div>
+                      <button
+                        onClick={() => complete(a.id)}
+                        className="mt-0.5 w-4 h-4 rounded border border-border shrink-0 hover:bg-primary/20"
+                        title="Mark complete"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm">{a.title}</div>
+                        <div className="mt-0.5">
+                          <DueDatePicker value={a.due_date} onChange={(d) => setDue(a.id, d)} />
+                        </div>
+                      </div>
+                      <Select
+                        value={a.assignee_id ?? "unassigned"}
+                        onValueChange={(v) => reassign(a.id, v === "unassigned" ? null : v)}
+                      >
+                        <SelectTrigger className="h-7 w-[8rem] text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="unassigned">Unassigned</SelectItem>
+                          {profiles.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.full_name || p.email}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <PushToGoogleTasksButton
+                        actionItemId={a.id}
+                        pushedAt={a.google_task_pushed_at}
+                        onPushed={load}
+                      />
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}
