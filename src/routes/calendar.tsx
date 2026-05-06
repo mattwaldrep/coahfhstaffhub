@@ -156,6 +156,11 @@ const emptyForm = (start = ""): FormState => ({
   byweekday: [],
   bysetpos: "",
   recurrence_end_date: "",
+  other_listings: "",
+  room_needed: "",
+  action_note: "",
+  missions_team_needed: false,
+  church_covering: "",
 });
 
 function buildRRule(f: FormState, startDate: Date): string | null {
