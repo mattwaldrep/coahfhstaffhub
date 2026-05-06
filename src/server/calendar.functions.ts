@@ -179,6 +179,7 @@ export const submitSubmission = createServerFn({ method: "POST" })
       .update({ status: "submitted", submitted_at: new Date().toISOString() })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
+    try { await notifySubmissionReady(data.id); } catch (e) { console.error("notifySubmissionReady failed", e); }
     return { ok: true };
   });
 
