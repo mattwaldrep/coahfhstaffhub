@@ -352,6 +352,11 @@ function CalendarBody() {
       recurs: !!ev.rrule,
       freq, interval, byweekday, bysetpos,
       recurrence_end_date: ev.recurrence_end_date ?? "",
+      other_listings: (ev.other_listings ?? []).join(", "),
+      room_needed: ev.room_needed ?? "",
+      action_note: ev.action_note ?? "",
+      missions_team_needed: ev.missions_team_needed ?? false,
+      church_covering: ev.church_covering ?? "",
     });
     setEditingOccurrence(occ.occurrence_date);
     loadChecklist(ev.id);
