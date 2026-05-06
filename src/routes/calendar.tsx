@@ -1080,6 +1080,8 @@ function ListView({ occurrences, onPickEvent }: { occurrences: Occurrence[]; onP
                 {o.category && <> · {o.category}</>}
                 {o.leader_name && <> · Led by {o.leader_name}</>}
                 {o.location && <> · {o.location}</>}
+                {o.room_needed && <> · Room: {o.room_needed}</>}
+                {o.church_covering && <> · {o.church_covering}</>}
               </div>
             </div>
             <div className="text-sm text-muted-foreground shrink-0 text-right">
