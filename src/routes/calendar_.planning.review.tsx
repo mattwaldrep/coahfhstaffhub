@@ -12,7 +12,7 @@ import {
 import { toast } from "sonner";
 import { ArrowLeft, Check, X } from "lucide-react";
 
-export const Route = createFileRoute("/calendar/planning/review")({
+export const Route = createFileRoute("/calendar_/planning/review")({
   component: () => <AppShell><Review /></AppShell>,
 });
 
@@ -77,13 +77,11 @@ function Review() {
       <Link to="/calendar/planning"><Button variant="ghost" size="sm" className="mb-3"><ArrowLeft className="w-4 h-4 mr-1.5" /> Back</Button></Link>
       <h1 className="text-3xl font-display font-bold mb-1">Review submissions</h1>
       <p className="text-muted-foreground text-sm mb-6">{active?.title}</p>
-
       {submitted.length === 0 && (
         <div className="text-sm text-muted-foreground bg-surface border border-border rounded-2xl p-4">
           No submitted plans yet.
         </div>
       )}
-
       <div className="space-y-3">
         {submitted.map((s: any) => (
           <div key={s.id} className="bg-surface border border-border rounded-2xl">
@@ -125,5 +123,5 @@ function Review() {
         ))}
       </div>
     </>
-  );
+  )
 }
