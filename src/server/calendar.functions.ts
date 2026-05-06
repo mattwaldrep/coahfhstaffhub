@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { notifyCycleOpen, notifySubmissionReady } from "./calendar-notifications.server";
 
 async function isCore(supabase: any, userId: string): Promise<boolean> {
   const { data } = await supabase
@@ -82,6 +83,7 @@ export const createPlanningCycle = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error) throw new Error(error.message);
+    try { await notifyCycleOpen(row); } catch (e) { console.error("notifyCycleOpen failed", e); }
     return row;
   });
 
@@ -177,6 +179,7 @@ export const submitSubmission = createServerFn({ method: "POST" })
       .update({ status: "submitted", submitted_at: new Date().toISOString() })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
+    try { await notifySubmissionReady(data.id); } catch (e) { console.error("notifySubmissionReady failed", e); }
     return { ok: true };
   });
 

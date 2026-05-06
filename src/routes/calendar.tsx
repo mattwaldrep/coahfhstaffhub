@@ -238,6 +238,7 @@ function CalendarBody() {
     forest_hills_main: true, coah_lm: true, youth: true, general: true,
   });
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [flagFilter, setFlagFilter] = useState<"all" | "pco" | "missions">("all");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [editingOccurrence, setEditingOccurrence] = useState<Date | null>(null);
@@ -514,9 +515,14 @@ function CalendarBody() {
     [events, range.start.getTime(), range.end.getTime()],
   );
 
-  const visible = occurrences.filter(
-    (o) => filters[o.sub_calendar] && (categoryFilter === "all" || o.category === categoryFilter),
-  );
+  const visible = occurrences.filter((o) => {
+    const cals = [o.sub_calendar, ...(o.other_listings ?? [])];
+    if (!cals.some((c) => filters[c])) return false;
+    if (categoryFilter !== "all" && o.category !== categoryFilter) return false;
+    if (flagFilter === "pco" && !o.pco_registration) return false;
+    if (flagFilter === "missions" && !o.missions_team_needed) return false;
+    return true;
+  });
 
   return (
     <>
@@ -572,6 +578,14 @@ function CalendarBody() {
             <SelectContent>
               <SelectItem value="all">All categories</SelectItem>
               {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={flagFilter} onValueChange={(v) => setFlagFilter(v as typeof flagFilter)}>
+            <SelectTrigger className="h-8 w-[10rem] text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All events</SelectItem>
+              <SelectItem value="pco">Needs PCO registration</SelectItem>
+              <SelectItem value="missions">Missions team needed</SelectItem>
             </SelectContent>
           </Select>
           {SUB_CALS.map((s) => (
@@ -1052,12 +1066,22 @@ function ListView({ occurrences, onPickEvent }: { occurrences: Occurrence[]; onP
                 {o.pco_registration && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">PCO</span>
                 )}
+                {o.missions_team_needed && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/20 text-accent-foreground">Missions</span>
+                )}
+                {(o.other_listings ?? []).length > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                    +{o.other_listings.length} listing{o.other_listings.length === 1 ? "" : "s"}
+                  </span>
+                )}
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">
                 {cal.label}
                 {o.category && <> · {o.category}</>}
                 {o.leader_name && <> · Led by {o.leader_name}</>}
                 {o.location && <> · {o.location}</>}
+                {o.room_needed && <> · Room: {o.room_needed}</>}
+                {o.church_covering && <> · {o.church_covering}</>}
               </div>
             </div>
             <div className="text-sm text-muted-foreground shrink-0 text-right">
