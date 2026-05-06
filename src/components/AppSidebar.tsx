@@ -14,6 +14,7 @@ import {
 import {
   Home,
   CalendarDays,
+  CalendarClock,
   ClipboardList,
   ClipboardCheck,
   Users,
