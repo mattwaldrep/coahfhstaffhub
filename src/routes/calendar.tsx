@@ -392,6 +392,13 @@ function CalendarBody() {
       pco_registration: form.pco_registration,
       rrule,
       recurrence_end_date: form.recurrence_end_date || null,
+      other_listings: form.other_listings
+        ? form.other_listings.split(",").map((s) => s.trim()).filter(Boolean)
+        : [],
+      room_needed: form.room_needed || null,
+      action_note: form.action_note || null,
+      missions_team_needed: form.missions_team_needed,
+      church_covering: form.church_covering || null,
     };
     const { error } = form.id
       ? await supabase.from("calendar_events").update(payload).eq("id", form.id)
