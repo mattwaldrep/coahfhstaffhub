@@ -238,6 +238,7 @@ function CalendarBody() {
     forest_hills_main: true, coah_lm: true, youth: true, general: true,
   });
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [flagFilter, setFlagFilter] = useState<"all" | "pco" | "missions">("all");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [editingOccurrence, setEditingOccurrence] = useState<Date | null>(null);
