@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner";
 import { CalendarDays, Plus, ChevronRight } from "lucide-react";
 
-export const Route = createFileRoute("/calendar/planning")({
+export const Route = createFileRoute("/calendar_/planning")({
   component: () => <AppShell><PlanningHome /></AppShell>,
 });
 
