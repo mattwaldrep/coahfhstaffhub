@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   addMonths,
@@ -95,6 +95,11 @@ type EventRow = {
   rrule: string | null;
   recurrence_end_date: string | null;
   excluded_dates: string[];
+  other_listings: string[];
+  room_needed: string | null;
+  action_note: string | null;
+  missions_team_needed: boolean;
+  church_covering: string | null;
 };
 
 type Occurrence = EventRow & { occurrence_date: Date };
@@ -124,8 +129,13 @@ type FormState = {
   freq: "WEEKLY" | "MONTHLY" | "YEARLY";
   interval: number;
   byweekday: string[];
-  bysetpos: string; // "" | "1".."4" | "-1" (last)
+  bysetpos: string;
   recurrence_end_date: string;
+  other_listings: string;
+  room_needed: string;
+  action_note: string;
+  missions_team_needed: boolean;
+  church_covering: string;
 };
 
 const emptyForm = (start = ""): FormState => ({
@@ -146,6 +156,11 @@ const emptyForm = (start = ""): FormState => ({
   byweekday: [],
   bysetpos: "",
   recurrence_end_date: "",
+  other_listings: "",
+  room_needed: "",
+  action_note: "",
+  missions_team_needed: false,
+  church_covering: "",
 });
 
 function buildRRule(f: FormState, startDate: Date): string | null {
@@ -337,6 +352,11 @@ function CalendarBody() {
       recurs: !!ev.rrule,
       freq, interval, byweekday, bysetpos,
       recurrence_end_date: ev.recurrence_end_date ?? "",
+      other_listings: (ev.other_listings ?? []).join(", "),
+      room_needed: ev.room_needed ?? "",
+      action_note: ev.action_note ?? "",
+      missions_team_needed: ev.missions_team_needed ?? false,
+      church_covering: ev.church_covering ?? "",
     });
     setEditingOccurrence(occ.occurrence_date);
     loadChecklist(ev.id);
@@ -372,6 +392,13 @@ function CalendarBody() {
       pco_registration: form.pco_registration,
       rrule,
       recurrence_end_date: form.recurrence_end_date || null,
+      other_listings: form.other_listings
+        ? form.other_listings.split(",").map((s) => s.trim()).filter(Boolean)
+        : [],
+      room_needed: form.room_needed || null,
+      action_note: form.action_note || null,
+      missions_team_needed: form.missions_team_needed,
+      church_covering: form.church_covering || null,
     };
     const { error } = form.id
       ? await supabase.from("calendar_events").update(payload).eq("id", form.id)
@@ -433,6 +460,13 @@ function CalendarBody() {
       pco_registration: form.pco_registration,
       rrule: null,
       recurrence_end_date: null,
+      other_listings: form.other_listings
+        ? form.other_listings.split(",").map((s) => s.trim()).filter(Boolean)
+        : [],
+      room_needed: form.room_needed || null,
+      action_note: form.action_note || null,
+      missions_team_needed: form.missions_team_needed,
+      church_covering: form.church_covering || null,
     });
     if (insertErr) { toast.error(insertErr.message); return; }
     // 2) Add original occurrence date to excluded_dates on the series
@@ -485,6 +519,7 @@ function CalendarBody() {
 
   return (
     <>
+      <PlanningBanner />
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-3xl font-display font-bold">Calendar</h1>
@@ -637,6 +672,53 @@ function CalendarBody() {
             <div className="space-y-2">
               <Label>Notes</Label>
               <Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            </div>
+
+            {/* Logistics */}
+            <div className="space-y-3 rounded-xl border border-border p-3">
+              <Label className="text-sm font-medium">Logistics</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">Room needed</Label>
+                  <Input
+                    placeholder="e.g. Office, Sanctuary"
+                    value={form.room_needed}
+                    onChange={(e) => setForm({ ...form, room_needed: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Church covering</Label>
+                  <Input
+                    placeholder="e.g. Family Hope, COAH:LM, Both"
+                    value={form.church_covering}
+                    onChange={(e) => setForm({ ...form, church_covering: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Other listings (comma-separated)</Label>
+                <Input
+                  placeholder="e.g. Google Business, Eventbrite"
+                  value={form.other_listings}
+                  onChange={(e) => setForm({ ...form, other_listings: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Action / follow-up</Label>
+                <Textarea
+                  rows={2}
+                  placeholder="What needs to happen for this event?"
+                  value={form.action_note}
+                  onChange={(e) => setForm({ ...form, action_note: e.target.value })}
+                />
+              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <Switch
+                  checked={form.missions_team_needed}
+                  onCheckedChange={(v) => setForm({ ...form, missions_team_needed: v })}
+                />
+                Missions team needed
+              </label>
             </div>
 
             {/* Recurrence */}

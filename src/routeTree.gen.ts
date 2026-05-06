@@ -26,8 +26,11 @@ import { Route as ElderSettingsRouteImport } from './routes/elder.settings'
 import { Route as ElderPastoralCareRouteImport } from './routes/elder.pastoral-care'
 import { Route as ElderMeetingsRouteImport } from './routes/elder.meetings'
 import { Route as ElderArchiveRouteImport } from './routes/elder.archive'
+import { Route as CalendarPlanningRouteImport } from './routes/calendar.planning'
 import { Route as ElderMeetingsIndexRouteImport } from './routes/elder.meetings.index'
 import { Route as ElderMeetingsMeetingIdRouteImport } from './routes/elder.meetings.$meetingId'
+import { Route as CalendarPlanningReviewRouteImport } from './routes/calendar.planning.review'
+import { Route as CalendarPlanningSubmissionIdRouteImport } from './routes/calendar.planning.$submissionId'
 import { Route as ApiGoogleOauthCallbackRouteImport } from './routes/api/google.oauth-callback'
 import { Route as ApiPublicHooksSundayReviewNudgeRouteImport } from './routes/api/public/hooks.sunday-review-nudge'
 import { Route as ApiPublicHooksActionItemsDigestRouteImport } from './routes/api/public/hooks.action-items-digest'
@@ -117,6 +120,11 @@ const ElderArchiveRoute = ElderArchiveRouteImport.update({
   path: '/archive',
   getParentRoute: () => ElderRoute,
 } as any)
+const CalendarPlanningRoute = CalendarPlanningRouteImport.update({
+  id: '/planning',
+  path: '/planning',
+  getParentRoute: () => CalendarRoute,
+} as any)
 const ElderMeetingsIndexRoute = ElderMeetingsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -127,6 +135,17 @@ const ElderMeetingsMeetingIdRoute = ElderMeetingsMeetingIdRouteImport.update({
   path: '/$meetingId',
   getParentRoute: () => ElderMeetingsRoute,
 } as any)
+const CalendarPlanningReviewRoute = CalendarPlanningReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => CalendarPlanningRoute,
+} as any)
+const CalendarPlanningSubmissionIdRoute =
+  CalendarPlanningSubmissionIdRouteImport.update({
+    id: '/$submissionId',
+    path: '/$submissionId',
+    getParentRoute: () => CalendarPlanningRoute,
+  } as any)
 const ApiGoogleOauthCallbackRoute = ApiGoogleOauthCallbackRouteImport.update({
   id: '/api/google/oauth-callback',
   path: '/api/google/oauth-callback',
@@ -147,7 +166,7 @@ const ApiPublicHooksActionItemsDigestRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/calendar': typeof CalendarRoute
+  '/calendar': typeof CalendarRouteWithChildren
   '/elder': typeof ElderRouteWithChildren
   '/finance': typeof FinanceRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -158,12 +177,15 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/sunday-review': typeof SundayReviewRoute
   '/users': typeof UsersRoute
+  '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/meetings': typeof ElderMeetingsRouteWithChildren
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/elder/': typeof ElderIndexRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
+  '/calendar/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
+  '/calendar/planning/review': typeof CalendarPlanningReviewRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/meetings/': typeof ElderMeetingsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
@@ -171,7 +193,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/calendar': typeof CalendarRoute
+  '/calendar': typeof CalendarRouteWithChildren
   '/finance': typeof FinanceRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -181,11 +203,14 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/sunday-review': typeof SundayReviewRoute
   '/users': typeof UsersRoute
+  '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/elder': typeof ElderIndexRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
+  '/calendar/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
+  '/calendar/planning/review': typeof CalendarPlanningReviewRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/meetings': typeof ElderMeetingsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
@@ -194,7 +219,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/calendar': typeof CalendarRoute
+  '/calendar': typeof CalendarRouteWithChildren
   '/elder': typeof ElderRouteWithChildren
   '/finance': typeof FinanceRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -205,12 +230,15 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/sunday-review': typeof SundayReviewRoute
   '/users': typeof UsersRoute
+  '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/meetings': typeof ElderMeetingsRouteWithChildren
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/elder/': typeof ElderIndexRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
+  '/calendar/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
+  '/calendar/planning/review': typeof CalendarPlanningReviewRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/meetings/': typeof ElderMeetingsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
@@ -231,12 +259,15 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sunday-review'
     | '/users'
+    | '/calendar/planning'
     | '/elder/archive'
     | '/elder/meetings'
     | '/elder/pastoral-care'
     | '/elder/settings'
     | '/elder/'
     | '/api/google/oauth-callback'
+    | '/calendar/planning/$submissionId'
+    | '/calendar/planning/review'
     | '/elder/meetings/$meetingId'
     | '/elder/meetings/'
     | '/api/public/hooks/action-items-digest'
@@ -254,11 +285,14 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sunday-review'
     | '/users'
+    | '/calendar/planning'
     | '/elder/archive'
     | '/elder/pastoral-care'
     | '/elder/settings'
     | '/elder'
     | '/api/google/oauth-callback'
+    | '/calendar/planning/$submissionId'
+    | '/calendar/planning/review'
     | '/elder/meetings/$meetingId'
     | '/elder/meetings'
     | '/api/public/hooks/action-items-digest'
@@ -277,12 +311,15 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sunday-review'
     | '/users'
+    | '/calendar/planning'
     | '/elder/archive'
     | '/elder/meetings'
     | '/elder/pastoral-care'
     | '/elder/settings'
     | '/elder/'
     | '/api/google/oauth-callback'
+    | '/calendar/planning/$submissionId'
+    | '/calendar/planning/review'
     | '/elder/meetings/$meetingId'
     | '/elder/meetings/'
     | '/api/public/hooks/action-items-digest'
@@ -291,7 +328,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CalendarRoute: typeof CalendarRoute
+  CalendarRoute: typeof CalendarRouteWithChildren
   ElderRoute: typeof ElderRouteWithChildren
   FinanceRoute: typeof FinanceRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -428,6 +465,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ElderArchiveRouteImport
       parentRoute: typeof ElderRoute
     }
+    '/calendar/planning': {
+      id: '/calendar/planning'
+      path: '/planning'
+      fullPath: '/calendar/planning'
+      preLoaderRoute: typeof CalendarPlanningRouteImport
+      parentRoute: typeof CalendarRoute
+    }
     '/elder/meetings/': {
       id: '/elder/meetings/'
       path: '/'
@@ -441,6 +485,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/elder/meetings/$meetingId'
       preLoaderRoute: typeof ElderMeetingsMeetingIdRouteImport
       parentRoute: typeof ElderMeetingsRoute
+    }
+    '/calendar/planning/review': {
+      id: '/calendar/planning/review'
+      path: '/review'
+      fullPath: '/calendar/planning/review'
+      preLoaderRoute: typeof CalendarPlanningReviewRouteImport
+      parentRoute: typeof CalendarPlanningRoute
+    }
+    '/calendar/planning/$submissionId': {
+      id: '/calendar/planning/$submissionId'
+      path: '/$submissionId'
+      fullPath: '/calendar/planning/$submissionId'
+      preLoaderRoute: typeof CalendarPlanningSubmissionIdRouteImport
+      parentRoute: typeof CalendarPlanningRoute
     }
     '/api/google/oauth-callback': {
       id: '/api/google/oauth-callback'
@@ -465,6 +523,31 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface CalendarPlanningRouteChildren {
+  CalendarPlanningSubmissionIdRoute: typeof CalendarPlanningSubmissionIdRoute
+  CalendarPlanningReviewRoute: typeof CalendarPlanningReviewRoute
+}
+
+const CalendarPlanningRouteChildren: CalendarPlanningRouteChildren = {
+  CalendarPlanningSubmissionIdRoute: CalendarPlanningSubmissionIdRoute,
+  CalendarPlanningReviewRoute: CalendarPlanningReviewRoute,
+}
+
+const CalendarPlanningRouteWithChildren =
+  CalendarPlanningRoute._addFileChildren(CalendarPlanningRouteChildren)
+
+interface CalendarRouteChildren {
+  CalendarPlanningRoute: typeof CalendarPlanningRouteWithChildren
+}
+
+const CalendarRouteChildren: CalendarRouteChildren = {
+  CalendarPlanningRoute: CalendarPlanningRouteWithChildren,
+}
+
+const CalendarRouteWithChildren = CalendarRoute._addFileChildren(
+  CalendarRouteChildren,
+)
 
 interface ElderMeetingsRouteChildren {
   ElderMeetingsMeetingIdRoute: typeof ElderMeetingsMeetingIdRoute
@@ -500,7 +583,7 @@ const ElderRouteWithChildren = ElderRoute._addFileChildren(ElderRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CalendarRoute: CalendarRoute,
+  CalendarRoute: CalendarRouteWithChildren,
   ElderRoute: ElderRouteWithChildren,
   FinanceRoute: FinanceRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,

@@ -202,8 +202,10 @@ export type Database = {
       }
       calendar_events: {
         Row: {
+          action_note: string | null
           all_day: boolean
           category: string | null
+          church_covering: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -213,9 +215,12 @@ export type Database = {
           leader_id: string | null
           leader_name: string | null
           location: string | null
+          missions_team_needed: boolean
+          other_listings: string[]
           pco_registration: boolean
           readiness: Database["public"]["Enums"]["readiness"] | null
           recurrence_end_date: string | null
+          room_needed: string | null
           rrule: string | null
           start_at: string
           sub_calendar: Database["public"]["Enums"]["sub_calendar"]
@@ -223,8 +228,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          action_note?: string | null
           all_day?: boolean
           category?: string | null
+          church_covering?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -234,9 +241,12 @@ export type Database = {
           leader_id?: string | null
           leader_name?: string | null
           location?: string | null
+          missions_team_needed?: boolean
+          other_listings?: string[]
           pco_registration?: boolean
           readiness?: Database["public"]["Enums"]["readiness"] | null
           recurrence_end_date?: string | null
+          room_needed?: string | null
           rrule?: string | null
           start_at: string
           sub_calendar?: Database["public"]["Enums"]["sub_calendar"]
@@ -244,8 +254,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          action_note?: string | null
           all_day?: boolean
           category?: string | null
+          church_covering?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -255,9 +267,12 @@ export type Database = {
           leader_id?: string | null
           leader_name?: string | null
           location?: string | null
+          missions_team_needed?: boolean
+          other_listings?: string[]
           pco_registration?: boolean
           readiness?: Database["public"]["Enums"]["readiness"] | null
           recurrence_end_date?: string | null
+          room_needed?: string | null
           rrule?: string | null
           start_at?: string
           sub_calendar?: Database["public"]["Enums"]["sub_calendar"]
@@ -277,6 +292,207 @@ export type Database = {
             columns: ["leader_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_plan_submissions: {
+        Row: {
+          created_at: string
+          cycle_id: string
+          id: string
+          leader_id: string
+          reviewed_at: string | null
+          reviewer_id: string | null
+          reviewer_note: string | null
+          status: Database["public"]["Enums"]["plan_submission_status"]
+          sub_calendar: Database["public"]["Enums"]["sub_calendar"]
+          submitted_at: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cycle_id: string
+          id?: string
+          leader_id: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          reviewer_note?: string | null
+          status?: Database["public"]["Enums"]["plan_submission_status"]
+          sub_calendar: Database["public"]["Enums"]["sub_calendar"]
+          submitted_at?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cycle_id?: string
+          id?: string
+          leader_id?: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          reviewer_note?: string | null
+          status?: Database["public"]["Enums"]["plan_submission_status"]
+          sub_calendar?: Database["public"]["Enums"]["sub_calendar"]
+          submitted_at?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_plan_submissions_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_planning_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_plan_submissions_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_plan_submissions_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_planning_cycles: {
+        Row: {
+          closes_at: string
+          created_at: string
+          created_by: string | null
+          id: string
+          opens_at: string
+          plan_year: number
+          status: Database["public"]["Enums"]["planning_cycle_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          closes_at: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          opens_at: string
+          plan_year: number
+          status?: Database["public"]["Enums"]["planning_cycle_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          closes_at?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          opens_at?: string
+          plan_year?: number
+          status?: Database["public"]["Enums"]["planning_cycle_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_planning_cycles_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_proposed_events: {
+        Row: {
+          action_note: string | null
+          all_day: boolean
+          approved_event_id: string | null
+          category: string | null
+          church_covering: string | null
+          created_at: string
+          description: string | null
+          end_at: string | null
+          id: string
+          leader_name: string | null
+          location: string | null
+          missions_team_needed: boolean
+          other_listings: string[]
+          pco_registration: boolean
+          reviewer_note: string | null
+          room_needed: string | null
+          start_at: string
+          status: Database["public"]["Enums"]["proposed_event_status"]
+          sub_calendar: Database["public"]["Enums"]["sub_calendar"]
+          submission_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          action_note?: string | null
+          all_day?: boolean
+          approved_event_id?: string | null
+          category?: string | null
+          church_covering?: string | null
+          created_at?: string
+          description?: string | null
+          end_at?: string | null
+          id?: string
+          leader_name?: string | null
+          location?: string | null
+          missions_team_needed?: boolean
+          other_listings?: string[]
+          pco_registration?: boolean
+          reviewer_note?: string | null
+          room_needed?: string | null
+          start_at: string
+          status?: Database["public"]["Enums"]["proposed_event_status"]
+          sub_calendar: Database["public"]["Enums"]["sub_calendar"]
+          submission_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          action_note?: string | null
+          all_day?: boolean
+          approved_event_id?: string | null
+          category?: string | null
+          church_covering?: string | null
+          created_at?: string
+          description?: string | null
+          end_at?: string | null
+          id?: string
+          leader_name?: string | null
+          location?: string | null
+          missions_team_needed?: boolean
+          other_listings?: string[]
+          pco_registration?: boolean
+          reviewer_note?: string | null
+          room_needed?: string | null
+          start_at?: string
+          status?: Database["public"]["Enums"]["proposed_event_status"]
+          sub_calendar?: Database["public"]["Enums"]["sub_calendar"]
+          submission_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_proposed_events_approved_event_id_fkey"
+            columns: ["approved_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_proposed_events_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_plan_submissions"
             referencedColumns: ["id"]
           },
         ]
@@ -1266,6 +1482,15 @@ export type Database = {
     }
     Enums: {
       app_role: "core" | "meeting" | "extended" | "elder" | "elder_candidate"
+      plan_submission_status:
+        | "draft"
+        | "submitted"
+        | "in_review"
+        | "approved"
+        | "partially_approved"
+        | "rejected"
+      planning_cycle_status: "open" | "review" | "closed"
+      proposed_event_status: "pending" | "approved" | "rejected"
       readiness: "green" | "yellow" | "red"
       sub_calendar: "forest_hills_main" | "coah_lm" | "youth" | "general"
       trip_status:
@@ -1403,6 +1628,16 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["core", "meeting", "extended", "elder", "elder_candidate"],
+      plan_submission_status: [
+        "draft",
+        "submitted",
+        "in_review",
+        "approved",
+        "partially_approved",
+        "rejected",
+      ],
+      planning_cycle_status: ["open", "review", "closed"],
+      proposed_event_status: ["pending", "approved", "rejected"],
       readiness: ["green", "yellow", "red"],
       sub_calendar: ["forest_hills_main", "coah_lm", "youth", "general"],
       trip_status: [

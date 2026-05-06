@@ -1,54 +1,95 @@
-## Goal
+## Part 1 — Missing fields from the master sheet
 
-When an elder meeting is generated, the next meeting's "Last Meeting Follow-up" section should automatically include:
-1. Every item from the previous meeting's **New Business** section.
-2. Any other agenda item (from any section) that an elder explicitly **flagged** to carry over.
+I diffed the `FH MASTER 2026` tab against the current `calendar_events` schema. The sheet has 13 columns; we already cover most, but four were dropped during the migration:
 
-## How it works today
 
-- `createElderMeeting` already seeds the new meeting's agenda from two sources: open `elder_action_items` (inserted into `follow_up` as `source: "carryover"`) and rows in `elder_next_meeting_seed`.
-- It does **not** look at the previous meeting's agenda items at all, so New Business never carries forward.
-- There is no UI control to mark an arbitrary agenda item for follow-up.
+| Sheet column            | Current field     | Status                                                                             |
+| ----------------------- | ----------------- | ---------------------------------------------------------------------------------- |
+| Date / Time             | start_at / end_at | ✓                                                                                  |
+| Event Name              | title             | ✓                                                                                  |
+| Category                | category          | ✓                                                                                  |
+| Notes                   | description       | ✓                                                                                  |
+| Leader                  | leader_name       | ✓                                                                                  |
+| PCO Registration?       | pco_registration  | ✓                                                                                  |
+| **Other Listings**      | —                 | **missing** — things like google business profile or eventbrite                    |
+| Room Needed             | location          | ⚠️ partially — sheet treats it as a discrete room request, not a free-text address |
+| **Action**              | —                 | **missing** — open action item / follow-up associated with the event               |
+| **Missions Team Need?** | —                 | **missing** — Yes/No flag                                                          |
+| **Church Covering**     | —                 | **missing** — which campus/church is hosting                                       |
 
-## Plan
 
-### 1. Schema change
+### Schema additions to `calendar_events`
 
-Add one column to `elder_agenda_items`:
-- `carry_to_next boolean not null default false`
+- `cross_listings text[]` — array of additional sub_calendar enum values
+- `room_needed text` (rename of how we surface `location` in the form: keep `location` column, add a dedicated `room_needed` field since several events have both an outside location AND need an internal room)
+- `action_note text`
+- `missions_team_needed boolean default false`
+- `church_covering text` (small enum: e.g. Family Hope, Living Mountain, Both, Other — confirm options when editing)
 
-No new tables — we reuse the agenda items themselves as the source of truth, which keeps RLS, executive-session, and ordering behavior consistent.
+### UI changes
 
-### 2. Server: carry forward into next meeting
+- Event create/edit dialog (`src/routes/calendar.tsx`): add the four new inputs, grouped under a "Logistics" section. Yes/No fields render as switches with the same styling as `pco_registration`.
+- Event detail/popover: show new fields when populated.
+- When `cross_listings` is set, the event renders on each listed sub-calendar in the calendar view (filter logic update only — same row in DB).
 
-Update `createElderMeeting` in `src/server/elder.functions.ts`:
-- Find the most recent prior `elder_meetings` row (by `meeting_date`, excluding the one being created).
-- Load its `elder_agenda_items` where `section_key = 'new_business'` OR `carry_to_next = true`.
-- Insert them into the new meeting as `section_key: 'follow_up'`, `source: 'carryover'`, preserving `title`, `body`, `executive_session`, and ordering after any existing follow-up inserts.
-- Dedupe against the existing action-item carryover (skip if a follow-up row with the same title already exists for the new meeting).
-- Respect executive-session visibility — non-full elders never see executive items, but the server uses the admin client so they will be inserted; that matches how action-item carryover already behaves.
+---
 
-### 3. Server: small helpers
+## Part 2 — Annual Calendar Planning workflow
 
-Add a server function `setAgendaCarryToNext({ id, carry })` that updates the flag (gated by `assertElderAccess` + executive-session rule, mirroring `setAgendaExecutive`).
+A once-a-year structured submission flow so each ministry leader plans their year inside the app, sees everyone else's draft + the master calendar live, and a reviewer approves into production.
 
-### 4. UI: flag any agenda item
+### Concepts
 
-In `src/routes/elder.meetings.$meetingId.tsx` → `AgendaItemRow`:
-- Add a bookmark/flag icon button next to the executive lock icon.
-- Filled state when `carry_to_next === true` (or when `section_key === 'new_business'`, shown as implicit/auto-on and disabled with a tooltip "New Business always carries forward").
-- Clicking toggles `setAgendaCarryToNext`.
-- Add a small "Will carry to next meeting" hint under the title when flagged.
+- **Planning Cycle** — admin opens a cycle (e.g. "2027 Annual Planning"), sets `plan_year`, `opens_at`, `closes_at`, `status` (`open` / `review` / `closed`).
+- **Plan Submission** — one per leader per sub_calendar per cycle. Status: `draft` → `submitted` → `in_review` → `approved` / `partially_approved` / `rejected`.
+- **Proposed Event** — a calendar entry inside a submission. Mirrors `calendar_events` columns. Status: `pending` / `approved` / `rejected` (per-event, with optional reviewer note).
 
-No changes to JointSections for now (joint meetings have their own subsection items, not standard agenda items). If you want the same behavior there, say so and I'll extend it.
+### New tables
 
-### 5. Notes / non-goals
+- `calendar_planning_cycles` — id, plan_year, title, opens_at, closes_at, status, created_by
+- `calendar_plan_submissions` — id, cycle_id, leader_id, sub_calendar, status, submitted_at, reviewed_at, reviewer_id, reviewer_note
+- `calendar_proposed_events` — id, submission_id, all the calendar_events columns (incl. the new ones from Part 1), status, reviewer_note, approved_event_id (FK to calendar_events once published)
 
-- No backfill: only meetings created **after** this change will get auto-carry. Existing follow-up items from the seed table and action-item carryover continue to work unchanged.
-- The existing `elder_next_meeting_seed` table stays as-is for ad-hoc "add directly to next meeting" flows from outside a meeting view.
+RLS: leaders can CRUD their own draft submissions; everyone with calendar access can read submitted/approved proposed events (so silos are broken). Only `core` role can manage cycles and approve.
 
-## Files touched
+### Pages / routes
 
-- migration: add `carry_to_next` to `elder_agenda_items`
-- `src/server/elder.functions.ts` — extend `createElderMeeting`, add `setAgendaCarryToNext`
-- `src/routes/elder.meetings.$meetingId.tsx` — flag button + hint in `AgendaItemRow`
+- `src/routes/calendar.planning.tsx` — landing page for the active cycle
+  - **Banner / dashboard tile on `/calendar**` when a cycle is `open`: "Annual Planning is open — submit your YYYY plan by {closes_at}."
+  - Shows the user's own submission(s) with status, and a list of all other submissions in the workspace (read-only) so people can coordinate.
+- `src/routes/calendar.planning.$submissionId.tsx` — the planner
+  - Split view: left = the leader's proposed events (table + add-event form), right = a read-only mini calendar showing the master calendar + all other pending plans for the same date range, color-coded by sub_calendar with a dotted/striped style for "pending."
+  - Inline conflict warnings when a proposed date+room overlaps anything visible.
+  - "Submit for review" button locks editing.
+- `src/routes/calendar.planning.review.tsx` — reviewer view (core role)
+  - List of submissions grouped by sub_calendar; per-submission: bulk Approve all / Reject all, or expand and approve/reject events individually with a note.
+  - On approve, the proposed event is inserted into `calendar_events` and `approved_event_id` is set; on reject, it stays archived in the submission.
+
+### Server functions (`src/server/calendar.functions.ts` — new file)
+
+- `listPlanningCycles`, `createPlanningCycle`, `updatePlanningCycle`
+- `getActiveCycleForUser`
+- `createSubmission`, `updateSubmission`, `submitForReview`
+- `addProposedEvent`, `updateProposedEvent`, `deleteProposedEvent`
+- `listVisibleProposedEvents({ cycleId, rangeStart, rangeEnd })` — returns everyone's submitted events (for the silo-busting view)
+- `reviewSubmission({ submissionId, decisions: [{eventId, decision, note}] })` — atomic; inserts approved ones into `calendar_events`
+- `approveAllInSubmission`, `rejectAllInSubmission`
+
+### Notifications (Resend)
+
+- When a cycle opens: email all leaders.
+- 7 days and 1 day before `closes_at`: nudge leaders without a submitted plan.
+- When a submission is reviewed: email the leader with summary of approved/rejected items.
+
+---
+
+## Recommended order of work
+
+1. Migration: add the 5 new columns to `calendar_events` + the 3 planning tables with RLS.
+2. Wire the new fields into the existing event create/edit dialog and detail view.
+3. Build planning cycle admin (create/open/close cycles).
+4. Build leader planning view (submission editor + cross-visibility).
+5. Build reviewer view with bulk + per-event approval.
+6. Add cycle-open banner on `/calendar` and email nudges.
+
+Say the word and I'll implement in this order; or if you'd rather split — e.g. ship Part 1 first, then planning workflow as a follow-up — that works too.
