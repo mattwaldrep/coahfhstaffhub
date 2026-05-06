@@ -14,6 +14,7 @@ import {
 } from "date-fns";
 import { RRule, type Frequency } from "rrule";
 import { AppShell } from "@/components/AppShell";
+import { PlanningBanner } from "@/components/calendar/PlanningBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
