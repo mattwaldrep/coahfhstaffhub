@@ -460,6 +460,13 @@ function CalendarBody() {
       pco_registration: form.pco_registration,
       rrule: null,
       recurrence_end_date: null,
+      other_listings: form.other_listings
+        ? form.other_listings.split(",").map((s) => s.trim()).filter(Boolean)
+        : [],
+      room_needed: form.room_needed || null,
+      action_note: form.action_note || null,
+      missions_team_needed: form.missions_team_needed,
+      church_covering: form.church_covering || null,
     });
     if (insertErr) { toast.error(insertErr.message); return; }
     // 2) Add original occurrence date to excluded_dates on the series
