@@ -21,7 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Trash2, ArrowLeft, AlertTriangle } from "lucide-react";
 
-export const Route = createFileRoute("/calendar/planning/$submissionId")({
+export const Route = createFileRoute("/calendar_/planning/$submissionId")({
   component: () => <AppShell><Editor /></AppShell>,
 });
 
@@ -167,14 +167,12 @@ function Editor() {
           )}
         </div>
       </div>
-
       <h1 className="text-2xl font-display font-bold mb-1">
         {submission.sub_calendar.replace(/_/g, " ")} plan
       </h1>
       <div className="text-xs text-muted-foreground mb-6">
         {submission.leader?.full_name ?? "—"} · status: {submission.status}
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <section>
           <div className="flex items-center justify-between mb-3">
@@ -242,7 +240,6 @@ function Editor() {
           </div>
         </section>
       </div>
-
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editId ? "Edit" : "Add"} proposed event</DialogTitle></DialogHeader>
@@ -321,5 +318,5 @@ function Editor() {
         </DialogContent>
       </Dialog>
     </>
-  );
+  )
 }
