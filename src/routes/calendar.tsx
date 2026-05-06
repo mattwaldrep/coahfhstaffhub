@@ -580,6 +580,14 @@ function CalendarBody() {
               {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={flagFilter} onValueChange={(v) => setFlagFilter(v as typeof flagFilter)}>
+            <SelectTrigger className="h-8 w-[10rem] text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All events</SelectItem>
+              <SelectItem value="pco">Needs PCO registration</SelectItem>
+              <SelectItem value="missions">Missions team needed</SelectItem>
+            </SelectContent>
+          </Select>
           {SUB_CALS.map((s) => (
             <button
               key={s.value}
