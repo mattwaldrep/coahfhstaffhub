@@ -14,6 +14,7 @@ import {
 import {
   Home,
   CalendarDays,
+  CalendarClock,
   ClipboardList,
   ClipboardCheck,
   Users,
@@ -31,6 +32,7 @@ const PRIMARY = [
   { to: "/meeting", label: "Meeting", icon: ClipboardList },
   { to: "/sunday-review", label: "Sunday Review", icon: ClipboardCheck },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
+  { to: "/calendar/planning", label: "Annual Planning", icon: CalendarClock },
 ];
 
 const ELDER_ITEMS = [
