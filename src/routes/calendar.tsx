@@ -129,8 +129,13 @@ type FormState = {
   freq: "WEEKLY" | "MONTHLY" | "YEARLY";
   interval: number;
   byweekday: string[];
-  bysetpos: string; // "" | "1".."4" | "-1" (last)
+  bysetpos: string;
   recurrence_end_date: string;
+  other_listings: string;
+  room_needed: string;
+  action_note: string;
+  missions_team_needed: boolean;
+  church_covering: string;
 };
 
 const emptyForm = (start = ""): FormState => ({
