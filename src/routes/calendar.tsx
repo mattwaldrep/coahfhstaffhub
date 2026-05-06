@@ -673,6 +673,53 @@ function CalendarBody() {
               <Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             </div>
 
+            {/* Logistics */}
+            <div className="space-y-3 rounded-xl border border-border p-3">
+              <Label className="text-sm font-medium">Logistics</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">Room needed</Label>
+                  <Input
+                    placeholder="e.g. Office, Sanctuary"
+                    value={form.room_needed}
+                    onChange={(e) => setForm({ ...form, room_needed: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Church covering</Label>
+                  <Input
+                    placeholder="e.g. Family Hope, COAH:LM, Both"
+                    value={form.church_covering}
+                    onChange={(e) => setForm({ ...form, church_covering: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Other listings (comma-separated)</Label>
+                <Input
+                  placeholder="e.g. Google Business, Eventbrite"
+                  value={form.other_listings}
+                  onChange={(e) => setForm({ ...form, other_listings: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Action / follow-up</Label>
+                <Textarea
+                  rows={2}
+                  placeholder="What needs to happen for this event?"
+                  value={form.action_note}
+                  onChange={(e) => setForm({ ...form, action_note: e.target.value })}
+                />
+              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <Switch
+                  checked={form.missions_team_needed}
+                  onCheckedChange={(v) => setForm({ ...form, missions_team_needed: v })}
+                />
+                Missions team needed
+              </label>
+            </div>
+
             {/* Recurrence */}
             <div className="space-y-3 rounded-xl border border-border p-3">
               <label className="flex items-center gap-2 text-sm font-medium">
