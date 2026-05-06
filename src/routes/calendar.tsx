@@ -515,9 +515,14 @@ function CalendarBody() {
     [events, range.start.getTime(), range.end.getTime()],
   );
 
-  const visible = occurrences.filter(
-    (o) => filters[o.sub_calendar] && (categoryFilter === "all" || o.category === categoryFilter),
-  );
+  const visible = occurrences.filter((o) => {
+    const cals = [o.sub_calendar, ...(o.other_listings ?? [])];
+    if (!cals.some((c) => filters[c])) return false;
+    if (categoryFilter !== "all" && o.category !== categoryFilter) return false;
+    if (flagFilter === "pco" && !o.pco_registration) return false;
+    if (flagFilter === "missions" && !o.missions_team_needed) return false;
+    return true;
+  });
 
   return (
     <>
