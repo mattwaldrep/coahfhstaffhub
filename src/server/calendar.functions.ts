@@ -83,6 +83,7 @@ export const createPlanningCycle = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error) throw new Error(error.message);
+    try { await notifyCycleOpen(row); } catch (e) { console.error("notifyCycleOpen failed", e); }
     return row;
   });
 
