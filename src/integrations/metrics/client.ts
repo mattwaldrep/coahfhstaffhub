@@ -1,20 +1,6 @@
-// Separate Supabase client connected to the Church Metrics project.
-// Uses an isolated storage key so its session does not collide with the
-// primary app session.
-import { createClient } from "@supabase/supabase-js";
-
-const METRICS_URL = "https://jrqwumvyafswleztawqq.supabase.co";
-const METRICS_PUBLISHABLE_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpycXd1bXZ5YWZzd2xlenRhd3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxOTY5MDUsImV4cCI6MjA4OTc3MjkwNX0.Ag_frSWqndScYSG-YLh06ovhLkk5v2DY3HZST9u9qyg";
-
-export const metricsClient = createClient(METRICS_URL, METRICS_PUBLISHABLE_KEY, {
-  auth: {
-    storage: typeof window !== "undefined" ? window.localStorage : undefined,
-    storageKey: "coah-metrics-auth",
-    persistSession: true,
-    autoRefreshToken: true,
-  },
-});
+// Metrics data is now served via a server function backed by an authenticated
+// HTTP export endpoint, so individual users no longer need to sign in.
+import { getWeeklyMetrics } from "@/lib/metrics.functions";
 
 export type WeeklyMetric = {
   id: string;
@@ -82,25 +68,24 @@ export function summarizeWeeks(rows: WeeklyMetric[]): MetricsHeadline {
   };
 }
 
+let cache: { at: number; rows: WeeklyMetric[] } | null = null;
+const CACHE_MS = 5 * 60_000;
+
+async function getAll(): Promise<WeeklyMetric[]> {
+  if (cache && Date.now() - cache.at < CACHE_MS) return cache.rows;
+  const rows = (await getWeeklyMetrics()) as WeeklyMetric[];
+  cache = { at: Date.now(), rows };
+  return rows;
+}
+
 /** Fetch the most recent N weekly_metrics rows ordered by week_start_date desc. */
 export async function fetchRecentWeeks(limit = 8): Promise<WeeklyMetric[]> {
-  const { data, error } = await metricsClient
-    .from("weekly_metrics")
-    .select("*")
-    .order("week_start_date", { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return (data ?? []) as WeeklyMetric[];
+  const rows = await getAll();
+  return rows.slice(0, limit);
 }
 
 /** Fetch weeks within an inclusive date range (YYYY-MM-DD). */
 export async function fetchWeeksInRange(start: string, end: string): Promise<WeeklyMetric[]> {
-  const { data, error } = await metricsClient
-    .from("weekly_metrics")
-    .select("*")
-    .gte("week_start_date", start)
-    .lte("week_start_date", end)
-    .order("week_start_date", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as WeeklyMetric[];
+  const rows = await getAll();
+  return rows.filter((r) => r.week_start_date >= start && r.week_start_date <= end);
 }
