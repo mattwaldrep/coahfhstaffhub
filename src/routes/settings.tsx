@@ -119,87 +119,8 @@ function SettingsPage() {
         </form>
 
         <GoogleTasksCard />
-        <ChurchMetricsCard />
       </div>
     </AppShell>
-  );
-}
-
-function ChurchMetricsCard() {
-  const session = useMetricsSession();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  async function connect(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    const { error } = await metricsClient.auth.signInWithPassword({ email, password });
-    setBusy(false);
-    if (error) toast.error(error.message);
-    else {
-      toast.success("Church Metrics connected");
-      setPassword("");
-    }
-  }
-
-  async function disconnect() {
-    setBusy(true);
-    await metricsClient.auth.signOut();
-    setBusy(false);
-    toast.success("Church Metrics disconnected");
-  }
-
-  const connected = !!session;
-
-  return (
-    <div className="bg-surface border border-border rounded-2xl p-6 space-y-4">
-      <div>
-        <h2 className="font-display font-semibold flex items-center gap-2">
-          <BarChart3 className="w-4 h-4" /> Church Metrics
-          {connected && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
-        </h2>
-        <p className="text-xs text-muted-foreground mt-1">
-          Sign in with your Church Metrics account so this app can pull live attendance, giving, and engagement data into the dashboard and the staff meeting.
-        </p>
-      </div>
-
-      {session === undefined ? (
-        <div className="text-xs text-muted-foreground flex items-center gap-2">
-          <Loader2 className="w-3 h-3 animate-spin" /> Checking…
-        </div>
-      ) : connected ? (
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <span className="text-sm text-muted-foreground">
-            Connected as <span className="font-medium text-foreground">{session!.user.email}</span>
-          </span>
-          <Button variant="outline" size="sm" onClick={disconnect} disabled={busy}>
-            <Unplug className="w-4 h-4 mr-1.5" /> Disconnect
-          </Button>
-        </div>
-      ) : (
-        <form onSubmit={connect} className="space-y-3">
-          <div className="space-y-2">
-            <Label htmlFor="cm-email">Email</Label>
-            <Input id="cm-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cm-pw">Password</Label>
-            <Input id="cm-pw" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
-          </div>
-          <div className="flex justify-end">
-            <Button type="submit" disabled={busy || !email || !password}>
-              {busy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plug className="w-4 h-4 mr-2" />}
-              Connect
-            </Button>
-          </div>
-        </form>
-      )}
-
-      <div className="text-[11px] text-muted-foreground border-t border-border pt-3">
-        Your Church Metrics session is stored in this browser only. Sign out anytime.
-      </div>
-    </div>
   );
 }
 
