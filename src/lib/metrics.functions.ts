@@ -50,17 +50,17 @@ export const getWeeklyMetrics = createServerFn({ method: "GET" }).handler(
 );
 
 export const getMilestones = createServerFn({ method: "GET" }).handler(
-  async () => fetchTable<Record<string, unknown>>("milestones"),
+  async () => fetchTable<Record<string, any>>("milestones"),
 );
 export const getEventAttendance = createServerFn({ method: "GET" }).handler(
-  async () => fetchTable<Record<string, unknown>>("event_attendance"),
+  async () => fetchTable<Record<string, any>>("event_attendance"),
 );
 export const getGoals = createServerFn({ method: "GET" }).handler(
-  async () => fetchTable<Record<string, unknown>>("goals"),
+  async () => fetchTable<Record<string, any>>("goals"),
 );
 export const getBaselines = createServerFn({ method: "GET" }).handler(
-  async () => fetchTable<Record<string, unknown>>("baselines"),
+  async () => fetchTable<Record<string, any>>("baselines"),
 );
 export const getChartAnnotations = createServerFn({ method: "GET" }).handler(
-  async () => fetchTable<Record<string, unknown>>("chart_annotations"),
+  async () => fetchTable<Record<string, any>>("chart_annotations"),
 );
