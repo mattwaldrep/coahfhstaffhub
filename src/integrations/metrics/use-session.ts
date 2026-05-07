@@ -1,13 +1,6 @@
-import { useEffect, useState } from "react";
-import type { Session } from "@supabase/supabase-js";
-import { metricsClient } from "./client";
-
+// Metrics is now backed by a server-side export endpoint, so there is no
+// per-user session anymore. This hook returns a stable truthy sentinel for
+// backwards compatibility with existing components that gated on a session.
 export function useMetricsSession() {
-  const [session, setSession] = useState<Session | null | undefined>(undefined);
-  useEffect(() => {
-    metricsClient.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: sub } = metricsClient.auth.onAuthStateChange((_e, s) => setSession(s));
-    return () => sub.subscription.unsubscribe();
-  }, []);
-  return session;
+  return { user: { email: "metrics-export" } } as const;
 }
