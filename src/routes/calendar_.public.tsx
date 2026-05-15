@@ -23,7 +23,7 @@ import {
 import { expandEvents, type Occurrence } from "@/lib/calendar-expand";
 import { getPublicEvents, type PublicEventRow } from "@/lib/public-calendar.functions";
 
-export const Route = createFileRoute("/calendar/public")({
+export const Route = createFileRoute("/calendar_/public")({
   head: () => ({
     meta: [
       { title: "Calendar — City on a Hill Forest Hills" },
