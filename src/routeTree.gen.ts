@@ -26,6 +26,7 @@ import { Route as ElderSettingsRouteImport } from './routes/elder.settings'
 import { Route as ElderPastoralCareRouteImport } from './routes/elder.pastoral-care'
 import { Route as ElderMeetingsRouteImport } from './routes/elder.meetings'
 import { Route as ElderArchiveRouteImport } from './routes/elder.archive'
+import { Route as CalendarPublicRouteImport } from './routes/calendar_.public'
 import { Route as CalendarPlanningRouteImport } from './routes/calendar_.planning'
 import { Route as ElderMeetingsIndexRouteImport } from './routes/elder.meetings.index'
 import { Route as ElderMeetingsMeetingIdRouteImport } from './routes/elder.meetings.$meetingId'
@@ -120,6 +121,11 @@ const ElderArchiveRoute = ElderArchiveRouteImport.update({
   path: '/archive',
   getParentRoute: () => ElderRoute,
 } as any)
+const CalendarPublicRoute = CalendarPublicRouteImport.update({
+  id: '/calendar_/public',
+  path: '/calendar/public',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CalendarPlanningRoute = CalendarPlanningRouteImport.update({
   id: '/calendar_/planning',
   path: '/calendar/planning',
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/sunday-review': typeof SundayReviewRoute
   '/users': typeof UsersRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
+  '/calendar/public': typeof CalendarPublicRoute
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/meetings': typeof ElderMeetingsRouteWithChildren
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
@@ -204,6 +211,7 @@ export interface FileRoutesByTo {
   '/sunday-review': typeof SundayReviewRoute
   '/users': typeof UsersRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
+  '/calendar/public': typeof CalendarPublicRoute
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
@@ -231,6 +239,7 @@ export interface FileRoutesById {
   '/sunday-review': typeof SundayReviewRoute
   '/users': typeof UsersRoute
   '/calendar_/planning': typeof CalendarPlanningRouteWithChildren
+  '/calendar_/public': typeof CalendarPublicRoute
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/meetings': typeof ElderMeetingsRouteWithChildren
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
@@ -260,6 +269,7 @@ export interface FileRouteTypes {
     | '/sunday-review'
     | '/users'
     | '/calendar/planning'
+    | '/calendar/public'
     | '/elder/archive'
     | '/elder/meetings'
     | '/elder/pastoral-care'
@@ -286,6 +296,7 @@ export interface FileRouteTypes {
     | '/sunday-review'
     | '/users'
     | '/calendar/planning'
+    | '/calendar/public'
     | '/elder/archive'
     | '/elder/pastoral-care'
     | '/elder/settings'
@@ -312,6 +323,7 @@ export interface FileRouteTypes {
     | '/sunday-review'
     | '/users'
     | '/calendar_/planning'
+    | '/calendar_/public'
     | '/elder/archive'
     | '/elder/meetings'
     | '/elder/pastoral-care'
@@ -340,6 +352,7 @@ export interface RootRouteChildren {
   SundayReviewRoute: typeof SundayReviewRoute
   UsersRoute: typeof UsersRoute
   CalendarPlanningRoute: typeof CalendarPlanningRouteWithChildren
+  CalendarPublicRoute: typeof CalendarPublicRoute
   ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
   ApiPublicHooksActionItemsDigestRoute: typeof ApiPublicHooksActionItemsDigestRoute
   ApiPublicHooksSundayReviewNudgeRoute: typeof ApiPublicHooksSundayReviewNudgeRoute
@@ -466,6 +479,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ElderArchiveRouteImport
       parentRoute: typeof ElderRoute
     }
+    '/calendar_/public': {
+      id: '/calendar_/public'
+      path: '/calendar/public'
+      fullPath: '/calendar/public'
+      preLoaderRoute: typeof CalendarPublicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/calendar_/planning': {
       id: '/calendar_/planning'
       path: '/calendar/planning'
@@ -584,6 +604,7 @@ const rootRouteChildren: RootRouteChildren = {
   SundayReviewRoute: SundayReviewRoute,
   UsersRoute: UsersRoute,
   CalendarPlanningRoute: CalendarPlanningRouteWithChildren,
+  CalendarPublicRoute: CalendarPublicRoute,
   ApiGoogleOauthCallbackRoute: ApiGoogleOauthCallbackRoute,
   ApiPublicHooksActionItemsDigestRoute: ApiPublicHooksActionItemsDigestRoute,
   ApiPublicHooksSundayReviewNudgeRoute: ApiPublicHooksSundayReviewNudgeRoute,
