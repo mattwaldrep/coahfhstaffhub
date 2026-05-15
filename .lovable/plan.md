@@ -1,45 +1,45 @@
-## How notifications work today
+## Goal
 
-When you open a planning cycle, the app automatically emails **every user in the database who has a role of `core`, `meeting`, or `extended`** (deduped by email). There's no separate "planning recipients" list — the audience is simply everyone you've invited into the app.
+Add a public, read-only calendar at `/calendar/public` (no login) that has the same view modes (Month / Week / List) and sub-calendar filter chips as the staff calendar, but no edit controls.
 
-Right now you have 6 users (you, Steven, plus four elders) — all also leaders, but if any sub-calendar leader isn't in this list, they won't get the email.
+## What you'll get
 
-## What you need to do
+- Public URL: `https://coahfhstaffhub.lovable.app/calendar/public`
+- Same three views: **Month**, **Week**, **List** — toggle in the header
+- Same sub-calendar filter chips: Forest Hills Main, COAH:LM, Youth, General (toggle on/off; preference saved in URL/localStorage)
+- Same month/week navigation (prev/next/today)
+- Click an event → read-only details popup (title, date/time, location, leader, category, sub-calendar, description)
+- No "Add event", no edit/delete buttons, no checklist editing, no AppShell sidebar
+- Friendly header with church name + small "Staff sign in" link
 
-For each ministry leader who should plan a sub-calendar, **invite them through Settings → Users** with the **Extended** role. That single action:
+## Implementation
 
-1. Creates their account + profile (via the existing invite flow in `inviteUser`).
-2. Sends them a Lovable Cloud invite email so they can set a password.
-3. Adds them to the recipient list for the next `notifyCycleOpen` email.
-4. Lets them sign in, see the "Annual Planning" sidebar item, and submit their own sub-calendar plan.
-5. Lets them view other ministries' submitted plans (read-only) to avoid conflicts.
+1. **Refactor — extract a shared read-only viewer**
+   - Move the existing `MonthGrid`, `WeekStrip`, `ListView`, the filter chip row, and the view/cursor controls out of `src/routes/calendar.tsx` into `src/components/calendar/CalendarViewer.tsx`.
+   - Component takes props: `occurrences`, `view`, `setView`, `cursor`, `setCursor`, `filters`, `setFilters`, `onPickEvent`, `canEdit` (defaults to `false`).
+   - When `canEdit` is `false`: hide the "+ New event" affordance, day-cell click does nothing, event click opens a read-only details modal instead of the edit dialog.
+   - Staff `/calendar` keeps all current behavior by passing `canEdit={true}` and its existing edit handlers.
 
-Extended is the right tier — they can plan and read, but can't approve submissions or manage cycles (that stays with Core).
+2. **New route** `src/routes/calendar.public.tsx`
+   - No `AppShell` — a slim public layout (church name header, footer with link to `/login`).
+   - Fetches via a new server function (below), runs the same `expandEvents` logic from `src/lib/calendar-expand.ts` for recurrence.
+   - Renders `<CalendarViewer canEdit={false} ... />` so it gets identical Month/Week/List + filter chips for free.
+   - SEO: route-specific `head()` with title "COAH Forest Hills Calendar", description, og tags.
 
-## Suggested leader roster to invite
+3. **New server function** `src/lib/public-calendar.functions.ts`
+   - `getPublicEvents({ rangeStart, rangeEnd })` — `createServerFn`, no auth middleware.
+   - Uses `supabaseAdmin` server-side to bypass RLS.
+   - Returns only safe fields needed by the viewer: `id, title, start_at, end_at, sub_calendar, category, leader_name, all_day, rrule, excluded_dates, other_listings, location, description`.
+   - Excludes internal-only fields (`readiness`, `action_note`, `room_needed`, `church_covering`, `missions_team_needed`, `pco_registration`, checklists).
 
-Based on the sub-calendars defined in the planner (Forest Hills Main, COAH:LM, Youth, General), at minimum invite the leader for each. Add anyone else who runs recurring events that land on the master calendar.
+4. **Optional**: small "Share public calendar" button on staff `/calendar` that copies the public URL.
 
-## Workflow going forward
+## Open questions
 
-```text
-1. Add new leader → /users → Invite (role: Extended)
-2. Leader receives Lovable Cloud invite, sets password, logs in
-3. When you open the next cycle:
-   - Cycle insert fires notifyCycleOpen
-   - Every core/meeting/extended user (incl. new leader) gets the email
-   - Leader clicks CTA → /calendar/planning → starts their plan
-4. On submit, Core (you + Steven) get a "ready for review" email
-```
+1. **All events public, or opt-in per event?** Today every event in `calendar_events` would be visible. Options:
+   - (a) All public (simplest, matches current internal SELECT-all behavior)
+   - (b) Add an `is_public` boolean column (default `true` or `false` — your call) with a toggle on the event editor
+2. **Sub-calendars on the public view**: show all four with chips like staff view (default), or restrict to a subset (e.g. exclude "General" internal stuff)?
+3. **URL path**: `/calendar/public` (default), `/public-calendar`, or `/events`?
 
-## Optional polish (only if you want it later)
-
-- **Pre-cycle dry-run check**: a small "Preview recipients" button on the New Cycle dialog that lists who will get the email, so you can confirm coverage before clicking Open.
-- **Per-sub-calendar owner mapping**: instead of relying on "all extended users get notified," maintain an explicit `sub_calendar → leader_id` table and only email the assigned leader for each sub-calendar. Useful once the leader list grows past ~10 people.
-- **Reminder nudge**: a scheduled job that re-emails leaders who haven't started a draft 3 days before `closes_at`.
-
-None of these are required — the simple "invite as Extended" flow above is sufficient for the cycle-open notification to work.
-
-## What I'd build if you say go
-
-Nothing yet — this is a workflow/data question, not a code change. The system already does what you need; you just need to populate the user list. If you want any of the optional polish items, tell me which and I'll plan that next.
+If you have no preference, defaults will be: (a) all events public, all four sub-calendars with chips, path `/calendar/public`.
