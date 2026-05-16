@@ -209,9 +209,34 @@ function SectionCard({ section, meetingId, items, note, isFullElder, reload, men
       }
     >
       <div className="p-4 space-y-3">
-        {items.map((item: any) => (
-          <AgendaItemRow key={item.id} item={item} isFullElder={isFullElder} reload={reload} />
-        ))}
+        <SortableAgendaList
+          items={items}
+          onReorder={async (reordered: any[]) => {
+            try {
+              await Promise.all(
+                reordered.map((it: any, idx: number) =>
+                  it.position === idx
+                    ? null
+                    : upsertAgendaItem({
+                        data: {
+                          id: it.id,
+                          meeting_id: meetingId,
+                          section_key: it.section_key,
+                          title: it.title,
+                          position: idx,
+                        },
+                      }),
+                ),
+              );
+              reload();
+            } catch (e: any) {
+              toast.error(e.message ?? "Failed to reorder");
+            }
+          }}
+          renderItem={(item: any) => (
+            <AgendaItemRow item={item} isFullElder={isFullElder} reload={reload} meetingId={meetingId} />
+          )}
+        />
         <div className="space-y-2">
           <RichTextEditor
             value={adding}
