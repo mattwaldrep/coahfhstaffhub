@@ -343,7 +343,7 @@ function MeetingPage() {
                     </button>
                     <div className="flex-1 min-w-0">
                       <div className={cn("text-sm", item.status === "done" && "line-through text-muted-foreground")}>
-                        {item.title}
+                        <LinkedText value={item.title} />
                       </div>
                       {item.owner_name && (
                         <div className="text-xs text-muted-foreground mt-0.5">{item.owner_name}</div>
