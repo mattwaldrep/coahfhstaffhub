@@ -299,6 +299,16 @@ function CollapsibleCard({
   );
 }
 
+/** Renders an agenda item title. Supports rich-text HTML and legacy plain text / [label](url) markdown. */
+function AgendaTitle({ value, className }: { value: string; className?: string }) {
+  if (!value) return null;
+  const looksHtml = /<[a-z][\s\S]*>/i.test(value);
+  if (looksHtml) {
+    return <RichTextView html={value} className={className} />;
+  }
+  return <div className={className}><LinkedText value={value} /></div>;
+}
+
 function AgendaItemRow({ item, isFullElder, reload }: any) {
   const isNewBusiness = item.section_key === "new_business";
   const willCarry = isNewBusiness || !!item.carry_to_next;
