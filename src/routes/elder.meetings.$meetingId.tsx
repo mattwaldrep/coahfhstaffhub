@@ -174,13 +174,14 @@ function SectionCard({ section, meetingId, items, note, isFullElder, reload, men
   useEffect(() => { setNotes(note?.notes ?? ""); }, [note?.notes]);
 
   async function add() {
-    if (!adding.trim()) return;
+    const plain = adding.replace(/<[^>]+>/g, "").trim();
+    if (!plain) return;
     try {
       await upsertAgendaItem({
         data: {
           meeting_id: meetingId,
           section_key: section.key,
-          title: adding.trim(),
+          title: adding,
           executive_session: isExec,
         },
       });
@@ -208,15 +209,14 @@ function SectionCard({ section, meetingId, items, note, isFullElder, reload, men
         {items.map((item: any) => (
           <AgendaItemRow key={item.id} item={item} isFullElder={isFullElder} reload={reload} />
         ))}
-        <div className="flex gap-2">
-          <Input
-            placeholder="Add agenda item…  use [label](https://…) for links"
+        <div className="space-y-2">
+          <RichTextEditor
             value={adding}
-            onChange={(e) => setAdding(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
-            className="h-8 text-sm"
+            onChange={setAdding}
+            placeholder="Add agenda item…  (use the link button to add hyperlinks)"
+            minHeight={40}
           />
-          <Button size="sm" variant="outline" onClick={add}><Plus className="w-3 h-3" /></Button>
+          <Button size="sm" variant="outline" onClick={add}><Plus className="w-3 h-3 mr-1" /> Add</Button>
         </div>
         <RichTextEditor
           value={notes}
@@ -299,14 +299,24 @@ function CollapsibleCard({
   );
 }
 
+/** Renders an agenda item title. Supports rich-text HTML and legacy plain text / [label](url) markdown. */
+function AgendaTitle({ value, className }: { value: string; className?: string }) {
+  if (!value) return null;
+  const looksHtml = /<[a-z][\s\S]*>/i.test(value);
+  if (looksHtml) {
+    return <RichTextView html={value} className={className} />;
+  }
+  return <div className={className}><LinkedText value={value} /></div>;
+}
+
 function AgendaItemRow({ item, isFullElder, reload }: any) {
   const isNewBusiness = item.section_key === "new_business";
   const willCarry = isNewBusiness || !!item.carry_to_next;
   return (
     <div className="flex items-start gap-2 group">
       <div className="flex-1 min-w-0">
-        <div className="text-sm"><LinkedText value={item.title} /></div>
-        {item.body && <div className="text-xs text-muted-foreground mt-0.5"><LinkedText value={item.body} /></div>}
+        <AgendaTitle value={item.title} className="text-sm" />
+        {item.body && <AgendaTitle value={item.body} className="text-xs text-muted-foreground mt-0.5" />}
         <div className="flex gap-2 mt-0.5">
           {item.source && (
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">

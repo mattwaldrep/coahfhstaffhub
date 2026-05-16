@@ -9,6 +9,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { finalizeMeeting, sendMeetingRecap } from "@/server/meeting.functions";
 import { cn } from "@/lib/utils";
 import { LinkedText } from "@/lib/render-linked-text";
+import { RichTextEditor, RichTextView } from "@/components/ui/rich-text-editor";
+
+function AgendaTitle({ value, className }: { value: string; className?: string }) {
+  if (!value) return null;
+  const looksHtml = /<[a-z][\s\S]*>/i.test(value);
+  if (looksHtml) return <RichTextView html={value} className={className} />;
+  return <span className={className}><LinkedText value={value} /></span>;
+}
 import { toast } from "sonner";
 import {
   StandingSection,
@@ -147,8 +155,10 @@ function MeetingPage() {
   }, [meeting?.id]);
 
   const addAgenda = async () => {
-    if (!meeting || !newAgenda.trim()) return;
-    const title = newAgenda.trim();
+    if (!meeting) return;
+    const plain = newAgenda.replace(/<[^>]+>/g, "").trim();
+    if (!plain) return;
+    const title = newAgenda;
     setNewAgenda("");
     const position = agenda.length;
     const { error } = await supabase
@@ -344,7 +354,7 @@ function MeetingPage() {
                     </button>
                     <div className="flex-1 min-w-0">
                       <div className={cn("text-sm", item.status === "done" && "line-through text-muted-foreground")}>
-                        <LinkedText value={item.title} />
+                        <AgendaTitle value={item.title} />
                       </div>
                       {item.owner_name && (
                         <div className="text-xs text-muted-foreground mt-0.5">{item.owner_name}</div>
@@ -365,23 +375,22 @@ function MeetingPage() {
                   </li>
                 )}
               </ul>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  addAgenda();
-                }}
-                className="mt-4 flex gap-2"
-              >
-                <input
+              <div className="mt-4 space-y-2">
+                <RichTextEditor
                   value={newAgenda}
-                  onChange={(e) => setNewAgenda(e.target.value)}
-                  placeholder="Add discussion item…  use [label](https://…) for links"
-                  className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  onChange={setNewAgenda}
+                  placeholder="Add discussion item…  (use the link button to add hyperlinks)"
+                  minHeight={40}
                 />
-                <Button type="submit" size="icon" disabled={!newAgenda.trim()}>
-                  <Plus className="w-4 h-4" />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={addAgenda}
+                  disabled={!newAgenda.replace(/<[^>]+>/g, "").trim()}
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add
                 </Button>
-              </form>
+              </div>
             </StandingSection>
 
             <UpcomingEventsSection meetingId={meeting.id} />
