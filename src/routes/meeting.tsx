@@ -179,6 +179,26 @@ function MeetingPage() {
     await supabase.from("agenda_items").delete().eq("id", id);
   };
 
+  const editAgenda = async (id: string, title: string) => {
+    const { error } = await supabase.from("agenda_items").update({ title }).eq("id", id);
+    if (error) toast.error(error.message);
+  };
+
+  const reorderAgenda = async (reordered: AgendaItem[]) => {
+    setAgenda(reordered.map((it, idx) => ({ ...it, position: idx })));
+    const changes = reordered
+      .map((it, idx) => ({ it, idx }))
+      .filter(({ it, idx }) => it.position !== idx);
+    if (changes.length === 0) return;
+    const results = await Promise.all(
+      changes.map(({ it, idx }) =>
+        supabase.from("agenda_items").update({ position: idx }).eq("id", it.id),
+      ),
+    );
+    const err = results.find((r) => r.error);
+    if (err?.error) toast.error(err.error.message);
+  };
+
   const addAction = async () => {
     if (!meeting || !newAction.trim()) return;
     const title = newAction.trim();
