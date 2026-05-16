@@ -367,23 +367,22 @@ function MeetingPage() {
                   </li>
                 )}
               </ul>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  addAgenda();
-                }}
-                className="mt-4 flex gap-2"
-              >
-                <input
+              <div className="mt-4 space-y-2">
+                <RichTextEditor
                   value={newAgenda}
-                  onChange={(e) => setNewAgenda(e.target.value)}
-                  placeholder="Add discussion item…  use [label](https://…) for links"
-                  className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  onChange={setNewAgenda}
+                  placeholder="Add discussion item…  (use the link button to add hyperlinks)"
+                  minHeight={40}
                 />
-                <Button type="submit" size="icon" disabled={!newAgenda.trim()}>
-                  <Plus className="w-4 h-4" />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={addAgenda}
+                  disabled={!newAgenda.replace(/<[^>]+>/g, "").trim()}
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add
                 </Button>
-              </form>
+              </div>
             </StandingSection>
 
             <UpcomingEventsSection meetingId={meeting.id} />
