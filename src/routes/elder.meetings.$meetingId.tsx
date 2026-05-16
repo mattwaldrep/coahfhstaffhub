@@ -460,8 +460,10 @@ function ActionItemsBlock({ meetingId, items, isFullElder, reload }: any) {
   }
 
   return (
-    <div className="bg-surface border border-border rounded-2xl">
-      <div className="px-4 py-3 border-b border-border font-medium text-sm">Action items</div>
+    <CollapsibleCard
+      storageKey={`elder-collapsed:${meetingId}:action-items`}
+      header={<><span>Action items</span><span className="text-[10px] text-muted-foreground ml-1">({items.length})</span></>}
+    >
       <div className="p-4 space-y-2">
         {items.length === 0 && <div className="text-xs text-muted-foreground">None yet.</div>}
         {items.map((a: any) => (
@@ -496,6 +498,6 @@ function ActionItemsBlock({ meetingId, items, isFullElder, reload }: any) {
           <Button size="sm" variant="outline" onClick={add}><Plus className="w-3 h-3" /></Button>
         </div>
       </div>
-    </div>
+    </CollapsibleCard>
   );
 }
