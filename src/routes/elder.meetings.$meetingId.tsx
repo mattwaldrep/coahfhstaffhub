@@ -415,8 +415,10 @@ function JointSubSection({ sub, meetingId, items, reload, mentionUsers }: any) {
   }
 
   return (
-    <div className="bg-surface border border-border rounded-2xl">
-      <div className="px-4 py-3 border-b border-border font-medium text-sm">{sub.label}</div>
+    <CollapsibleCard
+      storageKey={`elder-collapsed:${meetingId}:joint:${sub.key}`}
+      header={<><span>{sub.label}</span><span className="text-[10px] text-muted-foreground ml-1">({items.length})</span></>}
+    >
       <div className="p-4 space-y-3">
         {items.map((it: any) => (
           <div key={it.id} className="border border-border rounded-lg p-3 group">
@@ -438,7 +440,7 @@ function JointSubSection({ sub, meetingId, items, reload, mentionUsers }: any) {
           <Button size="sm" variant="outline" onClick={add}><Plus className="w-3 h-3 mr-1" /> Add</Button>
         </div>
       </div>
-    </div>
+    </CollapsibleCard>
   );
 }
 
