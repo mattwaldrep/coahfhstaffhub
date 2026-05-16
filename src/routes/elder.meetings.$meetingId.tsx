@@ -174,13 +174,14 @@ function SectionCard({ section, meetingId, items, note, isFullElder, reload, men
   useEffect(() => { setNotes(note?.notes ?? ""); }, [note?.notes]);
 
   async function add() {
-    if (!adding.trim()) return;
+    const plain = adding.replace(/<[^>]+>/g, "").trim();
+    if (!plain) return;
     try {
       await upsertAgendaItem({
         data: {
           meeting_id: meetingId,
           section_key: section.key,
-          title: adding.trim(),
+          title: adding,
           executive_session: isExec,
         },
       });
