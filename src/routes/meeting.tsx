@@ -1,15 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, type ReactNode } from "react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Plus, Check, Trash2, Loader2, Send, MailCheck } from "lucide-react";
+import { Mic, MicOff, Plus, Check, Trash2, Loader2, Send, MailCheck, GripVertical, Pencil, X } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { finalizeMeeting, sendMeetingRecap } from "@/server/meeting.functions";
 import { cn } from "@/lib/utils";
 import { LinkedText } from "@/lib/render-linked-text";
 import { RichTextEditor, RichTextView } from "@/components/ui/rich-text-editor";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 function AgendaTitle({ value, className }: { value: string; className?: string }) {
   if (!value) return null;
@@ -176,6 +179,26 @@ function MeetingPage() {
     await supabase.from("agenda_items").delete().eq("id", id);
   };
 
+  const editAgenda = async (id: string, title: string) => {
+    const { error } = await supabase.from("agenda_items").update({ title }).eq("id", id);
+    if (error) toast.error(error.message);
+  };
+
+  const reorderAgenda = async (reordered: AgendaItem[]) => {
+    setAgenda(reordered.map((it, idx) => ({ ...it, position: idx })));
+    const changes = reordered
+      .map((it, idx) => ({ it, idx }))
+      .filter(({ it, idx }) => it.position !== idx);
+    if (changes.length === 0) return;
+    const results = await Promise.all(
+      changes.map(({ it, idx }) =>
+        supabase.from("agenda_items").update({ position: idx }).eq("id", it.id),
+      ),
+    );
+    const err = results.find((r) => r.error);
+    if (err?.error) toast.error(err.error.message);
+  };
+
   const addAction = async () => {
     if (!meeting || !newAction.trim()) return;
     const title = newAction.trim();
@@ -335,46 +358,21 @@ function MeetingPage() {
                 </span>
               }
             >
-              <ul className="space-y-2">
-                {agenda.map((item) => (
-                  <li
-                    key={item.id}
-                    className="group flex items-start gap-3 p-2 rounded-lg hover:bg-muted/40 transition-colors"
-                  >
-                    <button
-                      onClick={() => toggleAgenda(item)}
-                      className={cn(
-                        "mt-0.5 w-5 h-5 rounded border flex items-center justify-center shrink-0",
-                        item.status === "done"
-                          ? "bg-primary border-primary text-primary-foreground"
-                          : "border-border",
-                      )}
-                    >
-                      {item.status === "done" && <Check className="w-3 h-3" />}
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <div className={cn("text-sm", item.status === "done" && "line-through text-muted-foreground")}>
-                        <AgendaTitle value={item.title} />
-                      </div>
-                      {item.owner_name && (
-                        <div className="text-xs text-muted-foreground mt-0.5">{item.owner_name}</div>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => removeAgenda(item.id)}
-                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
-                      aria-label="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </li>
-                ))}
-                {agenda.length === 0 && (
-                  <li className="text-sm text-muted-foreground py-2">
-                    No discussion items yet — add one below.
-                  </li>
+              <SortableAgendaList items={agenda} onReorder={reorderAgenda}>
+                {(item) => (
+                  <AgendaRow
+                    item={item}
+                    onToggle={() => toggleAgenda(item)}
+                    onDelete={() => removeAgenda(item.id)}
+                    onSave={(title) => editAgenda(item.id, title)}
+                  />
                 )}
-              </ul>
+              </SortableAgendaList>
+              {agenda.length === 0 && (
+                <div className="text-sm text-muted-foreground py-2">
+                  No discussion items yet — add one below.
+                </div>
+              )}
               <div className="mt-4 space-y-2">
                 <RichTextEditor
                   value={newAgenda}
@@ -547,4 +545,145 @@ function applyChange<T extends { id: string }>(
     next = [...next].sort((a, b) => (a[sortKey] as any) - (b[sortKey] as any));
   }
   return next;
+}
+
+function SortableAgendaList({
+  items,
+  onReorder,
+  children,
+}: {
+  items: AgendaItem[];
+  onReorder: (items: AgendaItem[]) => void;
+  children: (item: AgendaItem) => ReactNode;
+}) {
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const ids = items.map((i) => i.id);
+  const onEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIdx = ids.indexOf(active.id as string);
+    const newIdx = ids.indexOf(over.id as string);
+    if (oldIdx < 0 || newIdx < 0) return;
+    onReorder(arrayMove(items, oldIdx, newIdx));
+  };
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onEnd}>
+      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+        <ul className="space-y-2">
+          {items.map((item) => (
+            <SortableLi key={item.id} id={item.id}>
+              {children(item)}
+            </SortableLi>
+          ))}
+        </ul>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+function SortableLi({ id, children }: { id: string; children: ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+  return (
+    <li ref={setNodeRef} style={style} className="group flex items-start gap-2 p-2 rounded-lg hover:bg-muted/40 transition-colors">
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="mt-1 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
+        aria-label="Drag to reorder"
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
+      <div className="flex-1 min-w-0">{children}</div>
+    </li>
+  );
+}
+
+function AgendaRow({
+  item,
+  onToggle,
+  onDelete,
+  onSave,
+}: {
+  item: AgendaItem;
+  onToggle: () => void;
+  onDelete: () => void;
+  onSave: (title: string) => Promise<void> | void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(item.title);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { setDraft(item.title); }, [item.title]);
+
+  async function save() {
+    const plain = draft.replace(/<[^>]+>/g, "").trim();
+    if (!plain) { toast.error("Title cannot be empty"); return; }
+    setSaving(true);
+    try {
+      await onSave(draft);
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (editing) {
+    return (
+      <div className="space-y-2">
+        <RichTextEditor value={draft} onChange={setDraft} minHeight={40} />
+        <div className="flex gap-2">
+          <Button size="sm" onClick={save} disabled={saving}>
+            <Check className="w-3 h-3 mr-1" /> Save
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => { setEditing(false); setDraft(item.title); }}>
+            <X className="w-3 h-3 mr-1" /> Cancel
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-start gap-3">
+      <button
+        onClick={onToggle}
+        className={cn(
+          "mt-0.5 w-5 h-5 rounded border flex items-center justify-center shrink-0",
+          item.status === "done"
+            ? "bg-primary border-primary text-primary-foreground"
+            : "border-border",
+        )}
+      >
+        {item.status === "done" && <Check className="w-3 h-3" />}
+      </button>
+      <div className="flex-1 min-w-0">
+        <div className={cn("text-sm", item.status === "done" && "line-through text-muted-foreground")}>
+          <AgendaTitle value={item.title} />
+        </div>
+        {item.owner_name && (
+          <div className="text-xs text-muted-foreground mt-0.5">{item.owner_name}</div>
+        )}
+      </div>
+      <button
+        onClick={() => setEditing(true)}
+        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-opacity"
+        aria-label="Edit"
+      >
+        <Pencil className="w-4 h-4" />
+      </button>
+      <button
+        onClick={onDelete}
+        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+        aria-label="Delete"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  );
 }

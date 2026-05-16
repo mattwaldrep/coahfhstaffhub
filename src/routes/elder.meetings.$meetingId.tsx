@@ -15,9 +15,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { RichTextEditor, RichTextView, extractMentions } from "@/components/ui/rich-text-editor";
 import { LinkedText } from "@/lib/render-linked-text";
 import type { MentionUser } from "@/components/ui/mention-list";
-import { Plus, Trash2, Lock, Unlock, ChevronLeft, ChevronDown, ChevronRight, Check, Square, Bookmark } from "lucide-react";
+import { Plus, Trash2, Lock, Unlock, ChevronLeft, ChevronDown, ChevronRight, Check, Square, Bookmark, GripVertical, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
 import { PastoralCareList } from "@/components/pastoral/PastoralCareList";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 export const Route = createFileRoute("/elder/meetings/$meetingId")({
   component: MeetingDetail,
@@ -206,9 +209,34 @@ function SectionCard({ section, meetingId, items, note, isFullElder, reload, men
       }
     >
       <div className="p-4 space-y-3">
-        {items.map((item: any) => (
-          <AgendaItemRow key={item.id} item={item} isFullElder={isFullElder} reload={reload} />
-        ))}
+        <SortableAgendaList
+          items={items}
+          onReorder={async (reordered: any[]) => {
+            try {
+              await Promise.all(
+                reordered.map((it: any, idx: number) =>
+                  it.position === idx
+                    ? null
+                    : upsertAgendaItem({
+                        data: {
+                          id: it.id,
+                          meeting_id: meetingId,
+                          section_key: it.section_key,
+                          title: it.title,
+                          position: idx,
+                        },
+                      }),
+                ),
+              );
+              reload();
+            } catch (e: any) {
+              toast.error(e.message ?? "Failed to reorder");
+            }
+          }}
+          renderItem={(item: any) => (
+            <AgendaItemRow item={item} isFullElder={isFullElder} reload={reload} meetingId={meetingId} />
+          )}
+        />
         <div className="space-y-2">
           <RichTextEditor
             value={adding}
@@ -309,9 +337,110 @@ function AgendaTitle({ value, className }: { value: string; className?: string }
   return <div className={className}><LinkedText value={value} /></div>;
 }
 
-function AgendaItemRow({ item, isFullElder, reload }: any) {
+function SortableAgendaList({
+  items,
+  onReorder,
+  renderItem,
+}: {
+  items: any[];
+  onReorder: (items: any[]) => void;
+  renderItem: (item: any) => ReactNode;
+}) {
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const ids = items.map((i) => i.id);
+  const handleEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIdx = ids.indexOf(active.id as string);
+    const newIdx = ids.indexOf(over.id as string);
+    if (oldIdx < 0 || newIdx < 0) return;
+    onReorder(arrayMove(items, oldIdx, newIdx));
+  };
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleEnd}>
+      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+        <div className="space-y-2">
+          {items.map((item) => (
+            <SortableRow key={item.id} id={item.id}>
+              {renderItem(item)}
+            </SortableRow>
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+function SortableRow({ id, children }: { id: string; children: ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-start gap-1">
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="mt-1 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
+        aria-label="Drag to reorder"
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
+      <div className="flex-1 min-w-0">{children}</div>
+    </div>
+  );
+}
+
+function AgendaItemRow({ item, isFullElder, reload, meetingId }: any) {
   const isNewBusiness = item.section_key === "new_business";
   const willCarry = isNewBusiness || !!item.carry_to_next;
+  const [editing, setEditing] = useState(false);
+  const [draftTitle, setDraftTitle] = useState(item.title ?? "");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { setDraftTitle(item.title ?? ""); }, [item.title]);
+
+  async function saveEdit() {
+    const plain = draftTitle.replace(/<[^>]+>/g, "").trim();
+    if (!plain) { toast.error("Title cannot be empty"); return; }
+    setSaving(true);
+    try {
+      await upsertAgendaItem({
+        data: {
+          id: item.id,
+          meeting_id: meetingId,
+          section_key: item.section_key,
+          title: draftTitle,
+        },
+      });
+      setEditing(false);
+      reload();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (editing) {
+    return (
+      <div className="space-y-2">
+        <RichTextEditor value={draftTitle} onChange={setDraftTitle} minHeight={40} />
+        <div className="flex gap-2">
+          <Button size="sm" onClick={saveEdit} disabled={saving}>
+            <Check className="w-3 h-3 mr-1" /> Save
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => { setEditing(false); setDraftTitle(item.title ?? ""); }}>
+            <X className="w-3 h-3 mr-1" /> Cancel
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-start gap-2 group">
       <div className="flex-1 min-w-0">
@@ -330,6 +459,13 @@ function AgendaItemRow({ item, isFullElder, reload }: any) {
           )}
         </div>
       </div>
+      <button
+        title="Edit item"
+        onClick={() => setEditing(true)}
+        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+      >
+        <Pencil className="w-3.5 h-3.5" />
+      </button>
       <button
         title={
           isNewBusiness
