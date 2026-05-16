@@ -264,8 +264,8 @@ function CollapsibleCard({
   defaultOpen = true,
 }: {
   storageKey: string;
-  header: React.ReactNode;
-  children: React.ReactNode;
+  header: ReactNode;
+  children: ReactNode;
   className?: string;
   defaultOpen?: boolean;
 }) {
