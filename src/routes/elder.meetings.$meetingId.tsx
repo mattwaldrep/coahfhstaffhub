@@ -208,15 +208,14 @@ function SectionCard({ section, meetingId, items, note, isFullElder, reload, men
         {items.map((item: any) => (
           <AgendaItemRow key={item.id} item={item} isFullElder={isFullElder} reload={reload} />
         ))}
-        <div className="flex gap-2">
-          <Input
-            placeholder="Add agenda item…  use [label](https://…) for links"
+        <div className="space-y-2">
+          <RichTextEditor
             value={adding}
-            onChange={(e) => setAdding(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
-            className="h-8 text-sm"
+            onChange={setAdding}
+            placeholder="Add agenda item…  (use the link button to add hyperlinks)"
+            minHeight={40}
           />
-          <Button size="sm" variant="outline" onClick={add}><Plus className="w-3 h-3" /></Button>
+          <Button size="sm" variant="outline" onClick={add}><Plus className="w-3 h-3 mr-1" /> Add</Button>
         </div>
         <RichTextEditor
           value={notes}
