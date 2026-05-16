@@ -546,3 +546,144 @@ function applyChange<T extends { id: string }>(
   }
   return next;
 }
+
+function SortableAgendaList({
+  items,
+  onReorder,
+  children,
+}: {
+  items: AgendaItem[];
+  onReorder: (items: AgendaItem[]) => void;
+  children: (item: AgendaItem) => ReactNode;
+}) {
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const ids = items.map((i) => i.id);
+  const onEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIdx = ids.indexOf(active.id as string);
+    const newIdx = ids.indexOf(over.id as string);
+    if (oldIdx < 0 || newIdx < 0) return;
+    onReorder(arrayMove(items, oldIdx, newIdx));
+  };
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onEnd}>
+      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+        <ul className="space-y-2">
+          {items.map((item) => (
+            <SortableLi key={item.id} id={item.id}>
+              {children(item)}
+            </SortableLi>
+          ))}
+        </ul>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+function SortableLi({ id, children }: { id: string; children: ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+  return (
+    <li ref={setNodeRef} style={style} className="group flex items-start gap-2 p-2 rounded-lg hover:bg-muted/40 transition-colors">
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="mt-1 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
+        aria-label="Drag to reorder"
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
+      <div className="flex-1 min-w-0">{children}</div>
+    </li>
+  );
+}
+
+function AgendaRow({
+  item,
+  onToggle,
+  onDelete,
+  onSave,
+}: {
+  item: AgendaItem;
+  onToggle: () => void;
+  onDelete: () => void;
+  onSave: (title: string) => Promise<void> | void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(item.title);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { setDraft(item.title); }, [item.title]);
+
+  async function save() {
+    const plain = draft.replace(/<[^>]+>/g, "").trim();
+    if (!plain) { toast.error("Title cannot be empty"); return; }
+    setSaving(true);
+    try {
+      await onSave(draft);
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (editing) {
+    return (
+      <div className="space-y-2">
+        <RichTextEditor value={draft} onChange={setDraft} minHeight={40} />
+        <div className="flex gap-2">
+          <Button size="sm" onClick={save} disabled={saving}>
+            <Check className="w-3 h-3 mr-1" /> Save
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => { setEditing(false); setDraft(item.title); }}>
+            <X className="w-3 h-3 mr-1" /> Cancel
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-start gap-3">
+      <button
+        onClick={onToggle}
+        className={cn(
+          "mt-0.5 w-5 h-5 rounded border flex items-center justify-center shrink-0",
+          item.status === "done"
+            ? "bg-primary border-primary text-primary-foreground"
+            : "border-border",
+        )}
+      >
+        {item.status === "done" && <Check className="w-3 h-3" />}
+      </button>
+      <div className="flex-1 min-w-0">
+        <div className={cn("text-sm", item.status === "done" && "line-through text-muted-foreground")}>
+          <AgendaTitle value={item.title} />
+        </div>
+        {item.owner_name && (
+          <div className="text-xs text-muted-foreground mt-0.5">{item.owner_name}</div>
+        )}
+      </div>
+      <button
+        onClick={() => setEditing(true)}
+        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-opacity"
+        aria-label="Edit"
+      >
+        <Pencil className="w-4 h-4" />
+      </button>
+      <button
+        onClick={onDelete}
+        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+        aria-label="Delete"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
