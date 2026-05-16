@@ -4,7 +4,7 @@ import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Plus, Check, Trash2, Loader2, GripVertical, Pencil, X } from "lucide-react";
+import { Mic, MicOff, Plus, Check, Trash2, Loader2, Send, MailCheck, GripVertical, Pencil, X } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { finalizeMeeting, sendMeetingRecap } from "@/server/meeting.functions";
 import { cn } from "@/lib/utils";
