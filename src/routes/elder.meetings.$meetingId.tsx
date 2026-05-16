@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, type ReactNode } from "react";
 import { format } from "date-fns";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RichTextEditor, RichTextView, extractMentions } from "@/components/ui/rich-text-editor";
 import { LinkedText } from "@/lib/render-linked-text";
 import type { MentionUser } from "@/components/ui/mention-list";
-import { Plus, Trash2, Lock, Unlock, ChevronLeft, Check, Square, Bookmark } from "lucide-react";
+import { Plus, Trash2, Lock, Unlock, ChevronLeft, ChevronDown, ChevronRight, Check, Square, Bookmark } from "lucide-react";
 import { toast } from "sonner";
 import { PastoralCareList } from "@/components/pastoral/PastoralCareList";
 
@@ -129,17 +129,22 @@ function StandardSections({ meetingId, agenda, sectionNotes, isFullElder, reload
         if (s.key === "executive" && !isFullElder) return null;
         if ((s as any).isPastoral) {
           return (
-            <div key={s.key} className="bg-surface border border-border rounded-2xl">
-              <div className="px-4 py-3 border-b border-border font-medium text-sm flex items-center justify-between">
-                <span>Pastoral Care</span>
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  Synced from Planning Center
-                </span>
-              </div>
+            <CollapsibleCard
+              key={s.key}
+              storageKey={`elder-collapsed:${meetingId}:${s.key}`}
+              header={
+                <div className="flex items-center justify-between w-full">
+                  <span>Pastoral Care</span>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Synced from Planning Center
+                  </span>
+                </div>
+              }
+            >
               <div className="p-4">
                 <PastoralCareList meetingId={meetingId} variant="meeting" />
               </div>
-            </div>
+            </CollapsibleCard>
           );
         }
         const items = agenda.filter((a: any) => a.section_key === s.key);
@@ -187,14 +192,18 @@ function SectionCard({ section, meetingId, items, note, isFullElder, reload, men
   }
 
   return (
-    <div className={`bg-surface border rounded-2xl ${isExec ? "border-[oklch(0.55_0.15_280)]/40 ring-1 ring-[oklch(0.55_0.15_280)]/20" : "border-border"}`}>
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+    <CollapsibleCard
+      storageKey={`elder-collapsed:${meetingId}:${section.key}`}
+      className={isExec ? "border-[oklch(0.55_0.15_280)]/40 ring-1 ring-[oklch(0.55_0.15_280)]/20" : ""}
+      header={
         <div className="flex items-center gap-2">
           {isExec && <Lock className="w-3.5 h-3.5 text-[oklch(0.55_0.15_280)]" />}
-          <span className="font-medium text-sm">{section.label}</span>
+          <span>{section.label}</span>
           {isExec && <span className="text-[10px] uppercase tracking-wider text-[oklch(0.55_0.15_280)]">Full Elders Only</span>}
+          <span className="text-[10px] text-muted-foreground ml-1">({items.length})</span>
         </div>
-      </div>
+      }
+    >
       <div className="p-4 space-y-3">
         {items.map((item: any) => (
           <AgendaItemRow key={item.id} item={item} isFullElder={isFullElder} reload={reload} />
@@ -243,6 +252,49 @@ function SectionCard({ section, meetingId, items, note, isFullElder, reload, men
           }}
         />
       </div>
+    </CollapsibleCard>
+  );
+}
+
+function CollapsibleCard({
+  storageKey,
+  header,
+  children,
+  className,
+  defaultOpen = true,
+}: {
+  storageKey: string;
+  header: ReactNode;
+  children: ReactNode;
+  className?: string;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return defaultOpen;
+    const v = window.localStorage.getItem(storageKey);
+    if (v === "0") return false;
+    if (v === "1") return true;
+    return defaultOpen;
+  });
+  const toggle = () => {
+    setOpen((o) => {
+      const next = !o;
+      try { window.localStorage.setItem(storageKey, next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
+  return (
+    <div className={`bg-surface border rounded-2xl ${className ?? "border-border"}`}>
+      <button
+        type="button"
+        onClick={toggle}
+        className={`w-full flex items-center gap-2 px-4 py-3 font-medium text-sm text-left ${open ? "border-b border-border" : ""} hover:bg-muted/40 rounded-t-2xl ${open ? "" : "rounded-b-2xl"}`}
+        aria-expanded={open}
+      >
+        {open ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
+        <div className="flex-1 min-w-0">{header}</div>
+      </button>
+      {open && children}
     </div>
   );
 }
@@ -363,8 +415,10 @@ function JointSubSection({ sub, meetingId, items, reload, mentionUsers }: any) {
   }
 
   return (
-    <div className="bg-surface border border-border rounded-2xl">
-      <div className="px-4 py-3 border-b border-border font-medium text-sm">{sub.label}</div>
+    <CollapsibleCard
+      storageKey={`elder-collapsed:${meetingId}:joint:${sub.key}`}
+      header={<><span>{sub.label}</span><span className="text-[10px] text-muted-foreground ml-1">({items.length})</span></>}
+    >
       <div className="p-4 space-y-3">
         {items.map((it: any) => (
           <div key={it.id} className="border border-border rounded-lg p-3 group">
@@ -386,7 +440,7 @@ function JointSubSection({ sub, meetingId, items, reload, mentionUsers }: any) {
           <Button size="sm" variant="outline" onClick={add}><Plus className="w-3 h-3 mr-1" /> Add</Button>
         </div>
       </div>
-    </div>
+    </CollapsibleCard>
   );
 }
 
@@ -406,8 +460,10 @@ function ActionItemsBlock({ meetingId, items, isFullElder, reload }: any) {
   }
 
   return (
-    <div className="bg-surface border border-border rounded-2xl">
-      <div className="px-4 py-3 border-b border-border font-medium text-sm">Action items</div>
+    <CollapsibleCard
+      storageKey={`elder-collapsed:${meetingId}:action-items`}
+      header={<><span>Action items</span><span className="text-[10px] text-muted-foreground ml-1">({items.length})</span></>}
+    >
       <div className="p-4 space-y-2">
         {items.length === 0 && <div className="text-xs text-muted-foreground">None yet.</div>}
         {items.map((a: any) => (
@@ -442,6 +498,6 @@ function ActionItemsBlock({ meetingId, items, isFullElder, reload }: any) {
           <Button size="sm" variant="outline" onClick={add}><Plus className="w-3 h-3" /></Button>
         </div>
       </div>
-    </div>
+    </CollapsibleCard>
   );
 }
