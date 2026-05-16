@@ -9,6 +9,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { finalizeMeeting, sendMeetingRecap } from "@/server/meeting.functions";
 import { cn } from "@/lib/utils";
 import { LinkedText } from "@/lib/render-linked-text";
+import { RichTextEditor, RichTextView } from "@/components/ui/rich-text-editor";
+
+function AgendaTitle({ value, className }: { value: string; className?: string }) {
+  if (!value) return null;
+  const looksHtml = /<[a-z][\s\S]*>/i.test(value);
+  if (looksHtml) return <RichTextView html={value} className={className} />;
+  return <span className={className}><LinkedText value={value} /></span>;
+}
 import { toast } from "sonner";
 import {
   StandingSection,
