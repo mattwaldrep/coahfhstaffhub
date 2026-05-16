@@ -1,15 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, type ReactNode } from "react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Plus, Check, Trash2, Loader2, Send, MailCheck } from "lucide-react";
+import { Mic, MicOff, Plus, Check, Trash2, Loader2, GripVertical, Pencil, X } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { finalizeMeeting, sendMeetingRecap } from "@/server/meeting.functions";
 import { cn } from "@/lib/utils";
 import { LinkedText } from "@/lib/render-linked-text";
 import { RichTextEditor, RichTextView } from "@/components/ui/rich-text-editor";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 function AgendaTitle({ value, className }: { value: string; className?: string }) {
   if (!value) return null;
