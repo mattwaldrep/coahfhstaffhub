@@ -305,8 +305,8 @@ function AgendaItemRow({ item, isFullElder, reload }: any) {
   return (
     <div className="flex items-start gap-2 group">
       <div className="flex-1 min-w-0">
-        <div className="text-sm"><LinkedText value={item.title} /></div>
-        {item.body && <div className="text-xs text-muted-foreground mt-0.5"><LinkedText value={item.body} /></div>}
+        <AgendaTitle value={item.title} className="text-sm" />
+        {item.body && <AgendaTitle value={item.body} className="text-xs text-muted-foreground mt-0.5" />}
         <div className="flex gap-2 mt-0.5">
           {item.source && (
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
