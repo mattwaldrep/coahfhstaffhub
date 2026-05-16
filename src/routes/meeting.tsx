@@ -147,8 +147,10 @@ function MeetingPage() {
   }, [meeting?.id]);
 
   const addAgenda = async () => {
-    if (!meeting || !newAgenda.trim()) return;
-    const title = newAgenda.trim();
+    if (!meeting) return;
+    const plain = newAgenda.replace(/<[^>]+>/g, "").trim();
+    if (!plain) return;
+    const title = newAgenda;
     setNewAgenda("");
     const position = agenda.length;
     const { error } = await supabase
