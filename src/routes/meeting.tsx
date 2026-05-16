@@ -358,46 +358,21 @@ function MeetingPage() {
                 </span>
               }
             >
-              <ul className="space-y-2">
-                {agenda.map((item) => (
-                  <li
-                    key={item.id}
-                    className="group flex items-start gap-3 p-2 rounded-lg hover:bg-muted/40 transition-colors"
-                  >
-                    <button
-                      onClick={() => toggleAgenda(item)}
-                      className={cn(
-                        "mt-0.5 w-5 h-5 rounded border flex items-center justify-center shrink-0",
-                        item.status === "done"
-                          ? "bg-primary border-primary text-primary-foreground"
-                          : "border-border",
-                      )}
-                    >
-                      {item.status === "done" && <Check className="w-3 h-3" />}
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <div className={cn("text-sm", item.status === "done" && "line-through text-muted-foreground")}>
-                        <AgendaTitle value={item.title} />
-                      </div>
-                      {item.owner_name && (
-                        <div className="text-xs text-muted-foreground mt-0.5">{item.owner_name}</div>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => removeAgenda(item.id)}
-                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
-                      aria-label="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </li>
-                ))}
-                {agenda.length === 0 && (
-                  <li className="text-sm text-muted-foreground py-2">
-                    No discussion items yet — add one below.
-                  </li>
+              <SortableAgendaList items={agenda} onReorder={reorderAgenda}>
+                {(item) => (
+                  <AgendaRow
+                    item={item}
+                    onToggle={() => toggleAgenda(item)}
+                    onDelete={() => removeAgenda(item.id)}
+                    onSave={(title) => editAgenda(item.id, title)}
+                  />
                 )}
-              </ul>
+              </SortableAgendaList>
+              {agenda.length === 0 && (
+                <div className="text-sm text-muted-foreground py-2">
+                  No discussion items yet — add one below.
+                </div>
+              )}
               <div className="mt-4 space-y-2">
                 <RichTextEditor
                   value={newAgenda}
