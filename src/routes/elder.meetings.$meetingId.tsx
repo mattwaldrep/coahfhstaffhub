@@ -15,9 +15,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { RichTextEditor, RichTextView, extractMentions } from "@/components/ui/rich-text-editor";
 import { LinkedText } from "@/lib/render-linked-text";
 import type { MentionUser } from "@/components/ui/mention-list";
-import { Plus, Trash2, Lock, Unlock, ChevronLeft, ChevronDown, ChevronRight, Check, Square, Bookmark } from "lucide-react";
+import { Plus, Trash2, Lock, Unlock, ChevronLeft, ChevronDown, ChevronRight, Check, Square, Bookmark, GripVertical, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
 import { PastoralCareList } from "@/components/pastoral/PastoralCareList";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 export const Route = createFileRoute("/elder/meetings/$meetingId")({
   component: MeetingDetail,
