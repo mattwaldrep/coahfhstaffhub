@@ -8,6 +8,7 @@ import { Mic, MicOff, Plus, Check, Trash2, Loader2, Send, MailCheck } from "luci
 import { useServerFn } from "@tanstack/react-start";
 import { finalizeMeeting, sendMeetingRecap } from "@/server/meeting.functions";
 import { cn } from "@/lib/utils";
+import { LinkedText } from "@/lib/render-linked-text";
 import { toast } from "sonner";
 import {
   StandingSection,
@@ -343,7 +344,7 @@ function MeetingPage() {
                     </button>
                     <div className="flex-1 min-w-0">
                       <div className={cn("text-sm", item.status === "done" && "line-through text-muted-foreground")}>
-                        {item.title}
+                        <LinkedText value={item.title} />
                       </div>
                       {item.owner_name && (
                         <div className="text-xs text-muted-foreground mt-0.5">{item.owner_name}</div>
@@ -374,7 +375,7 @@ function MeetingPage() {
                 <input
                   value={newAgenda}
                   onChange={(e) => setNewAgenda(e.target.value)}
-                  placeholder="Add discussion item…"
+                  placeholder="Add discussion item…  use [label](https://…) for links"
                   className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
                 />
                 <Button type="submit" size="icon" disabled={!newAgenda.trim()}>

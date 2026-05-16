@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RichTextEditor, RichTextView, extractMentions } from "@/components/ui/rich-text-editor";
+import { LinkedText } from "@/lib/render-linked-text";
 import type { MentionUser } from "@/components/ui/mention-list";
 import { Plus, Trash2, Lock, Unlock, ChevronLeft, Check, Square, Bookmark } from "lucide-react";
 import { toast } from "sonner";
@@ -200,7 +201,7 @@ function SectionCard({ section, meetingId, items, note, isFullElder, reload, men
         ))}
         <div className="flex gap-2">
           <Input
-            placeholder="Add agenda item…"
+            placeholder="Add agenda item…  use [label](https://…) for links"
             value={adding}
             onChange={(e) => setAdding(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
@@ -252,8 +253,8 @@ function AgendaItemRow({ item, isFullElder, reload }: any) {
   return (
     <div className="flex items-start gap-2 group">
       <div className="flex-1 min-w-0">
-        <div className="text-sm">{item.title}</div>
-        {item.body && <div className="text-xs text-muted-foreground mt-0.5">{item.body}</div>}
+        <div className="text-sm"><LinkedText value={item.title} /></div>
+        {item.body && <div className="text-xs text-muted-foreground mt-0.5"><LinkedText value={item.body} /></div>}
         <div className="flex gap-2 mt-0.5">
           {item.source && (
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
