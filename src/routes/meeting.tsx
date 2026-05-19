@@ -393,6 +393,7 @@ function MeetingPage() {
             </StandingSection>
 
             <UpcomingEventsSection meetingId={meeting.id} />
+            <ClassesNeedingAttentionSection />
 
             <SectionDivider label="Capture" />
 
