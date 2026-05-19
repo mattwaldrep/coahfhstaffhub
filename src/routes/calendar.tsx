@@ -166,6 +166,8 @@ const emptyForm = (start = ""): FormState => ({
   action_note: "",
   missions_team_needed: false,
   church_covering: "",
+  childcare_needed: false,
+  childcare_arranged: false,
 });
 
 function buildRRule(f: FormState, startDate: Date): string | null {
