@@ -56,6 +56,7 @@ function Dashboard() {
   const metricsSession = useMetricsSession();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [actions, setActions] = useState<ActionItem[]>([]);
+  const [classAlerts, setClassAlerts] = useState<Array<{ id: string; title: string; date: Date; gaps: string[] }>>([]);
   const [headline, setHeadline] = useState<MetricsHeadline | null>(null);
   const [prevHeadline, setPrevHeadline] = useState<MetricsHeadline | null>(null);
   const [statsRange, setStatsRange] = useState<string | null>(null);
