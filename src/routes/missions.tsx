@@ -571,3 +571,391 @@ function TripCard({
     </div>
   );
 }
+
+function StatusPill({ status }: { status: Status }) {
+  const color = STATUS_TONE[status] ?? "oklch(0.7 0.02 270)";
+  return (
+    <span
+      className="text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap"
+      style={{ background: `color-mix(in oklab, ${color} 22%, transparent)`, color }}
+    >
+      {STATUS_LABEL[status]}
+    </span>
+  );
+}
+
+function tripDateLabel(t: Trip) {
+  if (!t.start_date) return "No date set";
+  const s = new Date(t.start_date);
+  if (t.end_date) {
+    const e = new Date(t.end_date);
+    if (isSameMonth(s, e)) return `${format(s, "MMM d")}–${format(e, "d, yyyy")}`;
+    if (isSameYear(s, e)) return `${format(s, "MMM d")} – ${format(e, "MMM d, yyyy")}`;
+    return `${format(s, "MMM d, yyyy")} – ${format(e, "MMM d, yyyy")}`;
+  }
+  return format(s, "MMM d, yyyy");
+}
+
+function readinessPct(steps: Record<string, boolean> | null | undefined) {
+  const done = STEPS.filter((s) => steps?.[s.key]).length;
+  return Math.round((done / STEPS.length) * 100);
+}
+
+type GroupKey = "in_field" | "this_month" | "next_month" | "later_year" | "next_year" | "no_date" | "past";
+const GROUP_ORDER: { key: GroupKey; label: string }[] = [
+  { key: "in_field", label: "In field now" },
+  { key: "this_month", label: "This month" },
+  { key: "next_month", label: "Next month" },
+  { key: "later_year", label: "Later this year" },
+  { key: "next_year", label: "Next year and beyond" },
+  { key: "no_date", label: "No date set" },
+  { key: "past", label: "Past & cancelled" },
+];
+
+function bucketTrip(t: Trip): GroupKey {
+  if (t.status === "complete" || t.status === "cancelled") return "past";
+  if (!t.start_date) return "no_date";
+  const today = startOfDay(new Date());
+  const start = new Date(t.start_date);
+  const end = t.end_date ? new Date(t.end_date) : start;
+  if (isWithinInterval(today, { start, end })) return "in_field";
+  if (isPast(end)) return "past";
+  if (isThisMonth(start)) return "this_month";
+  const nextMonthStart = startOfMonth(addMonths(new Date(), 1));
+  const nextMonthEnd = endOfMonth(nextMonthStart);
+  if (isWithinInterval(start, { start: nextMonthStart, end: nextMonthEnd })) return "next_month";
+  if (start.getFullYear() === today.getFullYear()) return "later_year";
+  return "next_year";
+}
+
+function TimelineView({
+  trips, showPast, onOpen,
+}: { trips: Trip[]; showPast: boolean; onOpen: (t: Trip) => void }) {
+  const groups = useMemo(() => {
+    const m = new Map<GroupKey, Trip[]>();
+    for (const t of trips) {
+      const k = bucketTrip(t);
+      if (k === "past" && !showPast) continue;
+      const arr = m.get(k) ?? [];
+      arr.push(t);
+      m.set(k, arr);
+    }
+    for (const arr of m.values()) {
+      arr.sort((a, b) => {
+        if (!a.start_date) return 1;
+        if (!b.start_date) return -1;
+        return a.start_date.localeCompare(b.start_date);
+      });
+    }
+    return m;
+  }, [trips, showPast]);
+
+  const visible = GROUP_ORDER.filter((g) => (groups.get(g.key)?.length ?? 0) > 0);
+
+  if (visible.length === 0) {
+    return <EmptyState label="No upcoming trips." />;
+  }
+
+  return (
+    <div className="space-y-6">
+      {visible.map((g) => (
+        <section key={g.key}>
+          <div className="flex items-baseline gap-2 mb-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {g.label}
+            </h2>
+            <span className="text-xs text-muted-foreground/70">({groups.get(g.key)!.length})</span>
+          </div>
+          <div className="space-y-2">
+            {groups.get(g.key)!.map((t) => (
+              <TimelineRow key={t.id} trip={t} onClick={() => onOpen(t)} />
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function TimelineRow({ trip, onClick }: { trip: Trip; onClick: () => void }) {
+  const pct = readinessPct(trip.steps);
+  return (
+    <div
+      onClick={onClick}
+      className="bg-surface border border-border rounded-xl p-3 hover:border-border/80 transition cursor-pointer flex flex-wrap items-center gap-x-4 gap-y-2"
+    >
+      <div className="min-w-[8rem] text-xs text-muted-foreground">
+        {tripDateLabel(trip)}
+      </div>
+      <div className="flex-1 min-w-[10rem]">
+        <div className="font-medium text-sm">{trip.church_name}</div>
+        {(trip.leader_name || trip.primary_focus) && (
+          <div className="text-[11px] text-muted-foreground truncate">
+            {[trip.leader_name, trip.primary_focus].filter(Boolean).join(" · ")}
+          </div>
+        )}
+      </div>
+      <StatusPill status={trip.status} />
+      <div className="flex items-center gap-2 min-w-[6rem]">
+        <div className="flex-1 h-1 rounded-full bg-border overflow-hidden">
+          <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+        </div>
+        <span className="text-[10px] text-muted-foreground w-8 text-right">{pct}%</span>
+      </div>
+      <div className="flex items-center gap-1.5 text-muted-foreground">
+        {trip.leader_email && (
+          <a href={`mailto:${trip.leader_email}`} onClick={(e) => e.stopPropagation()} className="hover:text-foreground">
+            <Mail className="w-3.5 h-3.5" />
+          </a>
+        )}
+        {trip.leader_phone && (
+          <a href={`tel:${trip.leader_phone}`} onClick={(e) => e.stopPropagation()} className="hover:text-foreground">
+            <Phone className="w-3.5 h-3.5" />
+          </a>
+        )}
+        {trip.itinerary_link && (
+          <a href={trip.itinerary_link} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="hover:text-foreground">
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+type SortKey = "church_name" | "start_date" | "end_date" | "leader_name" | "status" | "readiness";
+
+function TableView({
+  trips, showPast, onOpen,
+}: { trips: Trip[]; showPast: boolean; onOpen: (t: Trip) => void }) {
+  const [sortKey, setSortKey] = useState<SortKey>("start_date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const rows = useMemo(() => {
+    const filtered = trips.filter((t) =>
+      showPast ? true : t.status !== "complete" && t.status !== "cancelled",
+    );
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      const av = sortVal(a, sortKey);
+      const bv = sortVal(b, sortKey);
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+  }, [trips, sortKey, sortDir, showPast]);
+
+  function toggleSort(k: SortKey) {
+    if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(k); setSortDir("asc"); }
+  }
+
+  if (rows.length === 0) return <EmptyState label="No trips to show." />;
+
+  return (
+    <div className="border border-border rounded-2xl overflow-hidden bg-surface">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="text-xs text-muted-foreground uppercase tracking-wider bg-background/40">
+            <tr>
+              <Th label="Church" k="church_name" sortKey={sortKey} dir={sortDir} onClick={toggleSort} />
+              <Th label="Start" k="start_date" sortKey={sortKey} dir={sortDir} onClick={toggleSort} />
+              <Th label="End" k="end_date" sortKey={sortKey} dir={sortDir} onClick={toggleSort} />
+              <Th label="Leader" k="leader_name" sortKey={sortKey} dir={sortDir} onClick={toggleSort} />
+              <th className="text-left font-medium px-3 py-2">Focus</th>
+              <Th label="Status" k="status" sortKey={sortKey} dir={sortDir} onClick={toggleSort} />
+              <Th label="Readiness" k="readiness" sortKey={sortKey} dir={sortDir} onClick={toggleSort} />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((t) => (
+              <tr
+                key={t.id}
+                onClick={() => onOpen(t)}
+                className="border-t border-border cursor-pointer hover:bg-background/40 transition"
+              >
+                <td className="px-3 py-2 font-medium">{t.church_name}</td>
+                <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                  {t.start_date ? format(new Date(t.start_date), "MMM d, yyyy") : "—"}
+                </td>
+                <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                  {t.end_date ? format(new Date(t.end_date), "MMM d, yyyy") : "—"}
+                </td>
+                <td className="px-3 py-2 text-muted-foreground">{t.leader_name ?? "—"}</td>
+                <td className="px-3 py-2 text-muted-foreground max-w-[16rem] truncate">{t.primary_focus ?? "—"}</td>
+                <td className="px-3 py-2"><StatusPill status={t.status} /></td>
+                <td className="px-3 py-2 min-w-[8rem]">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1 rounded-full bg-border overflow-hidden">
+                      <div className="h-full bg-primary" style={{ width: `${readinessPct(t.steps)}%` }} />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground w-8 text-right">{readinessPct(t.steps)}%</span>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function sortVal(t: Trip, k: SortKey): string | number | null {
+  switch (k) {
+    case "church_name": return t.church_name.toLowerCase();
+    case "start_date": return t.start_date ?? null;
+    case "end_date": return t.end_date ?? null;
+    case "leader_name": return (t.leader_name ?? "").toLowerCase();
+    case "status": return t.status;
+    case "readiness": return readinessPct(t.steps);
+  }
+}
+
+function Th({
+  label, k, sortKey, dir, onClick,
+}: { label: string; k: SortKey; sortKey: SortKey; dir: "asc" | "desc"; onClick: (k: SortKey) => void }) {
+  const active = sortKey === k;
+  return (
+    <th
+      onClick={() => onClick(k)}
+      className="text-left font-medium px-3 py-2 cursor-pointer select-none hover:text-foreground"
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        <ArrowUpDown className={`w-3 h-3 ${active ? "text-foreground" : "opacity-40"}`} />
+        {active && <span className="text-[10px]">{dir === "asc" ? "↑" : "↓"}</span>}
+      </span>
+    </th>
+  );
+}
+
+function CalendarView({
+  trips, month, onPrev, onNext, onToday, onOpen,
+}: {
+  trips: Trip[];
+  month: Date;
+  onPrev: () => void;
+  onNext: () => void;
+  onToday: () => void;
+  onOpen: (t: Trip) => void;
+}) {
+  const monthStart = startOfMonth(month);
+  const monthEnd = endOfMonth(month);
+  // Build a 6-row grid starting Sunday
+  const gridStart = new Date(monthStart);
+  gridStart.setDate(gridStart.getDate() - gridStart.getDay());
+  const days: Date[] = [];
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(gridStart);
+    d.setDate(gridStart.getDate() + i);
+    days.push(d);
+  }
+
+  const tripsInRange = trips.filter((t) => {
+    if (!t.start_date) return false;
+    const s = new Date(t.start_date);
+    const e = t.end_date ? new Date(t.end_date) : s;
+    return e >= days[0] && s <= days[days.length - 1];
+  });
+
+  const unscheduled = trips.filter((t) => !t.start_date);
+  const today = startOfDay(new Date());
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_16rem] gap-4">
+      <div className="bg-surface border border-border rounded-2xl p-3">
+        <div className="flex items-center justify-between mb-3">
+          <div className="font-display text-lg font-semibold">{format(month, "MMMM yyyy")}</div>
+          <div className="flex items-center gap-1">
+            <button onClick={onToday} className="text-xs px-2 py-1 rounded border border-border text-muted-foreground hover:text-foreground">Today</button>
+            <button onClick={onPrev} className="p-1 rounded hover:bg-background/40 text-muted-foreground hover:text-foreground"><ChevronLeft className="w-4 h-4" /></button>
+            <button onClick={onNext} className="p-1 rounded hover:bg-background/40 text-muted-foreground hover:text-foreground"><ChevronRight className="w-4 h-4" /></button>
+          </div>
+        </div>
+        <div className="grid grid-cols-7 text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+            <div key={d} className="px-1 py-1">{d}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
+          {days.map((d, i) => {
+            const inMonth = isSameMonth(d, month);
+            const isToday = startOfDay(d).getTime() === today.getTime();
+            const dayTrips = tripsInRange.filter((t) => {
+              const s = startOfDay(new Date(t.start_date!));
+              const e = startOfDay(new Date(t.end_date ?? t.start_date!));
+              const dd = startOfDay(d);
+              return dd >= s && dd <= e;
+            });
+            return (
+              <div
+                key={i}
+                className={`bg-surface min-h-[5.5rem] p-1 text-[10px] ${inMonth ? "" : "opacity-40"}`}
+              >
+                <div className={`text-right ${isToday ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+                  {format(d, "d")}
+                </div>
+                <div className="space-y-0.5 mt-0.5">
+                  {dayTrips.slice(0, 3).map((t) => {
+                    const s = startOfDay(new Date(t.start_date!));
+                    const isStart = startOfDay(d).getTime() === s.getTime();
+                    const color = STATUS_TONE[t.status];
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={(e) => { e.stopPropagation(); onOpen(t); }}
+                        className="block w-full text-left truncate px-1 py-0.5 rounded text-[10px] hover:brightness-110"
+                        style={{ background: `color-mix(in oklab, ${color} 25%, transparent)`, color }}
+                        title={t.church_name}
+                      >
+                        {isStart ? t.church_name : "…"}
+                      </button>
+                    );
+                  })}
+                  {dayTrips.length > 3 && (
+                    <div className="text-[9px] text-muted-foreground">+{dayTrips.length - 3} more</div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="bg-surface border border-border rounded-2xl p-3">
+        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+          Unscheduled
+        </div>
+        {unscheduled.length === 0 ? (
+          <div className="text-[11px] text-muted-foreground/60">No unscheduled trips.</div>
+        ) : (
+          <div className="space-y-1.5">
+            {unscheduled.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => onOpen(t)}
+                className="w-full text-left bg-background/60 border border-border rounded-lg px-2 py-1.5 hover:border-border/80"
+              >
+                <div className="text-sm font-medium truncate">{t.church_name}</div>
+                <div className="mt-0.5"><StatusPill status={t.status} /></div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({ label }: { label: string }) {
+  return (
+    <div className="border border-dashed border-border rounded-2xl py-12 text-center text-sm text-muted-foreground">
+      {label}
+    </div>
+  );
+}
+
