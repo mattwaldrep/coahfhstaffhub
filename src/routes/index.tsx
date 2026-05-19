@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { fetchRecentWeeks, summarizeWeeks, type MetricsHeadline } from "@/integrations/metrics/client";
 import { useMetricsSession } from "@/integrations/metrics/use-session";
 import { expandEvents, type EventRowLike } from "@/lib/calendar-expand";
-import { classGaps } from "@/routes/calendar";
+import { classGaps } from "@/lib/class-gaps";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
