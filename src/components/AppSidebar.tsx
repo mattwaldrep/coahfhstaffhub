@@ -87,7 +87,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel>Workspace</SidebarGroupLabel>}
+          {!collapsed && <SidebarGroupLabel>Annual Calendar Planning</SidebarGroupLabel>}
           <SidebarGroupContent>{renderItems(PRIMARY)}</SidebarGroupContent>
         </SidebarGroup>
         {hasElderAccess && (
