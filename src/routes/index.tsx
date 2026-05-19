@@ -79,6 +79,23 @@ function Dashboard() {
       .order("due_date", { ascending: true, nullsFirst: false })
       .limit(50)
       .then(({ data }) => setActions((data ?? []) as ActionItem[]));
+
+    // Upcoming class events needing teacher or childcare arrangement
+    const horizonEnd = new Date(Date.now() + 60 * 86400000);
+    supabase
+      .from("calendar_events")
+      .select("id,title,start_at,end_at,sub_calendar,leader_name,category,all_day,rrule,excluded_dates,childcare_needed,childcare_arranged")
+      .eq("category", "Class")
+      .or(`start_at.gte.${new Date().toISOString()},rrule.not.is.null`)
+      .then(({ data }) => {
+        const rows = (data ?? []) as Array<EventRowLike & { childcare_needed: boolean; childcare_arranged: boolean }>;
+        const occurrences = expandEvents(rows, new Date(), horizonEnd);
+        const alerts = occurrences
+          .map((o) => ({ id: o.id, title: o.title, date: o.occurrence_date, gaps: classGaps(o) }))
+          .filter((a) => a.gaps.length > 0)
+          .slice(0, 8);
+        setClassAlerts(alerts);
+      });
   }, []);
 
   // Live metrics from Church Metrics — last 4 weeks vs preceding 4 weeks
