@@ -2,8 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   format, isPast, isThisMonth, isWithinInterval, startOfMonth, endOfMonth,
-  addMonths, subMonths, startOfDay, isSameMonth, differenceInCalendarDays,
-  max as dateMax, min as dateMin, isSameYear,
+  addMonths, subMonths, startOfDay, isSameMonth, isSameYear,
 } from "date-fns";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
