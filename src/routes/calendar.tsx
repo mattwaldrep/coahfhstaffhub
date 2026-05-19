@@ -17,6 +17,7 @@ import { AppShell } from "@/components/AppShell";
 import { PlanningBanner } from "@/components/calendar/PlanningBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { classGaps } from "@/lib/class-gaps";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
