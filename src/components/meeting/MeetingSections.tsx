@@ -518,11 +518,11 @@ function EventList({
 
 export function LastWeekEventsSection({ meetingId }: { meetingId: string }) {
   const rangeEnd = useMemo(() => new Date(), []);
-  const rangeStart = useMemo(() => subDays(startOfDay(rangeEnd), 14), [rangeEnd]);
+  const rangeStart = useMemo(() => subDays(startOfDay(rangeEnd), 7), [rangeEnd]);
   return (
     <StandingSection
       title="Last Week's Events"
-      subtitle="Events from the previous 14 days — review and discuss."
+      subtitle="Events from the previous 7 days — review and discuss."
     >
       <EventList
         meetingId={meetingId}
