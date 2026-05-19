@@ -64,18 +64,7 @@ const CATEGORIES = [
   "Community Group", "Love DOT", "Prayer", "Core Team", "Other",
 ];
 
-export function classGaps(e: {
-  category?: string | null;
-  leader_name?: string | null;
-  childcare_needed?: boolean | null;
-  childcare_arranged?: boolean | null;
-}): string[] {
-  if (e.category !== "Class") return [];
-  const gaps: string[] = [];
-  if (!e.leader_name) gaps.push("teacher");
-  if (e.childcare_needed && !e.childcare_arranged) gaps.push("childcare arrangement");
-  return gaps;
-}
+import { classGaps } from "@/lib/class-gaps";
 
 const READINESS_COLORS: Record<string, string> = {
   green: "oklch(0.7 0.18 145)",
