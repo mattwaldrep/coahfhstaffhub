@@ -139,6 +139,8 @@ type FormState = {
   action_note: string;
   missions_team_needed: boolean;
   church_covering: string;
+  childcare_needed: boolean;
+  childcare_arranged: boolean;
 };
 
 const emptyForm = (start = ""): FormState => ({
