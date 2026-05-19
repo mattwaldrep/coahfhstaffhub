@@ -1,6 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { format } from "date-fns";
+import {
+  format, isPast, isThisMonth, isWithinInterval, startOfMonth, endOfMonth,
+  addMonths, subMonths, startOfDay, isSameMonth, differenceInCalendarDays,
+  max as dateMax, min as dateMin, isSameYear,
+} from "date-fns";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -15,8 +19,28 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, ExternalLink, Mail, Phone, Upload, FileText, X as XIcon } from "lucide-react";
+import {
+  Plus, Trash2, ExternalLink, Mail, Phone, Upload, FileText, X as XIcon,
+  LayoutGrid, List, Table as TableIcon, CalendarDays, ChevronLeft, ChevronRight,
+  ArrowUpDown,
+} from "lucide-react";
 import { toast } from "sonner";
+
+type ViewMode = "timeline" | "kanban" | "table" | "calendar";
+const VIEW_STORAGE_KEY = "missions:view";
+
+const STATUS_LABEL: Record<string, string> = {
+  not_started: "Not started", tbc: "TBC", pre_trip: "Pre-Trip",
+  in_field: "In Field", complete: "Complete", cancelled: "Cancelled",
+};
+const STATUS_TONE: Record<string, string> = {
+  not_started: "oklch(0.7 0.02 270)",
+  tbc: "oklch(0.75 0.12 75)",
+  pre_trip: "oklch(0.7 0.15 230)",
+  in_field: "oklch(0.7 0.18 145)",
+  complete: "oklch(0.6 0.06 160)",
+  cancelled: "oklch(0.6 0.04 25)",
+};
 
 export const Route = createFileRoute("/missions")({
   component: MissionsPage,
