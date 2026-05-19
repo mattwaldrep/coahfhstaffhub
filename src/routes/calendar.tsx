@@ -991,16 +991,23 @@ function ReadinessBadge({ value }: { value: string }) {
 
 function EventChip({ occ, compact }: { occ: Occurrence; compact?: boolean }) {
   const cal = SUB_CALS.find((s) => s.value === occ.sub_calendar)!;
+  const gaps = classGaps(occ);
   return (
     <div
-      className={`text-[10px] truncate px-1.5 py-0.5 rounded hover:opacity-80 ${compact ? "" : ""}`}
+      className={`text-[10px] truncate px-1.5 py-0.5 rounded hover:opacity-80 flex items-center gap-1 ${compact ? "" : ""}`}
       style={{
         background: `color-mix(in oklab, ${cal.color} 22%, transparent)`,
         color: `color-mix(in oklab, ${cal.color} 90%, white)`,
       }}
+      title={gaps.length ? `Class needs: ${gaps.join(", ")}` : undefined}
     >
-      {!occ.all_day && <>{format(occ.occurrence_date, "h:mm")} </>}
-      {occ.title}
+      {gaps.length > 0 && (
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-warning shrink-0" />
+      )}
+      <span className="truncate">
+        {!occ.all_day && <>{format(occ.occurrence_date, "h:mm")} </>}
+        {occ.title}
+      </span>
     </div>
   );
 }
