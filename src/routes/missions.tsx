@@ -138,12 +138,15 @@ function Body() {
     if (typeof window !== "undefined") window.localStorage.setItem(VIEW_STORAGE_KEY, view);
   }, [view]);
 
+  useEffect(() => {
+    load();
     const ch = supabase
       .channel("mission_trips")
       .on("postgres_changes", { event: "*", schema: "public", table: "mission_trips" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, []);
+
 
   async function load() {
     const { data } = await supabase
