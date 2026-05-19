@@ -34,6 +34,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { expandEvents, type EventRowLike } from "@/lib/calendar-expand";
+import { classGaps } from "@/lib/class-gaps";
 import { fetchWeeksInRange, summarizeWeeks, type WeeklyMetric, type MetricsHeadline } from "@/integrations/metrics/client";
 import { useMetricsSession } from "@/integrations/metrics/use-session";
 import { cn } from "@/lib/utils";
@@ -1121,3 +1122,53 @@ export function SectionDivider({ label }: { label: string }) {
     </div>
   );
 }
+
+export function ClassesNeedingAttentionSection() {
+  const [alerts, setAlerts] = useState<Array<{ id: string; title: string; date: Date; gaps: string[] }>>([]);
+  useEffect(() => {
+    const horizonEnd = new Date(Date.now() + 42 * 86400000);
+    supabase
+      .from("calendar_events")
+      .select("id,title,start_at,end_at,sub_calendar,leader_name,category,all_day,rrule,excluded_dates,childcare_needed,childcare_arranged")
+      .eq("category", "Class")
+      .or(`start_at.gte.${new Date().toISOString()},rrule.not.is.null`)
+      .then(({ data }) => {
+        const rows = (data ?? []) as Array<EventRowLike & { childcare_needed: boolean; childcare_arranged: boolean }>;
+        const occurrences = expandEvents(rows, new Date(), horizonEnd);
+        const list = occurrences
+          .map((o) => ({ id: o.id, title: o.title, date: o.occurrence_date, gaps: classGaps(o) }))
+          .filter((a) => a.gaps.length > 0);
+        setAlerts(list);
+      });
+  }, []);
+  return (
+    <StandingSection
+      title="Classes Needing Attention"
+      subtitle="Upcoming classes (next 6 weeks) missing a teacher or unarranged childcare."
+      badge={
+        alerts.length > 0 ? (
+          <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-warning/20 text-warning font-semibold">
+            {alerts.length}
+          </span>
+        ) : undefined
+      }
+    >
+      {alerts.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-2">All upcoming classes are squared away. 🎉</p>
+      ) : (
+        <ul className="space-y-2">
+          {alerts.map((a) => (
+            <li key={`${a.id}-${a.date.toISOString()}`} className="flex items-start justify-between gap-3 text-sm">
+              <div className="min-w-0">
+                <Link to="/calendar" className="font-medium hover:underline">{a.title}</Link>
+                <div className="text-xs text-warning">Needs {a.gaps.join(" + ")}</div>
+              </div>
+              <div className="text-xs text-muted-foreground shrink-0">{format(a.date, "EEE, MMM d")}</div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </StandingSection>
+  );
+}
+

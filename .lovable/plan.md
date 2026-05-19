@@ -1,36 +1,51 @@
-## Missions page — multi-view redesign
+## Goal
 
-Add a view switcher to `/missions` so teams can be viewed four ways. Keep the existing data model — this is purely a presentation change.
+When a calendar event's category is **Class**, prompt for a **Teacher** (reuses the existing Leader field) and a **Childcare** status. Never block creation, but surface clear reminders until both are resolved.
 
-### View switcher (top of page)
-Segmented control next to the existing status filter pills: **Timeline · Kanban · Table · Calendar**. Selection persists in `localStorage` (`missions:view`) so each user reopens to their last view.
+## Data model
 
-### 1. Timeline (by trip date)
-- Trips sorted by `start_date` ascending.
-- Grouped headers: **In field now**, **This month**, **Next month**, **Later this year**, **Next year+**, **No date set**.
-- Default scope: hide `complete` and `cancelled`; small "Show past/completed" toggle adds a **Past** group at the bottom.
-- Each row: date range · church name · leader · status pill · readiness bar/badge · quick contact icons. Click opens the existing edit dialog.
+Add two columns to `calendar_events`:
 
-### 2. Kanban (current)
-- Unchanged — existing 6-column board.
+- `childcare_needed` (boolean, default `false`) — toggle: does this class need childcare?
+- `childcare_arranged` (boolean, default `false`) — set true once arrangements are confirmed.
 
-### 3. Table / list
-- Sortable columns: Church, Start, End, Leader, Focus, Status, Readiness (%).
-- Same default scope (upcoming + in-field); status filter pills still apply.
-- Row click opens edit dialog. Status cell is the inline status dropdown.
+Teacher reuses the existing `leader_name` column (relabeled in the UI when category = Class). No schema change for teacher.
 
-### 4. Calendar
-- Month grid (reuse styling from `/calendar` where reasonable, but standalone — no event data, just trip bars).
-- Each trip rendered as a horizontal bar spanning `start_date`→`end_date`, colored by status.
-- Prev/next month controls; trips without dates listed in a sidebar "Unscheduled" panel.
-- Click a bar → edit dialog.
+Derived "needs attention" rule for a class event:
 
-### Shared behavior
-- Status filter pills, "New trip" button, and edit dialog stay the same and work across all views.
-- Empty states per view (e.g. "No upcoming trips" in Timeline).
+```text
+isClass = category === "Class"
+missingTeacher = isClass && !leader_name
+missingChildcare = isClass && childcare_needed && !childcare_arranged
+needsAttention = missingTeacher || missingChildcare
+```
 
-### Technical notes
-- All changes scoped to `src/routes/missions.tsx`. Extract each view into a small subcomponent (`TimelineView`, `KanbanView`, `TableView`, `CalendarView`) inside the same file to keep diffs contained.
-- Persisted view: `useState` initialized from `localStorage.getItem("missions:view")`, write on change.
-- Date grouping uses `date-fns` (already in project): `isThisMonth`, `addMonths`, `isWithinInterval`, `isPast`.
-- No DB migrations, no new tables, no RLS changes.
+## UI changes
+
+**1. Event dialog (`src/routes/calendar.tsx`)**
+- When `category === "Class"`:
+  - Relabel the Leader input as **Teacher** with a subtle hint ("Required for classes — you can save without it but it will be flagged").
+  - Show a **Childcare** block: toggle "This class needs childcare". When on, show a second toggle "Childcare arranged".
+- Submit still succeeds with gaps. If gaps exist, show a non-blocking warning toast: *"Saved. Still needed: teacher / childcare arrangement."*
+
+**2. Calendar views (month/week/agenda)**
+- Class events with `needsAttention` get a small amber warning dot + tooltip listing what's missing.
+
+**3. Home dashboard — Alerts card (`src/routes/index.tsx`)**
+- Query upcoming class events with `needsAttention`. Render each as a row: event title, date, what's missing, link to edit.
+- Empty state stays as today.
+
+**4. Weekly staff meeting (`src/components/meeting/MeetingSections.tsx`)**
+- New standing section **"Classes needing attention"** placed near the existing event sections. Lists class events in the next ~6 weeks with missing teacher or unarranged childcare. Same row format as dashboard, with quick-edit link to the calendar.
+
+## Technical notes
+
+- Schema: single migration adding `childcare_needed boolean not null default false` and `childcare_arranged boolean not null default false`. Existing rows backfill to defaults — safe.
+- No RLS changes (existing `calendar_events` policies cover the new columns).
+- All UI logic is presentational; reads come from the existing event queries — just include the two new columns and `category`/`leader_name`.
+- TypeScript types regenerate automatically after migration.
+
+## Out of scope
+
+- No assignment/notification system (e.g. emailing a teacher). Just visual prompts.
+- No childcare-volunteer roster — `childcare_arranged` is a manual flag the user sets when arrangements exist outside the app.

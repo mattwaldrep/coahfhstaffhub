@@ -17,6 +17,7 @@ import { AppShell } from "@/components/AppShell";
 import { PlanningBanner } from "@/components/calendar/PlanningBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { classGaps } from "@/lib/class-gaps";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -101,6 +102,8 @@ type EventRow = {
   action_note: string | null;
   missions_team_needed: boolean;
   church_covering: string | null;
+  childcare_needed: boolean;
+  childcare_arranged: boolean;
 };
 
 type Occurrence = EventRow & { occurrence_date: Date };
@@ -137,6 +140,8 @@ type FormState = {
   action_note: string;
   missions_team_needed: boolean;
   church_covering: string;
+  childcare_needed: boolean;
+  childcare_arranged: boolean;
 };
 
 const emptyForm = (start = ""): FormState => ({
@@ -162,6 +167,8 @@ const emptyForm = (start = ""): FormState => ({
   action_note: "",
   missions_team_needed: false,
   church_covering: "",
+  childcare_needed: false,
+  childcare_arranged: false,
 });
 
 function buildRRule(f: FormState, startDate: Date): string | null {
@@ -359,6 +366,8 @@ function CalendarBody() {
       action_note: ev.action_note ?? "",
       missions_team_needed: ev.missions_team_needed ?? false,
       church_covering: ev.church_covering ?? "",
+      childcare_needed: ev.childcare_needed ?? false,
+      childcare_arranged: ev.childcare_arranged ?? false,
     });
     setEditingOccurrence(occ.occurrence_date);
     loadChecklist(ev.id);
@@ -401,12 +410,19 @@ function CalendarBody() {
       action_note: form.action_note || null,
       missions_team_needed: form.missions_team_needed,
       church_covering: form.church_covering || null,
+      childcare_needed: form.childcare_needed,
+      childcare_arranged: form.childcare_arranged,
     };
     const { error } = form.id
       ? await supabase.from("calendar_events").update(payload).eq("id", form.id)
       : await supabase.from("calendar_events").insert(payload);
     if (error) { toast.error(error.message); return; }
-    toast.success(form.id ? "Event updated" : "Event added");
+    const gaps = classGaps(form);
+    if (gaps.length > 0) {
+      toast.warning(`Saved. Still needed: ${gaps.join(", ")}.`);
+    } else {
+      toast.success(form.id ? "Event updated" : "Event added");
+    }
     setOpen(false);
     load();
   }
@@ -469,6 +485,8 @@ function CalendarBody() {
       action_note: form.action_note || null,
       missions_team_needed: form.missions_team_needed,
       church_covering: form.church_covering || null,
+      childcare_needed: form.childcare_needed,
+      childcare_arranged: form.childcare_arranged,
     });
     if (insertErr) { toast.error(insertErr.message); return; }
     // 2) Add original occurrence date to excluded_dates on the series
@@ -675,14 +693,52 @@ function CalendarBody() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Leader</Label>
-                <Input value={form.leader_name} onChange={(e) => setForm({ ...form, leader_name: e.target.value })} />
+                <Label>{form.category === "Class" ? "Teacher" : "Leader"}</Label>
+                <Input
+                  value={form.leader_name}
+                  onChange={(e) => setForm({ ...form, leader_name: e.target.value })}
+                  placeholder={form.category === "Class" ? "Who's teaching?" : ""}
+                />
+                {form.category === "Class" && !form.leader_name && (
+                  <p className="text-[11px] text-warning">
+                    Needed for classes — you can save without it, but it'll be flagged.
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Location</Label>
                 <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
               </div>
             </div>
+
+            {form.category === "Class" && (
+              <div className="space-y-3 rounded-xl border border-border p-3">
+                <Label className="text-sm font-medium">Childcare</Label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Switch
+                    checked={form.childcare_needed}
+                    onCheckedChange={(v) => setForm({ ...form, childcare_needed: v, childcare_arranged: v ? form.childcare_arranged : false })}
+                  />
+                  This class needs childcare
+                </label>
+                {form.childcare_needed && (
+                  <>
+                    <label className="flex items-center gap-2 text-sm">
+                      <Switch
+                        checked={form.childcare_arranged}
+                        onCheckedChange={(v) => setForm({ ...form, childcare_arranged: v })}
+                      />
+                      Childcare arranged
+                    </label>
+                    {!form.childcare_arranged && (
+                      <p className="text-[11px] text-warning">
+                        We'll keep flagging this event until childcare is marked as arranged.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Notes</Label>
@@ -923,16 +979,23 @@ function ReadinessBadge({ value }: { value: string }) {
 
 function EventChip({ occ, compact }: { occ: Occurrence; compact?: boolean }) {
   const cal = SUB_CALS.find((s) => s.value === occ.sub_calendar)!;
+  const gaps = classGaps(occ);
   return (
     <div
-      className={`text-[10px] truncate px-1.5 py-0.5 rounded hover:opacity-80 ${compact ? "" : ""}`}
+      className={`text-[10px] truncate px-1.5 py-0.5 rounded hover:opacity-80 flex items-center gap-1 ${compact ? "" : ""}`}
       style={{
         background: `color-mix(in oklab, ${cal.color} 22%, transparent)`,
         color: `color-mix(in oklab, ${cal.color} 90%, white)`,
       }}
+      title={gaps.length ? `Class needs: ${gaps.join(", ")}` : undefined}
     >
-      {!occ.all_day && <>{format(occ.occurrence_date, "h:mm")} </>}
-      {occ.title}
+      {gaps.length > 0 && (
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-warning shrink-0" />
+      )}
+      <span className="truncate">
+        {!occ.all_day && <>{format(occ.occurrence_date, "h:mm")} </>}
+        {occ.title}
+      </span>
     </div>
   );
 }
@@ -1072,6 +1135,11 @@ function ListView({ occurrences, onPickEvent }: { occurrences: Occurrence[]; onP
                 {(o.other_listings ?? []).length > 0 && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
                     +{o.other_listings.length} listing{o.other_listings.length === 1 ? "" : "s"}
+                  </span>
+                )}
+                {classGaps(o).length > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-warning/20 text-warning">
+                    Needs {classGaps(o).join(" + ")}
                   </span>
                 )}
               </div>

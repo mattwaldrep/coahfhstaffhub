@@ -31,6 +31,7 @@ import {
   ReviewTrendsSection,
   ReviewTasksSection,
   SectionDivider,
+  ClassesNeedingAttentionSection,
 } from "@/components/meeting/MeetingSections";
 
 export const Route = createFileRoute("/meeting")({
@@ -392,6 +393,7 @@ function MeetingPage() {
             </StandingSection>
 
             <UpcomingEventsSection meetingId={meeting.id} />
+            <ClassesNeedingAttentionSection />
 
             <SectionDivider label="Capture" />
 

@@ -205,6 +205,8 @@ export type Database = {
           action_note: string | null
           all_day: boolean
           category: string | null
+          childcare_arranged: boolean
+          childcare_needed: boolean
           church_covering: string | null
           created_at: string
           created_by: string | null
@@ -231,6 +233,8 @@ export type Database = {
           action_note?: string | null
           all_day?: boolean
           category?: string | null
+          childcare_arranged?: boolean
+          childcare_needed?: boolean
           church_covering?: string | null
           created_at?: string
           created_by?: string | null
@@ -257,6 +261,8 @@ export type Database = {
           action_note?: string | null
           all_day?: boolean
           category?: string | null
+          childcare_arranged?: boolean
+          childcare_needed?: boolean
           church_covering?: string | null
           created_at?: string
           created_by?: string | null

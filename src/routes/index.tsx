@@ -8,6 +8,8 @@ import { AlertTriangle, ArrowUpRight, CalendarDays, CheckCircle2, Circle, AlertC
 import { cn } from "@/lib/utils";
 import { fetchRecentWeeks, summarizeWeeks, type MetricsHeadline } from "@/integrations/metrics/client";
 import { useMetricsSession } from "@/integrations/metrics/use-session";
+import { expandEvents, type EventRowLike } from "@/lib/calendar-expand";
+import { classGaps } from "@/lib/class-gaps";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -54,6 +56,7 @@ function Dashboard() {
   const metricsSession = useMetricsSession();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [actions, setActions] = useState<ActionItem[]>([]);
+  const [classAlerts, setClassAlerts] = useState<Array<{ id: string; title: string; date: Date; gaps: string[] }>>([]);
   const [headline, setHeadline] = useState<MetricsHeadline | null>(null);
   const [prevHeadline, setPrevHeadline] = useState<MetricsHeadline | null>(null);
   const [statsRange, setStatsRange] = useState<string | null>(null);
@@ -76,6 +79,23 @@ function Dashboard() {
       .order("due_date", { ascending: true, nullsFirst: false })
       .limit(50)
       .then(({ data }) => setActions((data ?? []) as ActionItem[]));
+
+    // Upcoming class events needing teacher or childcare arrangement
+    const horizonEnd = new Date(Date.now() + 60 * 86400000);
+    supabase
+      .from("calendar_events")
+      .select("id,title,start_at,end_at,sub_calendar,leader_name,category,all_day,rrule,excluded_dates,childcare_needed,childcare_arranged")
+      .eq("category", "Class")
+      .or(`start_at.gte.${new Date().toISOString()},rrule.not.is.null`)
+      .then(({ data }) => {
+        const rows = (data ?? []) as Array<EventRowLike & { childcare_needed: boolean; childcare_arranged: boolean }>;
+        const occurrences = expandEvents(rows, new Date(), horizonEnd);
+        const alerts = occurrences
+          .map((o) => ({ id: o.id, title: o.title, date: o.occurrence_date, gaps: classGaps(o) }))
+          .filter((a) => a.gaps.length > 0)
+          .slice(0, 8);
+        setClassAlerts(alerts);
+      });
   }, []);
 
   // Live metrics from Church Metrics — last 4 weeks vs preceding 4 weeks
@@ -233,10 +253,29 @@ function Dashboard() {
             <h2 className="text-lg font-display font-semibold mb-3 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-warning" /> Alerts
             </h2>
-            <p className="text-sm text-muted-foreground">
-              No active alerts. Event readiness and missions risk will surface here.
-            </p>
+            {classAlerts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No active alerts. Event readiness and missions risk will surface here.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {classAlerts.map((a) => (
+                  <li key={`${a.id}-${a.date.toISOString()}`} className="text-sm">
+                    <Link to="/calendar" className="flex items-start justify-between gap-3 hover:bg-background/40 rounded-md p-1 -m-1">
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{a.title}</div>
+                        <div className="text-xs text-warning">Needs {a.gaps.join(" + ")}</div>
+                      </div>
+                      <div className="text-xs text-muted-foreground shrink-0">
+                        {format(a.date, "EEE, MMM d")}
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
+
 
           <MetricsStatusCard connected={!!metricsSession} error={metricsErr} weeks={headline?.weeks ?? 0} />
         </div>
