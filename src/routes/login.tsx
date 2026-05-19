@@ -106,6 +106,13 @@ function LoginPage() {
           </p>
         </div>
         <form onSubmit={submit} className="bg-surface border border-border rounded-2xl p-6 space-y-4 shadow-soft">
+          <Button type="button" variant="outline" className="w-full" onClick={signInWithGoogle}>
+            Continue with Google
+          </Button>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
+            <div className="relative flex justify-center text-xs"><span className="bg-surface px-2 text-muted-foreground">or</span></div>
+          </div>
           {mode === "signup" && (
             <div className="space-y-2">
               <Label htmlFor="name">Full name</Label>
