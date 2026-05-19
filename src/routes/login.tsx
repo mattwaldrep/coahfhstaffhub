@@ -1,11 +1,19 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+
+async function signInWithGoogle() {
+  const result = await lovable.auth.signInWithOAuth("google", {
+    redirect_uri: window.location.origin,
+  });
+  if (result.error) toast.error(result.error.message ?? "Google sign-in failed");
+}
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -98,6 +106,13 @@ function LoginPage() {
           </p>
         </div>
         <form onSubmit={submit} className="bg-surface border border-border rounded-2xl p-6 space-y-4 shadow-soft">
+          <Button type="button" variant="outline" className="w-full" onClick={signInWithGoogle}>
+            Continue with Google
+          </Button>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
+            <div className="relative flex justify-center text-xs"><span className="bg-surface px-2 text-muted-foreground">or</span></div>
+          </div>
           {mode === "signup" && (
             <div className="space-y-2">
               <Label htmlFor="name">Full name</Label>
