@@ -1136,7 +1136,7 @@ export function ClassesNeedingAttentionSection() {
         const rows = (data ?? []) as Array<EventRowLike & { childcare_needed: boolean; childcare_arranged: boolean }>;
         const occurrences = expandEvents(rows, new Date(), horizonEnd);
         const list = occurrences
-          .map((o) => ({ id: o.id, title: o.title, date: o.occurrence_date, gaps: classGapsLocal(o) }))
+          .map((o) => ({ id: o.id, title: o.title, date: o.occurrence_date, gaps: classGaps(o) }))
           .filter((a) => a.gaps.length > 0);
         setAlerts(list);
       });
