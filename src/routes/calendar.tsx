@@ -1149,6 +1149,11 @@ function ListView({ occurrences, onPickEvent }: { occurrences: Occurrence[]; onP
                     +{o.other_listings.length} listing{o.other_listings.length === 1 ? "" : "s"}
                   </span>
                 )}
+                {classGaps(o).length > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-warning/20 text-warning">
+                    Needs {classGaps(o).join(" + ")}
+                  </span>
+                )}
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">
                 {cal.label}
