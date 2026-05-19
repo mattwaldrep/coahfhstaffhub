@@ -126,9 +126,18 @@ function Body() {
   const [form, setForm] = useState<Form>(emptyForm());
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
   const [uploading, setUploading] = useState(false);
+  const [view, setView] = useState<ViewMode>(() => {
+    if (typeof window === "undefined") return "timeline";
+    const saved = window.localStorage.getItem(VIEW_STORAGE_KEY) as ViewMode | null;
+    return saved && ["timeline", "kanban", "table", "calendar"].includes(saved) ? saved : "timeline";
+  });
+  const [showPast, setShowPast] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(() => startOfMonth(new Date()));
 
   useEffect(() => {
-    load();
+    if (typeof window !== "undefined") window.localStorage.setItem(VIEW_STORAGE_KEY, view);
+  }, [view]);
+
     const ch = supabase
       .channel("mission_trips")
       .on("postgres_changes", { event: "*", schema: "public", table: "mission_trips" }, () => load())
