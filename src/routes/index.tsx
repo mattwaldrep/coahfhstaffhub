@@ -253,10 +253,29 @@ function Dashboard() {
             <h2 className="text-lg font-display font-semibold mb-3 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-warning" /> Alerts
             </h2>
-            <p className="text-sm text-muted-foreground">
-              No active alerts. Event readiness and missions risk will surface here.
-            </p>
+            {classAlerts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No active alerts. Event readiness and missions risk will surface here.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {classAlerts.map((a) => (
+                  <li key={`${a.id}-${a.date.toISOString()}`} className="text-sm">
+                    <Link to="/calendar" className="flex items-start justify-between gap-3 hover:bg-background/40 rounded-md p-1 -m-1">
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{a.title}</div>
+                        <div className="text-xs text-warning">Needs {a.gaps.join(" + ")}</div>
+                      </div>
+                      <div className="text-xs text-muted-foreground shrink-0">
+                        {format(a.date, "EEE, MMM d")}
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
+
 
           <MetricsStatusCard connected={!!metricsSession} error={metricsErr} weeks={headline?.weeks ?? 0} />
         </div>
