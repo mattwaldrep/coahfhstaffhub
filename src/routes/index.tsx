@@ -191,9 +191,26 @@ function Dashboard() {
               <ul className="space-y-3">
                 {myActions.map((a) => {
                   const overdue = a.due_date && a.due_date < todayStr;
+                  const toggle = async () => {
+                    setActions((prev) => prev.filter((x) => x.id !== a.id));
+                    const { error } = await supabase
+                      .from("action_items")
+                      .update({ completed: true })
+                      .eq("id", a.id);
+                    if (error) {
+                      setActions((prev) => [...prev, a]);
+                    }
+                  };
                   return (
                     <li key={a.id} className="flex items-start gap-3 text-sm">
-                      <Circle className={cn("w-4 h-4 mt-0.5 shrink-0", overdue ? "text-destructive" : "text-muted-foreground")} />
+                      <button
+                        type="button"
+                        onClick={toggle}
+                        aria-label="Mark complete"
+                        className="mt-0.5 shrink-0 rounded-full hover:text-primary transition-colors"
+                      >
+                        <Circle className={cn("w-4 h-4", overdue ? "text-destructive" : "text-muted-foreground")} />
+                      </button>
                       <div className="flex-1">
                         <div className="text-foreground">{a.title}</div>
                         {a.due_date && (
