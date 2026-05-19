@@ -1,20 +1,36 @@
-## Goal
-Let agenda items in both the staff meeting page and the elder meeting page contain markdown-style hyperlinks: `[label](https://example.com)` renders as a clickable link.
+## Missions page — multi-view redesign
 
-## Approach
-Render-only change. The DB stays the same (`title` remains plain text). When displaying an agenda item title, parse it for `[label](url)` patterns and render those segments as `<a target="_blank" rel="noopener noreferrer">`. URLs are validated (must start with `http://`, `https://`, or `mailto:`) to avoid `javascript:` injection. Plain text without the pattern renders unchanged.
+Add a view switcher to `/missions` so teams can be viewed four ways. Keep the existing data model — this is purely a presentation change.
 
-## Changes
+### View switcher (top of page)
+Segmented control next to the existing status filter pills: **Timeline · Kanban · Table · Calendar**. Selection persists in `localStorage` (`missions:view`) so each user reopens to their last view.
 
-1. **New helper** `src/lib/render-linked-text.tsx` — exports `<LinkedText value={string} />`. Splits the string on the `[label](url)` regex, returns a React fragment with `<a>` for valid links and plain text for the rest. Sanitizes URLs.
+### 1. Timeline (by trip date)
+- Trips sorted by `start_date` ascending.
+- Grouped headers: **In field now**, **This month**, **Next month**, **Later this year**, **Next year+**, **No date set**.
+- Default scope: hide `complete` and `cancelled`; small "Show past/completed" toggle adds a **Past** group at the bottom.
+- Each row: date range · church name · leader · status pill · readiness bar/badge · quick contact icons. Click opens the existing edit dialog.
 
-2. **`src/routes/meeting.tsx`** — In the agenda list (around line 328–355), replace the plain `{item.title}` render with `<LinkedText value={item.title} />`. Keep the click-to-toggle behavior on the row; stop link clicks from bubbling so clicking a link doesn't toggle done-state.
+### 2. Kanban (current)
+- Unchanged — existing 6-column board.
 
-3. **`src/routes/elder.meetings.$meetingId.tsx`** — In `AgendaItemRow` (around line 249), same swap: render the title via `<LinkedText />`. Stop propagation on link clicks so it doesn't trigger row interactions.
+### 3. Table / list
+- Sortable columns: Church, Start, End, Leader, Focus, Status, Readiness (%).
+- Same default scope (upcoming + in-field); status filter pills still apply.
+- Row click opens edit dialog. Status cell is the inline status dropdown.
 
-4. **Input affordance** — Add a small hint under each "Add agenda item…" input on both pages: `Tip: use [label](https://…) for links`. No editor changes; users type the syntax directly.
+### 4. Calendar
+- Month grid (reuse styling from `/calendar` where reasonable, but standalone — no event data, just trip bars).
+- Each trip rendered as a horizontal bar spanning `start_date`→`end_date`, colored by status.
+- Prev/next month controls; trips without dates listed in a sidebar "Unscheduled" panel.
+- Click a bar → edit dialog.
 
-## Out of scope
-- No DB migration.
-- No rich text editor swap.
-- No changes to email recap rendering (recap continues to show raw text — can be a follow-up if you want).
+### Shared behavior
+- Status filter pills, "New trip" button, and edit dialog stay the same and work across all views.
+- Empty states per view (e.g. "No upcoming trips" in Timeline).
+
+### Technical notes
+- All changes scoped to `src/routes/missions.tsx`. Extract each view into a small subcomponent (`TimelineView`, `KanbanView`, `TableView`, `CalendarView`) inside the same file to keep diffs contained.
+- Persisted view: `useState` initialized from `localStorage.getItem("missions:view")`, write on change.
+- Date grouping uses `date-fns` (already in project): `isThisMonth`, `addMonths`, `isWithinInterval`, `isPast`.
+- No DB migrations, no new tables, no RLS changes.
