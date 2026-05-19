@@ -65,8 +65,6 @@ const CATEGORIES = [
   "Community Group", "Love DOT", "Prayer", "Core Team", "Other",
 ];
 
-import { classGaps } from "@/lib/class-gaps";
-
 const READINESS_COLORS: Record<string, string> = {
   green: "oklch(0.7 0.18 145)",
   yellow: "oklch(0.82 0.16 90)",
