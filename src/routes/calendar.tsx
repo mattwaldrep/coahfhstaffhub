@@ -416,7 +416,12 @@ function CalendarBody() {
       ? await supabase.from("calendar_events").update(payload).eq("id", form.id)
       : await supabase.from("calendar_events").insert(payload);
     if (error) { toast.error(error.message); return; }
-    toast.success(form.id ? "Event updated" : "Event added");
+    const gaps = classGaps(form);
+    if (gaps.length > 0) {
+      toast.warning(`Saved. Still needed: ${gaps.join(", ")}.`);
+    } else {
+      toast.success(form.id ? "Event updated" : "Event added");
+    }
     setOpen(false);
     load();
   }
