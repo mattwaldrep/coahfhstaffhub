@@ -705,14 +705,52 @@ function CalendarBody() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Leader</Label>
-                <Input value={form.leader_name} onChange={(e) => setForm({ ...form, leader_name: e.target.value })} />
+                <Label>{form.category === "Class" ? "Teacher" : "Leader"}</Label>
+                <Input
+                  value={form.leader_name}
+                  onChange={(e) => setForm({ ...form, leader_name: e.target.value })}
+                  placeholder={form.category === "Class" ? "Who's teaching?" : ""}
+                />
+                {form.category === "Class" && !form.leader_name && (
+                  <p className="text-[11px] text-warning">
+                    Needed for classes — you can save without it, but it'll be flagged.
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Location</Label>
                 <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
               </div>
             </div>
+
+            {form.category === "Class" && (
+              <div className="space-y-3 rounded-xl border border-border p-3">
+                <Label className="text-sm font-medium">Childcare</Label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Switch
+                    checked={form.childcare_needed}
+                    onCheckedChange={(v) => setForm({ ...form, childcare_needed: v, childcare_arranged: v ? form.childcare_arranged : false })}
+                  />
+                  This class needs childcare
+                </label>
+                {form.childcare_needed && (
+                  <>
+                    <label className="flex items-center gap-2 text-sm">
+                      <Switch
+                        checked={form.childcare_arranged}
+                        onCheckedChange={(v) => setForm({ ...form, childcare_arranged: v })}
+                      />
+                      Childcare arranged
+                    </label>
+                    {!form.childcare_arranged && (
+                      <p className="text-[11px] text-warning">
+                        We'll keep flagging this event until childcare is marked as arranged.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Notes</Label>
