@@ -365,6 +365,8 @@ function CalendarBody() {
       action_note: ev.action_note ?? "",
       missions_team_needed: ev.missions_team_needed ?? false,
       church_covering: ev.church_covering ?? "",
+      childcare_needed: ev.childcare_needed ?? false,
+      childcare_arranged: ev.childcare_arranged ?? false,
     });
     setEditingOccurrence(occ.occurrence_date);
     loadChecklist(ev.id);
