@@ -101,6 +101,8 @@ type EventRow = {
   action_note: string | null;
   missions_team_needed: boolean;
   church_covering: string | null;
+  childcare_needed: boolean;
+  childcare_arranged: boolean;
 };
 
 type Occurrence = EventRow & { occurrence_date: Date };
