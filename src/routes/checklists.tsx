@@ -39,9 +39,9 @@ function ChecklistsPage() {
       supabase.from("checklist_templates" as any).select("*").order("name"),
       supabase.from("checklist_template_items" as any).select("*").order("position"),
     ]);
-    setTemplates((t ?? []) as Template[]);
+    setTemplates((t ?? []) as unknown as Template[]);
     const map: Record<string, Item[]> = {};
-    for (const row of (i ?? []) as Item[]) {
+    for (const row of ((i ?? []) as unknown as Item[])) {
       (map[row.template_id] ??= []).push(row);
     }
     setItems(map);

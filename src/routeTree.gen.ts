@@ -22,6 +22,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FinanceRouteImport } from './routes/finance'
 import { Route as ElderRouteImport } from './routes/elder'
 import { Route as DecisionsRouteImport } from './routes/decisions'
+import { Route as ChecklistsRouteImport } from './routes/checklists'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ElderIndexRouteImport } from './routes/elder.index'
@@ -104,6 +105,11 @@ const ElderRoute = ElderRouteImport.update({
 const DecisionsRoute = DecisionsRouteImport.update({
   id: '/decisions',
   path: '/decisions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChecklistsRoute = ChecklistsRouteImport.update({
+  id: '/checklists',
+  path: '/checklists',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalendarRoute = CalendarRouteImport.update({
@@ -204,6 +210,7 @@ const ApiPublicHooksActionItemsDigestRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
+  '/checklists': typeof ChecklistsRoute
   '/decisions': typeof DecisionsRoute
   '/elder': typeof ElderRouteWithChildren
   '/finance': typeof FinanceRoute
@@ -237,6 +244,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
+  '/checklists': typeof ChecklistsRoute
   '/decisions': typeof DecisionsRoute
   '/finance': typeof FinanceRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -269,6 +277,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
+  '/checklists': typeof ChecklistsRoute
   '/decisions': typeof DecisionsRoute
   '/elder': typeof ElderRouteWithChildren
   '/finance': typeof FinanceRoute
@@ -304,6 +313,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/calendar'
+    | '/checklists'
     | '/decisions'
     | '/elder'
     | '/finance'
@@ -337,6 +347,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/calendar'
+    | '/checklists'
     | '/decisions'
     | '/finance'
     | '/forgot-password'
@@ -368,6 +379,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/calendar'
+    | '/checklists'
     | '/decisions'
     | '/elder'
     | '/finance'
@@ -402,6 +414,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CalendarRoute: typeof CalendarRoute
+  ChecklistsRoute: typeof ChecklistsRoute
   DecisionsRoute: typeof DecisionsRoute
   ElderRoute: typeof ElderRouteWithChildren
   FinanceRoute: typeof FinanceRoute
@@ -515,6 +528,13 @@ declare module '@tanstack/react-router' {
       path: '/decisions'
       fullPath: '/decisions'
       preLoaderRoute: typeof DecisionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checklists': {
+      id: '/checklists'
+      path: '/checklists'
+      fullPath: '/checklists'
+      preLoaderRoute: typeof ChecklistsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calendar': {
@@ -694,6 +714,7 @@ const CalendarPlanningRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CalendarRoute: CalendarRoute,
+  ChecklistsRoute: ChecklistsRoute,
   DecisionsRoute: DecisionsRoute,
   ElderRoute: ElderRouteWithChildren,
   FinanceRoute: FinanceRoute,
