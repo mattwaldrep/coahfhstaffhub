@@ -168,14 +168,17 @@ function DashboardTab({ year }: { year: number }) {
     <>
       <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
         <div className="text-sm text-muted-foreground">
-          Showing snapshot <strong className="text-foreground">{MONTHS[(selectedSnapshot?.as_of_month ?? 1) - 1]} {year}</strong>
+          Showing snapshot <strong className="text-foreground">
+            {selectedSnapshot ? `${MONTHS[selectedSnapshot.as_of_month - 1]} ${calYearOf(year, selectedSnapshot.as_of_month)}` : "—"}
+          </strong>
+          <span className="ml-2 text-xs">FY {year} · {fiscalYearRangeLabel(year)}</span>
         </div>
         <Select value={selectedSnapshotId ?? ""} onValueChange={setSelectedSnapshotId}>
-          <SelectTrigger className="w-48"><SelectValue placeholder="Snapshot" /></SelectTrigger>
+          <SelectTrigger className="w-56"><SelectValue placeholder="Snapshot" /></SelectTrigger>
           <SelectContent>
             {snapshots.map((s) => (
               <SelectItem key={s.id} value={s.id}>
-                As of {MONTHS[s.as_of_month - 1]} {s.fiscal_year}
+                As of {MONTHS[s.as_of_month - 1]} {calYearOf(s.fiscal_year, s.as_of_month)}
               </SelectItem>
             ))}
           </SelectContent>
