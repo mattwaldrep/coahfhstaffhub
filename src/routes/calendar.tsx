@@ -508,6 +508,8 @@ function CalendarBody() {
       church_covering: ev.church_covering ?? "",
       childcare_needed: ev.childcare_needed ?? false,
       childcare_arranged: ev.childcare_arranged ?? false,
+      room_not_needed: (ev as any).room_not_needed ?? false,
+      leader_not_needed: (ev as any).leader_not_needed ?? false,
       class_series_id: ev.class_series_id ?? "",
       room_ids: eventRoomsMap.current.get(ev.id) ?? [],
     });
