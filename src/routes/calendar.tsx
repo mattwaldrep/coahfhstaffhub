@@ -199,6 +199,8 @@ const emptyForm = (start = ""): FormState => ({
   church_covering: "",
   childcare_needed: false,
   childcare_arranged: false,
+  room_not_needed: false,
+  leader_not_needed: false,
   class_series_id: "",
   room_ids: [],
 });
