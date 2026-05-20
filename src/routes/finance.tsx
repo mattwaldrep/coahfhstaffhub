@@ -412,9 +412,10 @@ function ReportsTab({ year }: { year: number }) {
     setReports((data ?? []) as Report[]);
     const { data: catData } = await supabase
       .from("budget_categories")
-      .select("annual_budget,updated_at,kind,classification")
+      .select("annual_budget,updated_at,kind,classification,is_rollup")
       .eq("fiscal_year", year);
-    const arr = (catData ?? []) as { annual_budget: number; updated_at: string | null; kind: "income" | "expense"; classification: string | null }[];
+    const arr = ((catData ?? []) as { annual_budget: number; updated_at: string | null; kind: "income" | "expense"; classification: string | null; is_rollup: boolean | null }[])
+      .filter((c) => !c.is_rollup);
     const income = arr.filter((c) => c.kind === "income").reduce((s, c) => s + Number(c.annual_budget ?? 0), 0);
     const expense = arr
       .filter((c) => c.kind !== "income" && c.classification !== "designated_expense")
