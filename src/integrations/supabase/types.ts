@@ -29,6 +29,8 @@ export type Database = {
           notes: string | null
           source_checklist_item_id: string | null
           source_event_id: string | null
+          source_onboarding_task_id: string | null
+          source_workflow_id: string | null
           title: string
           updated_at: string
         }
@@ -46,6 +48,8 @@ export type Database = {
           notes?: string | null
           source_checklist_item_id?: string | null
           source_event_id?: string | null
+          source_onboarding_task_id?: string | null
+          source_workflow_id?: string | null
           title: string
           updated_at?: string
         }
@@ -63,6 +67,8 @@ export type Database = {
           notes?: string | null
           source_checklist_item_id?: string | null
           source_event_id?: string | null
+          source_onboarding_task_id?: string | null
+          source_workflow_id?: string | null
           title?: string
           updated_at?: string
         }
@@ -1757,10 +1763,13 @@ export type Database = {
       }
       onboarding_tasks: {
         Row: {
+          action_item_id: string | null
+          assignee_id: string | null
           completed_at: string | null
           completed_by: string | null
           created_at: string
           description: string | null
+          due_date: string | null
           id: string
           is_completed: boolean
           is_skipped: boolean
@@ -1774,10 +1783,13 @@ export type Database = {
           workflow_id: string
         }
         Insert: {
+          action_item_id?: string | null
+          assignee_id?: string | null
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string
           description?: string | null
+          due_date?: string | null
           id?: string
           is_completed?: boolean
           is_skipped?: boolean
@@ -1791,10 +1803,13 @@ export type Database = {
           workflow_id: string
         }
         Update: {
+          action_item_id?: string | null
+          assignee_id?: string | null
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string
           description?: string | null
+          due_date?: string | null
           id?: string
           is_completed?: boolean
           is_skipped?: boolean
