@@ -126,7 +126,13 @@ type ChecklistItem = {
   label: string;
   done: boolean;
   position: number;
+  assignee_id: string | null;
+  due_date: string | null;
+  action_item_id: string | null;
 };
+
+type UserOption = { id: string; full_name: string | null; email: string | null };
+
 
 type ClassSeries = {
   id: string;
