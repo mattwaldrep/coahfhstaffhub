@@ -88,6 +88,7 @@ export function AnnualBudgetDialog({
           categoryId: match?.id ?? null,
           createAs: match ? null : line.name,
           ignored: false,
+          classification: line.classification,
         };
       }));
     } catch (e: any) {
