@@ -12,10 +12,13 @@ import {
   detectHeaderInfo,
 } from "./parse-qbo-csv";
 
+export type BudgetKind = "income" | "expense";
+
 export type AnnualBudgetLine = {
   name: string;
   annualBudget: number;
   indent: number;
+  kind: BudgetKind;
 };
 
 export type AnnualBudgetParseResult = {
@@ -106,13 +109,35 @@ function parseRows(rows: string[][]): AnnualBudgetParseResult {
   const lines: AnnualBudgetLine[] = [];
   const ignored: string[] = [];
 
+  // Section detection: QBO groups rows under top-level headers (Income,
+  // Cost of Goods Sold, Expense, Other Income, Other Expense). We flip the
+  // `kind` flag as we walk past each header so leaf rows get tagged correctly.
+  let currentKind: BudgetKind | null = null;
+
+  const sectionKindFor = (name: string): BudgetKind | null => {
+    const n = name.trim().toLowerCase();
+    if (n === "income" || n === "other income") return "income";
+    if (n === "expense" || n === "expenses" || n === "other expense" || n === "other expenses" || n === "cost of goods sold") return "expense";
+    return null;
+  };
+
   for (let i = headerRow + 1; i < rows.length; i++) {
     const r = rows[i] ?? [];
     const rawName = (r[0] ?? "").toString();
     const name = rawName.trim();
     if (!name) continue;
 
+    // Section header (always at indent 0 in QBO exports)
+    const indent = rawName.length - rawName.trimStart().length;
+    const sectionKind = sectionKindFor(name);
+    if (sectionKind && indent === 0) {
+      currentKind = sectionKind;
+      continue;
+    }
+
     if (isTotalRow(name)) {
+      // "Total Income" / "Total Expense" close the current section
+      currentKind = null;
       ignored.push(name);
       continue;
     }
@@ -122,7 +147,6 @@ function parseRows(rows: string[][]): AnnualBudgetParseResult {
       annual = parseNumber(r[totalCol]);
     }
     if (annual == null || annual === 0) {
-      // Sum month columns if a Total column wasn't found or was blank
       if (monthCols.length) {
         let sum = 0;
         let any = false;
@@ -134,20 +158,25 @@ function parseRows(rows: string[][]): AnnualBudgetParseResult {
       }
     }
     if (annual == null) {
-      // Last resort: rightmost numeric cell on the row
       for (let c = r.length - 1; c >= 1; c--) {
         const n = parseNumber(r[c]);
         if (n != null) { annual = n; break; }
       }
     }
 
-    if (annual == null) {
+    // Skip rollup parents and empty placeholder accounts (no budget set)
+    if (annual == null || annual === 0) {
       ignored.push(name);
       continue;
     }
 
-    const indent = rawName.length - rawName.trimStart().length;
-    lines.push({ name, annualBudget: annual, indent });
+    if (!currentKind) {
+      // Couldn't determine section — skip rather than misclassify
+      ignored.push(name);
+      continue;
+    }
+
+    lines.push({ name, annualBudget: annual, indent, kind: currentKind });
   }
 
   return { fiscalYear, lines, ignored };

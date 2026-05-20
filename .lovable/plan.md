@@ -1,62 +1,43 @@
-## Goal
+## What's wrong
 
-Right now the top cards (Annual budget, Annual variance, Pacing) are wrong because annual budget is being inferred from the monthly YTD report. Real source of truth in QBO is the **Budget Overview** export (annual budget by account). We'll import that first, then layer monthly Budget vs. Actuals on top — and never let the monthly file overwrite annual numbers.
+The QBO export groups rows under section headers ("Income", "Cost of Goods Sold", "Expense", "Other Income", "Other Expense"). The current importer ignores those headers and dumps every line into one flat list of "budget categories." The dashboard then sums **everything** as one annual budget number — so tithes/offering revenue gets added on top of payroll and rent. That's why the totals look nonsensical.
 
-## What you'll see on the Finance page
+It also imports rollup parents and $0 placeholder accounts, which clutters the category list.
 
-Under **Manage → Imports**, two clearly separated upload areas:
+## Fix
 
-1. **Annual budget (one per fiscal year)** — upload QBO's Budget Overview as CSV or XLSX. Shows last upload date + a "Re-upload" button.
-2. **Monthly Budget vs. Actuals** — unchanged workflow, but the review dialog no longer asks about annual budget at all.
+### 1. Schema: tag each category
+Add `kind` to `budget_categories`:
+- `income` — revenue accounts (Income, Other Income)
+- `expense` — spending accounts (Cost of Goods Sold, Expense, Other Expense)
 
-The dashboard cards use annual figures only from step 1, so "Annual budget" stops reading $0.
+Default existing rows to `expense` (legacy data is cleared anyway).
 
-## Implementation
+### 2. Parser: track the current section
+Walk the sheet top-to-bottom. Whenever column A is a section header at indent 0 (`Income`, `Cost of Goods Sold`, `Expense`, `Other Income`, `Other Expense`), flip an `kind` flag. Tag each subsequent leaf line with that kind. Skip:
+- Section headers themselves
+- "Total …" subtotal rows (already ignored)
+- Rows whose annual is `0` or blank (parent rollups and unused accounts)
 
-### 1. Parser
-- New `src/lib/parse-qbo-budget.ts` exporting `parseQboBudget(input: string | ArrayBuffer, filename: string): { fiscalYear?, lines: { name, indent, annualBudget }[], ignored: string[] }`.
-- Detect file type by extension; route XLSX through SheetJS (`xlsx` package — installed via `bun add xlsx`) and CSV through Papa Parse (already in use).
-- Column detection: look for the rightmost numeric column on the header row (QBO Budget Overview is `Account | Jul | Aug | … | Jun | Total`). Use the **Total** column as annual budget; if missing, sum the 12 month columns.
-- Reuse subtotal/total-row filters from `parse-qbo-csv.ts` (extract `isTotalRow`, `parseNumber`, `normalize`, `matchCategory` into a shared `src/lib/qbo-shared.ts` so both parsers use them).
-- Reuse `detectHeaderInfo` for fiscal year (Jul–Jun convention already correct).
+### 3. Review dialog: show the split
+In `AnnualBudgetDialog`, group the parsed lines into two tables — **Income** and **Expense** — each with its own subtotal. The user can still un-check rows they don't want imported.
 
-### 2. Server function
-- New `src/server/finance-budget.functions.ts` → `applyAnnualBudget`:
-  - Input: `{ fiscalYear, lines: [{ categoryId|null, createAs|null, annualBudget }] }`.
-  - Auth: `requireSupabaseAuth` + core-role check.
-  - For each line: create category if `createAs`, else `update annual_budget = annualBudget where id = categoryId`.
-  - Dedup by category_id (same pattern as snapshot apply) so duplicate account names sum cleanly.
-  - Return `{ updated, created }`.
+### 4. Server function: persist the kind
+`applyAnnualBudget` writes `kind` alongside `annual_budget` when creating/updating `budget_categories`.
 
-### 3. UI
-- New `src/components/finance/AnnualBudgetDialog.tsx` modeled on `SnapshotReviewDialog`: file drop, parse, show table of `Line | Annual budget | Maps to`, with the same category-match/create selector. No "as of month" or "full year" fields.
-- In `src/routes/finance.tsx`, in the existing Imports section, add an "Annual budget" card above the monthly reports list with last-imported indicator (derived from `max(updated_at)` on `budget_categories` for that FY) and a "Upload annual budget" button that opens the new dialog.
+### 5. Dashboard cards: stop combining them
+On `/finance`, replace the single "Annual budget" total with three numbers:
+- **Annual income budget** = sum of `kind = 'income'`
+- **Annual expense budget** = sum of `kind = 'expense'`
+- **Projected surplus / (deficit)** = income − expense
 
-### 4. Strip annual-budget logic from monthly import
-- `SnapshotReviewDialog.tsx`: remove the "Full-year report" checkbox, the `fiscalMonthIndex` extrapolation, and stop sending `annualBudget` / `updateAnnualBudgets`.
-- `applyFinanceSnapshot` (server fn): drop `updateAnnualBudgets` from the schema; only write snapshot lines (ytd_actual, ytd_budget). Stop writing to `budget_categories.annual_budget` entirely.
-- The recent "backfill when annual_budget = 0" branch is removed too — annual budgets are now owned by the annual import.
+Budget-vs-actuals lists also split into Income and Expense sections so a $200k tithes line never sits next to a $25k rent line in the same ranking.
 
-### 5. Dashboard cards
-- `src/routes/finance.tsx` already reads `totals.annualBudget` from `budget_categories`. No formula change needed — once the annual file is imported, the cards become accurate. Empty-state hint updates: "Upload your annual budget first, then monthly Budget vs. Actuals reports."
+### Out of scope
+- No changes to the monthly snapshot importer's math (it still just writes YTD actual/budget per category — those categories now carry a `kind`, which lets the dashboard group them correctly automatically).
+- No re-import of historical data needed; the finance module was just wiped.
 
-## Files touched
-
-Created:
-- `src/lib/parse-qbo-budget.ts`
-- `src/lib/qbo-shared.ts` (extracted helpers)
-- `src/server/finance-budget.functions.ts`
-- `src/components/finance/AnnualBudgetDialog.tsx`
-
-Edited:
-- `src/lib/parse-qbo-csv.ts` (import shared helpers)
-- `src/server/finance-snapshot.functions.ts` (remove annual writes)
-- `src/components/finance/SnapshotReviewDialog.tsx` (remove full-year + extrapolation)
-- `src/routes/finance.tsx` (annual-budget card + dialog wiring, empty-state copy)
-
-Dependency added: `xlsx` (SheetJS).
-
-## Out of scope
-
-- No schema changes — `budget_categories.annual_budget` is the right home already.
-- No historical re-import; you'll re-upload the annual budget once after this ships.
+### Technical notes
+- Migration adds `kind text not null default 'expense' check (kind in ('income','expense'))` on `budget_categories`.
+- `parse-qbo-budget.ts` returns `lines: { name, annualBudget, indent, kind }[]`.
+- `finance_snapshot_lines` doesn't need a `kind` column — it joins to `budget_categories` for kind.

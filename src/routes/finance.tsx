@@ -32,7 +32,7 @@ const fmt = (n: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n || 0);
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 
-type Category = { id: string; name: string; fiscal_year: number; annual_budget: number; sort_order: number };
+type Category = { id: string; name: string; fiscal_year: number; annual_budget: number; sort_order: number; kind: "income" | "expense" };
 type Snapshot = { id: string; fiscal_year: number; as_of_month: number; source_report_id: string | null; created_at: string };
 type SnapshotLine = { id: string; snapshot_id: string; category_id: string; ytd_actual: number; ytd_budget: number; annual_budget: number | null };
 type Report = { id: string; fiscal_year: number; month: number; label: string | null; file_path: string; file_name: string; mime_type: string | null; created_at: string; imported_at: string | null };
@@ -145,15 +145,36 @@ function DashboardTab({ year }: { year: number }) {
   }, [cats, snapshots, lines]);
 
   const totals = useMemo(() => {
-    const annualBudget = cats.reduce((s, c) => s + Number(c.annual_budget), 0);
-    const ytdActual = selectedLines.reduce((s, l) => s + Number(l.ytd_actual), 0);
-    const ytdBudget = selectedLines.reduce((s, l) => s + Number(l.ytd_budget), 0);
+    const incomeCats = cats.filter((c) => c.kind === "income");
+    const expenseCats = cats.filter((c) => c.kind !== "income");
+
+    const sumYtdActualFor = (list: Category[]) =>
+      list.reduce((s, c) => s + Number(lineByCat.get(c.id)?.ytd_actual ?? 0), 0);
+    const sumYtdBudgetFor = (list: Category[]) =>
+      list.reduce((s, c) => s + Number(lineByCat.get(c.id)?.ytd_budget ?? 0), 0);
+
+    const incomeAnnual = incomeCats.reduce((s, c) => s + Number(c.annual_budget), 0);
+    const expenseAnnual = expenseCats.reduce((s, c) => s + Number(c.annual_budget), 0);
+    const incomeYtdActual = sumYtdActualFor(incomeCats);
+    const expenseYtdActual = sumYtdActualFor(expenseCats);
+    const incomeYtdBudget = sumYtdBudgetFor(incomeCats);
+    const expenseYtdBudget = sumYtdBudgetFor(expenseCats);
+
     const asOf = selectedSnapshot?.as_of_month;
     const monthsElapsed = asOf ? fiscalMonthIndex(asOf) : 0;
     const yearPace = monthsElapsed / 12;
-    const spendPace = annualBudget > 0 ? ytdActual / annualBudget : 0;
-    return { annualBudget, ytdActual, ytdBudget, monthsElapsed, yearPace, spendPace };
-  }, [cats, selectedLines, selectedSnapshot]);
+    const spendPace = expenseAnnual > 0 ? expenseYtdActual / expenseAnnual : 0;
+
+    return {
+      incomeCats, expenseCats,
+      incomeAnnual, expenseAnnual,
+      incomeYtdActual, expenseYtdActual,
+      incomeYtdBudget, expenseYtdBudget,
+      monthsElapsed, yearPace, spendPace,
+      projectedNet: incomeAnnual - expenseAnnual,
+      ytdNet: incomeYtdActual - expenseYtdActual,
+    };
+  }, [cats, lineByCat, selectedSnapshot]);
 
   if (snapshots.length === 0) {
     return (
@@ -188,73 +209,119 @@ function DashboardTab({ year }: { year: number }) {
         </Select>
       </div>
 
-      {/* Top strip */}
+      {/* Top strip — income, expense, projected net, pacing */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        <Stat label="Annual budget" value={fmt(totals.annualBudget)} />
-        <Stat label="YTD actual" value={fmt(totals.ytdActual)} sub={`vs. ${fmt(totals.ytdBudget)} YTD budget`} />
-        <Stat label="Annual variance" value={fmt(totals.annualBudget - totals.ytdActual)}
-          tone={totals.annualBudget - totals.ytdActual < 0 ? "danger" : "default"} />
-        <Stat label="Pacing"
+        <Stat
+          label="Annual income"
+          value={fmt(totals.incomeAnnual)}
+          sub={`${fmt(totals.incomeYtdActual)} received YTD`}
+        />
+        <Stat
+          label="Annual expense"
+          value={fmt(totals.expenseAnnual)}
+          sub={`${fmt(totals.expenseYtdActual)} spent YTD`}
+        />
+        <Stat
+          label="Projected net"
+          value={fmt(totals.projectedNet)}
+          sub={`${fmt(totals.ytdNet)} YTD`}
+          tone={totals.projectedNet < 0 ? "danger" : "default"}
+        />
+        <Stat
+          label="Pacing (expense)"
           value={`${pct(totals.spendPace)} spent`}
           sub={`${pct(totals.yearPace)} of year elapsed`}
           tone={totals.spendPace > totals.yearPace + 0.05 ? "danger" : "default"}
         />
       </div>
 
-      <div className="bg-surface border border-border rounded-2xl overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border text-[11px] uppercase tracking-wider text-muted-foreground">
-              <th className="text-left px-3 py-2">Category</th>
-              <th className="text-right px-3 py-2">Annual budget</th>
-              <th className="text-right px-3 py-2">YTD actual</th>
-              <th className="text-right px-3 py-2">YTD budget</th>
-              <th className="text-right px-3 py-2">vs. YTD budget</th>
-              <th className="text-right px-3 py-2">vs. annual</th>
-              <th className="text-left px-3 py-2">Trend</th>
-            </tr>
-          </thead>
-          <tbody>
-            {cats.map((c) => {
-              const line = lineByCat.get(c.id);
-              const ytdActual = line ? Number(line.ytd_actual) : 0;
-              const ytdBudget = line ? Number(line.ytd_budget) : 0;
-              const annual = Number(c.annual_budget);
-              const vsYtd = ytdBudget - ytdActual;
-              const vsAnnual = annual - ytdActual;
-              const trend = trendByCat.get(c.id) ?? [];
-              return (
-                <tr key={c.id} className="border-b border-border/40 hover:bg-background/40">
-                  <td className="px-3 py-1.5 font-medium">{c.name}</td>
-                  <td className="text-right tabular-nums px-3">{fmt(annual)}</td>
-                  <td className="text-right tabular-nums px-3">{fmt(ytdActual)}</td>
-                  <td className="text-right tabular-nums px-3 text-muted-foreground">{fmt(ytdBudget)}</td>
-                  <td className={`text-right tabular-nums px-3 ${vsYtd < 0 ? "text-destructive" : "text-muted-foreground"}`}>{fmt(vsYtd)}</td>
-                  <td className={`text-right tabular-nums px-3 ${vsAnnual < 0 ? "text-destructive" : "text-muted-foreground"}`}>{fmt(vsAnnual)}</td>
-                  <td className="px-3"><Sparkline values={trend} /></td>
-                </tr>
-              );
-            })}
-            {cats.length === 0 && (
-              <tr><td colSpan={7} className="text-center py-8 text-muted-foreground text-sm">No categories yet — upload a report to seed them.</td></tr>
-            )}
-          </tbody>
-          {cats.length > 0 && (
-            <tfoot>
-              <tr className="font-semibold bg-background/40">
-                <td className="px-3 py-2">Total</td>
-                <td className="text-right tabular-nums px-3">{fmt(totals.annualBudget)}</td>
-                <td className="text-right tabular-nums px-3">{fmt(totals.ytdActual)}</td>
-                <td className="text-right tabular-nums px-3 text-muted-foreground">{fmt(totals.ytdBudget)}</td>
-                <td className={`text-right tabular-nums px-3 ${totals.ytdBudget - totals.ytdActual < 0 ? "text-destructive" : ""}`}>{fmt(totals.ytdBudget - totals.ytdActual)}</td>
-                <td className={`text-right tabular-nums px-3 ${totals.annualBudget - totals.ytdActual < 0 ? "text-destructive" : ""}`}>{fmt(totals.annualBudget - totals.ytdActual)}</td>
-                <td></td>
-              </tr>
-            </tfoot>
-          )}
-        </table>
-      </div>
+      {renderCategoryTable("Income", totals.incomeCats, lineByCat, trendByCat, totals.incomeAnnual, totals.incomeYtdActual, totals.incomeYtdBudget, "income")}
+      <div className="mt-4" />
+      {renderCategoryTable("Expense", totals.expenseCats, lineByCat, trendByCat, totals.expenseAnnual, totals.expenseYtdActual, totals.expenseYtdBudget, "expense")}
     </>
+  );
+}
+
+function renderCategoryTable(
+  title: string,
+  cats: Category[],
+  lineByCat: Map<string, SnapshotLine>,
+  trendByCat: Map<string, number[]>,
+  annualTotal: number,
+  ytdActualTotal: number,
+  ytdBudgetTotal: number,
+  kind: "income" | "expense",
+) {
+  const variancePositiveIsGood = kind === "income";
+  const varianceClass = (n: number) =>
+    n === 0
+      ? "text-muted-foreground"
+      : (n > 0) === variancePositiveIsGood
+        ? "text-muted-foreground"
+        : "text-destructive";
+  return (
+    <div className="bg-surface border border-border rounded-2xl overflow-x-auto">
+      <div className="px-3 py-2 border-b border-border flex items-baseline justify-between">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h3>
+        <span className="text-xs text-muted-foreground">{cats.length} categories</span>
+      </div>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-border text-[11px] uppercase tracking-wider text-muted-foreground">
+            <th className="text-left px-3 py-2">Category</th>
+            <th className="text-right px-3 py-2">Annual budget</th>
+            <th className="text-right px-3 py-2">YTD actual</th>
+            <th className="text-right px-3 py-2">YTD budget</th>
+            <th className="text-right px-3 py-2">vs. YTD budget</th>
+            <th className="text-right px-3 py-2">vs. annual</th>
+            <th className="text-left px-3 py-2">Trend</th>
+          </tr>
+        </thead>
+        <tbody>
+          {cats.map((c) => {
+            const line = lineByCat.get(c.id);
+            const ytdActual = line ? Number(line.ytd_actual) : 0;
+            const ytdBudget = line ? Number(line.ytd_budget) : 0;
+            const annual = Number(c.annual_budget);
+            // For income: actual > budget is GOOD; for expense: actual > budget is BAD
+            const vsYtd = kind === "income" ? ytdActual - ytdBudget : ytdBudget - ytdActual;
+            const vsAnnual = kind === "income" ? ytdActual - annual : annual - ytdActual;
+            const trend = trendByCat.get(c.id) ?? [];
+            return (
+              <tr key={c.id} className="border-b border-border/40 hover:bg-background/40">
+                <td className="px-3 py-1.5 font-medium">{c.name}</td>
+                <td className="text-right tabular-nums px-3">{fmt(annual)}</td>
+                <td className="text-right tabular-nums px-3">{fmt(ytdActual)}</td>
+                <td className="text-right tabular-nums px-3 text-muted-foreground">{fmt(ytdBudget)}</td>
+                <td className={`text-right tabular-nums px-3 ${varianceClass(vsYtd)}`}>{fmt(vsYtd)}</td>
+                <td className={`text-right tabular-nums px-3 ${varianceClass(vsAnnual)}`}>{fmt(vsAnnual)}</td>
+                <td className="px-3"><Sparkline values={trend} /></td>
+              </tr>
+            );
+          })}
+          {cats.length === 0 && (
+            <tr><td colSpan={7} className="text-center py-8 text-muted-foreground text-sm">No {title.toLowerCase()} categories yet.</td></tr>
+          )}
+        </tbody>
+        {cats.length > 0 && (
+          <tfoot>
+            <tr className="font-semibold bg-background/40">
+              <td className="px-3 py-2">Total</td>
+              <td className="text-right tabular-nums px-3">{fmt(annualTotal)}</td>
+              <td className="text-right tabular-nums px-3">{fmt(ytdActualTotal)}</td>
+              <td className="text-right tabular-nums px-3 text-muted-foreground">{fmt(ytdBudgetTotal)}</td>
+              <td className={`text-right tabular-nums px-3 ${varianceClass(kind === "income" ? ytdActualTotal - ytdBudgetTotal : ytdBudgetTotal - ytdActualTotal)}`}>
+                {fmt(kind === "income" ? ytdActualTotal - ytdBudgetTotal : ytdBudgetTotal - ytdActualTotal)}
+              </td>
+              <td className={`text-right tabular-nums px-3 ${varianceClass(kind === "income" ? ytdActualTotal - annualTotal : annualTotal - ytdActualTotal)}`}>
+                {fmt(kind === "income" ? ytdActualTotal - annualTotal : annualTotal - ytdActualTotal)}
+              </td>
+              <td></td>
+            </tr>
+          </tfoot>
+        )}
+      </table>
+    </div>
   );
 }
 
@@ -298,7 +365,7 @@ function ReportsTab({ year }: { year: number }) {
   const [uploading, setUploading] = useState(false);
   const [importing, setImporting] = useState<Report | null>(null);
   const [annualOpen, setAnnualOpen] = useState(false);
-  const [annualMeta, setAnnualMeta] = useState<{ count: number; updatedAt: string | null; total: number }>({ count: 0, updatedAt: null, total: 0 });
+  const [annualMeta, setAnnualMeta] = useState<{ count: number; updatedAt: string | null; income: number; expense: number }>({ count: 0, updatedAt: null, income: 0, expense: 0 });
 
   useEffect(() => { load(); }, [year]);
 
@@ -311,15 +378,16 @@ function ReportsTab({ year }: { year: number }) {
     setReports((data ?? []) as Report[]);
     const { data: catData } = await supabase
       .from("budget_categories")
-      .select("annual_budget,updated_at")
+      .select("annual_budget,updated_at,kind")
       .eq("fiscal_year", year);
-    const arr = (catData ?? []) as { annual_budget: number; updated_at: string | null }[];
-    const total = arr.reduce((s, c) => s + Number(c.annual_budget ?? 0), 0);
+    const arr = (catData ?? []) as { annual_budget: number; updated_at: string | null; kind: "income" | "expense" }[];
+    const income = arr.filter((c) => c.kind === "income").reduce((s, c) => s + Number(c.annual_budget ?? 0), 0);
+    const expense = arr.filter((c) => c.kind !== "income").reduce((s, c) => s + Number(c.annual_budget ?? 0), 0);
     const latest = arr.reduce<string | null>((acc, c) => {
       if (!c.updated_at) return acc;
       return !acc || c.updated_at > acc ? c.updated_at : acc;
     }, null);
-    setAnnualMeta({ count: arr.length, updatedAt: latest, total });
+    setAnnualMeta({ count: arr.length, updatedAt: latest, income, expense });
   }
 
   async function upload(e: React.FormEvent) {
@@ -380,7 +448,11 @@ function ReportsTab({ year }: { year: number }) {
       <div className="bg-surface border border-border rounded-2xl p-4 mb-4 flex items-center justify-between gap-3 flex-wrap">
         <div className="min-w-0">
           <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Annual budget — FY {year}</div>
-          <div className="text-xl font-display font-semibold tabular-nums mt-0.5">{fmt(annualMeta.total)}</div>
+          <div className="flex items-baseline gap-3 mt-0.5 flex-wrap">
+            <div><span className="text-[11px] text-muted-foreground mr-1">Income</span><span className="text-lg font-display font-semibold tabular-nums text-emerald-600">{fmt(annualMeta.income)}</span></div>
+            <div><span className="text-[11px] text-muted-foreground mr-1">Expense</span><span className="text-lg font-display font-semibold tabular-nums text-rose-600">{fmt(annualMeta.expense)}</span></div>
+            <div><span className="text-[11px] text-muted-foreground mr-1">Net</span><span className={`text-lg font-display font-semibold tabular-nums ${annualMeta.income - annualMeta.expense < 0 ? "text-destructive" : ""}`}>{fmt(annualMeta.income - annualMeta.expense)}</span></div>
+          </div>
           <div className="text-[11px] text-muted-foreground mt-0.5">
             {annualMeta.count > 0
               ? <>{annualMeta.count} categories · last updated {annualMeta.updatedAt ? format(new Date(annualMeta.updatedAt), "MMM d, yyyy") : "—"}</>

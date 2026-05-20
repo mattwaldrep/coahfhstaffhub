@@ -6,6 +6,7 @@ const LineSchema = z.object({
   categoryId: z.string().uuid().nullable(),
   createAs: z.string().min(1).max(200).nullable(),
   annualBudget: z.number(),
+  kind: z.enum(["income", "expense"]),
 });
 
 const ApplySchema = z.object({
@@ -25,8 +26,7 @@ export const applyAnnualBudget = createServerFn({ method: "POST" })
       throw new Error("Core access required");
     }
 
-    // Dedup by category_id (or by createAs name when creating)
-    const byKey = new Map<string, { categoryId: string | null; createAs: string | null; annualBudget: number }>();
+    const byKey = new Map<string, { categoryId: string | null; createAs: string | null; annualBudget: number; kind: "income" | "expense" }>();
     for (const line of data.lines) {
       const key = line.categoryId ?? `new::${(line.createAs ?? "").toLowerCase()}`;
       const prev = byKey.get(key);
@@ -45,6 +45,7 @@ export const applyAnnualBudget = createServerFn({ method: "POST" })
             name: v.createAs,
             fiscal_year: data.fiscalYear,
             annual_budget: v.annualBudget,
+            kind: v.kind,
           })
           .select("id").single();
         if (error) throw new Error(`Couldn't create category "${v.createAs}": ${error.message}`);
@@ -56,7 +57,7 @@ export const applyAnnualBudget = createServerFn({ method: "POST" })
 
       const { error } = await supabase
         .from("budget_categories")
-        .update({ annual_budget: v.annualBudget })
+        .update({ annual_budget: v.annualBudget, kind: v.kind })
         .eq("id", categoryId);
       if (error) throw new Error(`Couldn't update annual budget: ${error.message}`);
       updated++;
