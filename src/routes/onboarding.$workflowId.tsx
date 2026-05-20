@@ -266,6 +266,7 @@ function WorkflowDetail() {
                       collapsed={collapsed}
                       toggle={toggle}
                       isCore={isCore}
+                      assignableUsers={assignableUsers}
                       onComplete={async (id, completed) => {
                         await completeFn({ data: { task_id: id, completed } });
                         invalidate();
@@ -289,8 +290,29 @@ function WorkflowDetail() {
                         await delFn({ data: { task_id: id } });
                         invalidate();
                       }}
+                      onAssign={async (id, assigneeId, dueDate) => {
+                        try {
+                          await assignFn({
+                            data: { onboardingTaskId: id, assigneeId, dueDate: dueDate ?? null },
+                          });
+                          toast.success("Assigned");
+                          invalidate();
+                        } catch (e: any) {
+                          toast.error(e?.message ?? "Failed to assign");
+                        }
+                      }}
+                      onUnassign={async (id) => {
+                        try {
+                          await unassignFn({ data: { onboardingTaskId: id } });
+                          toast.success("Task removed");
+                          invalidate();
+                        } catch (e: any) {
+                          toast.error(e?.message ?? "Failed");
+                        }
+                      }}
                     />
                   ))}
+
                   {isCore && (
                     <AddInline
                       placeholder={`Add task to ${section}…`}
