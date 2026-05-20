@@ -45,10 +45,16 @@ import {
   Trash2,
   Repeat,
   X,
+  CalendarDays,
 } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+
 import { toast } from "sonner";
 import { useUndoableAction } from "@/lib/use-undoable-action";
 import { scoreEvent, readinessColor } from "@/lib/event-readiness";
+import { findConflicts, type ConflictEvent } from "@/lib/event-conflicts";
+import { AlertTriangle } from "lucide-react";
+
 
 export const Route = createFileRoute("/calendar")({
   component: CalendarPage,
@@ -106,7 +112,9 @@ type EventRow = {
   church_covering: string | null;
   childcare_needed: boolean;
   childcare_arranged: boolean;
+  class_series_id: string | null;
 };
+
 
 type Occurrence = EventRow & { occurrence_date: Date };
 
@@ -117,6 +125,17 @@ type ChecklistItem = {
   done: boolean;
   position: number;
 };
+
+type ClassSeries = {
+  id: string;
+  name: string;
+  default_leader_name: string | null;
+  default_teacher_name: string | null;
+  default_childcare_needed: boolean;
+  default_room_id: string | null;
+};
+
+type Room = { id: string; name: string };
 
 type FormState = {
   id?: string;
@@ -144,6 +163,8 @@ type FormState = {
   church_covering: string;
   childcare_needed: boolean;
   childcare_arranged: boolean;
+  class_series_id: string;
+  room_ids: string[];
 };
 
 const emptyForm = (start = ""): FormState => ({
@@ -171,7 +192,10 @@ const emptyForm = (start = ""): FormState => ({
   church_covering: "",
   childcare_needed: false,
   childcare_arranged: false,
+  class_series_id: "",
+  room_ids: [],
 });
+
 
 function buildRRule(f: FormState, startDate: Date): string | null {
   if (!f.recurs) return null;
@@ -253,7 +277,11 @@ function CalendarBody() {
   const [editingOccurrence, setEditingOccurrence] = useState<Date | null>(null);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [newItem, setNewItem] = useState("");
+  const [classSeries, setClassSeries] = useState<ClassSeries[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const eventRoomsMap = useRef<Map<string, string[]>>(new Map());
   const undo = useUndoableAction();
+
 
   const range = useMemo(() => {
     if (view === "week") {
@@ -294,13 +322,28 @@ function CalendarBody() {
 
   async function load() {
     // Fetch events overlapping range, plus any recurring (which may have started earlier)
-    const { data } = await supabase
-      .from("calendar_events")
-      .select("*")
-      .or(`and(start_at.gte.${range.start.toISOString()},start_at.lte.${range.end.toISOString()}),rrule.not.is.null`)
-      .order("start_at", { ascending: true });
+    const [{ data }, { data: er }, { data: cs }, { data: rs }] = await Promise.all([
+      supabase
+        .from("calendar_events")
+        .select("*")
+        .or(`and(start_at.gte.${range.start.toISOString()},start_at.lte.${range.end.toISOString()}),rrule.not.is.null`)
+        .order("start_at", { ascending: true }),
+      supabase.from("event_rooms").select("event_id, room_id"),
+      supabase.from("class_series").select("id, name, default_leader_name, default_teacher_name, default_childcare_needed, default_room_id").eq("active", true).order("name"),
+      supabase.from("rooms").select("id, name").eq("active", true).order("name"),
+    ]);
     setEvents(data ?? []);
+    const map = new Map<string, string[]>();
+    for (const row of er ?? []) {
+      const arr = map.get(row.event_id) ?? [];
+      arr.push(row.room_id);
+      map.set(row.event_id, arr);
+    }
+    eventRoomsMap.current = map;
+    setClassSeries((cs ?? []) as ClassSeries[]);
+    setRooms((rs ?? []) as Room[]);
   }
+
 
   async function loadChecklist(eventId: string) {
     const { data } = await supabase
@@ -371,7 +414,10 @@ function CalendarBody() {
       church_covering: ev.church_covering ?? "",
       childcare_needed: ev.childcare_needed ?? false,
       childcare_arranged: ev.childcare_arranged ?? false,
+      class_series_id: ev.class_series_id ?? "",
+      room_ids: eventRoomsMap.current.get(ev.id) ?? [],
     });
+
     setEditingOccurrence(occ.occurrence_date);
     loadChecklist(ev.id);
     setOpen(true);
@@ -415,11 +461,19 @@ function CalendarBody() {
       church_covering: form.church_covering || null,
       childcare_needed: form.childcare_needed,
       childcare_arranged: form.childcare_arranged,
+      class_series_id: form.class_series_id || null,
     };
-    const { error } = form.id
-      ? await supabase.from("calendar_events").update(payload).eq("id", form.id)
-      : await supabase.from("calendar_events").insert(payload);
-    if (error) { toast.error(error.message); return; }
+    const result = form.id
+      ? await supabase.from("calendar_events").update(payload).eq("id", form.id).select("id").single()
+      : await supabase.from("calendar_events").insert(payload).select("id").single();
+    if (result.error) { toast.error(result.error.message); return; }
+    const savedId = result.data?.id ?? form.id;
+    if (savedId) {
+      await supabase.from("event_rooms").delete().eq("event_id", savedId);
+      if (form.room_ids.length > 0) {
+        await supabase.from("event_rooms").insert(form.room_ids.map((rid) => ({ event_id: savedId, room_id: rid })));
+      }
+    }
     const gaps = classGaps(form);
     if (gaps.length > 0) {
       toast.warning(`Saved. Still needed: ${gaps.join(", ")}.`);
@@ -429,6 +483,7 @@ function CalendarBody() {
     setOpen(false);
     load();
   }
+
 
   async function remove() {
     if (!form.id) return;
@@ -557,6 +612,80 @@ function CalendarBody() {
     return true;
   });
 
+  // Per-occurrence conflict map keyed by `${eventId}-${time}`
+  const conflictMap = useMemo(() => {
+    const m = new Map<string, number>();
+    const items: ConflictEvent[] = visible.map((o) => ({
+      id: `${o.id}-${o.occurrence_date.getTime()}`,
+      title: o.title,
+      start_at: o.occurrence_date.toISOString(),
+      end_at: o.end_at,
+      all_day: o.all_day,
+      leader_name: o.leader_name,
+      room_ids: eventRoomsMap.current.get(o.id) ?? [],
+    }));
+    for (const c of items) {
+      const conflicts = findConflicts(c, items);
+      if (conflicts.length) m.set(c.id, conflicts.length);
+    }
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, events]);
+
+  // Conflicts for the currently-edited event (live as the form changes)
+  const formConflicts = useMemo(() => {
+    if (!open || !form.start_at) return [];
+    const startDate = form.all_day
+      ? new Date(`${form.start_at.slice(0, 10)}T12:00:00Z`)
+      : new Date(form.start_at);
+    const endDate = form.end_at
+      ? (form.all_day ? new Date(`${form.end_at.slice(0, 10)}T12:00:00Z`) : new Date(form.end_at))
+      : null;
+    const candidate: ConflictEvent = {
+      id: form.id ?? "__new__",
+      title: form.title,
+      start_at: startDate.toISOString(),
+      end_at: endDate ? endDate.toISOString() : null,
+      all_day: form.all_day,
+      leader_name: form.leader_name,
+      room_ids: form.room_ids,
+    };
+    const existing: ConflictEvent[] = visible
+      .filter((o) => o.id !== form.id)
+      .map((o) => ({
+        id: o.id,
+        title: o.title,
+        start_at: o.occurrence_date.toISOString(),
+        end_at: o.end_at,
+        all_day: o.all_day,
+        leader_name: o.leader_name,
+        room_ids: eventRoomsMap.current.get(o.id) ?? [],
+      }));
+    return findConflicts(candidate, existing);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, form, visible]);
+
+  function applySeries(seriesId: string) {
+    if (!seriesId) {
+      setForm((f) => ({ ...f, class_series_id: "" }));
+      return;
+    }
+    const s = classSeries.find((x) => x.id === seriesId);
+    if (!s) return;
+    const teacher = s.default_teacher_name || s.default_leader_name || "";
+    const roomName = s.default_room_id ? rooms.find((r) => r.id === s.default_room_id)?.name ?? "" : "";
+    setForm((f) => ({
+      ...f,
+      class_series_id: seriesId,
+      category: f.category || "Class",
+      leader_name: f.leader_name || teacher,
+      childcare_needed: f.childcare_needed || s.default_childcare_needed,
+      room_needed: f.room_needed || roomName,
+      room_ids: f.room_ids.length ? f.room_ids : (s.default_room_id ? [s.default_room_id] : []),
+    }));
+  }
+
+
   return (
     <>
       <PlanningBanner />
@@ -638,9 +767,10 @@ function CalendarBody() {
         </div>
       </div>
 
-      {view === "month" && <MonthGrid cursor={cursor} occurrences={visible} onPickDay={openNew} onPickEvent={openEdit} canEdit={canEdit} />}
+      {view === "month" && <MonthGrid cursor={cursor} occurrences={visible} conflictMap={conflictMap} onPickDay={openNew} onPickEvent={openEdit} canEdit={canEdit} />}
       {view === "week" && <WeekStrip cursor={cursor} occurrences={visible} onPickDay={openNew} onPickEvent={openEdit} canEdit={canEdit} />}
-      {view === "list" && <ListView occurrences={visible} onPickEvent={openEdit} />}
+      {view === "list" && <ListView occurrences={visible} conflictMap={conflictMap} onPickEvent={openEdit} />}
+
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto sm:rounded-lg max-sm:!w-screen max-sm:!max-w-none max-sm:!h-[100dvh] max-sm:!rounded-none max-sm:!max-h-none">
@@ -666,6 +796,59 @@ function CalendarBody() {
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={submit} className="space-y-4">
+            {formConflicts.length > 0 && (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs flex gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-medium text-amber-700">
+                    {formConflicts.length} scheduling conflict{formConflicts.length === 1 ? "" : "s"}
+                  </div>
+                  <ul className="mt-1 space-y-0.5">
+                    {formConflicts.slice(0, 5).map((c, i) => (
+                      <li key={i}>
+                        Overlaps <span className="font-medium">{c.other.title}</span> ({c.reason === "both" ? "same room & leader" : `same ${c.reason}`})
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+            {classSeries.length > 0 && (
+              <div className="space-y-2">
+                <Label>Class series (optional)</Label>
+                <Select value={form.class_series_id || "_none"} onValueChange={(v) => applySeries(v === "_none" ? "" : v)}>
+                  <SelectTrigger><SelectValue placeholder="No series" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">No series</SelectItem>
+                    {classSeries.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {rooms.length > 0 && (
+              <div className="space-y-2">
+                <Label>Rooms</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {rooms.map((r) => {
+                    const on = form.room_ids.includes(r.id);
+                    return (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => setForm({
+                          ...form,
+                          room_ids: on ? form.room_ids.filter((x) => x !== r.id) : [...form.room_ids, r.id],
+                        })}
+                        className={`text-xs px-2.5 py-1 rounded-full border transition ${
+                          on ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"
+                        }`}
+                      >{r.name}</button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>Title</Label>
               <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
@@ -1010,9 +1193,30 @@ function ReadinessBadge({ value }: { value: string }) {
   );
 }
 
-function EventChip({ occ, compact }: { occ: Occurrence; compact?: boolean }) {
+function EventChip({ occ, compact, conflictCount, checklistInfo }: {
+  occ: Occurrence;
+  compact?: boolean;
+  conflictCount?: number;
+  checklistInfo?: { total: number; done: number };
+}) {
   const cal = SUB_CALS.find((s) => s.value === occ.sub_calendar)!;
   const gaps = classGaps(occ);
+  const readiness = scoreEvent({
+    category: occ.category,
+    leader_name: occ.leader_name,
+    childcare_needed: occ.childcare_needed,
+    childcare_arranged: occ.childcare_arranged,
+    room_needed: occ.room_needed,
+    checklist_total: checklistInfo?.total ?? 0,
+    checklist_done: checklistInfo?.done ?? 0,
+  });
+  const ringColor = readiness.level === "ready" ? "bg-emerald-500" : readiness.level === "warning" ? "bg-amber-500" : "bg-destructive";
+  const titleBits = [
+    `${readiness.score}% ready`,
+    readiness.missing.length ? `Missing: ${readiness.missing.join(", ")}` : "",
+    gaps.length ? `Class needs: ${gaps.join(", ")}` : "",
+    conflictCount ? `${conflictCount} conflict${conflictCount === 1 ? "" : "s"}` : "",
+  ].filter(Boolean).join(" · ");
   return (
     <div
       className={`text-[10px] truncate px-1.5 py-0.5 rounded hover:opacity-80 flex items-center gap-1 ${compact ? "" : ""}`}
@@ -1020,11 +1224,10 @@ function EventChip({ occ, compact }: { occ: Occurrence; compact?: boolean }) {
         background: `color-mix(in oklab, ${cal.color} 22%, transparent)`,
         color: `color-mix(in oklab, ${cal.color} 90%, white)`,
       }}
-      title={gaps.length ? `Class needs: ${gaps.join(", ")}` : undefined}
+      title={titleBits || undefined}
     >
-      {gaps.length > 0 && (
-        <span className="inline-block w-1.5 h-1.5 rounded-full bg-warning shrink-0" />
-      )}
+      <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${ringColor}`} />
+      {conflictCount ? <AlertTriangle className="w-2.5 h-2.5 text-amber-500 shrink-0" /> : null}
       <span className="truncate">
         {!occ.all_day && <>{format(occ.occurrence_date, "h:mm")} </>}
         {occ.title}
@@ -1034,10 +1237,11 @@ function EventChip({ occ, compact }: { occ: Occurrence; compact?: boolean }) {
 }
 
 function MonthGrid({
-  cursor, occurrences, onPickDay, onPickEvent, canEdit,
+  cursor, occurrences, conflictMap, onPickDay, onPickEvent, canEdit,
 }: {
   cursor: Date;
   occurrences: Occurrence[];
+  conflictMap: Map<string, number>;
   onPickDay: (d: Date) => void;
   onPickEvent: (o: Occurrence) => void;
   canEdit: boolean;
@@ -1072,7 +1276,7 @@ function MonthGrid({
               <div className="space-y-0.5 overflow-hidden">
                 {dayEvents.slice(0, 3).map((o, i) => (
                   <div key={`${o.id}-${i}`} onClick={(e) => { e.stopPropagation(); onPickEvent(o); }}>
-                    <EventChip occ={o} />
+                    <EventChip occ={o} conflictCount={conflictMap.get(`${o.id}-${o.occurrence_date.getTime()}`)} />
                   </div>
                 ))}
                 {dayEvents.length > 3 && (
@@ -1086,6 +1290,7 @@ function MonthGrid({
     </div>
   );
 }
+
 
 function WeekStrip({
   cursor, occurrences, onPickDay, onPickEvent, canEdit,
@@ -1135,14 +1340,15 @@ function WeekStrip({
   );
 }
 
-function ListView({ occurrences, onPickEvent }: { occurrences: Occurrence[]; onPickEvent: (o: Occurrence) => void }) {
+function ListView({ occurrences, conflictMap, onPickEvent }: { occurrences: Occurrence[]; conflictMap: Map<string, number>; onPickEvent: (o: Occurrence) => void }) {
   if (occurrences.length === 0) {
     return (
-      <div className="bg-surface border border-border rounded-2xl p-8 text-sm text-muted-foreground text-center">
-        No events to show.
+      <div className="bg-surface border border-border rounded-2xl p-2">
+        <EmptyState icon={CalendarDays} title="No events to show" description="Try clearing filters or adding an event." />
       </div>
     );
   }
+
   return (
     <div className="bg-surface border border-border rounded-2xl divide-y divide-border">
       {occurrences.map((o, i) => {
@@ -1159,6 +1365,20 @@ function ListView({ occurrences, onPickEvent }: { occurrences: Occurrence[]; onP
                 {o.title}
                 {o.rrule && <Repeat className="w-3 h-3 text-muted-foreground" />}
                 {o.readiness && <ReadinessBadge value={o.readiness} />}
+                {(() => {
+                  const r = scoreEvent({
+                    category: o.category, leader_name: o.leader_name,
+                    childcare_needed: o.childcare_needed, childcare_arranged: o.childcare_arranged,
+                    room_needed: o.room_needed,
+                  });
+                  return <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${readinessColor(r.level)}`}>{r.score}%</span>;
+                })()}
+                {conflictMap.get(`${o.id}-${o.occurrence_date.getTime()}`) ? (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" /> Conflict
+                  </span>
+                ) : null}
+
                 {o.pco_registration && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">PCO</span>
                 )}
