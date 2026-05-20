@@ -989,7 +989,7 @@ function CalendarBody() {
             {rooms.length > 0 && (
               <div className="space-y-2">
                 <Label>Rooms</Label>
-                <div className="flex flex-wrap gap-1.5">
+                <div className={`flex flex-wrap gap-1.5 ${form.room_not_needed ? "opacity-50 pointer-events-none" : ""}`}>
                   {rooms.map((r) => {
                     const on = form.room_ids.includes(r.id);
                     return (
@@ -1007,6 +1007,13 @@ function CalendarBody() {
                     );
                   })}
                 </div>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                  <Switch
+                    checked={form.room_not_needed}
+                    onCheckedChange={(v) => setForm({ ...form, room_not_needed: v })}
+                  />
+                  No room needed (e.g. holiday / FYI)
+                </label>
               </div>
             )}
 
