@@ -27,6 +27,8 @@ export type Database = {
           id: string
           meeting_id: string | null
           notes: string | null
+          source_checklist_item_id: string | null
+          source_event_id: string | null
           title: string
           updated_at: string
         }
@@ -42,6 +44,8 @@ export type Database = {
           id?: string
           meeting_id?: string | null
           notes?: string | null
+          source_checklist_item_id?: string | null
+          source_event_id?: string | null
           title: string
           updated_at?: string
         }
@@ -57,6 +61,8 @@ export type Database = {
           id?: string
           meeting_id?: string | null
           notes?: string | null
+          source_checklist_item_id?: string | null
+          source_event_id?: string | null
           title?: string
           updated_at?: string
         }
@@ -1169,8 +1175,12 @@ export type Database = {
       }
       event_checklist_items: {
         Row: {
+          action_item_id: string | null
+          assignee_id: string | null
           created_at: string
+          created_by: string | null
           done: boolean
+          due_date: string | null
           event_id: string
           id: string
           label: string
@@ -1178,8 +1188,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          action_item_id?: string | null
+          assignee_id?: string | null
           created_at?: string
+          created_by?: string | null
           done?: boolean
+          due_date?: string | null
           event_id: string
           id?: string
           label: string
@@ -1187,8 +1201,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          action_item_id?: string | null
+          assignee_id?: string | null
           created_at?: string
+          created_by?: string | null
           done?: boolean
+          due_date?: string | null
           event_id?: string
           id?: string
           label?: string
