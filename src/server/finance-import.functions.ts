@@ -44,6 +44,7 @@ export const applyFinanceImport = createServerFn({ method: "POST" })
             name: row.createAs,
             fiscal_year: data.fiscalYear,
             annual_budget: row.annualBudget ?? 0,
+            classification: inferClassification(row.createAs, "expense"),
           })
           .select("id")
           .single();
