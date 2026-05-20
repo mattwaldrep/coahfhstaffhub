@@ -32,6 +32,7 @@ const emptyEvent = () => ({
   action_note: "", pco_registration: false,
   missions_team_needed: false, church_covering: "",
   other_listings: "" as string,
+  room_not_needed: false, leader_not_needed: false,
 });
 
 function Editor() {
@@ -92,6 +93,8 @@ function Editor() {
       missions_team_needed: e.missions_team_needed,
       church_covering: e.church_covering ?? "",
       other_listings: (e.other_listings ?? []).join(", "),
+      room_not_needed: e.room_not_needed ?? false,
+      leader_not_needed: e.leader_not_needed ?? false,
     });
     setOpen(true);
   }
@@ -116,6 +119,8 @@ function Editor() {
       church_covering: form.church_covering || null,
       other_listings: form.other_listings
         ? form.other_listings.split(",").map(s => s.trim()).filter(Boolean) : [],
+      room_not_needed: form.room_not_needed,
+      leader_not_needed: form.leader_not_needed,
     };
     try {
       if (editId) await fnUpd({ data: { id: editId, event } });
@@ -269,7 +274,7 @@ function Editor() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Leader</Label>
-                <Input value={form.leader_name} onChange={(e) => setForm({ ...form, leader_name: e.target.value })} />
+                <Input value={form.leader_name} disabled={form.leader_not_needed} onChange={(e) => setForm({ ...form, leader_name: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label>Category</Label>
@@ -281,7 +286,7 @@ function Editor() {
               </div>
               <div className="space-y-2">
                 <Label>Room needed</Label>
-                <Input value={form.room_needed} onChange={(e) => setForm({ ...form, room_needed: e.target.value })} />
+                <Input value={form.room_needed} disabled={form.room_not_needed} onChange={(e) => setForm({ ...form, room_needed: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label>Church covering</Label>
@@ -292,6 +297,16 @@ function Editor() {
                 <Input placeholder="comma-separated" value={form.other_listings}
                   onChange={(e) => setForm({ ...form, other_listings: e.target.value })} />
               </div>
+            </div>
+            <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+              <label className="flex items-center gap-2">
+                <Switch checked={form.room_not_needed} onCheckedChange={(v) => setForm({ ...form, room_not_needed: v })} />
+                No room needed
+              </label>
+              <label className="flex items-center gap-2">
+                <Switch checked={form.leader_not_needed} onCheckedChange={(v) => setForm({ ...form, leader_not_needed: v })} />
+                No leader needed
+              </label>
             </div>
             <div className="space-y-2">
               <Label>Notes</Label>

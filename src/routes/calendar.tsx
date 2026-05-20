@@ -112,6 +112,8 @@ type EventRow = {
   church_covering: string | null;
   childcare_needed: boolean;
   childcare_arranged: boolean;
+  room_not_needed: boolean;
+  leader_not_needed: boolean;
   class_series_id: string | null;
 };
 
@@ -166,6 +168,8 @@ type FormState = {
   church_covering: string;
   childcare_needed: boolean;
   childcare_arranged: boolean;
+  room_not_needed: boolean;
+  leader_not_needed: boolean;
   class_series_id: string;
   room_ids: string[];
 };
@@ -195,6 +199,8 @@ const emptyForm = (start = ""): FormState => ({
   church_covering: "",
   childcare_needed: false,
   childcare_arranged: false,
+  room_not_needed: false,
+  leader_not_needed: false,
   class_series_id: "",
   room_ids: [],
 });
@@ -311,6 +317,8 @@ function CalendarBody() {
       childcare_needed: occ.childcare_needed,
       childcare_arranged: occ.childcare_arranged,
       has_room,
+      room_not_needed: (occ as any).room_not_needed ?? false,
+      leader_not_needed: (occ as any).leader_not_needed ?? false,
       checklist_total: adHoc.total + tplItems.length,
       checklist_done: adHoc.done + tplDone,
     });
@@ -502,6 +510,8 @@ function CalendarBody() {
       church_covering: ev.church_covering ?? "",
       childcare_needed: ev.childcare_needed ?? false,
       childcare_arranged: ev.childcare_arranged ?? false,
+      room_not_needed: (ev as any).room_not_needed ?? false,
+      leader_not_needed: (ev as any).leader_not_needed ?? false,
       class_series_id: ev.class_series_id ?? "",
       room_ids: eventRoomsMap.current.get(ev.id) ?? [],
     });
@@ -550,6 +560,8 @@ function CalendarBody() {
       church_covering: form.church_covering || null,
       childcare_needed: form.childcare_needed,
       childcare_arranged: form.childcare_arranged,
+      room_not_needed: form.room_not_needed,
+      leader_not_needed: form.leader_not_needed,
       class_series_id: form.class_series_id || null,
     };
     const result = form.id
@@ -646,6 +658,8 @@ function CalendarBody() {
       church_covering: form.church_covering || null,
       childcare_needed: form.childcare_needed,
       childcare_arranged: form.childcare_arranged,
+      room_not_needed: form.room_not_needed,
+      leader_not_needed: form.leader_not_needed,
     });
     if (insertErr) { toast.error(insertErr.message); return; }
     // 2) Add original occurrence date to excluded_dates on the series
@@ -929,6 +943,8 @@ function CalendarBody() {
                   childcare_needed: form.childcare_needed,
                   childcare_arranged: form.childcare_arranged,
                   has_room: form.room_ids.length > 0 || form.room_needed.trim().length > 0,
+                  room_not_needed: form.room_not_needed,
+                  leader_not_needed: form.leader_not_needed,
                   checklist_total: checklist.length + tplTotal,
                   checklist_done: checklist.filter((i) => i.done).length + tplDone,
                 });
@@ -973,7 +989,7 @@ function CalendarBody() {
             {rooms.length > 0 && (
               <div className="space-y-2">
                 <Label>Rooms</Label>
-                <div className="flex flex-wrap gap-1.5">
+                <div className={`flex flex-wrap gap-1.5 ${form.room_not_needed ? "opacity-50 pointer-events-none" : ""}`}>
                   {rooms.map((r) => {
                     const on = form.room_ids.includes(r.id);
                     return (
@@ -991,6 +1007,13 @@ function CalendarBody() {
                     );
                   })}
                 </div>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                  <Switch
+                    checked={form.room_not_needed}
+                    onCheckedChange={(v) => setForm({ ...form, room_not_needed: v })}
+                  />
+                  No room needed (e.g. holiday / FYI)
+                </label>
               </div>
             )}
 
@@ -1059,12 +1082,20 @@ function CalendarBody() {
                   value={form.leader_name}
                   onChange={(e) => setForm({ ...form, leader_name: e.target.value })}
                   placeholder={form.category === "Class" ? "Who's teaching?" : ""}
+                  disabled={form.leader_not_needed}
                 />
-                {form.category === "Class" && !form.leader_name && (
+                {form.category === "Class" && !form.leader_name && !form.leader_not_needed && (
                   <p className="text-[11px] text-warning">
                     Needed for classes — you can save without it, but it'll be flagged.
                   </p>
                 )}
+                <label className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                  <Switch
+                    checked={form.leader_not_needed}
+                    onCheckedChange={(v) => setForm({ ...form, leader_not_needed: v })}
+                  />
+                  No {form.category === "Class" ? "teacher" : "leader"} needed
+                </label>
               </div>
               <div className="space-y-2">
                 <Label>Location</Label>

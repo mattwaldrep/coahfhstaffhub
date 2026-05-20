@@ -220,6 +220,7 @@ export type Database = {
           id: string
           leader_id: string | null
           leader_name: string | null
+          leader_not_needed: boolean
           location: string | null
           missions_team_needed: boolean
           other_listings: string[]
@@ -227,6 +228,7 @@ export type Database = {
           readiness: Database["public"]["Enums"]["readiness"] | null
           recurrence_end_date: string | null
           room_needed: string | null
+          room_not_needed: boolean
           rrule: string | null
           start_at: string
           sub_calendar: Database["public"]["Enums"]["sub_calendar"]
@@ -249,6 +251,7 @@ export type Database = {
           id?: string
           leader_id?: string | null
           leader_name?: string | null
+          leader_not_needed?: boolean
           location?: string | null
           missions_team_needed?: boolean
           other_listings?: string[]
@@ -256,6 +259,7 @@ export type Database = {
           readiness?: Database["public"]["Enums"]["readiness"] | null
           recurrence_end_date?: string | null
           room_needed?: string | null
+          room_not_needed?: boolean
           rrule?: string | null
           start_at: string
           sub_calendar?: Database["public"]["Enums"]["sub_calendar"]
@@ -278,6 +282,7 @@ export type Database = {
           id?: string
           leader_id?: string | null
           leader_name?: string | null
+          leader_not_needed?: boolean
           location?: string | null
           missions_team_needed?: boolean
           other_listings?: string[]
@@ -285,6 +290,7 @@ export type Database = {
           readiness?: Database["public"]["Enums"]["readiness"] | null
           recurrence_end_date?: string | null
           room_needed?: string | null
+          room_not_needed?: boolean
           rrule?: string | null
           start_at?: string
           sub_calendar?: Database["public"]["Enums"]["sub_calendar"]
@@ -438,12 +444,14 @@ export type Database = {
           end_at: string | null
           id: string
           leader_name: string | null
+          leader_not_needed: boolean
           location: string | null
           missions_team_needed: boolean
           other_listings: string[]
           pco_registration: boolean
           reviewer_note: string | null
           room_needed: string | null
+          room_not_needed: boolean
           start_at: string
           status: Database["public"]["Enums"]["proposed_event_status"]
           sub_calendar: Database["public"]["Enums"]["sub_calendar"]
@@ -462,12 +470,14 @@ export type Database = {
           end_at?: string | null
           id?: string
           leader_name?: string | null
+          leader_not_needed?: boolean
           location?: string | null
           missions_team_needed?: boolean
           other_listings?: string[]
           pco_registration?: boolean
           reviewer_note?: string | null
           room_needed?: string | null
+          room_not_needed?: boolean
           start_at: string
           status?: Database["public"]["Enums"]["proposed_event_status"]
           sub_calendar: Database["public"]["Enums"]["sub_calendar"]
@@ -486,12 +496,14 @@ export type Database = {
           end_at?: string | null
           id?: string
           leader_name?: string | null
+          leader_not_needed?: boolean
           location?: string | null
           missions_team_needed?: boolean
           other_listings?: string[]
           pco_registration?: boolean
           reviewer_note?: string | null
           room_needed?: string | null
+          room_not_needed?: boolean
           start_at?: string
           status?: Database["public"]["Enums"]["proposed_event_status"]
           sub_calendar?: Database["public"]["Enums"]["sub_calendar"]

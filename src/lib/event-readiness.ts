@@ -15,6 +15,8 @@ export type ReadinessEvent = {
   childcare_arranged?: boolean | null;
   room_needed?: string | null;
   has_room?: boolean; // computed: room assigned via event_rooms OR room_needed text filled
+  room_not_needed?: boolean | null;
+  leader_not_needed?: boolean | null;
   checklist_total?: number;
   checklist_done?: number;
 };
@@ -36,24 +38,24 @@ export function scoreEvent(e: ReadinessEvent): ReadinessResult {
   const isClass = e.category === "Class";
   const missing: string[] = [];
   let score = 0;
+  const leaderSkip = !!e.leader_not_needed;
+  const roomSkip = !!e.room_not_needed;
 
   if (isClass) {
-    if (teacherFrom(e)) score += 50; // teacher == leader for classes; weighted at 50
+    if (leaderSkip || teacherFrom(e)) score += 50;
     else missing.push("Teacher");
 
     if (!e.childcare_needed || e.childcare_arranged) score += 25;
     else missing.push("Childcare");
 
-    if (hasRoom(e)) score += 25;
+    if (roomSkip || hasRoom(e)) score += 25;
     else missing.push("Room");
   } else {
     // General events: leader (40) + room (30) + checklist (30).
-    // If no checklist exists, its 30 points are awarded automatically so
-    // events without a checklist aren't penalized for it.
-    if (teacherFrom(e)) score += 40;
+    if (leaderSkip || teacherFrom(e)) score += 40;
     else missing.push("Leader");
 
-    if (hasRoom(e)) score += 30;
+    if (roomSkip || hasRoom(e)) score += 30;
     else missing.push("Room");
 
     const total = e.checklist_total ?? 0;
