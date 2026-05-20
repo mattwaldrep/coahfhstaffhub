@@ -112,6 +112,8 @@ type EventRow = {
   church_covering: string | null;
   childcare_needed: boolean;
   childcare_arranged: boolean;
+  room_not_needed: boolean;
+  leader_not_needed: boolean;
   class_series_id: string | null;
 };
 
