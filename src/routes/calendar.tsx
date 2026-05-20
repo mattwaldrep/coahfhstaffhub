@@ -46,8 +46,17 @@ import {
   Repeat,
   X,
   CalendarDays,
+  UserPlus,
+  UserMinus,
+  CheckCircle2,
 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  assignChecklistItem,
+  unassignChecklistItem,
+} from "@/lib/checklist-tasks.functions";
 
 import { toast } from "sonner";
 import { useUndoableAction } from "@/lib/use-undoable-action";
