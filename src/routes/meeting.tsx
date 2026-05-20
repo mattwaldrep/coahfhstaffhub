@@ -83,6 +83,7 @@ function MeetingPage() {
   const [notesDraft, setNotesDraft] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
   const notesTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const undo = useUndoableAction();
 
   useEffect(() => {
     if (!user) return;
