@@ -142,19 +142,17 @@ function WorkflowDetail() {
 
   const tree = useMemo(() => buildTree(data?.tasks ?? []), [data?.tasks]);
   const sectionOrder = useMemo(() => {
-    const seen = new Set<string>();
-    const order: string[] = [];
-    (data?.tasks ?? [])
-      .slice()
-      .sort((a: any, b: any) => a.sort_order - b.sort_order)
-      .forEach((t: any) => {
-        if (!t.parent_task_id && !seen.has(t.section_name)) {
-          seen.add(t.section_name);
-          order.push(t.section_name);
-        }
-      });
-    return order;
+    const firstSeen = new Map<string, string>(); // section -> earliest created_at
+    (data?.tasks ?? []).forEach((t: any) => {
+      if (t.parent_task_id) return;
+      const prev = firstSeen.get(t.section_name);
+      if (!prev || t.created_at < prev) firstSeen.set(t.section_name, t.created_at);
+    });
+    return Array.from(firstSeen.entries())
+      .sort((a, b) => (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0))
+      .map(([s]) => s);
   }, [data?.tasks]);
+
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const toggle = (id: string) => setCollapsed((c) => ({ ...c, [id]: !c[id] }));
@@ -235,6 +233,52 @@ function WorkflowDetail() {
           </div>
         </CardContent>
       </Card>
+
+      {skippedCount > 0 && (
+        <Card className="border-dashed">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <SkipForward className="w-4 h-4" />
+              Skipped tasks ({skippedCount})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            {leaves
+              .filter((l) => l.is_skipped)
+              .map((l) => (
+                <div
+                  key={l.id}
+                  className="flex items-center justify-between gap-2 text-sm py-1 px-2 rounded hover:bg-muted/50"
+                >
+                  <div className="min-w-0 flex-1">
+                    <span className="line-through text-muted-foreground">{l.task_name}</span>
+                    <span className="text-xs text-muted-foreground ml-2">· {l.section_name}</span>
+                    {l.skipped_reason && (
+                      <span className="ml-2 text-xs text-muted-foreground italic">
+                        ({l.skipped_reason})
+                      </span>
+                    )}
+                  </div>
+                  {isCore && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2"
+                      onClick={async () => {
+                        await skipFn({ data: { task_id: l.id, skipped: false } });
+                        invalidate();
+                      }}
+                    >
+                      <Undo2 className="w-3.5 h-3.5 mr-1" />
+                      <span className="text-xs">Undo</span>
+                    </Button>
+                  )}
+                </div>
+              ))}
+          </CardContent>
+        </Card>
+      )}
+
 
       <div className="space-y-4">
         {sectionOrder.map((section) => {
