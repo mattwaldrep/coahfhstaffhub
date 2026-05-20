@@ -244,57 +244,16 @@ export function AnnualBudgetDialog({
               <Badge variant="outline">{stats.create} new categories</Badge>
               <Badge variant="outline">{stats.skipped} skipped</Badge>
               <Badge variant="outline">{ignored.length} subtotals ignored</Badge>
-              <Badge>Total {fmt(stats.total)}</Badge>
+              <Badge className="bg-emerald-600 hover:bg-emerald-600">Income {fmt(stats.incomeTotal)}</Badge>
+              <Badge className="bg-rose-600 hover:bg-rose-600">Expense {fmt(stats.expenseTotal)}</Badge>
+              <Badge variant="outline">
+                Net {fmt(stats.incomeTotal - stats.expenseTotal)}
+              </Badge>
             </div>
 
             <div className="overflow-y-auto flex-1 -mx-6 px-6 mt-2 border-t border-border">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-surface">
-                  <tr className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    <th className="text-left py-2 w-[50%]">Line</th>
-                    <th className="text-right py-2">Annual budget</th>
-                    <th className="text-left py-2 pl-3">Maps to</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r, idx) => (
-                    <tr key={idx} className={`border-b border-border/40 ${r.ignored ? "opacity-40" : ""}`}>
-                      <td className="py-1.5" style={{ paddingLeft: Math.min(r.line.indent * 4, 32) }}>
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            checked={!r.ignored}
-                            onCheckedChange={(v) => {
-                              const next = [...rows]; next[idx] = { ...r, ignored: !v }; setRows(next);
-                            }}
-                          />
-                          <span className="truncate">{r.line.name}</span>
-                        </div>
-                      </td>
-                      <td className="text-right tabular-nums">{fmt(r.line.annualBudget)}</td>
-                      <td className="pl-3 py-1.5">
-                        <Select
-                          value={r.categoryId ?? "__new__"}
-                          onValueChange={(v) => {
-                            const next = [...rows];
-                            next[idx] = v === "__new__"
-                              ? { ...r, categoryId: null, createAs: r.createAs ?? r.line.name }
-                              : { ...r, categoryId: v, createAs: null };
-                            setRows(next);
-                          }}
-                        >
-                          <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__new__">+ Create "{r.createAs ?? r.line.name}"</SelectItem>
-                            {cats.map((c) => (
-                              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {renderSection("Income", incomeRows, stats.incomeTotal)}
+              {renderSection("Expense", expenseRows, stats.expenseTotal)}
             </div>
           </>
         )}
