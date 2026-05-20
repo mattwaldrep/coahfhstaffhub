@@ -764,9 +764,10 @@ function CalendarBody() {
         </div>
       </div>
 
-      {view === "month" && <MonthGrid cursor={cursor} occurrences={visible} onPickDay={openNew} onPickEvent={openEdit} canEdit={canEdit} />}
+      {view === "month" && <MonthGrid cursor={cursor} occurrences={visible} conflictMap={conflictMap} onPickDay={openNew} onPickEvent={openEdit} canEdit={canEdit} />}
       {view === "week" && <WeekStrip cursor={cursor} occurrences={visible} onPickDay={openNew} onPickEvent={openEdit} canEdit={canEdit} />}
-      {view === "list" && <ListView occurrences={visible} onPickEvent={openEdit} />}
+      {view === "list" && <ListView occurrences={visible} conflictMap={conflictMap} onPickEvent={openEdit} />}
+
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto sm:rounded-lg max-sm:!w-screen max-sm:!max-w-none max-sm:!h-[100dvh] max-sm:!rounded-none max-sm:!max-h-none">
