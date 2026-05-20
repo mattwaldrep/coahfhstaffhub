@@ -413,6 +413,8 @@ export const bulkReviewSubmission = createServerFn({ method: "POST" })
             missions_team_needed: full.missions_team_needed,
             church_covering: full.church_covering,
             other_listings: full.other_listings ?? [],
+            room_not_needed: full.room_not_needed ?? false,
+            leader_not_needed: full.leader_not_needed ?? false,
             created_by: context.userId,
           })
           .select("id")
