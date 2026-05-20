@@ -95,11 +95,15 @@ export function AnnualBudgetDialog({
     }
   }
 
+  const incomeRows = rows.filter((r) => r.line.kind === "income");
+  const expenseRows = rows.filter((r) => r.line.kind === "expense");
+
   const stats = {
     matched: rows.filter((r) => !r.ignored && r.categoryId).length,
     create: rows.filter((r) => !r.ignored && !r.categoryId && r.createAs).length,
     skipped: rows.filter((r) => r.ignored).length,
-    total: rows.filter((r) => !r.ignored).reduce((s, r) => s + r.line.annualBudget, 0),
+    incomeTotal: incomeRows.filter((r) => !r.ignored).reduce((s, r) => s + r.line.annualBudget, 0),
+    expenseTotal: expenseRows.filter((r) => !r.ignored).reduce((s, r) => s + r.line.annualBudget, 0),
   };
 
   async function handleApply() {
@@ -111,6 +115,7 @@ export function AnnualBudgetDialog({
           categoryId: r.categoryId,
           createAs: r.categoryId ? null : (r.createAs ?? r.line.name),
           annualBudget: r.line.annualBudget,
+          kind: r.line.kind,
         }));
       if (!lines.length) {
         toast.error("Nothing to import");
@@ -130,6 +135,61 @@ export function AnnualBudgetDialog({
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function renderSection(title: string, sectionRows: RowState[], subtotal: number) {
+    if (!sectionRows.length) return null;
+    return (
+      <div className="mt-4">
+        <div className="flex items-baseline justify-between mb-1">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h4>
+          <span className="text-xs tabular-nums">Subtotal {fmt(subtotal)}</span>
+        </div>
+        <table className="w-full text-sm">
+          <tbody>
+            {sectionRows.map((r) => {
+              const idx = rows.indexOf(r);
+              return (
+                <tr key={idx} className={`border-b border-border/40 ${r.ignored ? "opacity-40" : ""}`}>
+                  <td className="py-1.5 w-[50%]" style={{ paddingLeft: Math.min(r.line.indent * 4, 32) }}>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={!r.ignored}
+                        onCheckedChange={(v) => {
+                          const next = [...rows]; next[idx] = { ...r, ignored: !v }; setRows(next);
+                        }}
+                      />
+                      <span className="truncate">{r.line.name}</span>
+                    </div>
+                  </td>
+                  <td className="text-right tabular-nums">{fmt(r.line.annualBudget)}</td>
+                  <td className="pl-3 py-1.5">
+                    <Select
+                      value={r.categoryId ?? "__new__"}
+                      onValueChange={(v) => {
+                        const next = [...rows];
+                        next[idx] = v === "__new__"
+                          ? { ...r, categoryId: null, createAs: r.createAs ?? r.line.name }
+                          : { ...r, categoryId: v, createAs: null };
+                        setRows(next);
+                      }}
+                    >
+                      <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__new__">+ Create "{r.createAs ?? r.line.name}"</SelectItem>
+                        {cats.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
   }
 
   return (
