@@ -21,6 +21,7 @@ function AgendaTitle({ value, className }: { value: string; className?: string }
   return <span className={className}><LinkedText value={value} /></span>;
 }
 import { toast } from "sonner";
+import { useUndoableAction } from "@/lib/use-undoable-action";
 import {
   StandingSection,
   DevotionalSection,
@@ -82,6 +83,7 @@ function MeetingPage() {
   const [notesDraft, setNotesDraft] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
   const notesTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const undo = useUndoableAction();
 
   useEffect(() => {
     if (!user) return;
@@ -176,8 +178,21 @@ function MeetingPage() {
     await supabase.from("agenda_items").update({ status: next }).eq("id", item.id);
   };
 
-  const removeAgenda = async (id: string) => {
-    await supabase.from("agenda_items").delete().eq("id", id);
+  const removeAgenda = (id: string) => {
+    const item = agenda.find((a) => a.id === id);
+    if (!item) return;
+    undo({
+      optimistic: () => {
+        setAgenda((prev) => prev.filter((a) => a.id !== id));
+        return item;
+      },
+      rollback: (snap) => setAgenda((prev) => [...prev, snap].sort((a, b) => a.position - b.position)),
+      commit: async () => {
+        const { error } = await supabase.from("agenda_items").delete().eq("id", id);
+        if (error) throw new Error(error.message);
+      },
+      message: "Agenda item removed",
+    });
   };
 
   const editAgenda = async (id: string, title: string) => {
@@ -210,12 +225,42 @@ function MeetingPage() {
     if (error) toast.error(error.message);
   };
 
-  const toggleAction = async (item: ActionItem) => {
-    await supabase.from("action_items").update({ completed: !item.completed }).eq("id", item.id);
+  const toggleAction = (item: ActionItem) => {
+    if (item.completed) {
+      // un-completing is non-destructive — just write
+      supabase.from("action_items").update({ completed: false }).eq("id", item.id);
+      return;
+    }
+    undo({
+      optimistic: () => {
+        setActions((prev) => prev.map((a) => (a.id === item.id ? { ...a, completed: true } : a)));
+        return item;
+      },
+      rollback: (snap) =>
+        setActions((prev) => prev.map((a) => (a.id === snap.id ? { ...a, completed: false } : a))),
+      commit: async () => {
+        const { error } = await supabase.from("action_items").update({ completed: true }).eq("id", item.id);
+        if (error) throw new Error(error.message);
+      },
+      message: "Marked complete",
+    });
   };
 
-  const removeAction = async (id: string) => {
-    await supabase.from("action_items").delete().eq("id", id);
+  const removeAction = (id: string) => {
+    const item = actions.find((a) => a.id === id);
+    if (!item) return;
+    undo({
+      optimistic: () => {
+        setActions((prev) => prev.filter((a) => a.id !== id));
+        return item;
+      },
+      rollback: (snap) => setActions((prev) => [...prev, snap]),
+      commit: async () => {
+        const { error } = await supabase.from("action_items").delete().eq("id", id);
+        if (error) throw new Error(error.message);
+      },
+      message: "Action item removed",
+    });
   };
 
   const onNotesChange = (val: string) => {
