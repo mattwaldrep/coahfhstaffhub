@@ -1,77 +1,73 @@
+# Assignable ad-hoc checklist items with rich context
 
-## Goal
+Make each ad-hoc checklist item on a calendar event assignable to a user as a task. Tasks (in the in-app action list and in Google Tasks) always include the parent event's name and date so they're never decontextualized.
 
-Teach the finance module about the difference between operational money and fund-raised church-planting money so it stops reporting a single misleading "Net". Surface three layered metrics on the dashboard, and split the budget tables to match.
+## Behavior
 
-## The model
+- Each ad-hoc checklist row gets an **Assign** action (avatar + due date picker). Once assigned, the row shows assignee chip, due date, and Google-sync status — converted from a plain checkbox into a task card.
+- Completion is **fully two-way** between: the checklist item, the linked `action_item`, and the Google Task. Toggling any one updates the other two.
+- Unassigning removes the linked task (with confirm if it was already pushed to Google).
 
-Today `budget_categories.kind` is just `income | expense`. That's not enough — `4501 Release of Restricted Funds - Payroll` reads as income but is really a bookkeeping bridge, and `9500 Designated Expense` rolls up church-planting fund-raised costs that should not weigh on operational health.
+## Title & notes format
 
-Add a new column `classification` with four values:
+- **Title** (shown in app + Google Tasks): `{Event title} ({date}) — {item label}`
+  - Example: `Tuesday Bible Study (Nov 12) — Arrange childcare`
+  - For recurring events, the date is the specific occurrence the checklist belongs to.
+- **Notes**: event title, start date/time, location (if any), then a deep link back to the event:
+  `Open in CoaH: https://<app>/calendar?event={eventId}`
 
-- `operating_income` — Tithes & Offering and other above-the-line income (default for `4xxx` accounts that aren't the bridge)
-- `bridge_income` — Release of Restricted Funds for payroll (account `4501*`)
-- `operating_expense` — normal above-the-line expenses (default for all expense accounts)
-- `designated_expense` — fund-raised church-planting costs (account `9500*` and its children, e.g. Cameron Sardano CP Expense, Matt Waldrep CP Expense, Steven Castello CP Expense)
+## Schema changes
 
-`kind` stays as the high-level income/expense flag; `classification` is the layer.
+Add to `event_checklist_items`:
+- `assignee_id uuid` — FK to `auth.users`
+- `due_date date` — optional
+- `action_item_id uuid` — links to the synced `action_items` row
+- `created_by uuid`
 
-## Schema (one migration)
+Add to `action_items`:
+- `source_event_id uuid` — back-ref to the calendar event
+- `source_checklist_item_id uuid` — back-ref to the checklist row
 
-- Add `classification text NOT NULL DEFAULT 'operating_expense'` to `budget_categories` with a `CHECK` constraint over the four values.
-- Backfill existing rows from name/account-number heuristics:
-  - name starts with `4501` → `bridge_income`
-  - `kind = 'income'` (and not above) → `operating_income`
-  - name starts with `9500` or matches `*CP Expense*` → `designated_expense`
-  - everything else → `operating_expense`
+The existing `google_task_id` / `google_task_pushed_at` on `action_items` stays as the Google sync handle. The existing 15-min Google sync cron continues to pull completion back — when it flips `action_items.completed`, a trigger mirrors that to `event_checklist_items.done`.
 
-## Auto-classification on import
+## Sync logic
 
-In `src/lib/parse-qbo-budget.ts` and `src/lib/parse-qbo-csv.ts`, infer a default classification per line from the leading account number / name (same rules as the backfill). Pass it through `AnnualBudgetLine` and into the review dialog.
+A single Postgres trigger keeps `event_checklist_items.done` and `action_items.completed` in lockstep when they're linked, in either direction. The existing Google Tasks 15-min poller already updates `action_items.completed`, so Google → app → checklist propagates for free.
 
-In `src/components/finance/AnnualBudgetDialog.tsx` and `ImportReviewDialog.tsx`, add a small "Layer" select per row (Operating / Bridge / Designated) so the user can correct mismatches before applying. Persist via the existing `applyAnnualBudget` / import server fns — extend the Zod schemas with the new field, and write it on insert/update of `budget_categories`.
+When assigning:
+1. Create `action_items` row with the composed title + notes, `assignee_id`, `due_date`, back-refs to event & checklist item.
+2. Update the checklist row with `assignee_id`, `due_date`, `action_item_id`.
+3. Call existing `autoPushIfEnabled` so it lands in Google Tasks if the assignee has the integration on.
 
-`finance_snapshot_lines` doesn't need a new column; the layer is read off `budget_categories.classification` at render time.
+When unassigning: delete the `action_items` row (Google task remains — Google API doesn't reliably support deletion across users without re-auth; we mark it complete instead and surface a toast).
 
-## Dashboard rewrite (`src/routes/finance.tsx`)
+When the checklist item's label is edited after assignment: update the linked `action_items.title` (and re-push to Google if already pushed, via a PATCH to the existing Google task).
 
-Replace the current 4-Stat strip + two flat tables with:
+## UI changes (`src/routes/calendar.tsx`)
 
-**Three layered Stat cards** (YTD value, annual projection sub-line, color-coded):
+In the "Ad-hoc checklist" section of the event drawer:
+- Each row becomes a compact card: checkbox · label · assignee avatar/name · due date · small "Google" icon if pushed.
+- Right-side menu: **Assign…** (opens a popover with user search + date picker), **Unassign**, **Delete**.
+- Show toast when assigning: "Pushed to Sarah's Google Tasks" if auto-push fires.
 
-```text
-Core Local Margin            Net Operating Income         Total Org Cash Flow
-Tithes − Operating Expense   (Tithes + Bridge) − Op Exp   All Income − All Expense
-expected negative; info tone   target ≈ $0; warn if far off  neutral
-```
+## Server functions (new file `src/lib/checklist-tasks.functions.ts`)
 
-Formulas, applied across both YTD (from selected snapshot) and annual (from category budgets):
+- `assignChecklistItem({ checklistItemId, assigneeId, dueDate })` — composes title/notes from the event, inserts `action_items`, links it, runs auto-push.
+- `unassignChecklistItem({ checklistItemId })` — unlinks and removes the action item.
+- `updateChecklistItemAssignment({ checklistItemId, assigneeId?, dueDate? })` — updates both rows in sync.
 
-- `coreLocalMargin   = sum(operating_income)                       − sum(operating_expense)`
-- `netOperating      = sum(operating_income) + sum(bridge_income)  − sum(operating_expense)`
-- `totalCashFlow     = sum(all income)                             − sum(all expense)`
-
-Pacing stat stays but pulls from `operating_expense` only (designated spend is donor-driven, not pace-driven).
-
-**Tables**, in this order, each with the same column shape as today:
-
-1. Operating Income
-2. Bridge Income (Release of Restricted Funds) — small explanatory caption
-3. Operating Expense
-4. Designated Expense (Fund-raised) — small caption: "Fund-raised church-planting costs. Tracked separately so they don't distort operational health."
-
-Each section uses the existing `renderCategoryTable` with one new arg for the section caption.
-
-## Out of scope
-
-- Charts beyond the existing per-category sparklines (the user said "dashboard and charts" but the only charts today are sparklines; the three stat cards are the primary layered view).
-- A separate "Designated income" layer for non-payroll restricted releases — only the payroll bridge is called out in the prompt; the picker still lets a user assign `bridge_income` to other release accounts later if needed.
-- Changing how QBO files are uploaded, parsed for asOfMonth, or how snapshots are built.
+All use `requireSupabaseAuth` and `core` role checks (matching existing checklist policies).
 
 ## Files touched
 
-- new migration: add `classification` column + backfill
-- `src/lib/parse-qbo-budget.ts`, `src/lib/parse-qbo-csv.ts` — infer default classification
-- `src/server/finance-budget.functions.ts`, `src/server/finance-import.functions.ts`, `src/server/finance-snapshot.functions.ts` — Zod + insert/update wiring
-- `src/components/finance/AnnualBudgetDialog.tsx`, `ImportReviewDialog.tsx` — Layer picker per row
-- `src/routes/finance.tsx` — three layered metrics + four-section tables
+- **Migration** — schema additions + trigger + RLS updates
+- `src/routes/calendar.tsx` — new assign UI on each checklist row
+- `src/lib/checklist-tasks.functions.ts` — new
+- `src/server/google-tasks.functions.ts` — small helper to update an existing Google task's title/notes when the checklist label changes
+- `src/integrations/supabase/types.ts` — auto-regenerates from migration
+
+## Not in scope
+
+- Bulk assigning multiple checklist items at once (can follow if useful).
+- Assigning items from checklist *templates* — only ad-hoc items per your earlier note. Templated items stay shared/non-personal.
+- Deleting a Google Task on unassign (Google API limits make this unreliable across other users' accounts; we mark complete instead).
