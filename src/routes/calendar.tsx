@@ -642,6 +642,57 @@ function CalendarBody() {
     loadChecklist(form.id!);
   }
 
+  function currentOccurrenceDate(): Date {
+    if (editingOccurrence) return editingOccurrence;
+    if (form.start_at) {
+      const datePart = form.start_at.slice(0, 10);
+      return new Date(`${datePart}T12:00:00`);
+    }
+    return new Date();
+  }
+
+  async function toggleEventTemplate(templateId: string, attached: boolean) {
+    if (!form.id) { toast.error("Save the event first"); return; }
+    if (attached) {
+      const { error } = await supabase
+        .from("event_template_attachments" as any)
+        .delete()
+        .eq("event_id", form.id)
+        .eq("template_id", templateId);
+      if (error) { toast.error(error.message); return; }
+      setEventTemplateIds((ids) => ids.filter((i) => i !== templateId));
+    } else {
+      const { error } = await supabase
+        .from("event_template_attachments" as any)
+        .insert({ event_id: form.id, template_id: templateId });
+      if (error) { toast.error(error.message); return; }
+      setEventTemplateIds((ids) => [...ids, templateId]);
+    }
+    load();
+  }
+
+  async function toggleTemplateItem(itemId: string, currentlyDone: boolean) {
+    if (!form.id) return;
+    const occDate = currentOccurrenceDate();
+    const dateKey = format(occDate, "yyyy-MM-dd");
+    const next = !currentlyDone;
+    // Optimistic
+    setTemplateStates((s) => ({ ...s, [`${itemId}:${dateKey}`]: next }));
+    const { error } = await supabase
+      .from("event_template_item_state" as any)
+      .upsert(
+        { event_id: form.id, template_item_id: itemId, occurrence_date: dateKey, done: next },
+        { onConflict: "event_id,template_item_id,occurrence_date" },
+      );
+    if (error) {
+      toast.error(error.message);
+      setTemplateStates((s) => ({ ...s, [`${itemId}:${dateKey}`]: currentlyDone }));
+    } else {
+      // Refresh aggregate data for chips
+      load();
+    }
+  }
+
   const occurrences = useMemo(
     () => expandEvents(events, range.start, range.end),
     [events, range.start.getTime(), range.end.getTime()],
