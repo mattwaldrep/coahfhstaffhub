@@ -25,6 +25,8 @@ export const Route = createFileRoute("/finance")({
 });
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+// Calendar year of a (fiscal_year, month) cell. Jul–Dec belong to fy-1; Jan–Jun belong to fy.
+const calYearOf = (fy: number, month: number) => (month >= 7 ? fy - 1 : fy);
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n || 0);
 const pct = (n: number) => `${Math.round(n * 100)}%`;
