@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { inferClassification } from "@/lib/budget-classification";
 
 const LineSchema = z.object({
   categoryId: z.string().uuid().nullable(),
@@ -43,6 +44,7 @@ export const applyFinanceSnapshot = createServerFn({ method: "POST" })
             name: line.createAs,
             fiscal_year: data.fiscalYear,
             annual_budget: 0,
+            classification: inferClassification(line.createAs, "expense"),
           })
           .select("id").single();
         if (error) throw new Error(`Couldn't create category "${line.createAs}": ${error.message}`);

@@ -17,6 +17,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { applyAnnualBudget } from "@/server/finance-budget.functions";
 import { parseQboBudget, type AnnualBudgetLine } from "@/lib/parse-qbo-budget";
 import { matchCategory } from "@/lib/parse-qbo-csv";
+import { CLASSIFICATION_LABEL, type BudgetClassification } from "@/lib/budget-classification";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n || 0);
@@ -36,6 +37,7 @@ type RowState = {
   categoryId: string | null;
   createAs: string | null;
   ignored: boolean;
+  classification: BudgetClassification;
 };
 
 export function AnnualBudgetDialog({
@@ -86,6 +88,7 @@ export function AnnualBudgetDialog({
           categoryId: match?.id ?? null,
           createAs: match ? null : line.name,
           ignored: false,
+          classification: line.classification,
         };
       }));
     } catch (e: any) {
@@ -95,15 +98,28 @@ export function AnnualBudgetDialog({
     }
   }
 
-  const incomeRows = rows.filter((r) => r.line.kind === "income");
-  const expenseRows = rows.filter((r) => r.line.kind === "expense");
+  const sections: { key: BudgetClassification; rows: RowState[] }[] = (
+    ["operating_income", "bridge_income", "operating_expense", "designated_expense"] as BudgetClassification[]
+  ).map((key) => ({ key, rows: rows.filter((r) => r.classification === key) }));
+
+  const sumActive = (rs: RowState[]) =>
+    rs.filter((r) => !r.ignored).reduce((s, r) => s + r.line.annualBudget, 0);
+
+  const opIncomeTotal = sumActive(sections[0].rows);
+  const bridgeTotal = sumActive(sections[1].rows);
+  const opExpenseTotal = sumActive(sections[2].rows);
+  const designatedTotal = sumActive(sections[3].rows);
 
   const stats = {
     matched: rows.filter((r) => !r.ignored && r.categoryId).length,
     create: rows.filter((r) => !r.ignored && !r.categoryId && r.createAs).length,
     skipped: rows.filter((r) => r.ignored).length,
-    incomeTotal: incomeRows.filter((r) => !r.ignored).reduce((s, r) => s + r.line.annualBudget, 0),
-    expenseTotal: expenseRows.filter((r) => !r.ignored).reduce((s, r) => s + r.line.annualBudget, 0),
+    opIncomeTotal,
+    bridgeTotal,
+    opExpenseTotal,
+    designatedTotal,
+    coreLocalMargin: opIncomeTotal - opExpenseTotal,
+    netOperating: opIncomeTotal + bridgeTotal - opExpenseTotal,
   };
 
   async function handleApply() {
@@ -116,6 +132,7 @@ export function AnnualBudgetDialog({
           createAs: r.categoryId ? null : (r.createAs ?? r.line.name),
           annualBudget: r.line.annualBudget,
           kind: r.line.kind,
+          classification: r.classification,
         }));
       if (!lines.length) {
         toast.error("Nothing to import");
@@ -183,6 +200,24 @@ export function AnnualBudgetDialog({
                       </SelectContent>
                     </Select>
                   </td>
+                  <td className="pl-3 py-1.5 w-44">
+                    <Select
+                      value={r.classification}
+                      onValueChange={(v) => {
+                        const next = [...rows];
+                        next[idx] = { ...r, classification: v as BudgetClassification };
+                        setRows(next);
+                      }}
+                    >
+                      <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="operating_income">Operating income</SelectItem>
+                        <SelectItem value="bridge_income">Bridge income</SelectItem>
+                        <SelectItem value="operating_expense">Operating expense</SelectItem>
+                        <SelectItem value="designated_expense">Designated (fund-raised)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </td>
                 </tr>
               );
             })}
@@ -244,16 +279,16 @@ export function AnnualBudgetDialog({
               <Badge variant="outline">{stats.create} new categories</Badge>
               <Badge variant="outline">{stats.skipped} skipped</Badge>
               <Badge variant="outline">{ignored.length} subtotals ignored</Badge>
-              <Badge className="bg-emerald-600 hover:bg-emerald-600">Income {fmt(stats.incomeTotal)}</Badge>
-              <Badge className="bg-rose-600 hover:bg-rose-600">Expense {fmt(stats.expenseTotal)}</Badge>
-              <Badge variant="outline">
-                Net {fmt(stats.incomeTotal - stats.expenseTotal)}
-              </Badge>
+              <Badge className="bg-emerald-600 hover:bg-emerald-600">Op Income {fmt(stats.opIncomeTotal)}</Badge>
+              <Badge className="bg-sky-600 hover:bg-sky-600">Bridge {fmt(stats.bridgeTotal)}</Badge>
+              <Badge className="bg-rose-600 hover:bg-rose-600">Op Expense {fmt(stats.opExpenseTotal)}</Badge>
+              <Badge className="bg-amber-600 hover:bg-amber-600">Designated {fmt(stats.designatedTotal)}</Badge>
+              <Badge variant="outline">Core Local Margin {fmt(stats.coreLocalMargin)}</Badge>
+              <Badge variant="outline">Net Operating {fmt(stats.netOperating)}</Badge>
             </div>
 
             <div className="overflow-y-auto flex-1 -mx-6 px-6 mt-2 border-t border-border">
-              {renderSection("Income", incomeRows, stats.incomeTotal)}
-              {renderSection("Expense", expenseRows, stats.expenseTotal)}
+              {sections.map((s) => renderSection(CLASSIFICATION_LABEL[s.key], s.rows, sumActive(s.rows)))}
             </div>
           </>
         )}

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { inferClassification } from "@/lib/budget-classification";
 
 const MonthlySchema = z.record(z.string().regex(/^([1-9]|1[0-2])$/), z.number());
 
@@ -43,6 +44,7 @@ export const applyFinanceImport = createServerFn({ method: "POST" })
             name: row.createAs,
             fiscal_year: data.fiscalYear,
             annual_budget: row.annualBudget ?? 0,
+            classification: inferClassification(row.createAs, "expense"),
           })
           .select("id")
           .single();

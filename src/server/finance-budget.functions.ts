@@ -1,12 +1,21 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { inferClassification } from "@/lib/budget-classification";
+
+const ClassificationSchema = z.enum([
+  "operating_income",
+  "bridge_income",
+  "operating_expense",
+  "designated_expense",
+]);
 
 const LineSchema = z.object({
   categoryId: z.string().uuid().nullable(),
   createAs: z.string().min(1).max(200).nullable(),
   annualBudget: z.number(),
   kind: z.enum(["income", "expense"]),
+  classification: ClassificationSchema.optional(),
 });
 
 const ApplySchema = z.object({
@@ -26,12 +35,16 @@ export const applyAnnualBudget = createServerFn({ method: "POST" })
       throw new Error("Core access required");
     }
 
-    const byKey = new Map<string, { categoryId: string | null; createAs: string | null; annualBudget: number; kind: "income" | "expense" }>();
+    const byKey = new Map<
+      string,
+      { categoryId: string | null; createAs: string | null; annualBudget: number; kind: "income" | "expense"; classification: ReturnType<typeof inferClassification> }
+    >();
     for (const line of data.lines) {
       const key = line.categoryId ?? `new::${(line.createAs ?? "").toLowerCase()}`;
+      const classification = line.classification ?? inferClassification(line.createAs ?? "", line.kind);
       const prev = byKey.get(key);
       if (prev) prev.annualBudget += line.annualBudget;
-      else byKey.set(key, { ...line });
+      else byKey.set(key, { ...line, classification });
     }
 
     let created = 0;
@@ -46,6 +59,7 @@ export const applyAnnualBudget = createServerFn({ method: "POST" })
             fiscal_year: data.fiscalYear,
             annual_budget: v.annualBudget,
             kind: v.kind,
+            classification: v.classification,
           })
           .select("id").single();
         if (error) throw new Error(`Couldn't create category "${v.createAs}": ${error.message}`);
@@ -57,7 +71,7 @@ export const applyAnnualBudget = createServerFn({ method: "POST" })
 
       const { error } = await supabase
         .from("budget_categories")
-        .update({ annual_budget: v.annualBudget, kind: v.kind })
+        .update({ annual_budget: v.annualBudget, kind: v.kind, classification: v.classification })
         .eq("id", categoryId);
       if (error) throw new Error(`Couldn't update annual budget: ${error.message}`);
       updated++;

@@ -12,6 +12,8 @@ import {
   detectHeaderInfo,
 } from "./parse-qbo-csv";
 
+import { inferClassification, type BudgetClassification } from "./budget-classification";
+
 export type BudgetKind = "income" | "expense";
 
 export type AnnualBudgetLine = {
@@ -19,6 +21,7 @@ export type AnnualBudgetLine = {
   annualBudget: number;
   indent: number;
   kind: BudgetKind;
+  classification: BudgetClassification;
 };
 
 export type AnnualBudgetParseResult = {
@@ -176,7 +179,7 @@ function parseRows(rows: string[][]): AnnualBudgetParseResult {
       continue;
     }
 
-    lines.push({ name, annualBudget: annual, indent, kind: currentKind });
+    lines.push({ name, annualBudget: annual, indent, kind: currentKind, classification: inferClassification(name, currentKind) });
   }
 
   return { fiscalYear, lines, ignored };
