@@ -142,19 +142,17 @@ function WorkflowDetail() {
 
   const tree = useMemo(() => buildTree(data?.tasks ?? []), [data?.tasks]);
   const sectionOrder = useMemo(() => {
-    const seen = new Set<string>();
-    const order: string[] = [];
-    (data?.tasks ?? [])
-      .slice()
-      .sort((a: any, b: any) => a.sort_order - b.sort_order)
-      .forEach((t: any) => {
-        if (!t.parent_task_id && !seen.has(t.section_name)) {
-          seen.add(t.section_name);
-          order.push(t.section_name);
-        }
-      });
-    return order;
+    const firstSeen = new Map<string, string>(); // section -> earliest created_at
+    (data?.tasks ?? []).forEach((t: any) => {
+      if (t.parent_task_id) return;
+      const prev = firstSeen.get(t.section_name);
+      if (!prev || t.created_at < prev) firstSeen.set(t.section_name, t.created_at);
+    });
+    return Array.from(firstSeen.entries())
+      .sort((a, b) => (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0))
+      .map(([s]) => s);
   }, [data?.tasks]);
+
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const toggle = (id: string) => setCollapsed((c) => ({ ...c, [id]: !c[id] }));
