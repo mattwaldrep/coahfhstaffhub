@@ -1124,7 +1124,8 @@ export function SectionDivider({ label }: { label: string }) {
 }
 
 export function ClassesNeedingAttentionSection() {
-  const [alerts, setAlerts] = useState<Array<{ id: string; title: string; date: Date; gaps: string[] }>>([]);
+  const [alerts, setAlerts] = useState<Array<{ id: string; title: string; date: Date; gaps: string[]; leader_name: string | null; childcare_needed: boolean; childcare_arranged: boolean }>>([]);
+  const [tick, setTick] = useState(0);
   useEffect(() => {
     const horizonEnd = new Date(Date.now() + 42 * 86400000);
     supabase
@@ -1136,11 +1137,19 @@ export function ClassesNeedingAttentionSection() {
         const rows = (data ?? []) as Array<EventRowLike & { childcare_needed: boolean; childcare_arranged: boolean }>;
         const occurrences = expandEvents(rows, new Date(), horizonEnd);
         const list = occurrences
-          .map((o) => ({ id: o.id, title: o.title, date: o.occurrence_date, gaps: classGaps(o) }))
+          .map((o) => ({
+            id: o.id,
+            title: o.title,
+            date: o.occurrence_date,
+            gaps: classGaps(o),
+            leader_name: o.leader_name ?? null,
+            childcare_needed: (o as { childcare_needed?: boolean }).childcare_needed ?? false,
+            childcare_arranged: (o as { childcare_arranged?: boolean }).childcare_arranged ?? false,
+          }))
           .filter((a) => a.gaps.length > 0);
         setAlerts(list);
       });
-  }, []);
+  }, [tick]);
   return (
     <StandingSection
       title="Classes Needing Attention"
@@ -1160,8 +1169,18 @@ export function ClassesNeedingAttentionSection() {
           {alerts.map((a) => (
             <li key={`${a.id}-${a.date.toISOString()}`} className="flex items-start justify-between gap-3 text-sm">
               <div className="min-w-0">
-                <Link to="/calendar" className="font-medium hover:underline">{a.title}</Link>
-                <div className="text-xs text-warning">Needs {a.gaps.join(" + ")}</div>
+                <div className="font-medium truncate">{a.title}</div>
+                <InlineClassFixer
+                  event={{
+                    id: a.id,
+                    title: a.title,
+                    leader_name: a.leader_name,
+                    childcare_needed: a.childcare_needed,
+                    childcare_arranged: a.childcare_arranged,
+                  }}
+                  gaps={a.gaps}
+                  onSaved={() => setTick((t) => t + 1)}
+                />
               </div>
               <div className="text-xs text-muted-foreground shrink-0">{format(a.date, "EEE, MMM d")}</div>
             </li>
@@ -1171,4 +1190,5 @@ export function ClassesNeedingAttentionSection() {
     </StandingSection>
   );
 }
+
 
