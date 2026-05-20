@@ -101,12 +101,28 @@ export const applyFinanceSnapshot = createServerFn({ method: "POST" })
     }
 
     if (resolved.length > 0) {
-      const payload = resolved.map((r) => ({
+      // Dedup by category_id — table has UNIQUE(snapshot_id, category_id).
+      // Multiple parsed lines can map to the same category (duplicate account
+      // names, or user mapped two lines to one existing category). Sum values
+      // so the insert succeeds instead of throwing a duplicate-key error
+      // (which surfaces as "[object Response]" on the client).
+      const byCat = new Map<string, { ytdActual: number; ytdBudget: number; annualBudget: number | null }>();
+      for (const r of resolved) {
+        const prev = byCat.get(r.categoryId);
+        if (prev) {
+          prev.ytdActual += r.ytdActual;
+          prev.ytdBudget += r.ytdBudget;
+          if (r.annualBudget != null) prev.annualBudget = (prev.annualBudget ?? 0) + r.annualBudget;
+        } else {
+          byCat.set(r.categoryId, { ytdActual: r.ytdActual, ytdBudget: r.ytdBudget, annualBudget: r.annualBudget });
+        }
+      }
+      const payload = Array.from(byCat.entries()).map(([category_id, v]) => ({
         snapshot_id: snapshotId,
-        category_id: r.categoryId,
-        ytd_actual: r.ytdActual,
-        ytd_budget: r.ytdBudget,
-        annual_budget: r.annualBudget,
+        category_id,
+        ytd_actual: v.ytdActual,
+        ytd_budget: v.ytdBudget,
+        annual_budget: v.annualBudget,
       }));
       const { error } = await supabase.from("finance_snapshot_lines").insert(payload);
       if (error) throw new Error(`Couldn't write snapshot lines: ${error.message}`);
