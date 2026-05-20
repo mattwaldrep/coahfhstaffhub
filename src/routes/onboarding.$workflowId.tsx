@@ -28,6 +28,18 @@ import {
   setWorkflowStatus,
   deleteTask,
 } from "@/lib/onboarding.functions";
+import {
+  assignOnboardingTask,
+  unassignOnboardingTask,
+  listAssignableUsers,
+} from "@/lib/onboarding-tasks.functions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import {
@@ -39,8 +51,14 @@ import {
   Undo2,
   MoreVertical,
   Trash2,
+  UserPlus,
+  UserMinus,
+  CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+type UserOption = { id: string; full_name: string | null; email: string | null };
+
 
 export const Route = createFileRoute("/onboarding/$workflowId")({
   component: WorkflowDetail,
