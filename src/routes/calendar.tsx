@@ -463,6 +463,7 @@ function CalendarBody() {
 
     setEditingOccurrence(occ.occurrence_date);
     loadChecklist(ev.id);
+    loadTemplatesForEvent(ev.id, occ.occurrence_date);
     setOpen(true);
   }
 
