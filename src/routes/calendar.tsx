@@ -319,13 +319,28 @@ function CalendarBody() {
 
   async function load() {
     // Fetch events overlapping range, plus any recurring (which may have started earlier)
-    const { data } = await supabase
-      .from("calendar_events")
-      .select("*")
-      .or(`and(start_at.gte.${range.start.toISOString()},start_at.lte.${range.end.toISOString()}),rrule.not.is.null`)
-      .order("start_at", { ascending: true });
+    const [{ data }, { data: er }, { data: cs }, { data: rs }] = await Promise.all([
+      supabase
+        .from("calendar_events")
+        .select("*")
+        .or(`and(start_at.gte.${range.start.toISOString()},start_at.lte.${range.end.toISOString()}),rrule.not.is.null`)
+        .order("start_at", { ascending: true }),
+      supabase.from("event_rooms").select("event_id, room_id"),
+      supabase.from("class_series").select("id, name, default_leader_name, default_teacher_name, default_childcare_needed, default_room_id").eq("active", true).order("name"),
+      supabase.from("rooms").select("id, name").eq("active", true).order("name"),
+    ]);
     setEvents(data ?? []);
+    const map = new Map<string, string[]>();
+    for (const row of er ?? []) {
+      const arr = map.get(row.event_id) ?? [];
+      arr.push(row.room_id);
+      map.set(row.event_id, arr);
+    }
+    eventRoomsMap.current = map;
+    setClassSeries((cs ?? []) as ClassSeries[]);
+    setRooms((rs ?? []) as Room[]);
   }
+
 
   async function loadChecklist(eventId: string) {
     const { data } = await supabase
