@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { inferClassification } from "@/lib/budget-classification";
+import { getBudgetLineMeta } from "@/lib/budget-classification";
 
 const MonthlySchema = z.record(z.string().regex(/^([1-9]|1[0-2])$/), z.number());
 
@@ -38,13 +38,15 @@ export const applyFinanceImport = createServerFn({ method: "POST" })
     for (const row of data.rows) {
       let categoryId = row.categoryId;
       if (!categoryId && row.createAs) {
+        const meta = getBudgetLineMeta(row.createAs, "expense");
         const { data: created, error: createErr } = await supabase
           .from("budget_categories")
           .insert({
             name: row.createAs,
             fiscal_year: data.fiscalYear,
             annual_budget: row.annualBudget ?? 0,
-            classification: inferClassification(row.createAs, "expense"),
+            kind: meta.kind,
+            classification: meta.classification,
           })
           .select("id")
           .single();

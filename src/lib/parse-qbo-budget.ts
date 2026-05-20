@@ -12,9 +12,7 @@ import {
   detectHeaderInfo,
 } from "./parse-qbo-csv";
 
-import { inferClassification, type BudgetClassification } from "./budget-classification";
-
-export type BudgetKind = "income" | "expense";
+import { getBudgetLineMeta, type BudgetClassification, type BudgetKind } from "./budget-classification";
 
 export type AnnualBudgetLine = {
   name: string;
@@ -167,19 +165,32 @@ function parseRows(rows: string[][]): AnnualBudgetParseResult {
       }
     }
 
-    // Skip rollup parents and empty placeholder accounts (no budget set)
-    if (annual == null || annual === 0) {
-      ignored.push(name);
-      continue;
-    }
-
     if (!currentKind) {
       // Couldn't determine section — skip rather than misclassify
       ignored.push(name);
       continue;
     }
 
-    lines.push({ name, annualBudget: annual, indent, kind: currentKind, classification: inferClassification(name, currentKind) });
+    const meta = getBudgetLineMeta(name, currentKind);
+
+    // Skip rollup parents and empty placeholder accounts (no budget set)
+    if (annual == null || annual === 0) {
+      ignored.push(name);
+      continue;
+    }
+
+    if (meta.isRollup) {
+      ignored.push(name);
+      continue;
+    }
+
+    lines.push({
+      name,
+      annualBudget: annual,
+      indent,
+      kind: meta.kind,
+      classification: meta.classification,
+    });
   }
 
   return { fiscalYear, lines, ignored };

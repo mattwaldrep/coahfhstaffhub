@@ -172,33 +172,42 @@ export type Database = {
       }
       budget_categories: {
         Row: {
+          account_code: string | null
           annual_budget: number
           classification: string
           created_at: string
           fiscal_year: number
           id: string
+          is_below_the_line: boolean | null
+          is_rollup: boolean | null
           kind: string
           name: string
           sort_order: number
           updated_at: string
         }
         Insert: {
+          account_code?: string | null
           annual_budget?: number
           classification?: string
           created_at?: string
           fiscal_year: number
           id?: string
+          is_below_the_line?: boolean | null
+          is_rollup?: boolean | null
           kind?: string
           name: string
           sort_order?: number
           updated_at?: string
         }
         Update: {
+          account_code?: string | null
           annual_budget?: number
           classification?: string
           created_at?: string
           fiscal_year?: number
           id?: string
+          is_below_the_line?: boolean | null
+          is_rollup?: boolean | null
           kind?: string
           name?: string
           sort_order?: number
@@ -1964,6 +1973,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      extract_finance_account_code: { Args: { _name: string }; Returns: string }
       has_any_elder_access: { Args: { _user_id: string }; Returns: boolean }
       has_any_role: {
         Args: {
