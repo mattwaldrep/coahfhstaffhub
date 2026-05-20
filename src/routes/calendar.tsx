@@ -283,6 +283,9 @@ function CalendarBody() {
   const [classSeries, setClassSeries] = useState<ClassSeries[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const eventRoomsMap = useRef<Map<string, string[]>>(new Map());
+  const eventChecklistMap = useRef<Map<string, { total: number; done: number }>>(new Map());
+  const eventAttachmentsMap = useRef<Map<string, string[]>>(new Map());
+  const templateStateMap = useRef<Map<string, boolean>>(new Map()); // key: `${event_id}:${item_id}:${YYYY-MM-DD}`
   const undo = useUndoableAction();
 
   // Checklist templates
@@ -290,6 +293,28 @@ function CalendarBody() {
   const [allTemplateItems, setAllTemplateItems] = useState<TemplateItem[]>([]);
   const [eventTemplateIds, setEventTemplateIds] = useState<string[]>([]); // attached to current form event
   const [templateStates, setTemplateStates] = useState<Record<string, boolean>>({}); // key: `${item_id}:${YYYY-MM-DD}`
+
+  function readinessFor(occ: Occurrence) {
+    const roomIds = eventRoomsMap.current.get(occ.id) ?? [];
+    const has_room = roomIds.length > 0 || (occ.room_needed ?? "").trim().length > 0;
+    const adHoc = eventChecklistMap.current.get(occ.id) ?? { total: 0, done: 0 };
+    const tplIds = eventAttachmentsMap.current.get(occ.id) ?? [];
+    const tplItems = allTemplateItems.filter((i) => tplIds.includes(i.template_id));
+    const dateKey = format(occ.occurrence_date, "yyyy-MM-dd");
+    let tplDone = 0;
+    for (const it of tplItems) {
+      if (templateStateMap.current.get(`${occ.id}:${it.id}:${dateKey}`)) tplDone++;
+    }
+    return scoreEvent({
+      category: occ.category,
+      leader_name: occ.leader_name,
+      childcare_needed: occ.childcare_needed,
+      childcare_arranged: occ.childcare_arranged,
+      has_room,
+      checklist_total: adHoc.total + tplItems.length,
+      checklist_done: adHoc.done + tplDone,
+    });
+  }
 
 
   const range = useMemo(() => {
@@ -357,9 +382,36 @@ function CalendarBody() {
     setRooms((rs ?? []) as Room[]);
     setAllTemplates(((tpls ?? []) as unknown) as ChecklistTemplate[]);
     setAllTemplateItems(((tplItems ?? []) as unknown) as TemplateItem[]);
-    void atts; void states;
-  }
 
+    // Per-event ad-hoc checklist counts (for readiness scoring everywhere)
+    const { data: cli } = await supabase
+      .from("event_checklist_items")
+      .select("event_id, done");
+    const cMap = new Map<string, { total: number; done: number }>();
+    for (const row of (cli ?? []) as Array<{ event_id: string; done: boolean }>) {
+      const cur = cMap.get(row.event_id) ?? { total: 0, done: 0 };
+      cur.total += 1;
+      if (row.done) cur.done += 1;
+      cMap.set(row.event_id, cur);
+    }
+    eventChecklistMap.current = cMap;
+
+    // Per-event template attachments
+    const aMap = new Map<string, string[]>();
+    for (const row of (atts ?? []) as unknown as Array<{ event_id: string; template_id: string }>) {
+      const arr = aMap.get(row.event_id) ?? [];
+      arr.push(row.template_id);
+      aMap.set(row.event_id, arr);
+    }
+    eventAttachmentsMap.current = aMap;
+
+    // Per-occurrence template item state
+    const sMap = new Map<string, boolean>();
+    for (const row of (states ?? []) as unknown as Array<{ event_id: string; template_item_id: string; occurrence_date: string; done: boolean }>) {
+      sMap.set(`${row.event_id}:${row.template_item_id}:${row.occurrence_date}`, row.done);
+    }
+    templateStateMap.current = sMap;
+  }
 
   async function loadChecklist(eventId: string) {
     const { data } = await supabase
@@ -386,6 +438,7 @@ function CalendarBody() {
     }
     setTemplateStates(m);
   }
+
 
   function openNew(date?: Date) {
     if (!canEdit) return;
@@ -854,9 +907,9 @@ function CalendarBody() {
         </div>
       </div>
 
-      {view === "month" && <MonthGrid cursor={cursor} occurrences={visible} conflictMap={conflictMap} onPickDay={openNew} onPickEvent={openEdit} canEdit={canEdit} />}
+      {view === "month" && <MonthGrid cursor={cursor} occurrences={visible} conflictMap={conflictMap} onPickDay={openNew} onPickEvent={openEdit} canEdit={canEdit} readinessOf={readinessFor} />}
       {view === "week" && <WeekStrip cursor={cursor} occurrences={visible} onPickDay={openNew} onPickEvent={openEdit} canEdit={canEdit} />}
-      {view === "list" && <ListView occurrences={visible} conflictMap={conflictMap} onPickEvent={openEdit} />}
+      {view === "list" && <ListView occurrences={visible} conflictMap={conflictMap} onPickEvent={openEdit} readinessOf={readinessFor} />}
 
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -875,7 +928,7 @@ function CalendarBody() {
                   leader_name: form.leader_name,
                   childcare_needed: form.childcare_needed,
                   childcare_arranged: form.childcare_arranged,
-                  room_needed: form.room_needed,
+                  has_room: form.room_ids.length > 0 || form.room_needed.trim().length > 0,
                   checklist_total: checklist.length + tplTotal,
                   checklist_done: checklist.filter((i) => i.done).length + tplDone,
                 });
@@ -1358,23 +1411,14 @@ function ReadinessBadge({ value }: { value: string }) {
   );
 }
 
-function EventChip({ occ, compact, conflictCount, checklistInfo }: {
+function EventChip({ occ, compact, conflictCount, readiness }: {
   occ: Occurrence;
   compact?: boolean;
   conflictCount?: number;
-  checklistInfo?: { total: number; done: number };
+  readiness: ReturnType<typeof scoreEvent>;
 }) {
   const cal = SUB_CALS.find((s) => s.value === occ.sub_calendar)!;
   const gaps = classGaps(occ);
-  const readiness = scoreEvent({
-    category: occ.category,
-    leader_name: occ.leader_name,
-    childcare_needed: occ.childcare_needed,
-    childcare_arranged: occ.childcare_arranged,
-    room_needed: occ.room_needed,
-    checklist_total: checklistInfo?.total ?? 0,
-    checklist_done: checklistInfo?.done ?? 0,
-  });
   const ringColor = readiness.level === "ready" ? "bg-emerald-500" : readiness.level === "warning" ? "bg-amber-500" : "bg-destructive";
   const titleBits = [
     `${readiness.score}% ready`,
@@ -1402,7 +1446,7 @@ function EventChip({ occ, compact, conflictCount, checklistInfo }: {
 }
 
 function MonthGrid({
-  cursor, occurrences, conflictMap, onPickDay, onPickEvent, canEdit,
+  cursor, occurrences, conflictMap, onPickDay, onPickEvent, canEdit, readinessOf,
 }: {
   cursor: Date;
   occurrences: Occurrence[];
@@ -1410,6 +1454,7 @@ function MonthGrid({
   onPickDay: (d: Date) => void;
   onPickEvent: (o: Occurrence) => void;
   canEdit: boolean;
+  readinessOf: (occ: Occurrence) => ReturnType<typeof scoreEvent>;
 }) {
   const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 0 });
   const end = endOfWeek(endOfMonth(cursor), { weekStartsOn: 0 });
@@ -1441,7 +1486,7 @@ function MonthGrid({
               <div className="space-y-0.5 overflow-hidden">
                 {dayEvents.slice(0, 3).map((o, i) => (
                   <div key={`${o.id}-${i}`} onClick={(e) => { e.stopPropagation(); onPickEvent(o); }}>
-                    <EventChip occ={o} conflictCount={conflictMap.get(`${o.id}-${o.occurrence_date.getTime()}`)} />
+                    <EventChip occ={o} conflictCount={conflictMap.get(`${o.id}-${o.occurrence_date.getTime()}`)} readiness={readinessOf(o)} />
                   </div>
                 ))}
                 {dayEvents.length > 3 && (
@@ -1505,7 +1550,7 @@ function WeekStrip({
   );
 }
 
-function ListView({ occurrences, conflictMap, onPickEvent }: { occurrences: Occurrence[]; conflictMap: Map<string, number>; onPickEvent: (o: Occurrence) => void }) {
+function ListView({ occurrences, conflictMap, onPickEvent, readinessOf }: { occurrences: Occurrence[]; conflictMap: Map<string, number>; onPickEvent: (o: Occurrence) => void; readinessOf: (occ: Occurrence) => ReturnType<typeof scoreEvent> }) {
   if (occurrences.length === 0) {
     return (
       <div className="bg-surface border border-border rounded-2xl p-2">
@@ -1531,12 +1576,8 @@ function ListView({ occurrences, conflictMap, onPickEvent }: { occurrences: Occu
                 {o.rrule && <Repeat className="w-3 h-3 text-muted-foreground" />}
                 {o.readiness && <ReadinessBadge value={o.readiness} />}
                 {(() => {
-                  const r = scoreEvent({
-                    category: o.category, leader_name: o.leader_name,
-                    childcare_needed: o.childcare_needed, childcare_arranged: o.childcare_arranged,
-                    room_needed: o.room_needed,
-                  });
-                  return <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${readinessColor(r.level)}`}>{r.score}%</span>;
+                  const r = readinessOf(o);
+                  return <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${readinessColor(r.level)}`} title={r.missing.join(", ") || "Ready"}>{r.score}%</span>;
                 })()}
                 {conflictMap.get(`${o.id}-${o.occurrence_date.getTime()}`) ? (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 flex items-center gap-1">
