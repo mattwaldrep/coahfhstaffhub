@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { applyFinanceSnapshot } from "@/server/finance-snapshot.functions";
 import { parseQboCsv, matchCategory, type QboLine } from "@/lib/parse-qbo-csv";
+import { fiscalMonthIndex } from "@/lib/fiscal-year";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const fmt = (n: number) =>
