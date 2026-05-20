@@ -1411,23 +1411,14 @@ function ReadinessBadge({ value }: { value: string }) {
   );
 }
 
-function EventChip({ occ, compact, conflictCount, checklistInfo }: {
+function EventChip({ occ, compact, conflictCount, readiness }: {
   occ: Occurrence;
   compact?: boolean;
   conflictCount?: number;
-  checklistInfo?: { total: number; done: number };
+  readiness: ReturnType<typeof scoreEvent>;
 }) {
   const cal = SUB_CALS.find((s) => s.value === occ.sub_calendar)!;
   const gaps = classGaps(occ);
-  const readiness = scoreEvent({
-    category: occ.category,
-    leader_name: occ.leader_name,
-    childcare_needed: occ.childcare_needed,
-    childcare_arranged: occ.childcare_arranged,
-    room_needed: occ.room_needed,
-    checklist_total: checklistInfo?.total ?? 0,
-    checklist_done: checklistInfo?.done ?? 0,
-  });
   const ringColor = readiness.level === "ready" ? "bg-emerald-500" : readiness.level === "warning" ? "bg-amber-500" : "bg-destructive";
   const titleBits = [
     `${readiness.score}% ready`,
