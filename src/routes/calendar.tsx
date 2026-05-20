@@ -609,6 +609,80 @@ function CalendarBody() {
     return true;
   });
 
+  // Per-occurrence conflict map keyed by `${eventId}-${time}`
+  const conflictMap = useMemo(() => {
+    const m = new Map<string, number>();
+    const items: ConflictEvent[] = visible.map((o) => ({
+      id: `${o.id}-${o.occurrence_date.getTime()}`,
+      title: o.title,
+      start_at: o.occurrence_date.toISOString(),
+      end_at: o.end_at,
+      all_day: o.all_day,
+      leader_name: o.leader_name,
+      room_ids: eventRoomsMap.current.get(o.id) ?? [],
+    }));
+    for (const c of items) {
+      const conflicts = findConflicts(c, items);
+      if (conflicts.length) m.set(c.id, conflicts.length);
+    }
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, events]);
+
+  // Conflicts for the currently-edited event (live as the form changes)
+  const formConflicts = useMemo(() => {
+    if (!open || !form.start_at) return [];
+    const startDate = form.all_day
+      ? new Date(`${form.start_at.slice(0, 10)}T12:00:00Z`)
+      : new Date(form.start_at);
+    const endDate = form.end_at
+      ? (form.all_day ? new Date(`${form.end_at.slice(0, 10)}T12:00:00Z`) : new Date(form.end_at))
+      : null;
+    const candidate: ConflictEvent = {
+      id: form.id ?? "__new__",
+      title: form.title,
+      start_at: startDate.toISOString(),
+      end_at: endDate ? endDate.toISOString() : null,
+      all_day: form.all_day,
+      leader_name: form.leader_name,
+      room_ids: form.room_ids,
+    };
+    const existing: ConflictEvent[] = visible
+      .filter((o) => o.id !== form.id)
+      .map((o) => ({
+        id: o.id,
+        title: o.title,
+        start_at: o.occurrence_date.toISOString(),
+        end_at: o.end_at,
+        all_day: o.all_day,
+        leader_name: o.leader_name,
+        room_ids: eventRoomsMap.current.get(o.id) ?? [],
+      }));
+    return findConflicts(candidate, existing);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, form, visible]);
+
+  function applySeries(seriesId: string) {
+    if (!seriesId) {
+      setForm((f) => ({ ...f, class_series_id: "" }));
+      return;
+    }
+    const s = classSeries.find((x) => x.id === seriesId);
+    if (!s) return;
+    const teacher = s.default_teacher_name || s.default_leader_name || "";
+    const roomName = s.default_room_id ? rooms.find((r) => r.id === s.default_room_id)?.name ?? "" : "";
+    setForm((f) => ({
+      ...f,
+      class_series_id: seriesId,
+      category: f.category || "Class",
+      leader_name: f.leader_name || teacher,
+      childcare_needed: f.childcare_needed || s.default_childcare_needed,
+      room_needed: f.room_needed || roomName,
+      room_ids: f.room_ids.length ? f.room_ids : (s.default_room_id ? [s.default_room_id] : []),
+    }));
+  }
+
+
   return (
     <>
       <PlanningBanner />
