@@ -44,6 +44,7 @@ export const applyFinanceSnapshot = createServerFn({ method: "POST" })
             name: line.createAs,
             fiscal_year: data.fiscalYear,
             annual_budget: 0,
+            classification: inferClassification(line.createAs, "expense"),
           })
           .select("id").single();
         if (error) throw new Error(`Couldn't create category "${line.createAs}": ${error.message}`);
