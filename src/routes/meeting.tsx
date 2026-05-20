@@ -496,6 +496,8 @@ function MeetingPage() {
               </form>
             </StandingSection>
 
+            <MeetingDecisionsSection meetingId={meeting.id} />
+
             {/* Notes */}
             <StandingSection title="Meeting Notes" subtitle="General notes for the whole meeting." defaultOpen={false}>
               <textarea
