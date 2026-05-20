@@ -441,6 +441,18 @@ function ReportsTab({ year }: { year: number }) {
           </form>
         </DialogContent>
       </Dialog>
+
+      {importing && (
+        <ImportReviewDialog
+          open={!!importing}
+          onOpenChange={(o) => { if (!o) setImporting(null); }}
+          reportId={importing.id}
+          filePath={importing.file_path}
+          fileName={importing.file_name}
+          defaultFiscalYear={importing.fiscal_year}
+          onImported={() => { setImporting(null); load(); }}
+        />
+      )}
     </>
   );
 }
