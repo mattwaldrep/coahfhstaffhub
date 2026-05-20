@@ -396,7 +396,8 @@ function ReportsTab({ year }: { year: number }) {
   const [uploading, setUploading] = useState(false);
   const [importing, setImporting] = useState<Report | null>(null);
   const [annualOpen, setAnnualOpen] = useState(false);
-  const [annualMeta, setAnnualMeta] = useState<{ count: number; updatedAt: string | null; income: number; expense: number }>({ count: 0, updatedAt: null, income: 0, expense: 0 });
+  const [annualMeta, setAnnualMeta] = useState<{ count: number; updatedAt: string | null; income: number; expense: number; designated: number }>({ count: 0, updatedAt: null, income: 0, expense: 0, designated: 0 });
+  const [showDesignated, setShowDesignated] = useState(false);
 
   useEffect(() => { load(); }, [year]);
 
@@ -409,16 +410,21 @@ function ReportsTab({ year }: { year: number }) {
     setReports((data ?? []) as Report[]);
     const { data: catData } = await supabase
       .from("budget_categories")
-      .select("annual_budget,updated_at,kind")
+      .select("annual_budget,updated_at,kind,classification")
       .eq("fiscal_year", year);
-    const arr = (catData ?? []) as { annual_budget: number; updated_at: string | null; kind: "income" | "expense" }[];
+    const arr = (catData ?? []) as { annual_budget: number; updated_at: string | null; kind: "income" | "expense"; classification: string | null }[];
     const income = arr.filter((c) => c.kind === "income").reduce((s, c) => s + Number(c.annual_budget ?? 0), 0);
-    const expense = arr.filter((c) => c.kind !== "income").reduce((s, c) => s + Number(c.annual_budget ?? 0), 0);
+    const expense = arr
+      .filter((c) => c.kind !== "income" && c.classification !== "designated_expense")
+      .reduce((s, c) => s + Number(c.annual_budget ?? 0), 0);
+    const designated = arr
+      .filter((c) => c.classification === "designated_expense")
+      .reduce((s, c) => s + Number(c.annual_budget ?? 0), 0);
     const latest = arr.reduce<string | null>((acc, c) => {
       if (!c.updated_at) return acc;
       return !acc || c.updated_at > acc ? c.updated_at : acc;
     }, null);
-    setAnnualMeta({ count: arr.length, updatedAt: latest, income, expense });
+    setAnnualMeta({ count: arr.length, updatedAt: latest, income, expense, designated });
   }
 
   async function upload(e: React.FormEvent) {
@@ -485,6 +491,26 @@ function ReportsTab({ year }: { year: number }) {
             <div><span className="text-[11px] text-muted-foreground mr-1">Net</span><span className={`text-lg font-display font-semibold tabular-nums ${annualMeta.income - annualMeta.expense < 0 ? "text-destructive" : ""}`}>{fmt(annualMeta.income - annualMeta.expense)}</span></div>
           </div>
           <div className="text-[11px] text-muted-foreground mt-0.5">
+            Above the line only — operating income &amp; expense (5000–8000). Excludes 9500-series designated fund trackers.
+          </div>
+          {annualMeta.designated > 0 && (
+            <div className="mt-1">
+              <button
+                type="button"
+                onClick={() => setShowDesignated((v) => !v)}
+                className="text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+              >
+                {showDesignated ? "Hide" : "Show"} designated fund trackers (below the line)
+              </button>
+              {showDesignated && (
+                <div className="mt-1 text-[11px] text-muted-foreground">
+                  <span className="mr-2">Designated expense (9500 series): <span className="tabular-nums text-foreground">{fmt(annualMeta.designated)}</span></span>
+                  <span className="block opacity-80 mt-0.5">Internal bookkeeping for fund drawdowns (Cameron Sardano, Matt Waldrep, Steven Castello CP). Not real operational outlays — excluded from the Expense total above.</span>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="text-[11px] text-muted-foreground mt-1">
             {annualMeta.count > 0
               ? <>{annualMeta.count} categories · last updated {annualMeta.updatedAt ? format(new Date(annualMeta.updatedAt), "MMM d, yyyy") : "—"}</>
               : <>Not imported yet — upload QBO's Budget Overview to seed annual budgets.</>}
