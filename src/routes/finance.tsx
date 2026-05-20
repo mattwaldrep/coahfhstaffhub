@@ -377,9 +377,24 @@ function ReportsTab({ year }: { year: number }) {
 
   return (
     <>
+      <div className="bg-surface border border-border rounded-2xl p-4 mb-4 flex items-center justify-between gap-3 flex-wrap">
+        <div className="min-w-0">
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Annual budget — FY {year}</div>
+          <div className="text-xl font-display font-semibold tabular-nums mt-0.5">{fmt(annualMeta.total)}</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5">
+            {annualMeta.count > 0
+              ? <>{annualMeta.count} categories · last updated {annualMeta.updatedAt ? format(new Date(annualMeta.updatedAt), "MMM d, yyyy") : "—"}</>
+              : <>Not imported yet — upload QBO's Budget Overview to seed annual budgets.</>}
+          </div>
+        </div>
+        <Button size="sm" variant={annualMeta.count > 0 ? "outline" : "default"} onClick={() => setAnnualOpen(true)}>
+          <Upload className="w-4 h-4 mr-1.5" /> {annualMeta.count > 0 ? "Re-upload annual budget" : "Upload annual budget"}
+        </Button>
+      </div>
+
       <div className="flex items-center justify-between mb-3 gap-3">
         <p className="text-xs text-muted-foreground max-w-2xl">
-          Export <strong>Budget vs. Actuals — Fiscal Year-to-Date</strong> from QBO as <strong>CSV</strong>. Upload monthly; the dashboard refreshes from the latest snapshot. Mark the first upload of the year as a full-year report to seed annual budgets.
+          Export <strong>Budget vs. Actuals — Fiscal Year-to-Date</strong> from QBO as <strong>CSV</strong> and upload it each month. The dashboard refreshes from the latest snapshot. Annual budgets come from the separate Annual budget import above.
         </p>
         <Button size="sm" onClick={() => setOpen(true)}>
           <Upload className="w-4 h-4 mr-1.5" /> Upload report
