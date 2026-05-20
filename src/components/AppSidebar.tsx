@@ -24,6 +24,9 @@ import {
   Crown,
   HeartHandshake,
   ScrollText,
+  DoorOpen,
+  Gavel,
+  TrendingUp,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
@@ -33,6 +36,8 @@ const PRIMARY = [
   { to: "/sunday-review", label: "Sunday Review", icon: ClipboardCheck },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/calendar/planning", label: "Annual Planning", icon: CalendarClock },
+  { to: "/decisions", label: "Decisions", icon: Gavel },
+  { to: "/trends", label: "Trends", icon: TrendingUp },
 ];
 
 const ELDER_ITEMS = [
@@ -46,6 +51,7 @@ export function AppSidebar() {
   const { hasRole, hasElderAccess } = useAuth();
   const SECONDARY = [
     { to: "/missions", label: "Missions", icon: Users },
+    ...(hasRole("core") ? [{ to: "/rooms", label: "Rooms", icon: DoorOpen }] : []),
     ...(hasRole("core") ? [{ to: "/finance", label: "Finance", icon: Wallet }] : []),
     ...(hasRole("core") ? [{ to: "/users", label: "Users", icon: UserCog }] : []),
     { to: "/settings", label: "Settings", icon: SettingsIcon },
