@@ -307,6 +307,7 @@ function Editor() {
                 <Switch checked={form.leader_not_needed} onCheckedChange={(v) => setForm({ ...form, leader_not_needed: v })} />
                 No leader needed
               </label>
+            </div>
             <div className="space-y-2">
               <Label>Notes</Label>
               <Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
