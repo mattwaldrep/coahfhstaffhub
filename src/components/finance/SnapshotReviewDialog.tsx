@@ -122,11 +122,6 @@ export function SnapshotReviewDialog({
   async function handleApply() {
     setSubmitting(true);
     try {
-      // For partial-year reports, QBO's "YTD Budget" is the annual budget
-      // prorated to months elapsed. Extrapolate back to a full-year figure
-      // so newly created categories don't land with annual_budget = 0.
-      const monthsElapsed = fullYear ? 12 : fiscalMonthIndex(asOfMonth);
-      const scale = monthsElapsed > 0 ? 12 / monthsElapsed : 1;
       const lines = rows
         .filter((r) => !r.ignored)
         .map((r) => ({
@@ -134,9 +129,6 @@ export function SnapshotReviewDialog({
           createAs: r.categoryId ? null : (r.createAs ?? r.line.name),
           ytdActual: r.line.ytdActual,
           ytdBudget: r.line.ytdBudget,
-          annualBudget: fullYear
-            ? r.line.ytdBudget
-            : Math.round(r.line.ytdBudget * scale),
         }));
       if (!lines.length) {
         toast.error("Nothing to import");
@@ -148,7 +140,6 @@ export function SnapshotReviewDialog({
           fiscalYear,
           asOfMonth,
           sourceReportId: reportId,
-          updateAnnualBudgets: fullYear,
           lines,
         },
       });
