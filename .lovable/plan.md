@@ -1,73 +1,94 @@
-# Assignable ad-hoc checklist items with rich context
+## Staff Onboarding Module
 
-Make each ad-hoc checklist item on a calendar event assignable to a user as a task. Tasks (in the in-app action list and in Google Tasks) always include the parent event's name and date so they're never decontextualized.
+A configurable onboarding system: a master template admins can edit, per-hire workflows cloned from that template, and a live checklist with skip + nested subtask support.
 
-## Behavior
+### 1. Database schema (one migration)
 
-- Each ad-hoc checklist row gets an **Assign** action (avatar + due date picker). Once assigned, the row shows assignee chip, due date, and Google-sync status — converted from a plain checkbox into a task card.
-- Completion is **fully two-way** between: the checklist item, the linked `action_item`, and the Google Task. Toggling any one updates the other two.
-- Unassigning removes the linked task (with confirm if it was already pushed to Google).
+**`onboarding_templates`** — master library of tasks (and nested subtasks).
+- `id`, `section_name text`, `task_name text`, `description text`
+- `is_onsite_only boolean default false`
+- `is_active boolean default true`
+- `parent_id uuid null` (self-FK for subtasks / nested subtasks — supports arbitrary depth)
+- `sort_order int`, `created_at`, `updated_at`
 
-## Title & notes format
+**`onboarding_workflows`** — one row per new hire.
+- `id`, `new_hire_name text`, `new_hire_email text null`, `user_id uuid null` (link to profiles if they have an account)
+- `hire_type text check in ('onsite','remote','hybrid')`
+- `status text` (`active`, `paused`, `completed`, `archived`)
+- `start_date date`, `created_by`, `created_at`, `updated_at`
 
-- **Title** (shown in app + Google Tasks): `{Event title} ({date}) — {item label}`
-  - Example: `Tuesday Bible Study (Nov 12) — Arrange childcare`
-  - For recurring events, the date is the specific occurrence the checklist belongs to.
-- **Notes**: event title, start date/time, location (if any), then a deep link back to the event:
-  `Open in CoaH: https://<app>/calendar?event={eventId}`
+**`onboarding_tasks`** — live per-hire checklist, cloned at launch.
+- `id`, `workflow_id`, `section_name`, `task_name`, `description`
+- `is_completed boolean`, `completed_at`, `completed_by`
+- `is_skipped boolean`, `skipped_reason text null`
+- `parent_task_id uuid null` (mirrors template hierarchy)
+- `sort_order int`, `source_template_id uuid null` (for traceability)
 
-## Schema changes
+RLS: `core` role manages everything; all authenticated staff can view (matches existing patterns like `event_checklist_items`). Add `set_updated_at` triggers.
 
-Add to `event_checklist_items`:
-- `assignee_id uuid` — FK to `auth.users`
-- `due_date date` — optional
-- `action_item_id uuid` — links to the synced `action_items` row
-- `created_by uuid`
+### 2. Seed data
 
-Add to `action_items`:
-- `source_event_id uuid` — back-ref to the calendar event
-- `source_checklist_item_id uuid` — back-ref to the checklist row
+A second migration seeds `onboarding_templates` with the full hierarchy from the spec (Arrival → End of Week Eval), preserving parent/child/grandchild nesting and flagging the four on-site-only tasks (Welcome Kit, Keys, Welcome Lunch — plus any others marked on-site). Welcome Kit description includes the supply list verbatim.
 
-The existing `google_task_id` / `google_task_pushed_at` on `action_items` stays as the Google sync handle. The existing 15-min Google sync cron continues to pull completion back — when it flips `action_items.completed`, a trigger mirrors that to `event_checklist_items.done`.
+### 3. Server functions (`src/lib/onboarding.functions.ts`)
 
-## Sync logic
+All `requireSupabaseAuth` + core role check.
 
-A single Postgres trigger keeps `event_checklist_items.done` and `action_items.completed` in lockstep when they're linked, in either direction. The existing Google Tasks 15-min poller already updates `action_items.completed`, so Google → app → checklist propagates for free.
+- `listTemplate()` — full tree (active + inactive).
+- `upsertTemplateNode({ id?, parent_id?, section_name, task_name, description, is_onsite_only, sort_order })`
+- `setTemplateActive({ id, is_active })` — soft deactivate (preserves history).
+- `reorderTemplateNodes({ updates: [{id, sort_order, parent_id?}] })`
+- `launchWorkflow({ new_hire_name, hire_type, start_date, user_id? })` — clones every active template node into `onboarding_tasks`; if `hire_type='remote'`, sets `is_skipped=true, skipped_reason='Remote hire'` on `is_onsite_only` tasks (and their descendants).
+- `listWorkflows()` / `getWorkflow({ id })` — returns workflow + tasks tree + computed progress.
+- `setTaskCompleted({ task_id, completed })` / `setTaskSkipped({ task_id, skipped, reason? })`
+- `addAdHocTask({ workflow_id, parent_task_id?, section_name, task_name, description? })` — per-hire customization.
+- `archiveWorkflow({ id })`
 
-When assigning:
-1. Create `action_items` row with the composed title + notes, `assignee_id`, `due_date`, back-refs to event & checklist item.
-2. Update the checklist row with `assignee_id`, `due_date`, `action_item_id`.
-3. Call existing `autoPushIfEnabled` so it lands in Google Tasks if the assignee has the integration on.
+Progress math: `completed / (total - skipped)` over leaf tasks only (parents with children count via their children).
 
-When unassigning: delete the `action_items` row (Google task remains — Google API doesn't reliably support deletion across users without re-auth; we mark it complete instead and surface a toast).
+### 4. Routes & UI
 
-When the checklist item's label is edited after assignment: update the linked `action_items.title` (and re-push to Google if already pushed, via a PATCH to the existing Google task).
+**`/onboarding`** — dashboard.
+- "Launch onboarding" button (modal: name, hire type radio onsite/remote/hybrid, start date).
+- Cards/table of active workflows: name, hire type badge, start date, progress bar, status chip.
+- Filters: active / completed / archived.
 
-## UI changes (`src/routes/calendar.tsx`)
+**`/onboarding/$workflowId`** — live checklist.
+- Header: name, hire type, start date, overall progress bar (excluding skipped), status menu (mark complete / archive).
+- Grouped by `section_name`. Each section collapsible.
+- Each task row: checkbox · title · description tooltip · **Skip** button (or "Unskip" if skipped) · ad-hoc add button on parents.
+- Skipped rows render grayed/strikethrough and don't count toward progress.
+- Subtasks visually indented (16px per depth level) with collapse chevron on any parent. Parent checkbox is tri-state derived from children; checking a parent cascades to unskipped children.
+- "Add ad-hoc task" inline at section + subtask level.
 
-In the "Ad-hoc checklist" section of the event drawer:
-- Each row becomes a compact card: checkbox · label · assignee avatar/name · due date · small "Google" icon if pushed.
-- Right-side menu: **Assign…** (opens a popover with user search + date picker), **Unassign**, **Delete**.
-- Show toast when assigning: "Pushed to Sarah's Google Tasks" if auto-push fires.
+**`/onboarding/templates`** — master editor (core only).
+- Tree view of sections → tasks → subtasks → nested subtasks.
+- Inline edit: name, description, on-site-only toggle, active toggle.
+- Drag-to-reorder within parent (or up/down buttons for simplicity v1).
+- "Add section", "Add task under…", "Add subtask under…".
+- Deactivated nodes shown faded with restore button; future workflows skip them, existing workflows untouched.
 
-## Server functions (new file `src/lib/checklist-tasks.functions.ts`)
+Add `Onboarding` entry to `AppSidebar` (visible to `core` and `meeting`; editor link visible to `core` only).
 
-- `assignChecklistItem({ checklistItemId, assigneeId, dueDate })` — composes title/notes from the event, inserts `action_items`, links it, runs auto-push.
-- `unassignChecklistItem({ checklistItemId })` — unlinks and removes the action item.
-- `updateChecklistItemAssignment({ checklistItemId, assigneeId?, dueDate? })` — updates both rows in sync.
+### 5. Components
 
-All use `requireSupabaseAuth` and `core` role checks (matching existing checklist policies).
+- `src/components/onboarding/LaunchWorkflowDialog.tsx`
+- `src/components/onboarding/TaskTree.tsx` — recursive renderer used by both live checklist and template editor (mode prop).
+- `src/components/onboarding/ProgressBar.tsx` — reusable, excludes skipped.
+- `src/components/onboarding/TemplateNodeRow.tsx`
+- `src/components/onboarding/TaskRow.tsx`
 
-## Files touched
+### Technical notes
 
-- **Migration** — schema additions + trigger + RLS updates
-- `src/routes/calendar.tsx` — new assign UI on each checklist row
-- `src/lib/checklist-tasks.functions.ts` — new
-- `src/server/google-tasks.functions.ts` — small helper to update an existing Google task's title/notes when the checklist label changes
-- `src/integrations/supabase/types.ts` — auto-regenerates from migration
+- Cloning at launch (vs referencing template by FK) is intentional — matches the spec's "cloned from the master template" and lets admins edit templates later without retroactively changing in-flight onboardings.
+- `parent_id` self-FK on both `onboarding_templates` and `onboarding_tasks` supports the 3-level nesting in the spec (and beyond) without a separate subtasks table.
+- Remote auto-skip cascades to descendants of on-site-only parents at launch time, so a remote hire's progress isn't dragged down by unreachable children.
+- Skip is reversible (re-include in progress) via the same control.
+- No changes to existing modules; this is purely additive.
 
-## Not in scope
+### Out of scope (v1)
 
-- Bulk assigning multiple checklist items at once (can follow if useful).
-- Assigning items from checklist *templates* — only ad-hoc items per your earlier note. Templated items stay shared/non-personal.
-- Deleting a Google Task on unassign (Google API limits make this unreliable across other users' accounts; we mark complete instead).
+- Email notifications to new hires / mentors.
+- Per-task assignees (everything is owned by the workflow's `created_by`).
+- Linking onboarding tasks into the existing `action_items` / Google Tasks sync — easy to add later using the same pattern as `checklist-tasks.functions.ts`.
+- Templates per role/department (single global template now; can add `template_set_id` later without breaking schema).
