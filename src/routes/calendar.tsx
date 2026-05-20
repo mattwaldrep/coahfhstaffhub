@@ -1284,14 +1284,15 @@ function WeekStrip({
   );
 }
 
-function ListView({ occurrences, onPickEvent }: { occurrences: Occurrence[]; onPickEvent: (o: Occurrence) => void }) {
+function ListView({ occurrences, conflictMap, onPickEvent }: { occurrences: Occurrence[]; conflictMap: Map<string, number>; onPickEvent: (o: Occurrence) => void }) {
   if (occurrences.length === 0) {
     return (
-      <div className="bg-surface border border-border rounded-2xl p-8 text-sm text-muted-foreground text-center">
-        No events to show.
+      <div className="bg-surface border border-border rounded-2xl p-2">
+        <EmptyState icon={CalendarDays} title="No events to show" description="Try clearing filters or adding an event." />
       </div>
     );
   }
+
   return (
     <div className="bg-surface border border-border rounded-2xl divide-y divide-border">
       {occurrences.map((o, i) => {
