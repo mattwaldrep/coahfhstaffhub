@@ -274,7 +274,11 @@ function CalendarBody() {
   const [editingOccurrence, setEditingOccurrence] = useState<Date | null>(null);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [newItem, setNewItem] = useState("");
+  const [classSeries, setClassSeries] = useState<ClassSeries[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const eventRoomsMap = useRef<Map<string, string[]>>(new Map());
   const undo = useUndoableAction();
+
 
   const range = useMemo(() => {
     if (view === "week") {
