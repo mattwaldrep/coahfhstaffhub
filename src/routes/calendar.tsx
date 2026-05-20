@@ -558,6 +558,8 @@ function CalendarBody() {
       church_covering: form.church_covering || null,
       childcare_needed: form.childcare_needed,
       childcare_arranged: form.childcare_arranged,
+      room_not_needed: form.room_not_needed,
+      leader_not_needed: form.leader_not_needed,
       class_series_id: form.class_series_id || null,
     };
     const result = form.id
