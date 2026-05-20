@@ -279,16 +279,16 @@ export function AnnualBudgetDialog({
               <Badge variant="outline">{stats.create} new categories</Badge>
               <Badge variant="outline">{stats.skipped} skipped</Badge>
               <Badge variant="outline">{ignored.length} subtotals ignored</Badge>
-              <Badge className="bg-emerald-600 hover:bg-emerald-600">Income {fmt(stats.incomeTotal)}</Badge>
-              <Badge className="bg-rose-600 hover:bg-rose-600">Expense {fmt(stats.expenseTotal)}</Badge>
-              <Badge variant="outline">
-                Net {fmt(stats.incomeTotal - stats.expenseTotal)}
-              </Badge>
+              <Badge className="bg-emerald-600 hover:bg-emerald-600">Op Income {fmt(stats.opIncomeTotal)}</Badge>
+              <Badge className="bg-sky-600 hover:bg-sky-600">Bridge {fmt(stats.bridgeTotal)}</Badge>
+              <Badge className="bg-rose-600 hover:bg-rose-600">Op Expense {fmt(stats.opExpenseTotal)}</Badge>
+              <Badge className="bg-amber-600 hover:bg-amber-600">Designated {fmt(stats.designatedTotal)}</Badge>
+              <Badge variant="outline">Core Local Margin {fmt(stats.coreLocalMargin)}</Badge>
+              <Badge variant="outline">Net Operating {fmt(stats.netOperating)}</Badge>
             </div>
 
             <div className="overflow-y-auto flex-1 -mx-6 px-6 mt-2 border-t border-border">
-              {renderSection("Income", incomeRows, stats.incomeTotal)}
-              {renderSection("Expense", expenseRows, stats.expenseTotal)}
+              {sections.map((s) => renderSection(CLASSIFICATION_LABEL[s.key], s.rows, sumActive(s.rows)))}
             </div>
           </>
         )}
