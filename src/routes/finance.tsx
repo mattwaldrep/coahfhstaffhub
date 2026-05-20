@@ -226,25 +226,25 @@ function DashboardTab({ year }: { year: number }) {
         </Select>
       </div>
 
-      {/* Three layered metrics + pacing */}
+      {/* Above-the-line operational metrics + pacing */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
         <Stat
-          label="Core Local Margin"
-          value={fmt(totals.coreLocalMarginYtd)}
-          sub={`${fmt(totals.coreLocalMarginAnnual)} projected · tithes − op expense`}
+          label="Income (above the line)"
+          value={fmt(totals.ytdActual.opIncome + totals.ytdActual.bridge)}
+          sub={`${fmt(totals.annual.opIncome + totals.annual.bridge)} projected · tithes + restricted release`}
+          tone="default"
+        />
+        <Stat
+          label="Expense (above the line)"
+          value={fmt(totals.ytdActual.opExpense)}
+          sub={`${fmt(totals.annual.opExpense)} projected · operating only (5000–8000)`}
           tone="default"
         />
         <Stat
           label="Net Operating Income"
           value={fmt(totals.netOperatingYtd)}
           sub={`${fmt(totals.netOperatingAnnual)} projected · target ≈ $0`}
-          tone={Math.abs(totals.netOperatingYtd) > 10000 ? "danger" : "default"}
-        />
-        <Stat
-          label="Total Org Cash Flow"
-          value={fmt(totals.totalCashYtd)}
-          sub={`${fmt(totals.totalCashAnnual)} projected · all in − all out`}
-          tone={totals.totalCashYtd < 0 ? "danger" : "default"}
+          tone={totals.netOperatingYtd < 0 ? "danger" : "default"}
         />
         <Stat
           label="Op-expense pacing"
@@ -255,7 +255,7 @@ function DashboardTab({ year }: { year: number }) {
       </div>
       <p className="text-[11px] text-muted-foreground mb-4">
         Above the line = operational (tithes &amp; op-expense). Bridge income = restricted-fund release for payroll.
-        Below the line = fund-raised church-planting (donor-driven, doesn't distort operational health).
+        9500-series designated fund trackers are shown below the line and excluded from these totals.
       </p>
 
       {renderCategoryTable("Operating Income", totals.opIncomeCats, lineByCat, trendByCat, totals.annual.opIncome, totals.ytdActual.opIncome, totals.ytdBudget.opIncome, "income")}
