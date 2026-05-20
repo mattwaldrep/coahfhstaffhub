@@ -37,6 +37,7 @@ import { Route as CalendarPlanningReviewRouteImport } from './routes/calendar_.p
 import { Route as CalendarPlanningSubmissionIdRouteImport } from './routes/calendar_.planning.$submissionId'
 import { Route as ApiGoogleOauthCallbackRouteImport } from './routes/api/google.oauth-callback'
 import { Route as ApiPublicHooksSundayReviewNudgeRouteImport } from './routes/api/public/hooks.sunday-review-nudge'
+import { Route as ApiPublicHooksSendWeeklyDigestRouteImport } from './routes/api/public/hooks/send-weekly-digest'
 import { Route as ApiPublicHooksActionItemsDigestRouteImport } from './routes/api/public/hooks.action-items-digest'
 
 const UsersRoute = UsersRouteImport.update({
@@ -181,6 +182,12 @@ const ApiPublicHooksSundayReviewNudgeRoute =
     path: '/api/public/hooks/sunday-review-nudge',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSendWeeklyDigestRoute =
+  ApiPublicHooksSendWeeklyDigestRouteImport.update({
+    id: '/api/public/hooks/send-weekly-digest',
+    path: '/api/public/hooks/send-weekly-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksActionItemsDigestRoute =
   ApiPublicHooksActionItemsDigestRouteImport.update({
     id: '/api/public/hooks/action-items-digest',
@@ -217,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/meetings/': typeof ElderMeetingsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
+  '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
 }
 export interface FileRoutesByTo {
@@ -246,6 +254,7 @@ export interface FileRoutesByTo {
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/meetings': typeof ElderMeetingsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
+  '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
 }
 export interface FileRoutesById {
@@ -278,6 +287,7 @@ export interface FileRoutesById {
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/meetings/': typeof ElderMeetingsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
+  '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
 }
 export interface FileRouteTypes {
@@ -311,6 +321,7 @@ export interface FileRouteTypes {
     | '/elder/meetings/$meetingId'
     | '/elder/meetings/'
     | '/api/public/hooks/action-items-digest'
+    | '/api/public/hooks/send-weekly-digest'
     | '/api/public/hooks/sunday-review-nudge'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -340,6 +351,7 @@ export interface FileRouteTypes {
     | '/elder/meetings/$meetingId'
     | '/elder/meetings'
     | '/api/public/hooks/action-items-digest'
+    | '/api/public/hooks/send-weekly-digest'
     | '/api/public/hooks/sunday-review-nudge'
   id:
     | '__root__'
@@ -371,6 +383,7 @@ export interface FileRouteTypes {
     | '/elder/meetings/$meetingId'
     | '/elder/meetings/'
     | '/api/public/hooks/action-items-digest'
+    | '/api/public/hooks/send-weekly-digest'
     | '/api/public/hooks/sunday-review-nudge'
   fileRoutesById: FileRoutesById
 }
@@ -394,6 +407,7 @@ export interface RootRouteChildren {
   CalendarPublicRoute: typeof CalendarPublicRoute
   ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
   ApiPublicHooksActionItemsDigestRoute: typeof ApiPublicHooksActionItemsDigestRoute
+  ApiPublicHooksSendWeeklyDigestRoute: typeof ApiPublicHooksSendWeeklyDigestRoute
   ApiPublicHooksSundayReviewNudgeRoute: typeof ApiPublicHooksSundayReviewNudgeRoute
 }
 
@@ -595,6 +609,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSundayReviewNudgeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/send-weekly-digest': {
+      id: '/api/public/hooks/send-weekly-digest'
+      path: '/api/public/hooks/send-weekly-digest'
+      fullPath: '/api/public/hooks/send-weekly-digest'
+      preLoaderRoute: typeof ApiPublicHooksSendWeeklyDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/action-items-digest': {
       id: '/api/public/hooks/action-items-digest'
       path: '/api/public/hooks/action-items-digest'
@@ -670,6 +691,7 @@ const rootRouteChildren: RootRouteChildren = {
   CalendarPublicRoute: CalendarPublicRoute,
   ApiGoogleOauthCallbackRoute: ApiGoogleOauthCallbackRoute,
   ApiPublicHooksActionItemsDigestRoute: ApiPublicHooksActionItemsDigestRoute,
+  ApiPublicHooksSendWeeklyDigestRoute: ApiPublicHooksSendWeeklyDigestRoute,
   ApiPublicHooksSundayReviewNudgeRoute: ApiPublicHooksSundayReviewNudgeRoute,
 }
 export const routeTree = rootRouteImport
