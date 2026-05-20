@@ -309,7 +309,14 @@ function ReportsTab({ year }: { year: number }) {
       toast.success("Report uploaded");
       setOpen(false);
       setFile(null); setLabel("");
-      load();
+      await load();
+      // Auto-prompt import for PDFs
+      if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+        const { data: latest } = await supabase.from("finance_reports").select("*")
+          .eq("fiscal_year", year).eq("month", month).eq("report_type", "finance")
+          .order("created_at", { ascending: false }).limit(1).maybeSingle();
+        if (latest) setImporting(latest as Report);
+      }
     } catch (err: any) {
       toast.error(err.message ?? "Upload failed");
     } finally {
