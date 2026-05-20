@@ -34,13 +34,29 @@ export async function parseQboBudget(
   if (ext === "xlsx" || ext === "xls") {
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf, { type: "array" });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    rows = XLSX.utils.sheet_to_json<string[]>(ws, {
-      header: 1,
-      blankrows: false,
-      raw: false,
-      defval: "",
-    }) as string[][];
+    // Pick the first sheet whose header has month columns. QBO budget exports
+    // include a "Guidelines" sheet first; the data lives on a later sheet
+    // (e.g. "Consolidated").
+    let chosenRows: string[][] = [];
+    for (const name of wb.SheetNames) {
+      const ws = wb.Sheets[name];
+      const r = XLSX.utils.sheet_to_json<string[]>(ws, {
+        header: 1,
+        blankrows: false,
+        raw: false,
+        defval: "",
+      }) as string[][];
+      const hasMonths = r.slice(0, 10).some((row) => {
+        const lc = (row ?? []).map((c) => (c ?? "").toString().trim().toLowerCase());
+        return lc.filter((c) => MONTH_HEADER_RE.test(c)).length >= 6;
+      });
+      if (hasMonths) {
+        chosenRows = r;
+        break;
+      }
+      if (!chosenRows.length) chosenRows = r;
+    }
+    rows = chosenRows;
   } else {
     const text = await file.text();
     rows = (Papa.parse<string[]>(text, { skipEmptyLines: false }).data ?? []) as string[][];
@@ -53,7 +69,7 @@ function parseRows(rows: string[][]): AnnualBudgetParseResult {
   const headerText = rows.slice(0, 8).map((r) => r.join(" ")).join("\n");
   const { fiscalYear } = detectHeaderInfo(headerText);
 
-  // Find the column header row containing month names or "Total".
+  // Find the column header row containing month names or a totals column.
   let headerRow = -1;
   let totalCol = -1;
   let monthCols: number[] = [];
@@ -62,7 +78,14 @@ function parseRows(rows: string[][]): AnnualBudgetParseResult {
     const r = rows[i] ?? [];
     const lc = r.map((c) => (c ?? "").toString().trim().toLowerCase());
 
-    const tIdx = lc.findIndex((c) => c === "total" || /annual\s*(budget|total)/.test(c));
+    const tIdx = lc.findIndex(
+      (c) =>
+        c === "total" ||
+        c === "budget totals" ||
+        c === "budget total" ||
+        /annual\s*(budget|total)/.test(c) ||
+        /total\s*budget/.test(c),
+    );
     const monthIdxs = lc
       .map((c, idx) => (MONTH_HEADER_RE.test(c) ? idx : -1))
       .filter((idx) => idx >= 0);
