@@ -39,7 +39,7 @@ function FinancePage() { return <AppShell><Body /></AppShell>; }
 function Body() {
   const { hasRole, loading } = useAuth();
   const isCore = hasRole("core");
-  const [year, setYear] = useState<number>(new Date().getFullYear());
+  const [year, setYear] = useState<number>(currentFiscalYear());
 
   if (loading) return null;
   if (!isCore) {
