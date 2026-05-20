@@ -40,7 +40,7 @@ export function parseNumber(raw: unknown): number | null {
   return neg ? -n : n;
 }
 
-function isTotalRow(name: string): boolean {
+export function isTotalRow(name: string): boolean {
   const n = name.trim().toLowerCase();
   if (!n) return true;
   return (
