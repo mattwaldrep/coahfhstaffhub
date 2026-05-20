@@ -45,7 +45,10 @@ import {
   Trash2,
   Repeat,
   X,
+  CalendarDays,
 } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+
 import { toast } from "sonner";
 import { useUndoableAction } from "@/lib/use-undoable-action";
 import { scoreEvent, readinessColor } from "@/lib/event-readiness";
