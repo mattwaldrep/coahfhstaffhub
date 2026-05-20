@@ -519,45 +519,69 @@ export type Database = {
       class_series: {
         Row: {
           active: boolean
+          bysetpos: number | null
+          byweekday: string[]
+          calendar_event_id: string | null
           created_at: string
           created_by: string | null
           default_childcare_needed: boolean
           default_leader_name: string | null
           default_room_id: string | null
           default_teacher_name: string | null
+          end_date: string | null
           end_time: string | null
+          excluded_dates: string[]
+          freq: string
           id: string
+          interval: number
           name: string
+          start_date: string | null
           start_time: string | null
           updated_at: string
           weekday: number
         }
         Insert: {
           active?: boolean
+          bysetpos?: number | null
+          byweekday?: string[]
+          calendar_event_id?: string | null
           created_at?: string
           created_by?: string | null
           default_childcare_needed?: boolean
           default_leader_name?: string | null
           default_room_id?: string | null
           default_teacher_name?: string | null
+          end_date?: string | null
           end_time?: string | null
+          excluded_dates?: string[]
+          freq?: string
           id?: string
+          interval?: number
           name: string
+          start_date?: string | null
           start_time?: string | null
           updated_at?: string
           weekday: number
         }
         Update: {
           active?: boolean
+          bysetpos?: number | null
+          byweekday?: string[]
+          calendar_event_id?: string | null
           created_at?: string
           created_by?: string | null
           default_childcare_needed?: boolean
           default_leader_name?: string | null
           default_room_id?: string | null
           default_teacher_name?: string | null
+          end_date?: string | null
           end_time?: string | null
+          excluded_dates?: string[]
+          freq?: string
           id?: string
+          interval?: number
           name?: string
+          start_date?: string | null
           start_time?: string | null
           updated_at?: string
           weekday?: number
