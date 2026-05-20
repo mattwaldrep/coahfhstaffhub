@@ -317,6 +317,8 @@ function CalendarBody() {
       childcare_needed: occ.childcare_needed,
       childcare_arranged: occ.childcare_arranged,
       has_room,
+      room_not_needed: (occ as any).room_not_needed ?? false,
+      leader_not_needed: (occ as any).leader_not_needed ?? false,
       checklist_total: adHoc.total + tplItems.length,
       checklist_done: adHoc.done + tplDone,
     });
