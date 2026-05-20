@@ -303,6 +303,9 @@ function CalendarBody() {
   const [newItem, setNewItem] = useState("");
   const [classSeries, setClassSeries] = useState<ClassSeries[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [assignableUsers, setAssignableUsers] = useState<UserOption[]>([]);
+  const assignFn = useServerFn(assignChecklistItem);
+  const unassignFn = useServerFn(unassignChecklistItem);
   const eventRoomsMap = useRef<Map<string, string[]>>(new Map());
   const eventChecklistMap = useRef<Map<string, { total: number; done: number }>>(new Map());
   const eventAttachmentsMap = useRef<Map<string, string[]>>(new Map());
