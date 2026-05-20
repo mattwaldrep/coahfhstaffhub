@@ -121,6 +121,17 @@ type ChecklistItem = {
   position: number;
 };
 
+type ClassSeries = {
+  id: string;
+  name: string;
+  default_leader_name: string | null;
+  default_teacher_name: string | null;
+  default_childcare_needed: boolean;
+  default_room_id: string | null;
+};
+
+type Room = { id: string; name: string };
+
 type FormState = {
   id?: string;
   title: string;
@@ -147,6 +158,8 @@ type FormState = {
   church_covering: string;
   childcare_needed: boolean;
   childcare_arranged: boolean;
+  class_series_id: string;
+  room_ids: string[];
 };
 
 const emptyForm = (start = ""): FormState => ({
@@ -174,7 +187,10 @@ const emptyForm = (start = ""): FormState => ({
   church_covering: "",
   childcare_needed: false,
   childcare_arranged: false,
+  class_series_id: "",
+  room_ids: [],
 });
+
 
 function buildRRule(f: FormState, startDate: Date): string | null {
   if (!f.recurs) return null;
