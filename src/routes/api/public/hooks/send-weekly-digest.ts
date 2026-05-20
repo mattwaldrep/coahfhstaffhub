@@ -38,7 +38,7 @@ export const Route = createFileRoute("/api/public/hooks/send-weekly-digest")({
         const [eventsRes, actionsRes, recipientsRes] = await Promise.all([
           supabaseAdmin
             .from("calendar_events")
-            .select("title, start_at, sub_calendar, leader_name, childcare_needed, childcare_arranged, room_needed")
+            .select("title, start_at, category, leader_name, childcare_needed, childcare_arranged, room_needed")
             .gte("start_at", now.toISOString())
             .lt("start_at", weekEnd.toISOString())
             .order("start_at"),
