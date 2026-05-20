@@ -208,6 +208,7 @@ export type Database = {
           childcare_arranged: boolean
           childcare_needed: boolean
           church_covering: string | null
+          class_series_id: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -236,6 +237,7 @@ export type Database = {
           childcare_arranged?: boolean
           childcare_needed?: boolean
           church_covering?: string | null
+          class_series_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -264,6 +266,7 @@ export type Database = {
           childcare_arranged?: boolean
           childcare_needed?: boolean
           church_covering?: string | null
+          class_series_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -286,6 +289,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "calendar_events_class_series_id_fkey"
+            columns: ["class_series_id"]
+            isOneToOne: false
+            referencedRelation: "class_series"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "calendar_events_created_by_fkey"
             columns: ["created_by"]
@@ -499,6 +509,118 @@ export type Database = {
             columns: ["submission_id"]
             isOneToOne: false
             referencedRelation: "calendar_plan_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_series: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          default_childcare_needed: boolean
+          default_leader_name: string | null
+          default_room_id: string | null
+          default_teacher_name: string | null
+          end_time: string | null
+          id: string
+          name: string
+          start_time: string | null
+          updated_at: string
+          weekday: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          default_childcare_needed?: boolean
+          default_leader_name?: string | null
+          default_room_id?: string | null
+          default_teacher_name?: string | null
+          end_time?: string | null
+          id?: string
+          name: string
+          start_time?: string | null
+          updated_at?: string
+          weekday: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          default_childcare_needed?: boolean
+          default_leader_name?: string | null
+          default_room_id?: string | null
+          default_teacher_name?: string | null
+          end_time?: string | null
+          id?: string
+          name?: string
+          start_time?: string | null
+          updated_at?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_series_default_room_id_fkey"
+            columns: ["default_room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      decisions: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          meeting_id: string | null
+          motion_text: string | null
+          notes: string | null
+          outcome: string
+          title: string
+          updated_at: string
+          vote_abstain: number
+          vote_no: number
+          vote_yes: number
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          meeting_id?: string | null
+          motion_text?: string | null
+          notes?: string | null
+          outcome?: string
+          title: string
+          updated_at?: string
+          vote_abstain?: number
+          vote_no?: number
+          vote_yes?: number
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          meeting_id?: string | null
+          motion_text?: string | null
+          notes?: string | null
+          outcome?: string
+          title?: string
+          updated_at?: string
+          vote_abstain?: number
+          vote_no?: number
+          vote_yes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decisions_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
             referencedColumns: ["id"]
           },
         ]
@@ -970,6 +1092,42 @@ export type Database = {
           },
         ]
       }
+      event_rooms: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          room_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          room_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_rooms_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_rooms_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finance_reports: {
         Row: {
           created_at: string
@@ -1347,6 +1505,66 @@ export type Database = {
           full_name?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      rooms: {
+        Row: {
+          active: boolean
+          capacity: number | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          capacity?: number | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          capacity?: number | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sunday_review_nudges: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          section: string
+          updated_at: string
+          weekday_offset: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          section: string
+          updated_at?: string
+          weekday_offset?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          section?: string
+          updated_at?: string
+          weekday_offset?: number
         }
         Relationships: []
       }
