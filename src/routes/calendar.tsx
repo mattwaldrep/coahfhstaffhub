@@ -413,6 +413,33 @@ function CalendarBody() {
     templateStateMap.current = sMap;
   }
 
+  async function loadChecklist(eventId: string) {
+    const { data } = await supabase
+      .from("event_checklist_items")
+      .select("*")
+      .eq("event_id", eventId)
+      .order("position", { ascending: true });
+    setChecklist(data ?? []);
+  }
+
+  async function loadTemplatesForEvent(eventId: string, occurrenceDate: Date) {
+    const dateKey = format(occurrenceDate, "yyyy-MM-dd");
+    const [{ data: atts }, { data: states }] = await Promise.all([
+      supabase.from("event_template_attachments" as any).select("template_id").eq("event_id", eventId),
+      supabase.from("event_template_item_state" as any)
+        .select("template_item_id, done")
+        .eq("event_id", eventId)
+        .eq("occurrence_date", dateKey),
+    ]);
+    setEventTemplateIds(((atts ?? []) as unknown as Array<{ template_id: string }>).map((a) => a.template_id));
+    const m: Record<string, boolean> = {};
+    for (const row of ((states ?? []) as unknown as Array<{ template_item_id: string; done: boolean }>)) {
+      m[`${row.template_item_id}:${dateKey}`] = row.done;
+    }
+    setTemplateStates(m);
+  }
+
+
   function openNew(date?: Date) {
     if (!canEdit) return;
     const base = date ?? new Date();
