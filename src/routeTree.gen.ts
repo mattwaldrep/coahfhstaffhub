@@ -10,8 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsersRouteImport } from './routes/users'
+import { Route as TrendsRouteImport } from './routes/trends'
 import { Route as SundayReviewRouteImport } from './routes/sunday-review'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as MissionsRouteImport } from './routes/missions'
 import { Route as MeetingRouteImport } from './routes/meeting'
@@ -19,6 +21,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FinanceRouteImport } from './routes/finance'
 import { Route as ElderRouteImport } from './routes/elder'
+import { Route as DecisionsRouteImport } from './routes/decisions'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ElderIndexRouteImport } from './routes/elder.index'
@@ -41,6 +44,11 @@ const UsersRoute = UsersRouteImport.update({
   path: '/users',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TrendsRoute = TrendsRouteImport.update({
+  id: '/trends',
+  path: '/trends',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SundayReviewRoute = SundayReviewRouteImport.update({
   id: '/sunday-review',
   path: '/sunday-review',
@@ -49,6 +57,11 @@ const SundayReviewRoute = SundayReviewRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoomsRoute = RoomsRouteImport.update({
+  id: '/rooms',
+  path: '/rooms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -84,6 +97,11 @@ const FinanceRoute = FinanceRouteImport.update({
 const ElderRoute = ElderRouteImport.update({
   id: '/elder',
   path: '/elder',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DecisionsRoute = DecisionsRouteImport.update({
+  id: '/decisions',
+  path: '/decisions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalendarRoute = CalendarRouteImport.update({
@@ -173,6 +191,7 @@ const ApiPublicHooksActionItemsDigestRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
+  '/decisions': typeof DecisionsRoute
   '/elder': typeof ElderRouteWithChildren
   '/finance': typeof FinanceRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -180,8 +199,10 @@ export interface FileRoutesByFullPath {
   '/meeting': typeof MeetingRoute
   '/missions': typeof MissionsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/rooms': typeof RoomsRoute
   '/settings': typeof SettingsRoute
   '/sunday-review': typeof SundayReviewRoute
+  '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
@@ -201,14 +222,17 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
+  '/decisions': typeof DecisionsRoute
   '/finance': typeof FinanceRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/meeting': typeof MeetingRoute
   '/missions': typeof MissionsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/rooms': typeof RoomsRoute
   '/settings': typeof SettingsRoute
   '/sunday-review': typeof SundayReviewRoute
+  '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
@@ -228,6 +252,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
+  '/decisions': typeof DecisionsRoute
   '/elder': typeof ElderRouteWithChildren
   '/finance': typeof FinanceRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -235,8 +260,10 @@ export interface FileRoutesById {
   '/meeting': typeof MeetingRoute
   '/missions': typeof MissionsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/rooms': typeof RoomsRoute
   '/settings': typeof SettingsRoute
   '/sunday-review': typeof SundayReviewRoute
+  '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
   '/calendar_/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar_/public': typeof CalendarPublicRoute
@@ -258,6 +285,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/calendar'
+    | '/decisions'
     | '/elder'
     | '/finance'
     | '/forgot-password'
@@ -265,8 +293,10 @@ export interface FileRouteTypes {
     | '/meeting'
     | '/missions'
     | '/reset-password'
+    | '/rooms'
     | '/settings'
     | '/sunday-review'
+    | '/trends'
     | '/users'
     | '/calendar/planning'
     | '/calendar/public'
@@ -286,14 +316,17 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/calendar'
+    | '/decisions'
     | '/finance'
     | '/forgot-password'
     | '/login'
     | '/meeting'
     | '/missions'
     | '/reset-password'
+    | '/rooms'
     | '/settings'
     | '/sunday-review'
+    | '/trends'
     | '/users'
     | '/calendar/planning'
     | '/calendar/public'
@@ -312,6 +345,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/calendar'
+    | '/decisions'
     | '/elder'
     | '/finance'
     | '/forgot-password'
@@ -319,8 +353,10 @@ export interface FileRouteTypes {
     | '/meeting'
     | '/missions'
     | '/reset-password'
+    | '/rooms'
     | '/settings'
     | '/sunday-review'
+    | '/trends'
     | '/users'
     | '/calendar_/planning'
     | '/calendar_/public'
@@ -341,6 +377,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CalendarRoute: typeof CalendarRoute
+  DecisionsRoute: typeof DecisionsRoute
   ElderRoute: typeof ElderRouteWithChildren
   FinanceRoute: typeof FinanceRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -348,8 +385,10 @@ export interface RootRouteChildren {
   MeetingRoute: typeof MeetingRoute
   MissionsRoute: typeof MissionsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  RoomsRoute: typeof RoomsRoute
   SettingsRoute: typeof SettingsRoute
   SundayReviewRoute: typeof SundayReviewRoute
+  TrendsRoute: typeof TrendsRoute
   UsersRoute: typeof UsersRoute
   CalendarPlanningRoute: typeof CalendarPlanningRouteWithChildren
   CalendarPublicRoute: typeof CalendarPublicRoute
@@ -367,6 +406,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UsersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/trends': {
+      id: '/trends'
+      path: '/trends'
+      fullPath: '/trends'
+      preLoaderRoute: typeof TrendsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sunday-review': {
       id: '/sunday-review'
       path: '/sunday-review'
@@ -379,6 +425,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rooms': {
+      id: '/rooms'
+      path: '/rooms'
+      fullPath: '/rooms'
+      preLoaderRoute: typeof RoomsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -428,6 +481,13 @@ declare module '@tanstack/react-router' {
       path: '/elder'
       fullPath: '/elder'
       preLoaderRoute: typeof ElderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/decisions': {
+      id: '/decisions'
+      path: '/decisions'
+      fullPath: '/decisions'
+      preLoaderRoute: typeof DecisionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calendar': {
@@ -593,6 +653,7 @@ const CalendarPlanningRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CalendarRoute: CalendarRoute,
+  DecisionsRoute: DecisionsRoute,
   ElderRoute: ElderRouteWithChildren,
   FinanceRoute: FinanceRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
@@ -600,8 +661,10 @@ const rootRouteChildren: RootRouteChildren = {
   MeetingRoute: MeetingRoute,
   MissionsRoute: MissionsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  RoomsRoute: RoomsRoute,
   SettingsRoute: SettingsRoute,
   SundayReviewRoute: SundayReviewRoute,
+  TrendsRoute: TrendsRoute,
   UsersRoute: UsersRoute,
   CalendarPlanningRoute: CalendarPlanningRouteWithChildren,
   CalendarPublicRoute: CalendarPublicRoute,
