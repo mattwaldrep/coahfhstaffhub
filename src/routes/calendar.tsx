@@ -1199,11 +1199,84 @@ function CalendarBody() {
               )}
             </div>
 
+            {/* Checklist Templates */}
+            {form.id && (
+              <div className="space-y-3 rounded-xl border border-border p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="text-sm font-medium">Checklist templates</Label>
+                  <Link to="/checklists" className="text-xs text-muted-foreground underline">
+                    Manage templates
+                  </Link>
+                </div>
+
+                {allTemplates.length === 0 ? (
+                  <div className="text-xs text-muted-foreground">
+                    No templates yet. <Link to="/checklists" className="underline">Create one</Link>.
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {allTemplates.map((t) => {
+                      const on = eventTemplateIds.includes(t.id);
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => toggleEventTemplate(t.id, on)}
+                          className={`text-xs px-2 py-1 rounded-full border ${
+                            on ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"
+                          }`}
+                        >
+                          {on ? "✓ " : "+ "}{t.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {eventTemplateIds.length > 0 && (() => {
+                  const occDate = currentOccurrenceDate();
+                  const dateKey = format(occDate, "yyyy-MM-dd");
+                  return (
+                    <div className="space-y-3 pt-1">
+                      <div className="text-xs text-muted-foreground">
+                        State shown for{" "}
+                        <span className="font-medium text-foreground">{format(occDate, "MMM d, yyyy")}</span>
+                        {form.recurs ? " (this occurrence only)" : ""}
+                      </div>
+                      {eventTemplateIds.map((tid) => {
+                        const tpl = allTemplates.find((t) => t.id === tid);
+                        if (!tpl) return null;
+                        const its = allTemplateItems.filter((i) => i.template_id === tid);
+                        return (
+                          <div key={tid} className="space-y-1">
+                            <div className="text-xs font-medium">{tpl.name}</div>
+                            {its.length === 0 ? (
+                              <div className="text-xs text-muted-foreground italic pl-1">(no items)</div>
+                            ) : its.map((it) => {
+                              const done = !!templateStates[`${it.id}:${dateKey}`];
+                              return (
+                                <div key={it.id} className="flex items-center gap-2 pl-1">
+                                  <Checkbox checked={done} onCheckedChange={() => toggleTemplateItem(it.id, done)} />
+                                  <span className={`flex-1 text-sm ${done ? "line-through text-muted-foreground" : ""}`}>
+                                    {it.label}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
             {/* Checklist */}
             {form.id && (
               <div className="space-y-2 rounded-xl border border-border p-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Readiness checklist</Label>
+                  <Label className="text-sm font-medium">Ad-hoc checklist</Label>
                   <ReadinessBadge value={deriveReadiness(checklist, form.readiness)} />
                 </div>
                 <div className="space-y-1">
@@ -1222,7 +1295,7 @@ function CalendarBody() {
                 </div>
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Add an item…"
+                    placeholder="Add a one-off item…"
                     value={newItem}
                     onChange={(e) => setNewItem(e.target.value)}
                     onKeyDown={(e) => {
