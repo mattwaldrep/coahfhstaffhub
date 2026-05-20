@@ -561,11 +561,15 @@ function TaskRow({
               collapsed={collapsed}
               toggle={toggle}
               isCore={isCore}
+              assignableUsers={assignableUsers}
               onComplete={onComplete}
               onSkip={onSkip}
               onAdd={onAdd}
               onDelete={onDelete}
+              onAssign={onAssign}
+              onUnassign={onUnassign}
             />
+
           ))}
           {isCore && (
             <div style={{ paddingLeft: `${(depth + 1) * 16 + 8}px` }} className="pr-2">
