@@ -176,6 +176,7 @@ export type Database = {
           created_at: string
           fiscal_year: number
           id: string
+          kind: string
           name: string
           sort_order: number
           updated_at: string
@@ -185,6 +186,7 @@ export type Database = {
           created_at?: string
           fiscal_year: number
           id?: string
+          kind?: string
           name: string
           sort_order?: number
           updated_at?: string
@@ -194,6 +196,7 @@ export type Database = {
           created_at?: string
           fiscal_year?: number
           id?: string
+          kind?: string
           name?: string
           sort_order?: number
           updated_at?: string
