@@ -137,14 +137,14 @@ const ElderIndexRoute = ElderIndexRouteImport.update({
   getParentRoute: () => ElderRoute,
 } as any)
 const OnboardingTemplatesRoute = OnboardingTemplatesRouteImport.update({
-  id: '/templates',
-  path: '/templates',
-  getParentRoute: () => OnboardingRoute,
+  id: '/onboarding/templates',
+  path: '/onboarding/templates',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingWorkflowIdRoute = OnboardingWorkflowIdRouteImport.update({
-  id: '/$workflowId',
-  path: '/$workflowId',
-  getParentRoute: () => OnboardingRoute,
+  id: '/onboarding/$workflowId',
+  path: '/onboarding/$workflowId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ElderSettingsRoute = ElderSettingsRouteImport.update({
   id: '/settings',
@@ -480,6 +480,8 @@ export interface RootRouteChildren {
   CalendarClassesRoute: typeof CalendarClassesRoute
   CalendarPlanningRoute: typeof CalendarPlanningRouteWithChildren
   CalendarPublicRoute: typeof CalendarPublicRoute
+  OnboardingWorkflowIdRoute: typeof OnboardingWorkflowIdRoute
+  OnboardingTemplatesRoute: typeof OnboardingTemplatesRoute
   OnboardingIndexRoute: typeof OnboardingIndexRoute
   ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
   ApiPublicHooksActionItemsDigestRoute: typeof ApiPublicHooksActionItemsDigestRoute
@@ -618,17 +620,17 @@ declare module '@tanstack/react-router' {
     }
     '/onboarding/templates': {
       id: '/onboarding/templates'
-      path: '/templates'
+      path: '/onboarding/templates'
       fullPath: '/onboarding/templates'
       preLoaderRoute: typeof OnboardingTemplatesRouteImport
-      parentRoute: typeof OnboardingRoute
+      parentRoute: typeof rootRouteImport
     }
     '/onboarding/$workflowId': {
       id: '/onboarding/$workflowId'
-      path: '/$workflowId'
+      path: '/onboarding/$workflowId'
       fullPath: '/onboarding/$workflowId'
       preLoaderRoute: typeof OnboardingWorkflowIdRouteImport
-      parentRoute: typeof OnboardingRoute
+      parentRoute: typeof rootRouteImport
     }
     '/elder/settings': {
       id: '/elder/settings'
@@ -810,6 +812,8 @@ const rootRouteChildren: RootRouteChildren = {
   CalendarClassesRoute: CalendarClassesRoute,
   CalendarPlanningRoute: CalendarPlanningRouteWithChildren,
   CalendarPublicRoute: CalendarPublicRoute,
+  OnboardingWorkflowIdRoute: OnboardingWorkflowIdRoute,
+  OnboardingTemplatesRoute: OnboardingTemplatesRoute,
   OnboardingIndexRoute: OnboardingIndexRoute,
   ApiGoogleOauthCallbackRoute: ApiGoogleOauthCallbackRoute,
   ApiPublicHooksActionItemsDigestRoute: ApiPublicHooksActionItemsDigestRoute,
