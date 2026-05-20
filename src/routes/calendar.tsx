@@ -137,6 +137,9 @@ type ClassSeries = {
 
 type Room = { id: string; name: string };
 
+type ChecklistTemplate = { id: string; name: string; description: string | null };
+type TemplateItem = { id: string; template_id: string; label: string; position: number };
+
 type FormState = {
   id?: string;
   title: string;
