@@ -58,7 +58,8 @@ function Dashboard() {
   const metricsSession = useMetricsSession();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [actions, setActions] = useState<ActionItem[]>([]);
-  const [classAlerts, setClassAlerts] = useState<Array<{ id: string; title: string; date: Date; gaps: string[] }>>([]);
+  const [classAlerts, setClassAlerts] = useState<Array<{ id: string; title: string; date: Date; gaps: string[]; leader_name: string | null; childcare_needed: boolean; childcare_arranged: boolean }>>([]);
+  const [alertsTick, setAlertsTick] = useState(0);
   const [headline, setHeadline] = useState<MetricsHeadline | null>(null);
   const [prevHeadline, setPrevHeadline] = useState<MetricsHeadline | null>(null);
   const [statsRange, setStatsRange] = useState<string | null>(null);
