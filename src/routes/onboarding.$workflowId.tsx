@@ -28,6 +28,18 @@ import {
   setWorkflowStatus,
   deleteTask,
 } from "@/lib/onboarding.functions";
+import {
+  assignOnboardingTask,
+  unassignOnboardingTask,
+  listAssignableUsers,
+} from "@/lib/onboarding-tasks.functions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import {
@@ -39,8 +51,14 @@ import {
   Undo2,
   MoreVertical,
   Trash2,
+  UserPlus,
+  UserMinus,
+  CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+type UserOption = { id: string; full_name: string | null; email: string | null };
+
 
 export const Route = createFileRoute("/onboarding/$workflowId")({
   component: WorkflowDetail,
@@ -56,8 +74,12 @@ interface TaskNode {
   is_skipped: boolean;
   skipped_reason: string | null;
   sort_order: number;
+  assignee_id: string | null;
+  due_date: string | null;
+  action_item_id: string | null;
   children: TaskNode[];
 }
+
 
 function buildTree(tasks: any[]): Map<string, TaskNode[]> {
   const byId = new Map<string, TaskNode>();
@@ -99,6 +121,16 @@ function WorkflowDetail() {
   const addFn = useServerFn(addAdHocTask);
   const statusFn = useServerFn(setWorkflowStatus);
   const delFn = useServerFn(deleteTask);
+  const assignFn = useServerFn(assignOnboardingTask);
+  const unassignFn = useServerFn(unassignOnboardingTask);
+  const listUsersFn = useServerFn(listAssignableUsers);
+
+  const { data: assignableUsers = [] } = useQuery<UserOption[]>({
+    queryKey: ["assignable-users"],
+    queryFn: () => listUsersFn(),
+    staleTime: 5 * 60 * 1000,
+  });
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["onboarding-workflow", workflowId],
@@ -234,6 +266,7 @@ function WorkflowDetail() {
                       collapsed={collapsed}
                       toggle={toggle}
                       isCore={isCore}
+                      assignableUsers={assignableUsers}
                       onComplete={async (id, completed) => {
                         await completeFn({ data: { task_id: id, completed } });
                         invalidate();
@@ -257,8 +290,29 @@ function WorkflowDetail() {
                         await delFn({ data: { task_id: id } });
                         invalidate();
                       }}
+                      onAssign={async (id, assigneeId, dueDate) => {
+                        try {
+                          await assignFn({
+                            data: { onboardingTaskId: id, assigneeId, dueDate: dueDate ?? null },
+                          });
+                          toast.success("Assigned");
+                          invalidate();
+                        } catch (e: any) {
+                          toast.error(e?.message ?? "Failed to assign");
+                        }
+                      }}
+                      onUnassign={async (id) => {
+                        try {
+                          await unassignFn({ data: { onboardingTaskId: id } });
+                          toast.success("Task removed");
+                          invalidate();
+                        } catch (e: any) {
+                          toast.error(e?.message ?? "Failed");
+                        }
+                      }}
                     />
                   ))}
+
                   {isCore && (
                     <AddInline
                       placeholder={`Add task to ${section}…`}
@@ -291,20 +345,26 @@ function TaskRow({
   collapsed,
   toggle,
   isCore,
+  assignableUsers,
   onComplete,
   onSkip,
   onAdd,
   onDelete,
+  onAssign,
+  onUnassign,
 }: {
   node: TaskNode;
   depth: number;
   collapsed: Record<string, boolean>;
   toggle: (id: string) => void;
   isCore: boolean;
+  assignableUsers: UserOption[];
   onComplete: (id: string, completed: boolean) => void;
   onSkip: (id: string, skipped: boolean) => void;
   onAdd: (parentId: string, name: string) => void;
   onDelete: (id: string) => void;
+  onAssign: (id: string, assigneeId: string, dueDate: string | null) => void;
+  onUnassign: (id: string) => void;
 }) {
   const hasChildren = node.children.length > 0;
   const isCol = collapsed[node.id];
@@ -315,12 +375,15 @@ function TaskRow({
   const allDone = counted.length > 0 && counted.every((l) => l.is_completed);
   const someDone = counted.some((l) => l.is_completed) && !allDone;
 
+  const assignee = assignableUsers.find((u) => u.id === node.assignee_id);
+  const assigneeLabel = assignee?.full_name || assignee?.email || null;
+
   return (
     <div>
       <div
         className={cn(
           "flex items-center gap-2 py-1.5 px-2 rounded hover:bg-muted/50 group",
-          node.is_skipped && "opacity-50",
+          node.is_skipped && "opacity-60",
         )}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
       >
@@ -368,22 +431,112 @@ function TaskRow({
           {node.description && (
             <div className="text-xs text-muted-foreground line-clamp-2">{node.description}</div>
           )}
+          {(assigneeLabel || node.due_date || node.action_item_id) && (
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+              {assigneeLabel && <span>👤 {assigneeLabel}</span>}
+              {node.due_date && <span>📅 {node.due_date}</span>}
+              {node.action_item_id && (
+                <span title="Synced as a task" className="inline-flex items-center gap-0.5">
+                  <CheckCircle2 className="w-3 h-3" /> task
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {isCore && (
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+          <div className="flex items-center gap-1">
+            {/* Skip / Unskip — always visible when skipped so it's easy to undo */}
             <Button
-              variant="ghost"
+              variant={node.is_skipped ? "secondary" : "ghost"}
               size="sm"
-              className="h-7 px-2"
+              className={cn(
+                "h-7 px-2",
+                !node.is_skipped && "opacity-0 group-hover:opacity-100 transition-opacity",
+              )}
               onClick={() => onSkip(node.id, !node.is_skipped)}
-              title={node.is_skipped ? "Unskip" : "Skip"}
+              title={node.is_skipped ? "Undo skip" : "Skip task"}
             >
-              {node.is_skipped ? <Undo2 className="w-3.5 h-3.5" /> : <SkipForward className="w-3.5 h-3.5" />}
+              {node.is_skipped ? (
+                <>
+                  <Undo2 className="w-3.5 h-3.5 mr-1" />
+                  <span className="text-xs">Undo skip</span>
+                </>
+              ) : (
+                <SkipForward className="w-3.5 h-3.5" />
+              )}
             </Button>
+
+            {!hasChildren && !node.is_skipped && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "h-7 px-2",
+                      !node.assignee_id && "opacity-0 group-hover:opacity-100 transition-opacity",
+                    )}
+                    title={node.assignee_id ? "Reassign" : "Assign to user"}
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-2 space-y-2" align="end">
+                  <div className="text-xs font-medium px-1">Assign onboarding task</div>
+                  <Select
+                    value={node.assignee_id ?? ""}
+                    onValueChange={(uid) =>
+                      onAssign(node.id, uid, node.due_date ?? null)
+                    }
+                  >
+                    <SelectTrigger className="h-8">
+                      <SelectValue placeholder="Pick a user…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {assignableUsers.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.full_name || u.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="date"
+                    value={node.due_date ?? ""}
+                    onChange={(e) => {
+                      const v = e.target.value || null;
+                      if (node.assignee_id) onAssign(node.id, node.assignee_id, v);
+                    }}
+                    disabled={!node.assignee_id}
+                    className="h-8"
+                    placeholder="Due date"
+                  />
+                  {node.action_item_id && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start text-muted-foreground"
+                      onClick={() => onUnassign(node.id)}
+                    >
+                      <UserMinus className="w-3.5 h-3.5 mr-1.5" /> Unassign
+                    </Button>
+                  )}
+                  <div className="text-[10px] text-muted-foreground px-1">
+                    Task title includes the new hire's name so it makes sense in Google Tasks.
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
                   <MoreVertical className="w-3.5 h-3.5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -397,6 +550,7 @@ function TaskRow({
         )}
       </div>
 
+
       {hasChildren && !isCol && (
         <div>
           {node.children.map((c) => (
@@ -407,11 +561,15 @@ function TaskRow({
               collapsed={collapsed}
               toggle={toggle}
               isCore={isCore}
+              assignableUsers={assignableUsers}
               onComplete={onComplete}
               onSkip={onSkip}
               onAdd={onAdd}
               onDelete={onDelete}
+              onAssign={onAssign}
+              onUnassign={onUnassign}
             />
+
           ))}
           {isCore && (
             <div style={{ paddingLeft: `${(depth + 1) * 16 + 8}px` }} className="pr-2">
