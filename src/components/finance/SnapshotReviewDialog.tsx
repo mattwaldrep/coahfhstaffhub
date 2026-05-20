@@ -23,6 +23,14 @@ const fmt = (n: number) =>
 
 type Category = { id: string; name: string; fiscal_year: number; annual_budget: number };
 
+function getErrorMessage(error: unknown) {
+  if (error instanceof Response) return error.status === 401 ? "Your session expired. Please sign in again and retry the import." : `Import failed (${error.status})`;
+  if (error && typeof error === "object" && "message" in error && typeof (error as { message?: unknown }).message === "string") {
+    return (error as { message: string }).message;
+  }
+  return "Import failed";
+}
+
 type RowState = {
   line: QboLine;
   // null = create new category with this name; uuid = map to existing
@@ -141,8 +149,8 @@ export function SnapshotReviewDialog({
         `Imported ${result.linesWritten} lines${result.createdCategories ? `, created ${result.createdCategories} categories` : ""}`,
       );
       onApplied();
-    } catch (e: any) {
-      toast.error(e.message ?? "Import failed");
+    } catch (e) {
+      toast.error(getErrorMessage(e));
     } finally {
       setSubmitting(false);
     }
