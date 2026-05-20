@@ -27,6 +27,7 @@ import {
   DoorOpen,
   Gavel,
   TrendingUp,
+  GraduationCap,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
