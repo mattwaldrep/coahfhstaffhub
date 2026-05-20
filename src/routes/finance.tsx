@@ -32,7 +32,8 @@ const fmt = (n: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n || 0);
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 
-type Category = { id: string; name: string; fiscal_year: number; annual_budget: number; sort_order: number; kind: "income" | "expense" };
+type Classification = "operating_income" | "bridge_income" | "operating_expense" | "designated_expense";
+type Category = { id: string; name: string; fiscal_year: number; annual_budget: number; sort_order: number; kind: "income" | "expense"; classification: Classification };
 type Snapshot = { id: string; fiscal_year: number; as_of_month: number; source_report_id: string | null; created_at: string };
 type SnapshotLine = { id: string; snapshot_id: string; category_id: string; ytd_actual: number; ytd_budget: number; annual_budget: number | null };
 type Report = { id: string; fiscal_year: number; month: number; label: string | null; file_path: string; file_name: string; mime_type: string | null; created_at: string; imported_at: string | null };
