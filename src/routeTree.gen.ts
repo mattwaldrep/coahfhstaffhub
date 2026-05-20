@@ -15,7 +15,6 @@ import { Route as SundayReviewRouteImport } from './routes/sunday-review'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MissionsRouteImport } from './routes/missions'
 import { Route as MeetingRouteImport } from './routes/meeting'
 import { Route as LoginRouteImport } from './routes/login'
@@ -26,6 +25,7 @@ import { Route as DecisionsRouteImport } from './routes/decisions'
 import { Route as ChecklistsRouteImport } from './routes/checklists'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OnboardingIndexRouteImport } from './routes/onboarding.index'
 import { Route as ElderIndexRouteImport } from './routes/elder.index'
 import { Route as OnboardingTemplatesRouteImport } from './routes/onboarding.templates'
 import { Route as OnboardingWorkflowIdRouteImport } from './routes/onboarding.$workflowId'
@@ -76,11 +76,6 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OnboardingRoute = OnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const MissionsRoute = MissionsRouteImport.update({
   id: '/missions',
   path: '/missions',
@@ -129,6 +124,11 @@ const CalendarRoute = CalendarRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingIndexRoute = OnboardingIndexRouteImport.update({
+  id: '/onboarding/',
+  path: '/onboarding/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ElderIndexRoute = ElderIndexRouteImport.update({
@@ -243,7 +243,6 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/meeting': typeof MeetingRoute
   '/missions': typeof MissionsRoute
-  '/onboarding': typeof OnboardingRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/settings': typeof SettingsRoute
@@ -260,6 +259,7 @@ export interface FileRoutesByFullPath {
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/elder/': typeof ElderIndexRoute
+  '/onboarding/': typeof OnboardingIndexRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/calendar/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
   '/calendar/planning/review': typeof CalendarPlanningReviewRoute
@@ -280,7 +280,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/meeting': typeof MeetingRoute
   '/missions': typeof MissionsRoute
-  '/onboarding': typeof OnboardingRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/settings': typeof SettingsRoute
@@ -296,6 +295,7 @@ export interface FileRoutesByTo {
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/elder': typeof ElderIndexRoute
+  '/onboarding': typeof OnboardingIndexRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/calendar/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
   '/calendar/planning/review': typeof CalendarPlanningReviewRoute
@@ -318,7 +318,6 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/meeting': typeof MeetingRoute
   '/missions': typeof MissionsRoute
-  '/onboarding': typeof OnboardingRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/settings': typeof SettingsRoute
@@ -335,6 +334,7 @@ export interface FileRoutesById {
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/elder/': typeof ElderIndexRoute
+  '/onboarding/': typeof OnboardingIndexRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/calendar_/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
   '/calendar_/planning/review': typeof CalendarPlanningReviewRoute
@@ -358,7 +358,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/meeting'
     | '/missions'
-    | '/onboarding'
     | '/reset-password'
     | '/rooms'
     | '/settings'
@@ -375,6 +374,7 @@ export interface FileRouteTypes {
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
     | '/elder/'
+    | '/onboarding/'
     | '/api/google/oauth-callback'
     | '/calendar/planning/$submissionId'
     | '/calendar/planning/review'
@@ -395,7 +395,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/meeting'
     | '/missions'
-    | '/onboarding'
     | '/reset-password'
     | '/rooms'
     | '/settings'
@@ -411,6 +410,7 @@ export interface FileRouteTypes {
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
     | '/elder'
+    | '/onboarding'
     | '/api/google/oauth-callback'
     | '/calendar/planning/$submissionId'
     | '/calendar/planning/review'
@@ -432,7 +432,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/meeting'
     | '/missions'
-    | '/onboarding'
     | '/reset-password'
     | '/rooms'
     | '/settings'
@@ -449,6 +448,7 @@ export interface FileRouteTypes {
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
     | '/elder/'
+    | '/onboarding/'
     | '/api/google/oauth-callback'
     | '/calendar_/planning/$submissionId'
     | '/calendar_/planning/review'
@@ -471,7 +471,6 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MeetingRoute: typeof MeetingRoute
   MissionsRoute: typeof MissionsRoute
-  OnboardingRoute: typeof OnboardingRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
   RoomsRoute: typeof RoomsRoute
   SettingsRoute: typeof SettingsRoute
@@ -481,6 +480,7 @@ export interface RootRouteChildren {
   CalendarClassesRoute: typeof CalendarClassesRoute
   CalendarPlanningRoute: typeof CalendarPlanningRouteWithChildren
   CalendarPublicRoute: typeof CalendarPublicRoute
+  OnboardingIndexRoute: typeof OnboardingIndexRoute
   ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
   ApiPublicHooksActionItemsDigestRoute: typeof ApiPublicHooksActionItemsDigestRoute
   ApiPublicHooksSendWeeklyDigestRoute: typeof ApiPublicHooksSendWeeklyDigestRoute
@@ -530,13 +530,6 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/missions': {
@@ -607,6 +600,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/': {
+      id: '/onboarding/'
+      path: '/onboarding'
+      fullPath: '/onboarding/'
+      preLoaderRoute: typeof OnboardingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/elder/': {
@@ -777,20 +777,6 @@ const ElderRouteChildren: ElderRouteChildren = {
 
 const ElderRouteWithChildren = ElderRoute._addFileChildren(ElderRouteChildren)
 
-interface OnboardingRouteChildren {
-  OnboardingWorkflowIdRoute: typeof OnboardingWorkflowIdRoute
-  OnboardingTemplatesRoute: typeof OnboardingTemplatesRoute
-}
-
-const OnboardingRouteChildren: OnboardingRouteChildren = {
-  OnboardingWorkflowIdRoute: OnboardingWorkflowIdRoute,
-  OnboardingTemplatesRoute: OnboardingTemplatesRoute,
-}
-
-const OnboardingRouteWithChildren = OnboardingRoute._addFileChildren(
-  OnboardingRouteChildren,
-)
-
 interface CalendarPlanningRouteChildren {
   CalendarPlanningSubmissionIdRoute: typeof CalendarPlanningSubmissionIdRoute
   CalendarPlanningReviewRoute: typeof CalendarPlanningReviewRoute
@@ -815,7 +801,6 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MeetingRoute: MeetingRoute,
   MissionsRoute: MissionsRoute,
-  OnboardingRoute: OnboardingRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
   RoomsRoute: RoomsRoute,
   SettingsRoute: SettingsRoute,
@@ -825,6 +810,7 @@ const rootRouteChildren: RootRouteChildren = {
   CalendarClassesRoute: CalendarClassesRoute,
   CalendarPlanningRoute: CalendarPlanningRouteWithChildren,
   CalendarPublicRoute: CalendarPublicRoute,
+  OnboardingIndexRoute: OnboardingIndexRoute,
   ApiGoogleOauthCallbackRoute: ApiGoogleOauthCallbackRoute,
   ApiPublicHooksActionItemsDigestRoute: ApiPublicHooksActionItemsDigestRoute,
   ApiPublicHooksSendWeeklyDigestRoute: ApiPublicHooksSendWeeklyDigestRoute,
@@ -834,3 +820,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

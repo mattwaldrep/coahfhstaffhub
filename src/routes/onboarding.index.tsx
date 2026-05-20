@@ -29,7 +29,7 @@ import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { GraduationCap, Plus, Settings2 } from "lucide-react";
 
-export const Route = createFileRoute("/onboarding")({
+export const Route = createFileRoute("/onboarding/")({
   component: OnboardingPage,
 });
 
