@@ -29,7 +29,7 @@ const fmt = (n: number) =>
 
 type Category = { id: string; name: string; fiscal_year: number; annual_budget: number; sort_order: number };
 type Actual = { id: string; category_id: string; fiscal_year: number; month: number; amount: number; notes: string | null };
-type Report = { id: string; fiscal_year: number; month: number; label: string | null; file_path: string; file_name: string; mime_type: string | null; created_at: string };
+type Report = { id: string; fiscal_year: number; month: number; label: string | null; file_path: string; file_name: string; mime_type: string | null; created_at: string; imported_at: string | null };
 
 function FinancePage() { return <AppShell><Body /></AppShell>; }
 
