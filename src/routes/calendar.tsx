@@ -366,6 +366,18 @@ function CalendarBody() {
   useEffect(() => { formIdRef.current = form.id; }, [form.id]);
 
   useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .order("full_name");
+      setAssignableUsers((data ?? []) as UserOption[]);
+    })();
+  }, []);
+
+
+
+  useEffect(() => {
     load();
     const ch = supabase
       .channel("calendar_events")
