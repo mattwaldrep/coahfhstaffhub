@@ -8,7 +8,7 @@
  */
 
 export type ReadinessEvent = {
-  sub_calendar?: string | null;
+  category?: string | null; // "Class" → class scoring
   leader_name?: string | null;
   leader_id?: string | null;
   childcare_needed?: boolean | null;
@@ -33,7 +33,7 @@ function hasRoom(e: ReadinessEvent) {
 }
 
 export function scoreEvent(e: ReadinessEvent): ReadinessResult {
-  const isClass = e.sub_calendar === "classes";
+  const isClass = e.category === "Class";
   const missing: string[] = [];
   let score = 0;
 
