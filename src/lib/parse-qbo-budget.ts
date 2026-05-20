@@ -179,7 +179,7 @@ function parseRows(rows: string[][]): AnnualBudgetParseResult {
       continue;
     }
 
-    lines.push({ name, annualBudget: annual, indent, kind: currentKind });
+    lines.push({ name, annualBudget: annual, indent, kind: currentKind, classification: inferClassification(name, currentKind) });
   }
 
   return { fiscalYear, lines, ignored };
