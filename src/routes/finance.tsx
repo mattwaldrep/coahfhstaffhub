@@ -106,7 +106,9 @@ function DashboardTab({ year }: { year: number }) {
       supabase.from("budget_categories").select("*").eq("fiscal_year", year).order("sort_order").order("name"),
       supabase.from("finance_snapshots").select("*").eq("fiscal_year", year).order("as_of_month", { ascending: true }),
     ]);
-    setCats((c ?? []) as Category[]);
+    // Exclude rollup parents (e.g. "5000 Personnel") so we don't double-count
+    // them alongside their sub-accounts.
+    setCats(((c ?? []) as (Category & { is_rollup?: boolean | null })[]).filter((x) => !x.is_rollup) as Category[]);
     const snaps = (s ?? []) as Snapshot[];
     setSnapshots(snaps);
     const latest = snaps[snaps.length - 1];
