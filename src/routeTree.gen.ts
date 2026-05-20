@@ -31,6 +31,7 @@ import { Route as ElderMeetingsRouteImport } from './routes/elder.meetings'
 import { Route as ElderArchiveRouteImport } from './routes/elder.archive'
 import { Route as CalendarPublicRouteImport } from './routes/calendar_.public'
 import { Route as CalendarPlanningRouteImport } from './routes/calendar_.planning'
+import { Route as CalendarClassesRouteImport } from './routes/calendar_.classes'
 import { Route as ElderMeetingsIndexRouteImport } from './routes/elder.meetings.index'
 import { Route as ElderMeetingsMeetingIdRouteImport } from './routes/elder.meetings.$meetingId'
 import { Route as CalendarPlanningReviewRouteImport } from './routes/calendar_.planning.review'
@@ -150,6 +151,11 @@ const CalendarPlanningRoute = CalendarPlanningRouteImport.update({
   path: '/calendar/planning',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CalendarClassesRoute = CalendarClassesRouteImport.update({
+  id: '/calendar_/classes',
+  path: '/calendar/classes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ElderMeetingsIndexRoute = ElderMeetingsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -211,6 +217,7 @@ export interface FileRoutesByFullPath {
   '/sunday-review': typeof SundayReviewRoute
   '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
+  '/calendar/classes': typeof CalendarClassesRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
   '/elder/archive': typeof ElderArchiveRoute
@@ -242,6 +249,7 @@ export interface FileRoutesByTo {
   '/sunday-review': typeof SundayReviewRoute
   '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
+  '/calendar/classes': typeof CalendarClassesRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
   '/elder/archive': typeof ElderArchiveRoute
@@ -274,6 +282,7 @@ export interface FileRoutesById {
   '/sunday-review': typeof SundayReviewRoute
   '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
+  '/calendar_/classes': typeof CalendarClassesRoute
   '/calendar_/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar_/public': typeof CalendarPublicRoute
   '/elder/archive': typeof ElderArchiveRoute
@@ -308,6 +317,7 @@ export interface FileRouteTypes {
     | '/sunday-review'
     | '/trends'
     | '/users'
+    | '/calendar/classes'
     | '/calendar/planning'
     | '/calendar/public'
     | '/elder/archive'
@@ -339,6 +349,7 @@ export interface FileRouteTypes {
     | '/sunday-review'
     | '/trends'
     | '/users'
+    | '/calendar/classes'
     | '/calendar/planning'
     | '/calendar/public'
     | '/elder/archive'
@@ -370,6 +381,7 @@ export interface FileRouteTypes {
     | '/sunday-review'
     | '/trends'
     | '/users'
+    | '/calendar_/classes'
     | '/calendar_/planning'
     | '/calendar_/public'
     | '/elder/archive'
@@ -403,6 +415,7 @@ export interface RootRouteChildren {
   SundayReviewRoute: typeof SundayReviewRoute
   TrendsRoute: typeof TrendsRoute
   UsersRoute: typeof UsersRoute
+  CalendarClassesRoute: typeof CalendarClassesRoute
   CalendarPlanningRoute: typeof CalendarPlanningRouteWithChildren
   CalendarPublicRoute: typeof CalendarPublicRoute
   ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
@@ -567,6 +580,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CalendarPlanningRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/calendar_/classes': {
+      id: '/calendar_/classes'
+      path: '/calendar/classes'
+      fullPath: '/calendar/classes'
+      preLoaderRoute: typeof CalendarClassesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/elder/meetings/': {
       id: '/elder/meetings/'
       path: '/'
@@ -687,6 +707,7 @@ const rootRouteChildren: RootRouteChildren = {
   SundayReviewRoute: SundayReviewRoute,
   TrendsRoute: TrendsRoute,
   UsersRoute: UsersRoute,
+  CalendarClassesRoute: CalendarClassesRoute,
   CalendarPlanningRoute: CalendarPlanningRouteWithChildren,
   CalendarPublicRoute: CalendarPublicRoute,
   ApiGoogleOauthCallbackRoute: ApiGoogleOauthCallbackRoute,

@@ -13,7 +13,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { GraduationCap, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/calendar/classes")({ component: ClassesPage });
+export const Route = createFileRoute("/calendar_/classes")({ component: ClassesPage });
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 

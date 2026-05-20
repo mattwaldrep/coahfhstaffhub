@@ -52,6 +52,7 @@ export function AppSidebar() {
   const SECONDARY = [
     { to: "/missions", label: "Missions", icon: Users },
     ...(hasRole("core") ? [{ to: "/rooms", label: "Rooms", icon: DoorOpen }] : []),
+    ...(hasRole("core") ? [{ to: "/calendar/classes", label: "Classes", icon: GraduationCap }] : []),
     ...(hasRole("core") ? [{ to: "/finance", label: "Finance", icon: Wallet }] : []),
     ...(hasRole("core") ? [{ to: "/users", label: "Users", icon: UserCog }] : []),
     { to: "/settings", label: "Settings", icon: SettingsIcon },
