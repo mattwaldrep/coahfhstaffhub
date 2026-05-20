@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
@@ -14,17 +14,17 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { applyFinanceSnapshot } from "@/server/finance-snapshot.functions";
-import { parseQboCsv, matchCategory, type QboLine } from "@/lib/parse-qbo-csv";
+import { applyAnnualBudget } from "@/server/finance-budget.functions";
+import { parseQboBudget, type AnnualBudgetLine } from "@/lib/parse-qbo-budget";
+import { matchCategory } from "@/lib/parse-qbo-csv";
 
-const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n || 0);
 
 type Category = { id: string; name: string; fiscal_year: number; annual_budget: number };
 
 function getErrorMessage(error: unknown) {
-  if (error instanceof Response) return error.status === 401 ? "Your session expired. Please sign in again and retry the import." : `Import failed (${error.status})`;
+  if (error instanceof Response) return error.status === 401 ? "Your session expired. Please sign in again and retry." : `Import failed (${error.status})`;
   if (error && typeof error === "object" && "message" in error && typeof (error as { message?: unknown }).message === "string") {
     return (error as { message: string }).message;
   }
@@ -32,92 +32,75 @@ function getErrorMessage(error: unknown) {
 }
 
 type RowState = {
-  line: QboLine;
-  // null = create new category with this name; uuid = map to existing
+  line: AnnualBudgetLine;
   categoryId: string | null;
   createAs: string | null;
   ignored: boolean;
 };
 
-export function SnapshotReviewDialog({
+export function AnnualBudgetDialog({
   open,
   onOpenChange,
-  reportId,
-  filePath,
-  fileName,
-  defaultFiscalYear,
-  defaultMonth,
+  fiscalYear,
   onApplied,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
-  reportId: string | null;
-  filePath: string | null;
-  fileName: string;
-  defaultFiscalYear: number;
-  defaultMonth: number;
+  fiscalYear: number;
   onApplied: () => void;
 }) {
-  const [loading, setLoading] = useState(true);
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [fiscalYear, setFiscalYear] = useState(defaultFiscalYear);
-  const [asOfMonth, setAsOfMonth] = useState(defaultMonth);
-  // (full-year option removed — annual budgets are now owned by the Annual Budget import)
   const [rows, setRows] = useState<RowState[]>([]);
   const [ignored, setIgnored] = useState<string[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const applyFn = useServerFn(applyFinanceSnapshot);
+  const [detectedFy, setDetectedFy] = useState<number>(fiscalYear);
+  const applyFn = useServerFn(applyAnnualBudget);
 
-  useEffect(() => {
-    if (!open || !filePath) return;
-    let cancelled = false;
-    (async () => {
-      setLoading(true); setError(null);
-      try {
-        const { data: blob, error: dlErr } = await supabase.storage
-          .from("finance-reports").download(filePath);
-        if (dlErr) throw dlErr;
-        const text = await blob.text();
-        const parsed = parseQboCsv(text);
+  function reset() {
+    setFile(null); setRows([]); setIgnored([]); setError(null); setDetectedFy(fiscalYear);
+  }
 
-        const { data: catData } = await supabase
-          .from("budget_categories").select("id,name,fiscal_year,annual_budget")
-          .eq("fiscal_year", parsed.fiscalYear ?? defaultFiscalYear);
-        const catList = (catData ?? []) as Category[];
-        if (cancelled) return;
+  async function handleFile(f: File) {
+    setFile(f);
+    setLoading(true); setError(null);
+    try {
+      const parsed = await parseQboBudget(f);
+      const fy = parsed.fiscalYear ?? fiscalYear;
+      setDetectedFy(fy);
 
-        setCats(catList);
-        setFiscalYear(parsed.fiscalYear ?? defaultFiscalYear);
-        setAsOfMonth(parsed.asOfMonth ?? defaultMonth);
-        
-        setIgnored(parsed.ignored);
+      const { data: catData } = await supabase
+        .from("budget_categories").select("id,name,fiscal_year,annual_budget")
+        .eq("fiscal_year", fy);
+      const catList = (catData ?? []) as Category[];
+      setCats(catList);
+      setIgnored(parsed.ignored);
 
-        const matchable = catList.map((c) => ({ id: c.id, name: c.name }));
-        setRows(parsed.lines.map((line) => {
-          const match = matchCategory(line.name, matchable);
-          return {
-            line,
-            categoryId: match?.id ?? null,
-            createAs: match ? null : line.name,
-            ignored: false,
-          };
-        }));
-      } catch (e: any) {
-        setError(e.message ?? "Failed to parse file");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [open, filePath, defaultFiscalYear, defaultMonth]);
+      const matchable = catList.map((c) => ({ id: c.id, name: c.name }));
+      setRows(parsed.lines.map((line) => {
+        const match = matchCategory(line.name, matchable);
+        return {
+          line,
+          categoryId: match?.id ?? null,
+          createAs: match ? null : line.name,
+          ignored: false,
+        };
+      }));
+    } catch (e: any) {
+      setError(e?.message ?? "Failed to parse file");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const stats = useMemo(() => {
-    const matched = rows.filter((r) => !r.ignored && r.categoryId).length;
-    const create = rows.filter((r) => !r.ignored && !r.categoryId && r.createAs).length;
-    const skipped = rows.filter((r) => r.ignored).length;
-    return { matched, create, skipped };
-  }, [rows]);
+  const stats = {
+    matched: rows.filter((r) => !r.ignored && r.categoryId).length,
+    create: rows.filter((r) => !r.ignored && !r.categoryId && r.createAs).length,
+    skipped: rows.filter((r) => r.ignored).length,
+    total: rows.filter((r) => !r.ignored).reduce((s, r) => s + r.line.annualBudget, 0),
+  };
 
   async function handleApply() {
     setSubmitting(true);
@@ -127,8 +110,7 @@ export function SnapshotReviewDialog({
         .map((r) => ({
           categoryId: r.categoryId,
           createAs: r.categoryId ? null : (r.createAs ?? r.line.name),
-          ytdActual: r.line.ytdActual,
-          ytdBudget: r.line.ytdBudget,
+          annualBudget: r.line.annualBudget,
         }));
       if (!lines.length) {
         toast.error("Nothing to import");
@@ -136,16 +118,12 @@ export function SnapshotReviewDialog({
         return;
       }
       const result = await applyFn({
-        data: {
-          fiscalYear,
-          asOfMonth,
-          sourceReportId: reportId,
-          lines,
-        },
+        data: { fiscalYear: detectedFy, lines },
       });
       toast.success(
-        `Imported ${result.linesWritten} lines${result.createdCategories ? `, created ${result.createdCategories} categories` : ""}`,
+        `Annual budget saved — updated ${result.updated}${result.created ? `, created ${result.created} categories` : ""}`,
       );
+      reset();
       onApplied();
     } catch (e) {
       toast.error(getErrorMessage(e));
@@ -155,57 +133,66 @@ export function SnapshotReviewDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Import {fileName}</DialogTitle>
+          <DialogTitle>Import annual budget</DialogTitle>
           <DialogDescription>
-            Review detected categories and YTD values before writing to the dashboard.
+            Upload QBO's <strong>Budget Overview</strong> for the fiscal year (CSV or Excel). This sets the annual budget for each category.
           </DialogDescription>
         </DialogHeader>
 
-        {loading ? (
+        {!file ? (
+          <div className="space-y-3 py-4">
+            <Label>Budget Overview file</Label>
+            <Input
+              type="file"
+              accept=".csv,.xlsx,.xls,text/csv"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleFile(f);
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              In QBO: Reports → Budget Overview → choose the fiscal year → Export as Excel or CSV.
+            </p>
+          </div>
+        ) : loading ? (
           <div className="flex items-center justify-center py-12 text-muted-foreground">
-            <Loader2 className="w-5 h-5 animate-spin mr-2" /> Parsing report…
+            <Loader2 className="w-5 h-5 animate-spin mr-2" /> Parsing {file.name}…
           </div>
         ) : error ? (
-          <div className="text-sm text-destructive py-6">{error}</div>
+          <div className="space-y-2 py-4">
+            <div className="text-sm text-destructive">{error}</div>
+            <Button variant="outline" size="sm" onClick={reset}>Try a different file</Button>
+          </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Fiscal year</Label>
-                <Input type="number" value={fiscalYear}
-                  onChange={(e) => setFiscalYear(Number(e.target.value))} />
+                <Input type="number" value={detectedFy}
+                  onChange={(e) => setDetectedFy(Number(e.target.value))} />
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs">As-of month</Label>
-                <Select value={String(asOfMonth)} onValueChange={(v) => setAsOfMonth(Number(v))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {MONTHS.map((m, i) => <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+              <div className="col-span-2 flex items-end text-xs text-muted-foreground">
+                File: <span className="ml-1 font-mono">{file.name}</span>
               </div>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-1">
-              Annual budgets are managed via the separate <strong>Annual budget</strong> import.
-            </p>
 
-            <div className="flex gap-2 text-xs mt-2">
+            <div className="flex gap-2 text-xs mt-2 flex-wrap">
               <Badge variant="secondary">{stats.matched} matched</Badge>
               <Badge variant="outline">{stats.create} new categories</Badge>
               <Badge variant="outline">{stats.skipped} skipped</Badge>
               <Badge variant="outline">{ignored.length} subtotals ignored</Badge>
+              <Badge>Total {fmt(stats.total)}</Badge>
             </div>
 
             <div className="overflow-y-auto flex-1 -mx-6 px-6 mt-2 border-t border-border">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-surface">
                   <tr className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    <th className="text-left py-2 w-[40%]">Line</th>
-                    <th className="text-right py-2">YTD actual</th>
-                    <th className="text-right py-2">YTD budget</th>
+                    <th className="text-left py-2 w-[50%]">Line</th>
+                    <th className="text-right py-2">Annual budget</th>
                     <th className="text-left py-2 pl-3">Maps to</th>
                   </tr>
                 </thead>
@@ -223,8 +210,7 @@ export function SnapshotReviewDialog({
                           <span className="truncate">{r.line.name}</span>
                         </div>
                       </td>
-                      <td className="text-right tabular-nums">{fmt(r.line.ytdActual)}</td>
-                      <td className="text-right tabular-nums text-muted-foreground">{fmt(r.line.ytdBudget)}</td>
+                      <td className="text-right tabular-nums">{fmt(r.line.annualBudget)}</td>
                       <td className="pl-3 py-1.5">
                         <Select
                           value={r.categoryId ?? "__new__"}
@@ -255,9 +241,11 @@ export function SnapshotReviewDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Cancel</Button>
-          <Button onClick={handleApply} disabled={submitting || loading || !!error}>
-            {submitting ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Importing…</> : "Import to dashboard"}
-          </Button>
+          {file && !loading && !error && (
+            <Button onClick={handleApply} disabled={submitting}>
+              {submitting ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Saving…</> : "Save annual budget"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

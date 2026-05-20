@@ -27,7 +27,7 @@ const MONTH_NAMES = [
   "july","august","september","october","november","december",
 ];
 
-function parseNumber(raw: unknown): number | null {
+export function parseNumber(raw: unknown): number | null {
   if (raw == null) return null;
   let s = String(raw).trim();
   if (!s || s === "-" || s === "—") return 0;
@@ -40,7 +40,7 @@ function parseNumber(raw: unknown): number | null {
   return neg ? -n : n;
 }
 
-function isTotalRow(name: string): boolean {
+export function isTotalRow(name: string): boolean {
   const n = name.trim().toLowerCase();
   if (!n) return true;
   return (
@@ -53,7 +53,7 @@ function isTotalRow(name: string): boolean {
   );
 }
 
-function detectHeaderInfo(text: string): { asOfMonth?: number; fiscalYear?: number; fullYear: boolean } {
+export function detectHeaderInfo(text: string): { asOfMonth?: number; fiscalYear?: number; fullYear: boolean } {
   const lower = text.toLowerCase();
   let asOfMonth: number | undefined;
   let asOfYear: number | undefined;
