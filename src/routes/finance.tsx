@@ -368,13 +368,29 @@ function ReportsTab({ year }: { year: number }) {
                 <div className="text-xs text-muted-foreground/60 py-4 text-center">No reports</div>
               ) : (
                 <div className="space-y-1.5">
-                  {items.map((r) => (
+                  {items.map((r) => {
+                    const isPdf = (r.mime_type === "application/pdf") || r.file_name.toLowerCase().endsWith(".pdf");
+                    return (
                     <div key={r.id} className="flex items-center gap-2 group bg-background/40 rounded-lg px-2 py-1.5">
                       <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
                       <div className="min-w-0 flex-1">
                         <div className="text-xs font-medium truncate">{r.label || r.file_name}</div>
-                        <div className="text-[10px] text-muted-foreground">{format(new Date(r.created_at), "MMM d, yyyy")}</div>
+                        <div className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+                          {format(new Date(r.created_at), "MMM d, yyyy")}
+                          {r.imported_at ? (
+                            <Badge variant="secondary" className="h-3.5 px-1 text-[9px]">Imported</Badge>
+                          ) : isPdf ? (
+                            <Badge variant="outline" className="h-3.5 px-1 text-[9px]">Not imported</Badge>
+                          ) : (
+                            <Badge variant="outline" className="h-3.5 px-1 text-[9px]">Manual only</Badge>
+                          )}
+                        </div>
                       </div>
+                      {isPdf && (
+                        <button onClick={() => setImporting(r)} className="opacity-60 hover:opacity-100 text-primary" title="Import to budget">
+                          <Sparkles className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       <button onClick={() => download(r)} className="opacity-60 hover:opacity-100" title="Download">
                         <Download className="w-3.5 h-3.5" />
                       </button>
@@ -382,7 +398,8 @@ function ReportsTab({ year }: { year: number }) {
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
