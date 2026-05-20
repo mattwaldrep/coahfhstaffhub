@@ -396,7 +396,8 @@ function ReportsTab({ year }: { year: number }) {
   const [uploading, setUploading] = useState(false);
   const [importing, setImporting] = useState<Report | null>(null);
   const [annualOpen, setAnnualOpen] = useState(false);
-  const [annualMeta, setAnnualMeta] = useState<{ count: number; updatedAt: string | null; income: number; expense: number }>({ count: 0, updatedAt: null, income: 0, expense: 0 });
+  const [annualMeta, setAnnualMeta] = useState<{ count: number; updatedAt: string | null; income: number; expense: number; designated: number }>({ count: 0, updatedAt: null, income: 0, expense: 0, designated: 0 });
+  const [showDesignated, setShowDesignated] = useState(false);
 
   useEffect(() => { load(); }, [year]);
 
