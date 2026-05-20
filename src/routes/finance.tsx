@@ -277,6 +277,7 @@ function ReportsTab({ year }: { year: number }) {
   const [label, setLabel] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [importing, setImporting] = useState<Report | null>(null);
 
   useEffect(() => { load(); }, [year]);
 
