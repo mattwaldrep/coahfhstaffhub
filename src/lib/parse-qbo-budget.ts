@@ -12,10 +12,13 @@ import {
   detectHeaderInfo,
 } from "./parse-qbo-csv";
 
+export type BudgetKind = "income" | "expense";
+
 export type AnnualBudgetLine = {
   name: string;
   annualBudget: number;
   indent: number;
+  kind: BudgetKind;
 };
 
 export type AnnualBudgetParseResult = {
