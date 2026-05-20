@@ -21,6 +21,7 @@ function AgendaTitle({ value, className }: { value: string; className?: string }
   return <span className={className}><LinkedText value={value} /></span>;
 }
 import { toast } from "sonner";
+import { useUndoableAction } from "@/lib/use-undoable-action";
 import {
   StandingSection,
   DevotionalSection,
