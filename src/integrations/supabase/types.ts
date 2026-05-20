@@ -173,6 +173,7 @@ export type Database = {
       budget_categories: {
         Row: {
           annual_budget: number
+          classification: string
           created_at: string
           fiscal_year: number
           id: string
@@ -183,6 +184,7 @@ export type Database = {
         }
         Insert: {
           annual_budget?: number
+          classification?: string
           created_at?: string
           fiscal_year: number
           id?: string
@@ -193,6 +195,7 @@ export type Database = {
         }
         Update: {
           annual_budget?: number
+          classification?: string
           created_at?: string
           fiscal_year?: number
           id?: string
