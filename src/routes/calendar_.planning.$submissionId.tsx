@@ -119,6 +119,8 @@ function Editor() {
       church_covering: form.church_covering || null,
       other_listings: form.other_listings
         ? form.other_listings.split(",").map(s => s.trim()).filter(Boolean) : [],
+      room_not_needed: form.room_not_needed,
+      leader_not_needed: form.leader_not_needed,
     };
     try {
       if (editId) await fnUpd({ data: { id: editId, event } });
