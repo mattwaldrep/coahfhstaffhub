@@ -17,6 +17,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { applyAnnualBudget } from "@/server/finance-budget.functions";
 import { parseQboBudget, type AnnualBudgetLine } from "@/lib/parse-qbo-budget";
 import { matchCategory } from "@/lib/parse-qbo-csv";
+import { CLASSIFICATION_LABEL, type BudgetClassification } from "@/lib/budget-classification";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n || 0);
