@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { applyFinanceSnapshot } from "@/server/finance-snapshot.functions";
 import { parseQboCsv, matchCategory, type QboLine } from "@/lib/parse-qbo-csv";
+import { fiscalMonthIndex } from "@/lib/fiscal-year";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const fmt = (n: number) =>
@@ -122,6 +123,11 @@ export function SnapshotReviewDialog({
   async function handleApply() {
     setSubmitting(true);
     try {
+      // For partial-year reports, QBO's "YTD Budget" is the annual budget
+      // prorated to months elapsed. Extrapolate back to a full-year figure
+      // so newly created categories don't land with annual_budget = 0.
+      const monthsElapsed = fullYear ? 12 : fiscalMonthIndex(asOfMonth);
+      const scale = monthsElapsed > 0 ? 12 / monthsElapsed : 1;
       const lines = rows
         .filter((r) => !r.ignored)
         .map((r) => ({
@@ -129,7 +135,9 @@ export function SnapshotReviewDialog({
           createAs: r.categoryId ? null : (r.createAs ?? r.line.name),
           ytdActual: r.line.ytdActual,
           ytdBudget: r.line.ytdBudget,
-          annualBudget: fullYear ? r.line.ytdBudget : null,
+          annualBudget: fullYear
+            ? r.line.ytdBudget
+            : Math.round(r.line.ytdBudget * scale),
         }));
       if (!lines.length) {
         toast.error("Nothing to import");

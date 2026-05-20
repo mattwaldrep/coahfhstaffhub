@@ -56,6 +56,14 @@ export const applyFinanceSnapshot = createServerFn({ method: "POST" })
           .from("budget_categories")
           .update({ annual_budget: line.annualBudget })
           .eq("id", categoryId);
+      } else if (line.annualBudget != null && line.annualBudget > 0) {
+        // Backfill: if this category was created earlier with annual_budget=0
+        // (partial-year import before extrapolation existed), fill it in now.
+        await supabase
+          .from("budget_categories")
+          .update({ annual_budget: line.annualBudget })
+          .eq("id", categoryId)
+          .eq("annual_budget", 0);
       }
 
       resolved.push({
