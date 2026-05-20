@@ -6,6 +6,7 @@
 // "Net Operating Income" etc.
 
 import Papa from "papaparse";
+import { getBudgetLineMeta } from "./budget-classification";
 
 export type QboLine = {
   name: string;
@@ -51,6 +52,11 @@ export function isTotalRow(name: string): boolean {
     n === "net other income" ||
     n.startsWith("net ")
   );
+}
+
+function isPlaceholderRow(name: string): boolean {
+  const n = name.trim();
+  return /^\d{1,3}$/.test(n);
 }
 
 export function detectHeaderInfo(text: string): { asOfMonth?: number; fiscalYear?: number; fullYear: boolean } {
@@ -170,7 +176,7 @@ export function parseQboCsv(csvText: string): QboParseResult {
     const name = rawName.trim();
     if (!name) continue;
 
-    if (isTotalRow(name)) {
+    if (isTotalRow(name) || isPlaceholderRow(name)) {
       ignored.push(name);
       continue;
     }
@@ -186,6 +192,12 @@ export function parseQboCsv(csvText: string): QboParseResult {
 
     // Indentation = leading whitespace count
     const indent = rawName.length - rawName.trimStart().length;
+
+    const meta = getBudgetLineMeta(name, "expense");
+    if (meta.isRollup) {
+      ignored.push(name);
+      continue;
+    }
 
     lines.push({
       name,
