@@ -10,6 +10,8 @@ import { fetchRecentWeeks, summarizeWeeks, type MetricsHeadline } from "@/integr
 import { useMetricsSession } from "@/integrations/metrics/use-session";
 import { expandEvents, type EventRowLike } from "@/lib/calendar-expand";
 import { classGaps } from "@/lib/class-gaps";
+import { InlineClassFixer } from "@/components/inline/InlineClassFixer";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -56,7 +58,8 @@ function Dashboard() {
   const metricsSession = useMetricsSession();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [actions, setActions] = useState<ActionItem[]>([]);
-  const [classAlerts, setClassAlerts] = useState<Array<{ id: string; title: string; date: Date; gaps: string[] }>>([]);
+  const [classAlerts, setClassAlerts] = useState<Array<{ id: string; title: string; date: Date; gaps: string[]; leader_name: string | null; childcare_needed: boolean; childcare_arranged: boolean }>>([]);
+  const [alertsTick, setAlertsTick] = useState(0);
   const [headline, setHeadline] = useState<MetricsHeadline | null>(null);
   const [prevHeadline, setPrevHeadline] = useState<MetricsHeadline | null>(null);
   const [statsRange, setStatsRange] = useState<string | null>(null);
@@ -91,12 +94,20 @@ function Dashboard() {
         const rows = (data ?? []) as Array<EventRowLike & { childcare_needed: boolean; childcare_arranged: boolean }>;
         const occurrences = expandEvents(rows, new Date(), horizonEnd);
         const alerts = occurrences
-          .map((o) => ({ id: o.id, title: o.title, date: o.occurrence_date, gaps: classGaps(o) }))
+          .map((o) => ({
+            id: o.id,
+            title: o.title,
+            date: o.occurrence_date,
+            gaps: classGaps(o),
+            leader_name: o.leader_name ?? null,
+            childcare_needed: (o as { childcare_needed?: boolean }).childcare_needed ?? false,
+            childcare_arranged: (o as { childcare_arranged?: boolean }).childcare_arranged ?? false,
+          }))
           .filter((a) => a.gaps.length > 0)
           .slice(0, 8);
         setClassAlerts(alerts);
       });
-  }, []);
+  }, [alertsTick]);
 
   // Live metrics from Church Metrics — last 4 weeks vs preceding 4 weeks
   useEffect(() => {
@@ -254,22 +265,32 @@ function Dashboard() {
               <AlertTriangle className="w-4 h-4 text-warning" /> Alerts
             </h2>
             {classAlerts.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No active alerts. Event readiness and missions risk will surface here.
-              </p>
+              <EmptyState
+                compact
+                title="All clear"
+                description="No classes are missing a teacher or childcare in the next 60 days."
+              />
             ) : (
               <ul className="space-y-2">
                 {classAlerts.map((a) => (
-                  <li key={`${a.id}-${a.date.toISOString()}`} className="text-sm">
-                    <Link to="/calendar" className="flex items-start justify-between gap-3 hover:bg-background/40 rounded-md p-1 -m-1">
-                      <div className="min-w-0">
-                        <div className="font-medium truncate">{a.title}</div>
-                        <div className="text-xs text-warning">Needs {a.gaps.join(" + ")}</div>
-                      </div>
-                      <div className="text-xs text-muted-foreground shrink-0">
-                        {format(a.date, "EEE, MMM d")}
-                      </div>
-                    </Link>
+                  <li key={`${a.id}-${a.date.toISOString()}`} className="text-sm flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">{a.title}</div>
+                      <InlineClassFixer
+                        event={{
+                          id: a.id,
+                          title: a.title,
+                          leader_name: a.leader_name,
+                          childcare_needed: a.childcare_needed,
+                          childcare_arranged: a.childcare_arranged,
+                        }}
+                        gaps={a.gaps}
+                        onSaved={() => setAlertsTick((t) => t + 1)}
+                      />
+                    </div>
+                    <div className="text-xs text-muted-foreground shrink-0 pt-0.5">
+                      {format(a.date, "EEE, MMM d")}
+                    </div>
                   </li>
                 ))}
               </ul>
