@@ -47,6 +47,8 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useUndoableAction } from "@/lib/use-undoable-action";
+import { scoreEvent, readinessColor } from "@/lib/event-readiness";
 
 export const Route = createFileRoute("/calendar")({
   component: CalendarPage,
