@@ -47,6 +47,8 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useUndoableAction } from "@/lib/use-undoable-action";
+import { scoreEvent, readinessColor } from "@/lib/event-readiness";
 
 export const Route = createFileRoute("/calendar")({
   component: CalendarPage,
@@ -251,6 +253,7 @@ function CalendarBody() {
   const [editingOccurrence, setEditingOccurrence] = useState<Date | null>(null);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [newItem, setNewItem] = useState("");
+  const undo = useUndoableAction();
 
   const range = useMemo(() => {
     if (view === "week") {
@@ -429,11 +432,23 @@ function CalendarBody() {
 
   async function remove() {
     if (!form.id) return;
-    const { error } = await supabase.from("calendar_events").delete().eq("id", form.id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Event deleted");
+    const id = form.id;
+    const prev = events;
     setOpen(false);
-    load();
+    undo({
+      optimistic: () => {
+        setEvents((list) => list.filter((e) => e.id !== id));
+        return prev;
+      },
+      rollback: (snap) => setEvents(snap),
+      commit: async () => {
+        const { error } = await supabase.from("calendar_events").delete().eq("id", id);
+        if (error) throw new Error(error.message);
+        load();
+      },
+      message: "Event deleted",
+      description: "Tap undo to restore.",
+    });
   }
 
   async function skipOccurrence() {
@@ -628,9 +643,27 @@ function CalendarBody() {
       {view === "list" && <ListView occurrences={visible} onPickEvent={openEdit} />}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto sm:rounded-lg max-sm:!w-screen max-sm:!max-w-none max-sm:!h-[100dvh] max-sm:!rounded-none max-sm:!max-h-none">
           <DialogHeader>
-            <DialogTitle>{form.id ? "Edit event" : "Add event"}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="truncate">{form.id ? "Edit event" : "Add event"}</span>
+              {form.id && (() => {
+                const r = scoreEvent({
+                  category: form.category,
+                  leader_name: form.leader_name,
+                  childcare_needed: form.childcare_needed,
+                  childcare_arranged: form.childcare_arranged,
+                  room_needed: form.room_needed,
+                  checklist_total: checklist.length,
+                  checklist_done: checklist.filter((i) => i.done).length,
+                });
+                return (
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${readinessColor(r.level)}`} title={r.missing.join(", ") || "Ready"}>
+                    {r.score}% {r.level === "ready" ? "ready" : r.missing[0] ? `· need ${r.missing[0].toLowerCase()}` : ""}
+                  </span>
+                );
+              })()}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-2">
