@@ -145,7 +145,8 @@ function DashboardTab({ year }: { year: number }) {
     const annualBudget = cats.reduce((s, c) => s + Number(c.annual_budget), 0);
     const ytdActual = selectedLines.reduce((s, l) => s + Number(l.ytd_actual), 0);
     const ytdBudget = selectedLines.reduce((s, l) => s + Number(l.ytd_budget), 0);
-    const monthsElapsed = selectedSnapshot?.as_of_month ?? 0;
+    const asOf = selectedSnapshot?.as_of_month;
+    const monthsElapsed = asOf ? fiscalMonthIndex(asOf) : 0;
     const yearPace = monthsElapsed / 12;
     const spendPace = annualBudget > 0 ? ytdActual / annualBudget : 0;
     return { annualBudget, ytdActual, ytdBudget, monthsElapsed, yearPace, spendPace };
