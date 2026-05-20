@@ -402,6 +402,8 @@ function CalendarBody() {
     setForm(emptyForm(format(base, "yyyy-MM-dd'T'HH:mm")));
     setEditingOccurrence(null);
     setChecklist([]);
+    setEventTemplateIds([]);
+    setTemplateStates({});
     setOpen(true);
   }
 
