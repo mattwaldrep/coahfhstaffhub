@@ -53,6 +53,7 @@ export function AppSidebar() {
   const { hasRole, hasElderAccess } = useAuth();
   const SECONDARY = [
     { to: "/missions", label: "Missions", icon: Users },
+    ...(hasRole("core") ? [{ to: "/onboarding", label: "Onboarding", icon: GraduationCap }] : []),
     ...(hasRole("core") ? [{ to: "/rooms", label: "Rooms", icon: DoorOpen }] : []),
     ...(hasRole("core") ? [{ to: "/calendar/classes", label: "Classes", icon: GraduationCap }] : []),
     ...(hasRole("core") ? [{ to: "/checklists", label: "Checklists", icon: ListChecks }] : []),

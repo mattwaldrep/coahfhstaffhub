@@ -27,6 +27,7 @@ import { Route as ChecklistsRouteImport } from './routes/checklists'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ElderIndexRouteImport } from './routes/elder.index'
+import { Route as OnboardingTemplatesRouteImport } from './routes/onboarding.templates'
 import { Route as OnboardingWorkflowIdRouteImport } from './routes/onboarding.$workflowId'
 import { Route as ElderSettingsRouteImport } from './routes/elder.settings'
 import { Route as ElderPastoralCareRouteImport } from './routes/elder.pastoral-care'
@@ -134,6 +135,11 @@ const ElderIndexRoute = ElderIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ElderRoute,
+} as any)
+const OnboardingTemplatesRoute = OnboardingTemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => OnboardingRoute,
 } as any)
 const OnboardingWorkflowIdRoute = OnboardingWorkflowIdRouteImport.update({
   id: '/$workflowId',
@@ -252,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
+  '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/elder/': typeof ElderIndexRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/calendar/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
@@ -287,6 +294,7 @@ export interface FileRoutesByTo {
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
+  '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/elder': typeof ElderIndexRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/calendar/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
@@ -325,6 +333,7 @@ export interface FileRoutesById {
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
+  '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/elder/': typeof ElderIndexRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/calendar_/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
@@ -364,6 +373,7 @@ export interface FileRouteTypes {
     | '/elder/pastoral-care'
     | '/elder/settings'
     | '/onboarding/$workflowId'
+    | '/onboarding/templates'
     | '/elder/'
     | '/api/google/oauth-callback'
     | '/calendar/planning/$submissionId'
@@ -399,6 +409,7 @@ export interface FileRouteTypes {
     | '/elder/pastoral-care'
     | '/elder/settings'
     | '/onboarding/$workflowId'
+    | '/onboarding/templates'
     | '/elder'
     | '/api/google/oauth-callback'
     | '/calendar/planning/$submissionId'
@@ -436,6 +447,7 @@ export interface FileRouteTypes {
     | '/elder/pastoral-care'
     | '/elder/settings'
     | '/onboarding/$workflowId'
+    | '/onboarding/templates'
     | '/elder/'
     | '/api/google/oauth-callback'
     | '/calendar_/planning/$submissionId'
@@ -604,6 +616,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ElderIndexRouteImport
       parentRoute: typeof ElderRoute
     }
+    '/onboarding/templates': {
+      id: '/onboarding/templates'
+      path: '/templates'
+      fullPath: '/onboarding/templates'
+      preLoaderRoute: typeof OnboardingTemplatesRouteImport
+      parentRoute: typeof OnboardingRoute
+    }
     '/onboarding/$workflowId': {
       id: '/onboarding/$workflowId'
       path: '/$workflowId'
@@ -760,10 +779,12 @@ const ElderRouteWithChildren = ElderRoute._addFileChildren(ElderRouteChildren)
 
 interface OnboardingRouteChildren {
   OnboardingWorkflowIdRoute: typeof OnboardingWorkflowIdRoute
+  OnboardingTemplatesRoute: typeof OnboardingTemplatesRoute
 }
 
 const OnboardingRouteChildren: OnboardingRouteChildren = {
   OnboardingWorkflowIdRoute: OnboardingWorkflowIdRoute,
+  OnboardingTemplatesRoute: OnboardingTemplatesRoute,
 }
 
 const OnboardingRouteWithChildren = OnboardingRoute._addFileChildren(
