@@ -90,7 +90,7 @@ export function SnapshotReviewDialog({
         setCats(catList);
         setFiscalYear(parsed.fiscalYear ?? defaultFiscalYear);
         setAsOfMonth(parsed.asOfMonth ?? defaultMonth);
-        setFullYear(parsed.fullYear);
+        
         setIgnored(parsed.ignored);
 
         const matchable = catList.map((c) => ({ id: c.id, name: c.name }));
