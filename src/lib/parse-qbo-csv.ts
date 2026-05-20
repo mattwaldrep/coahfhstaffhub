@@ -27,7 +27,7 @@ const MONTH_NAMES = [
   "july","august","september","october","november","december",
 ];
 
-function parseNumber(raw: unknown): number | null {
+export function parseNumber(raw: unknown): number | null {
   if (raw == null) return null;
   let s = String(raw).trim();
   if (!s || s === "-" || s === "—") return 0;
