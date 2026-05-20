@@ -928,7 +928,7 @@ function CalendarBody() {
                   leader_name: form.leader_name,
                   childcare_needed: form.childcare_needed,
                   childcare_arranged: form.childcare_arranged,
-                  room_needed: form.room_needed,
+                  has_room: form.room_ids.length > 0 || form.room_needed.trim().length > 0,
                   checklist_total: checklist.length + tplTotal,
                   checklist_done: checklist.filter((i) => i.done).length + tplDone,
                 });
