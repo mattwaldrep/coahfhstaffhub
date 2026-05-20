@@ -10,6 +10,8 @@ import { fetchRecentWeeks, summarizeWeeks, type MetricsHeadline } from "@/integr
 import { useMetricsSession } from "@/integrations/metrics/use-session";
 import { expandEvents, type EventRowLike } from "@/lib/calendar-expand";
 import { classGaps } from "@/lib/class-gaps";
+import { InlineClassFixer } from "@/components/inline/InlineClassFixer";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
