@@ -74,8 +74,12 @@ interface TaskNode {
   is_skipped: boolean;
   skipped_reason: string | null;
   sort_order: number;
+  assignee_id: string | null;
+  due_date: string | null;
+  action_item_id: string | null;
   children: TaskNode[];
 }
+
 
 function buildTree(tasks: any[]): Map<string, TaskNode[]> {
   const byId = new Map<string, TaskNode>();
