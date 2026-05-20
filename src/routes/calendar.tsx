@@ -873,14 +873,19 @@ function CalendarBody() {
             <DialogTitle className="flex items-center gap-2">
               <span className="truncate">{form.id ? "Edit event" : "Add event"}</span>
               {form.id && (() => {
+                const occDate = currentOccurrenceDate();
+                const dateKey = format(occDate, "yyyy-MM-dd");
+                const tplItems = allTemplateItems.filter((i) => eventTemplateIds.includes(i.template_id));
+                const tplTotal = tplItems.length;
+                const tplDone = tplItems.filter((i) => templateStates[`${i.id}:${dateKey}`]).length;
                 const r = scoreEvent({
                   category: form.category,
                   leader_name: form.leader_name,
                   childcare_needed: form.childcare_needed,
                   childcare_arranged: form.childcare_arranged,
                   room_needed: form.room_needed,
-                  checklist_total: checklist.length,
-                  checklist_done: checklist.filter((i) => i.done).length,
+                  checklist_total: checklist.length + tplTotal,
+                  checklist_done: checklist.filter((i) => i.done).length + tplDone,
                 });
                 return (
                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${readinessColor(r.level)}`} title={r.missing.join(", ") || "Ready"}>
