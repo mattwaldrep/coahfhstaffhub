@@ -392,7 +392,10 @@ function CalendarBody() {
       church_covering: ev.church_covering ?? "",
       childcare_needed: ev.childcare_needed ?? false,
       childcare_arranged: ev.childcare_arranged ?? false,
+      class_series_id: ev.class_series_id ?? "",
+      room_ids: eventRoomsMap.current.get(ev.id) ?? [],
     });
+
     setEditingOccurrence(occ.occurrence_date);
     loadChecklist(ev.id);
     setOpen(true);
