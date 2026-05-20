@@ -1,70 +1,51 @@
 ## Goal
 
-Create reusable **checklist templates** (e.g., "Pot Luck setup", "Class week prep") and attach them to any event or class series. For recurring classes, completion is tracked **per week**.
+Allow events to opt out of the "needs a room" and "needs a leader" readiness checks independently, for things like holidays, observances, and FYI items.
 
-## Tables (new)
+## Schema (one migration)
 
-- **`checklist_templates`** — name, description, created_by
-- **`checklist_template_items`** — template_id, label, position
-- **`event_template_attachments`** — event_id + template_id (link table; live attachment)
-- **`event_template_item_state`** — event_id + template_item_id + occurrence_date + done
-  - `occurrence_date` is the date of that specific week's occurrence (for a one-off event, it equals the event's own date)
-  - Composite unique key on (event_id, template_item_id, occurrence_date)
+Add two boolean flags to `calendar_events`:
 
-Existing `event_checklist_items` stays — it continues to hold one-off ad-hoc items added directly to a single event.
+- `room_not_needed boolean NOT NULL DEFAULT false`
+- `leader_not_needed boolean NOT NULL DEFAULT false`
 
-## How templates resolve at view time
-
-For an event occurrence on date D, the rendered checklist = 
-
-1. Ad-hoc items from `event_checklist_items` (existing behavior)
-2. Plus: for each attached template, all `checklist_template_items` joined to the per-occurrence state row keyed by (event_id, item_id, D). Missing state row → `done = false`.
-
-Checking a template item creates/updates one row in `event_template_item_state` for that occurrence_date only — next week starts fresh.
-
-## UI
-
-**1. New page `/settings/checklists`** (core role)
-- List all templates
-- Create / edit / delete templates with their item lists
-- Reorderable items (drag or up/down)
-
-**2. Calendar event dialog (`src/routes/calendar.tsx`)**
-Add a "Templates" section above the existing Readiness checklist:
-- Multi-select of available templates → writes to `event_template_attachments`
-- Renders attached template items grouped by template name, each with a checkbox bound to per-occurrence state
-- For non-recurring events, occurrence_date = the event's start date
-- For recurring events viewed from a specific date chip, pass that occurrence_date down (calendar already has occurrence_date in EventChip)
-
-**3. Class series dialog (`src/routes/calendar_.classes.tsx`)**
-Add the same "Templates" multi-select. Saving writes attachments against the series' linked `calendar_event_id`.
+(Mirror columns on `calendar_proposed_events` so planning submissions can carry the same intent through approval.)
 
 ## Readiness scoring (`src/lib/event-readiness.ts`)
 
-Update `checklist_total` and `checklist_done` calculations everywhere they're computed:
+Extend `ReadinessEvent` with `room_not_needed?: boolean` and `leader_not_needed?: boolean`.
 
-- Total = ad-hoc items + sum of template items across attached templates
-- Done = ad-hoc items done + per-occurrence done states for template items
+For **general** events:
+- If `leader_not_needed`: award the 40 leader points, drop "Leader" from missing.
+- If `room_not_needed`: award the 30 room points, drop "Room" from missing.
+- Checklist scoring unchanged.
 
-For event-level summaries (no specific occurrence), use the next upcoming occurrence's date as the lookup key (matches what the calendar chips already do).
+For **class** events (`category === "Class"`):
+- If `leader_not_needed`: award the 50 teacher points and drop "Teacher". (Rare for classes, but consistent.)
+- If `room_not_needed`: award the 25 room points and drop "Room".
+- Childcare unchanged.
 
-## Server functions (new `src/server/checklist-templates.functions.ts`)
+Net effect: a holiday with both flags set scores 100% with no warnings.
 
-- `listTemplates()` — for selectors
-- `upsertTemplate({ id?, name, description, items })` — manage template + items atomically
-- `deleteTemplate(id)`
-- `setEventTemplates({ event_id, template_ids })` — replace attachments
-- `setTemplateItemState({ event_id, item_id, occurrence_date, done })` — toggle per-occurrence state
+## UI
 
-All gated by `core` role.
+**Event dialog (`src/routes/calendar.tsx`) — Logistics section**
+- Under the Rooms picker, add a small checkbox: "No room needed (skip readiness check)". When checked, visually dim/disable the Rooms picker.
+- Under the Leader picker, add a small checkbox: "No leader needed". When checked, dim/disable the leader field.
+- Wire both into `form` state, send on save, and feed into the in-dialog readiness preview via `has_room` / leader inputs.
 
-## RLS
+**Calendar `readinessFor(occ)` helper**
+- Pass the two new flags through alongside the existing room/leader resolution.
+- Update prefetch/load mapping so list view, month chips, and dialog all see the flags.
 
-- Templates + items: readable by all authenticated, writable by core
-- Attachments + per-occurrence state: same as calendar_events (readable by authenticated, writable by core)
+**Class series dialog (`src/routes/calendar_.classes.tsx`)**
+- Same two checkboxes, persisted to the linked `calendar_event_id` so generated occurrences inherit them.
 
-## Out of scope (this turn)
+**Planning submission form**
+- Add the two checkboxes to the proposed-event editor so submitters can mark a holiday up front; reviewer approval carries them onto `calendar_events`.
 
-- Drag-and-drop reorder (use up/down buttons instead — simpler, ships now)
-- Assigning checklist items to specific people
-- Notifications when items remain undone on the day of the event
+## Out of scope
+
+- A separate "Holiday/Observance" category — kept simple; categories stay free-form.
+- Changing the room or leader pickers themselves (no "N/A" pseudo-row needed).
+- Hiding the readiness badge entirely for fully-skipped events (it will just show 100%, which reads correctly).
