@@ -161,7 +161,7 @@ function DashboardTab({ year }: { year: number }) {
         <Info className="w-10 h-10 mx-auto text-muted-foreground" />
         <h2 className="font-display text-lg font-semibold">No reports yet for FY {year}</h2>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          Export a <strong>Budget vs. Actuals — Fiscal Year-to-Date</strong> report from QBO as CSV, then upload it under the Monthly reports tab. The first upload will seed your budget categories automatically.
+          First, upload your <strong>Annual budget</strong> (QBO Budget Overview) under Monthly reports. Then upload your monthly <strong>Budget vs. Actuals — FYTD</strong> CSVs to track YTD performance.
         </p>
       </div>
     );
