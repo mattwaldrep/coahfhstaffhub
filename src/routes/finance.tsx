@@ -53,19 +53,24 @@ function Body() {
     );
   }
 
-  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i);
+  const currentFy = currentFiscalYear();
+  const years = Array.from({ length: 5 }, (_, i) => currentFy - 2 + i);
 
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-3xl font-display font-bold">Finance</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Upload monthly QBO Budget vs. Actuals exports to track YTD performance.</p>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Upload monthly QBO Budget vs. Actuals exports to track YTD performance. Fiscal year runs July&nbsp;1&nbsp;–&nbsp;June&nbsp;30.
+          </p>
         </div>
         <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
-          <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {years.map((y) => <SelectItem key={y} value={String(y)}>FY {y}</SelectItem>)}
+            {years.map((y) => (
+              <SelectItem key={y} value={String(y)}>FY {y} ({fiscalYearRangeLabel(y)})</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
