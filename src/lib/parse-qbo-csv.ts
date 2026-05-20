@@ -101,19 +101,41 @@ export function parseQboCsv(csvText: string): QboParseResult {
   const headerText = rows.slice(0, 8).map((r) => r.join(" ")).join("\n");
   const { asOfMonth, fiscalYear, fullYear } = detectHeaderInfo(headerText);
 
-  // Find the column header row containing "Actual" / "Budget"
+  // Find the column header row containing "Actual" / "Budget".
+  // QBO "by month" exports repeat Actual/Budget per month and end with a
+  // Total Actual / Total Budget pair — we must pick the TOTAL/YTD pair,
+  // not the first month.
   let headerRow = -1;
   let actualCol = -1;
   let budgetCol = -1;
+
+  const pickCols = (lc: string[]): { a: number; b: number } | null => {
+    // Collect all indices that look like an Actual column and Budget column
+    const actualIdxs: number[] = [];
+    const budgetIdxs: number[] = [];
+    lc.forEach((c, idx) => {
+      if (/(^|\b)(ytd\s+)?actual(\b|$)/.test(c)) actualIdxs.push(idx);
+      if (/(^|\b)(ytd\s+)?budget(\b|$)/.test(c) && !/over\s+budget|%\s*of\s*budget/.test(c)) budgetIdxs.push(idx);
+    });
+    if (!actualIdxs.length || !budgetIdxs.length) return null;
+
+    // Prefer explicit Total/YTD columns
+    const totalA = actualIdxs.find((i) => /total|ytd/.test(lc[i]));
+    const totalB = budgetIdxs.find((i) => /total|ytd/.test(lc[i]));
+    if (totalA !== undefined && totalB !== undefined) return { a: totalA, b: totalB };
+
+    // Otherwise pick the LAST pair (rightmost = cumulative in monthly layouts)
+    return { a: actualIdxs[actualIdxs.length - 1], b: budgetIdxs[budgetIdxs.length - 1] };
+  };
+
   for (let i = 0; i < Math.min(rows.length, 20); i++) {
     const r = rows[i] ?? [];
     const lc = r.map((c) => (c ?? "").toString().trim().toLowerCase());
-    const aIdx = lc.findIndex((c) => c === "actual" || c === "ytd actual");
-    const bIdx = lc.findIndex((c) => c === "budget" || c === "ytd budget");
-    if (aIdx !== -1 && bIdx !== -1) {
+    const picked = pickCols(lc);
+    if (picked) {
       headerRow = i;
-      actualCol = aIdx;
-      budgetCol = bIdx;
+      actualCol = picked.a;
+      budgetCol = picked.b;
       break;
     }
   }
