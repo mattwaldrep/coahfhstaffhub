@@ -114,8 +114,8 @@ export function parseQboCsv(csvText: string): QboParseResult {
     const actualIdxs: number[] = [];
     const budgetIdxs: number[] = [];
     lc.forEach((c, idx) => {
-      if (/(^|\b)(ytd\s+)?actual(\b|$)/.test(c)) actualIdxs.push(idx);
-      if (/(^|\b)(ytd\s+)?budget(\b|$)/.test(c) && !/over\s+budget|%\s*of\s*budget/.test(c)) budgetIdxs.push(idx);
+      if (/(^|\b)(ytd\s+)?actual(\b|$)/.test(c) && !/over\s+actual/.test(c)) actualIdxs.push(idx);
+      if (/(^|\b)(ytd\s+)?budget(\b|$)/.test(c) && !/over\s+budget|%\s*of\s*budget|percent\s+of\s+budget/.test(c)) budgetIdxs.push(idx);
     });
     if (!actualIdxs.length || !budgetIdxs.length) return null;
 
