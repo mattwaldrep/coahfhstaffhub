@@ -234,6 +234,52 @@ function WorkflowDetail() {
         </CardContent>
       </Card>
 
+      {skippedCount > 0 && (
+        <Card className="border-dashed">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <SkipForward className="w-4 h-4" />
+              Skipped tasks ({skippedCount})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            {leaves
+              .filter((l) => l.is_skipped)
+              .map((l) => (
+                <div
+                  key={l.id}
+                  className="flex items-center justify-between gap-2 text-sm py-1 px-2 rounded hover:bg-muted/50"
+                >
+                  <div className="min-w-0 flex-1">
+                    <span className="line-through text-muted-foreground">{l.task_name}</span>
+                    <span className="text-xs text-muted-foreground ml-2">· {l.section_name}</span>
+                    {l.skipped_reason && (
+                      <span className="ml-2 text-xs text-muted-foreground italic">
+                        ({l.skipped_reason})
+                      </span>
+                    )}
+                  </div>
+                  {isCore && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2"
+                      onClick={async () => {
+                        await skipFn({ data: { task_id: l.id, skipped: false } });
+                        invalidate();
+                      }}
+                    >
+                      <Undo2 className="w-3.5 h-3.5 mr-1" />
+                      <span className="text-xs">Undo</span>
+                    </Button>
+                  )}
+                </div>
+              ))}
+          </CardContent>
+        </Card>
+      )}
+
+
       <div className="space-y-4">
         {sectionOrder.map((section) => {
           const roots = tree.get(section) ?? [];
