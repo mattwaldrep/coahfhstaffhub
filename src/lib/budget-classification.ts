@@ -51,6 +51,8 @@ export function inferClassification(
 ): BudgetClassification {
   if (BRIDGE_RE.test(name)) return "bridge_income";
   if (kind === "income") return "operating_income";
+  const code = extractAccountCode(name);
+  if (isBelowTheLineAccountCode(code)) return "designated_expense";
   if (DESIGNATED_RE.test(name)) return "designated_expense";
   return "operating_expense";
 }
