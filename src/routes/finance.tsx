@@ -106,7 +106,9 @@ function DashboardTab({ year }: { year: number }) {
       supabase.from("budget_categories").select("*").eq("fiscal_year", year).order("sort_order").order("name"),
       supabase.from("finance_snapshots").select("*").eq("fiscal_year", year).order("as_of_month", { ascending: true }),
     ]);
-    setCats((c ?? []) as Category[]);
+    // Exclude rollup parents (e.g. "5000 Personnel") so we don't double-count
+    // them alongside their sub-accounts.
+    setCats(((c ?? []) as (Category & { is_rollup?: boolean | null })[]).filter((x) => !x.is_rollup) as Category[]);
     const snaps = (s ?? []) as Snapshot[];
     setSnapshots(snaps);
     const latest = snaps[snaps.length - 1];
@@ -410,9 +412,10 @@ function ReportsTab({ year }: { year: number }) {
     setReports((data ?? []) as Report[]);
     const { data: catData } = await supabase
       .from("budget_categories")
-      .select("annual_budget,updated_at,kind,classification")
+      .select("annual_budget,updated_at,kind,classification,is_rollup")
       .eq("fiscal_year", year);
-    const arr = (catData ?? []) as { annual_budget: number; updated_at: string | null; kind: "income" | "expense"; classification: string | null }[];
+    const arr = ((catData ?? []) as { annual_budget: number; updated_at: string | null; kind: "income" | "expense"; classification: string | null; is_rollup: boolean | null }[])
+      .filter((c) => !c.is_rollup);
     const income = arr.filter((c) => c.kind === "income").reduce((s, c) => s + Number(c.annual_budget ?? 0), 0);
     const expense = arr
       .filter((c) => c.kind !== "income" && c.classification !== "designated_expense")
