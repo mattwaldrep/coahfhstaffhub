@@ -53,7 +53,7 @@ export function isTotalRow(name: string): boolean {
   );
 }
 
-function detectHeaderInfo(text: string): { asOfMonth?: number; fiscalYear?: number; fullYear: boolean } {
+export function detectHeaderInfo(text: string): { asOfMonth?: number; fiscalYear?: number; fullYear: boolean } {
   const lower = text.toLowerCase();
   let asOfMonth: number | undefined;
   let asOfYear: number | undefined;
