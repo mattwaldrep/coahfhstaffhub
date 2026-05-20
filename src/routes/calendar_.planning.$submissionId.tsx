@@ -274,7 +274,7 @@ function Editor() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Leader</Label>
-                <Input value={form.leader_name} onChange={(e) => setForm({ ...form, leader_name: e.target.value })} />
+                <Input value={form.leader_name} disabled={form.leader_not_needed} onChange={(e) => setForm({ ...form, leader_name: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label>Category</Label>
@@ -286,7 +286,7 @@ function Editor() {
               </div>
               <div className="space-y-2">
                 <Label>Room needed</Label>
-                <Input value={form.room_needed} onChange={(e) => setForm({ ...form, room_needed: e.target.value })} />
+                <Input value={form.room_needed} disabled={form.room_not_needed} onChange={(e) => setForm({ ...form, room_needed: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label>Church covering</Label>
@@ -298,6 +298,15 @@ function Editor() {
                   onChange={(e) => setForm({ ...form, other_listings: e.target.value })} />
               </div>
             </div>
+            <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+              <label className="flex items-center gap-2">
+                <Switch checked={form.room_not_needed} onCheckedChange={(v) => setForm({ ...form, room_not_needed: v })} />
+                No room needed
+              </label>
+              <label className="flex items-center gap-2">
+                <Switch checked={form.leader_not_needed} onCheckedChange={(v) => setForm({ ...form, leader_not_needed: v })} />
+                No leader needed
+              </label>
             <div className="space-y-2">
               <Label>Notes</Label>
               <Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
