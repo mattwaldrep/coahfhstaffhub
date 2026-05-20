@@ -1109,23 +1109,13 @@ function CalendarBody() {
             {/* Logistics */}
             <div className="space-y-3 rounded-xl border border-border p-3">
               <Label className="text-sm font-medium">Logistics</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label className="text-xs">Room needed</Label>
-                  <Input
-                    placeholder="e.g. Office, Sanctuary"
-                    value={form.room_needed}
-                    onChange={(e) => setForm({ ...form, room_needed: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">Church covering</Label>
-                  <Input
-                    placeholder="e.g. Family Hope, COAH:LM, Both"
-                    value={form.church_covering}
-                    onChange={(e) => setForm({ ...form, church_covering: e.target.value })}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Church covering</Label>
+                <Input
+                  placeholder="e.g. Family Hope, COAH:LM, Both"
+                  value={form.church_covering}
+                  onChange={(e) => setForm({ ...form, church_covering: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label className="text-xs">Other listings (comma-separated)</Label>
