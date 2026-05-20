@@ -410,16 +410,21 @@ function ReportsTab({ year }: { year: number }) {
     setReports((data ?? []) as Report[]);
     const { data: catData } = await supabase
       .from("budget_categories")
-      .select("annual_budget,updated_at,kind")
+      .select("annual_budget,updated_at,kind,classification")
       .eq("fiscal_year", year);
-    const arr = (catData ?? []) as { annual_budget: number; updated_at: string | null; kind: "income" | "expense" }[];
+    const arr = (catData ?? []) as { annual_budget: number; updated_at: string | null; kind: "income" | "expense"; classification: string | null }[];
     const income = arr.filter((c) => c.kind === "income").reduce((s, c) => s + Number(c.annual_budget ?? 0), 0);
-    const expense = arr.filter((c) => c.kind !== "income").reduce((s, c) => s + Number(c.annual_budget ?? 0), 0);
+    const expense = arr
+      .filter((c) => c.kind !== "income" && c.classification !== "designated_expense")
+      .reduce((s, c) => s + Number(c.annual_budget ?? 0), 0);
+    const designated = arr
+      .filter((c) => c.classification === "designated_expense")
+      .reduce((s, c) => s + Number(c.annual_budget ?? 0), 0);
     const latest = arr.reduce<string | null>((acc, c) => {
       if (!c.updated_at) return acc;
       return !acc || c.updated_at > acc ? c.updated_at : acc;
     }, null);
-    setAnnualMeta({ count: arr.length, updatedAt: latest, income, expense });
+    setAnnualMeta({ count: arr.length, updatedAt: latest, income, expense, designated });
   }
 
   async function upload(e: React.FormEvent) {
