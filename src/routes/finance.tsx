@@ -146,34 +146,50 @@ function DashboardTab({ year }: { year: number }) {
   }, [cats, snapshots, lines]);
 
   const totals = useMemo(() => {
-    const incomeCats = cats.filter((c) => c.kind === "income");
-    const expenseCats = cats.filter((c) => c.kind !== "income");
+    const byClass = (cls: Classification) => cats.filter((c) => c.classification === cls);
+    const opIncomeCats = byClass("operating_income");
+    const bridgeCats = byClass("bridge_income");
+    const opExpenseCats = byClass("operating_expense");
+    const designatedCats = byClass("designated_expense");
 
-    const sumYtdActualFor = (list: Category[]) =>
-      list.reduce((s, c) => s + Number(lineByCat.get(c.id)?.ytd_actual ?? 0), 0);
-    const sumYtdBudgetFor = (list: Category[]) =>
-      list.reduce((s, c) => s + Number(lineByCat.get(c.id)?.ytd_budget ?? 0), 0);
+    const sumAnnual = (list: Category[]) => list.reduce((s, c) => s + Number(c.annual_budget), 0);
+    const sumYtdActual = (list: Category[]) => list.reduce((s, c) => s + Number(lineByCat.get(c.id)?.ytd_actual ?? 0), 0);
+    const sumYtdBudget = (list: Category[]) => list.reduce((s, c) => s + Number(lineByCat.get(c.id)?.ytd_budget ?? 0), 0);
 
-    const incomeAnnual = incomeCats.reduce((s, c) => s + Number(c.annual_budget), 0);
-    const expenseAnnual = expenseCats.reduce((s, c) => s + Number(c.annual_budget), 0);
-    const incomeYtdActual = sumYtdActualFor(incomeCats);
-    const expenseYtdActual = sumYtdActualFor(expenseCats);
-    const incomeYtdBudget = sumYtdBudgetFor(incomeCats);
-    const expenseYtdBudget = sumYtdBudgetFor(expenseCats);
+    const annual = {
+      opIncome: sumAnnual(opIncomeCats),
+      bridge: sumAnnual(bridgeCats),
+      opExpense: sumAnnual(opExpenseCats),
+      designated: sumAnnual(designatedCats),
+    };
+    const ytdActual = {
+      opIncome: sumYtdActual(opIncomeCats),
+      bridge: sumYtdActual(bridgeCats),
+      opExpense: sumYtdActual(opExpenseCats),
+      designated: sumYtdActual(designatedCats),
+    };
+    const ytdBudget = {
+      opIncome: sumYtdBudget(opIncomeCats),
+      bridge: sumYtdBudget(bridgeCats),
+      opExpense: sumYtdBudget(opExpenseCats),
+      designated: sumYtdBudget(designatedCats),
+    };
 
     const asOf = selectedSnapshot?.as_of_month;
     const monthsElapsed = asOf ? fiscalMonthIndex(asOf) : 0;
     const yearPace = monthsElapsed / 12;
-    const spendPace = expenseAnnual > 0 ? expenseYtdActual / expenseAnnual : 0;
+    const opSpendPace = annual.opExpense > 0 ? ytdActual.opExpense / annual.opExpense : 0;
 
     return {
-      incomeCats, expenseCats,
-      incomeAnnual, expenseAnnual,
-      incomeYtdActual, expenseYtdActual,
-      incomeYtdBudget, expenseYtdBudget,
-      monthsElapsed, yearPace, spendPace,
-      projectedNet: incomeAnnual - expenseAnnual,
-      ytdNet: incomeYtdActual - expenseYtdActual,
+      opIncomeCats, bridgeCats, opExpenseCats, designatedCats,
+      annual, ytdActual, ytdBudget,
+      monthsElapsed, yearPace, opSpendPace,
+      coreLocalMarginAnnual: annual.opIncome - annual.opExpense,
+      coreLocalMarginYtd: ytdActual.opIncome - ytdActual.opExpense,
+      netOperatingAnnual: annual.opIncome + annual.bridge - annual.opExpense,
+      netOperatingYtd: ytdActual.opIncome + ytdActual.bridge - ytdActual.opExpense,
+      totalCashAnnual: (annual.opIncome + annual.bridge) - (annual.opExpense + annual.designated),
+      totalCashYtd: (ytdActual.opIncome + ytdActual.bridge) - (ytdActual.opExpense + ytdActual.designated),
     };
   }, [cats, lineByCat, selectedSnapshot]);
 
@@ -210,35 +226,45 @@ function DashboardTab({ year }: { year: number }) {
         </Select>
       </div>
 
-      {/* Top strip — income, expense, projected net, pacing */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      {/* Three layered metrics + pacing */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
         <Stat
-          label="Annual income"
-          value={fmt(totals.incomeAnnual)}
-          sub={`${fmt(totals.incomeYtdActual)} received YTD`}
+          label="Core Local Margin"
+          value={fmt(totals.coreLocalMarginYtd)}
+          sub={`${fmt(totals.coreLocalMarginAnnual)} projected · tithes − op expense`}
+          tone="default"
         />
         <Stat
-          label="Annual expense"
-          value={fmt(totals.expenseAnnual)}
-          sub={`${fmt(totals.expenseYtdActual)} spent YTD`}
+          label="Net Operating Income"
+          value={fmt(totals.netOperatingYtd)}
+          sub={`${fmt(totals.netOperatingAnnual)} projected · target ≈ $0`}
+          tone={Math.abs(totals.netOperatingYtd) > 10000 ? "danger" : "default"}
         />
         <Stat
-          label="Projected net"
-          value={fmt(totals.projectedNet)}
-          sub={`${fmt(totals.ytdNet)} YTD`}
-          tone={totals.projectedNet < 0 ? "danger" : "default"}
+          label="Total Org Cash Flow"
+          value={fmt(totals.totalCashYtd)}
+          sub={`${fmt(totals.totalCashAnnual)} projected · all in − all out`}
+          tone={totals.totalCashYtd < 0 ? "danger" : "default"}
         />
         <Stat
-          label="Pacing (expense)"
-          value={`${pct(totals.spendPace)} spent`}
+          label="Op-expense pacing"
+          value={`${pct(totals.opSpendPace)} spent`}
           sub={`${pct(totals.yearPace)} of year elapsed`}
-          tone={totals.spendPace > totals.yearPace + 0.05 ? "danger" : "default"}
+          tone={totals.opSpendPace > totals.yearPace + 0.05 ? "danger" : "default"}
         />
       </div>
+      <p className="text-[11px] text-muted-foreground mb-4">
+        Above the line = operational (tithes &amp; op-expense). Bridge income = restricted-fund release for payroll.
+        Below the line = fund-raised church-planting (donor-driven, doesn't distort operational health).
+      </p>
 
-      {renderCategoryTable("Income", totals.incomeCats, lineByCat, trendByCat, totals.incomeAnnual, totals.incomeYtdActual, totals.incomeYtdBudget, "income")}
+      {renderCategoryTable("Operating Income", totals.opIncomeCats, lineByCat, trendByCat, totals.annual.opIncome, totals.ytdActual.opIncome, totals.ytdBudget.opIncome, "income")}
       <div className="mt-4" />
-      {renderCategoryTable("Expense", totals.expenseCats, lineByCat, trendByCat, totals.expenseAnnual, totals.expenseYtdActual, totals.expenseYtdBudget, "expense")}
+      {renderCategoryTable("Bridge Income (Restricted Release)", totals.bridgeCats, lineByCat, trendByCat, totals.annual.bridge, totals.ytdActual.bridge, totals.ytdBudget.bridge, "income", "Pulls fund-raised money up to cover salaries under 5000 Personnel. Not regular church income.")}
+      <div className="mt-4" />
+      {renderCategoryTable("Operating Expense", totals.opExpenseCats, lineByCat, trendByCat, totals.annual.opExpense, totals.ytdActual.opExpense, totals.ytdBudget.opExpense, "expense")}
+      <div className="mt-4" />
+      {renderCategoryTable("Designated Expense (Fund-raised)", totals.designatedCats, lineByCat, trendByCat, totals.annual.designated, totals.ytdActual.designated, totals.ytdBudget.designated, "expense", "Fund-raised church-planting costs. Tracked separately so they don't distort operational health.")}
     </>
   );
 }
@@ -252,6 +278,7 @@ function renderCategoryTable(
   ytdActualTotal: number,
   ytdBudgetTotal: number,
   kind: "income" | "expense",
+  caption?: string,
 ) {
   const variancePositiveIsGood = kind === "income";
   const varianceClass = (n: number) =>
@@ -262,9 +289,12 @@ function renderCategoryTable(
         : "text-destructive";
   return (
     <div className="bg-surface border border-border rounded-2xl overflow-x-auto">
-      <div className="px-3 py-2 border-b border-border flex items-baseline justify-between">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h3>
-        <span className="text-xs text-muted-foreground">{cats.length} categories</span>
+      <div className="px-3 py-2 border-b border-border">
+        <div className="flex items-baseline justify-between">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h3>
+          <span className="text-xs text-muted-foreground">{cats.length} categories</span>
+        </div>
+        {caption && <p className="text-[11px] text-muted-foreground mt-0.5">{caption}</p>}
       </div>
       <table className="w-full text-sm">
         <thead>
