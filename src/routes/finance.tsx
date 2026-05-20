@@ -145,15 +145,36 @@ function DashboardTab({ year }: { year: number }) {
   }, [cats, snapshots, lines]);
 
   const totals = useMemo(() => {
-    const annualBudget = cats.reduce((s, c) => s + Number(c.annual_budget), 0);
-    const ytdActual = selectedLines.reduce((s, l) => s + Number(l.ytd_actual), 0);
-    const ytdBudget = selectedLines.reduce((s, l) => s + Number(l.ytd_budget), 0);
+    const incomeCats = cats.filter((c) => c.kind === "income");
+    const expenseCats = cats.filter((c) => c.kind !== "income");
+
+    const sumYtdActualFor = (list: Category[]) =>
+      list.reduce((s, c) => s + Number(lineByCat.get(c.id)?.ytd_actual ?? 0), 0);
+    const sumYtdBudgetFor = (list: Category[]) =>
+      list.reduce((s, c) => s + Number(lineByCat.get(c.id)?.ytd_budget ?? 0), 0);
+
+    const incomeAnnual = incomeCats.reduce((s, c) => s + Number(c.annual_budget), 0);
+    const expenseAnnual = expenseCats.reduce((s, c) => s + Number(c.annual_budget), 0);
+    const incomeYtdActual = sumYtdActualFor(incomeCats);
+    const expenseYtdActual = sumYtdActualFor(expenseCats);
+    const incomeYtdBudget = sumYtdBudgetFor(incomeCats);
+    const expenseYtdBudget = sumYtdBudgetFor(expenseCats);
+
     const asOf = selectedSnapshot?.as_of_month;
     const monthsElapsed = asOf ? fiscalMonthIndex(asOf) : 0;
     const yearPace = monthsElapsed / 12;
-    const spendPace = annualBudget > 0 ? ytdActual / annualBudget : 0;
-    return { annualBudget, ytdActual, ytdBudget, monthsElapsed, yearPace, spendPace };
-  }, [cats, selectedLines, selectedSnapshot]);
+    const spendPace = expenseAnnual > 0 ? expenseYtdActual / expenseAnnual : 0;
+
+    return {
+      incomeCats, expenseCats,
+      incomeAnnual, expenseAnnual,
+      incomeYtdActual, expenseYtdActual,
+      incomeYtdBudget, expenseYtdBudget,
+      monthsElapsed, yearPace, spendPace,
+      projectedNet: incomeAnnual - expenseAnnual,
+      ytdNet: incomeYtdActual - expenseYtdActual,
+    };
+  }, [cats, lineByCat, selectedSnapshot]);
 
   if (snapshots.length === 0) {
     return (
@@ -188,73 +209,119 @@ function DashboardTab({ year }: { year: number }) {
         </Select>
       </div>
 
-      {/* Top strip */}
+      {/* Top strip — income, expense, projected net, pacing */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        <Stat label="Annual budget" value={fmt(totals.annualBudget)} />
-        <Stat label="YTD actual" value={fmt(totals.ytdActual)} sub={`vs. ${fmt(totals.ytdBudget)} YTD budget`} />
-        <Stat label="Annual variance" value={fmt(totals.annualBudget - totals.ytdActual)}
-          tone={totals.annualBudget - totals.ytdActual < 0 ? "danger" : "default"} />
-        <Stat label="Pacing"
+        <Stat
+          label="Annual income"
+          value={fmt(totals.incomeAnnual)}
+          sub={`${fmt(totals.incomeYtdActual)} received YTD`}
+        />
+        <Stat
+          label="Annual expense"
+          value={fmt(totals.expenseAnnual)}
+          sub={`${fmt(totals.expenseYtdActual)} spent YTD`}
+        />
+        <Stat
+          label="Projected net"
+          value={fmt(totals.projectedNet)}
+          sub={`${fmt(totals.ytdNet)} YTD`}
+          tone={totals.projectedNet < 0 ? "danger" : "default"}
+        />
+        <Stat
+          label="Pacing (expense)"
           value={`${pct(totals.spendPace)} spent`}
           sub={`${pct(totals.yearPace)} of year elapsed`}
           tone={totals.spendPace > totals.yearPace + 0.05 ? "danger" : "default"}
         />
       </div>
 
-      <div className="bg-surface border border-border rounded-2xl overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border text-[11px] uppercase tracking-wider text-muted-foreground">
-              <th className="text-left px-3 py-2">Category</th>
-              <th className="text-right px-3 py-2">Annual budget</th>
-              <th className="text-right px-3 py-2">YTD actual</th>
-              <th className="text-right px-3 py-2">YTD budget</th>
-              <th className="text-right px-3 py-2">vs. YTD budget</th>
-              <th className="text-right px-3 py-2">vs. annual</th>
-              <th className="text-left px-3 py-2">Trend</th>
-            </tr>
-          </thead>
-          <tbody>
-            {cats.map((c) => {
-              const line = lineByCat.get(c.id);
-              const ytdActual = line ? Number(line.ytd_actual) : 0;
-              const ytdBudget = line ? Number(line.ytd_budget) : 0;
-              const annual = Number(c.annual_budget);
-              const vsYtd = ytdBudget - ytdActual;
-              const vsAnnual = annual - ytdActual;
-              const trend = trendByCat.get(c.id) ?? [];
-              return (
-                <tr key={c.id} className="border-b border-border/40 hover:bg-background/40">
-                  <td className="px-3 py-1.5 font-medium">{c.name}</td>
-                  <td className="text-right tabular-nums px-3">{fmt(annual)}</td>
-                  <td className="text-right tabular-nums px-3">{fmt(ytdActual)}</td>
-                  <td className="text-right tabular-nums px-3 text-muted-foreground">{fmt(ytdBudget)}</td>
-                  <td className={`text-right tabular-nums px-3 ${vsYtd < 0 ? "text-destructive" : "text-muted-foreground"}`}>{fmt(vsYtd)}</td>
-                  <td className={`text-right tabular-nums px-3 ${vsAnnual < 0 ? "text-destructive" : "text-muted-foreground"}`}>{fmt(vsAnnual)}</td>
-                  <td className="px-3"><Sparkline values={trend} /></td>
-                </tr>
-              );
-            })}
-            {cats.length === 0 && (
-              <tr><td colSpan={7} className="text-center py-8 text-muted-foreground text-sm">No categories yet — upload a report to seed them.</td></tr>
-            )}
-          </tbody>
-          {cats.length > 0 && (
-            <tfoot>
-              <tr className="font-semibold bg-background/40">
-                <td className="px-3 py-2">Total</td>
-                <td className="text-right tabular-nums px-3">{fmt(totals.annualBudget)}</td>
-                <td className="text-right tabular-nums px-3">{fmt(totals.ytdActual)}</td>
-                <td className="text-right tabular-nums px-3 text-muted-foreground">{fmt(totals.ytdBudget)}</td>
-                <td className={`text-right tabular-nums px-3 ${totals.ytdBudget - totals.ytdActual < 0 ? "text-destructive" : ""}`}>{fmt(totals.ytdBudget - totals.ytdActual)}</td>
-                <td className={`text-right tabular-nums px-3 ${totals.annualBudget - totals.ytdActual < 0 ? "text-destructive" : ""}`}>{fmt(totals.annualBudget - totals.ytdActual)}</td>
-                <td></td>
-              </tr>
-            </tfoot>
-          )}
-        </table>
-      </div>
+      {renderCategoryTable("Income", totals.incomeCats, lineByCat, trendByCat, totals.incomeAnnual, totals.incomeYtdActual, totals.incomeYtdBudget, "income")}
+      <div className="mt-4" />
+      {renderCategoryTable("Expense", totals.expenseCats, lineByCat, trendByCat, totals.expenseAnnual, totals.expenseYtdActual, totals.expenseYtdBudget, "expense")}
     </>
+  );
+}
+
+function renderCategoryTable(
+  title: string,
+  cats: Category[],
+  lineByCat: Map<string, SnapshotLine>,
+  trendByCat: Map<string, number[]>,
+  annualTotal: number,
+  ytdActualTotal: number,
+  ytdBudgetTotal: number,
+  kind: "income" | "expense",
+) {
+  const variancePositiveIsGood = kind === "income";
+  const varianceClass = (n: number) =>
+    n === 0
+      ? "text-muted-foreground"
+      : (n > 0) === variancePositiveIsGood
+        ? "text-muted-foreground"
+        : "text-destructive";
+  return (
+    <div className="bg-surface border border-border rounded-2xl overflow-x-auto">
+      <div className="px-3 py-2 border-b border-border flex items-baseline justify-between">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h3>
+        <span className="text-xs text-muted-foreground">{cats.length} categories</span>
+      </div>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-border text-[11px] uppercase tracking-wider text-muted-foreground">
+            <th className="text-left px-3 py-2">Category</th>
+            <th className="text-right px-3 py-2">Annual budget</th>
+            <th className="text-right px-3 py-2">YTD actual</th>
+            <th className="text-right px-3 py-2">YTD budget</th>
+            <th className="text-right px-3 py-2">vs. YTD budget</th>
+            <th className="text-right px-3 py-2">vs. annual</th>
+            <th className="text-left px-3 py-2">Trend</th>
+          </tr>
+        </thead>
+        <tbody>
+          {cats.map((c) => {
+            const line = lineByCat.get(c.id);
+            const ytdActual = line ? Number(line.ytd_actual) : 0;
+            const ytdBudget = line ? Number(line.ytd_budget) : 0;
+            const annual = Number(c.annual_budget);
+            // For income: actual > budget is GOOD; for expense: actual > budget is BAD
+            const vsYtd = kind === "income" ? ytdActual - ytdBudget : ytdBudget - ytdActual;
+            const vsAnnual = kind === "income" ? ytdActual - annual : annual - ytdActual;
+            const trend = trendByCat.get(c.id) ?? [];
+            return (
+              <tr key={c.id} className="border-b border-border/40 hover:bg-background/40">
+                <td className="px-3 py-1.5 font-medium">{c.name}</td>
+                <td className="text-right tabular-nums px-3">{fmt(annual)}</td>
+                <td className="text-right tabular-nums px-3">{fmt(ytdActual)}</td>
+                <td className="text-right tabular-nums px-3 text-muted-foreground">{fmt(ytdBudget)}</td>
+                <td className={`text-right tabular-nums px-3 ${varianceClass(vsYtd)}`}>{fmt(vsYtd)}</td>
+                <td className={`text-right tabular-nums px-3 ${varianceClass(vsAnnual)}`}>{fmt(vsAnnual)}</td>
+                <td className="px-3"><Sparkline values={trend} /></td>
+              </tr>
+            );
+          })}
+          {cats.length === 0 && (
+            <tr><td colSpan={7} className="text-center py-8 text-muted-foreground text-sm">No {title.toLowerCase()} categories yet.</td></tr>
+          )}
+        </tbody>
+        {cats.length > 0 && (
+          <tfoot>
+            <tr className="font-semibold bg-background/40">
+              <td className="px-3 py-2">Total</td>
+              <td className="text-right tabular-nums px-3">{fmt(annualTotal)}</td>
+              <td className="text-right tabular-nums px-3">{fmt(ytdActualTotal)}</td>
+              <td className="text-right tabular-nums px-3 text-muted-foreground">{fmt(ytdBudgetTotal)}</td>
+              <td className={`text-right tabular-nums px-3 ${varianceClass(kind === "income" ? ytdActualTotal - ytdBudgetTotal : ytdBudgetTotal - ytdActualTotal)}`}>
+                {fmt(kind === "income" ? ytdActualTotal - ytdBudgetTotal : ytdBudgetTotal - ytdActualTotal)}
+              </td>
+              <td className={`text-right tabular-nums px-3 ${varianceClass(kind === "income" ? ytdActualTotal - annualTotal : annualTotal - ytdActualTotal)}`}>
+                {fmt(kind === "income" ? ytdActualTotal - annualTotal : annualTotal - ytdActualTotal)}
+              </td>
+              <td></td>
+            </tr>
+          </tfoot>
+        )}
+      </table>
+    </div>
   );
 }
 
