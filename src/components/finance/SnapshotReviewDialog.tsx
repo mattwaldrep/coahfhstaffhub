@@ -172,7 +172,7 @@ export function SnapshotReviewDialog({
           <div className="text-sm text-destructive py-6">{error}</div>
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Fiscal year</Label>
                 <Input type="number" value={fiscalYear}
@@ -187,13 +187,10 @@ export function SnapshotReviewDialog({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-end">
-                <label className="flex items-center gap-2 text-sm">
-                  <Checkbox checked={fullYear} onCheckedChange={(v) => setFullYear(!!v)} />
-                  Full-year report — use Budget column as annual budget
-                </label>
-              </div>
             </div>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Annual budgets are managed via the separate <strong>Annual budget</strong> import.
+            </p>
 
             <div className="flex gap-2 text-xs mt-2">
               <Badge variant="secondary">{stats.matched} matched</Badge>
