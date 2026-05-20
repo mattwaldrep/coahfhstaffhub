@@ -1576,12 +1576,8 @@ function ListView({ occurrences, conflictMap, onPickEvent, readinessOf }: { occu
                 {o.rrule && <Repeat className="w-3 h-3 text-muted-foreground" />}
                 {o.readiness && <ReadinessBadge value={o.readiness} />}
                 {(() => {
-                  const r = scoreEvent({
-                    category: o.category, leader_name: o.leader_name,
-                    childcare_needed: o.childcare_needed, childcare_arranged: o.childcare_arranged,
-                    room_needed: o.room_needed,
-                  });
-                  return <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${readinessColor(r.level)}`}>{r.score}%</span>;
+                  const r = readinessOf(o);
+                  return <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${readinessColor(r.level)}`} title={r.missing.join(", ") || "Ready"}>{r.score}%</span>;
                 })()}
                 {conflictMap.get(`${o.id}-${o.occurrence_date.getTime()}`) ? (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 flex items-center gap-1">
