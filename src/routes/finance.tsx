@@ -285,7 +285,7 @@ function renderCategoryTable(
     n === 0
       ? "text-muted-foreground"
       : (n > 0) === variancePositiveIsGood
-        ? "text-muted-foreground"
+        ? "text-emerald-600"
         : "text-destructive";
   return (
     <div className="bg-surface border border-border rounded-2xl overflow-x-auto">
