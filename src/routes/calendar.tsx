@@ -796,6 +796,59 @@ function CalendarBody() {
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={submit} className="space-y-4">
+            {formConflicts.length > 0 && (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs flex gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-medium text-amber-700">
+                    {formConflicts.length} scheduling conflict{formConflicts.length === 1 ? "" : "s"}
+                  </div>
+                  <ul className="mt-1 space-y-0.5">
+                    {formConflicts.slice(0, 5).map((c, i) => (
+                      <li key={i}>
+                        Overlaps <span className="font-medium">{c.other.title}</span> ({c.reason === "both" ? "same room & leader" : `same ${c.reason}`})
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+            {classSeries.length > 0 && (
+              <div className="space-y-2">
+                <Label>Class series (optional)</Label>
+                <Select value={form.class_series_id || "_none"} onValueChange={(v) => applySeries(v === "_none" ? "" : v)}>
+                  <SelectTrigger><SelectValue placeholder="No series" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">No series</SelectItem>
+                    {classSeries.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {rooms.length > 0 && (
+              <div className="space-y-2">
+                <Label>Rooms</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {rooms.map((r) => {
+                    const on = form.room_ids.includes(r.id);
+                    return (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => setForm({
+                          ...form,
+                          room_ids: on ? form.room_ids.filter((x) => x !== r.id) : [...form.room_ids, r.id],
+                        })}
+                        className={`text-xs px-2.5 py-1 rounded-full border transition ${
+                          on ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"
+                        }`}
+                      >{r.name}</button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>Title</Label>
               <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
