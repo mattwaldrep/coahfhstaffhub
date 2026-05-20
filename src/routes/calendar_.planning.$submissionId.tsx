@@ -93,6 +93,8 @@ function Editor() {
       missions_team_needed: e.missions_team_needed,
       church_covering: e.church_covering ?? "",
       other_listings: (e.other_listings ?? []).join(", "),
+      room_not_needed: e.room_not_needed ?? false,
+      leader_not_needed: e.leader_not_needed ?? false,
     });
     setOpen(true);
   }
