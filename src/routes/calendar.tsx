@@ -1446,7 +1446,7 @@ function EventChip({ occ, compact, conflictCount, readiness }: {
 }
 
 function MonthGrid({
-  cursor, occurrences, conflictMap, onPickDay, onPickEvent, canEdit,
+  cursor, occurrences, conflictMap, onPickDay, onPickEvent, canEdit, readinessOf,
 }: {
   cursor: Date;
   occurrences: Occurrence[];
@@ -1454,6 +1454,7 @@ function MonthGrid({
   onPickDay: (d: Date) => void;
   onPickEvent: (o: Occurrence) => void;
   canEdit: boolean;
+  readinessOf: (occ: Occurrence) => ReturnType<typeof scoreEvent>;
 }) {
   const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 0 });
   const end = endOfWeek(endOfMonth(cursor), { weekStartsOn: 0 });
