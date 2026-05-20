@@ -121,6 +121,16 @@ function WorkflowDetail() {
   const addFn = useServerFn(addAdHocTask);
   const statusFn = useServerFn(setWorkflowStatus);
   const delFn = useServerFn(deleteTask);
+  const assignFn = useServerFn(assignOnboardingTask);
+  const unassignFn = useServerFn(unassignOnboardingTask);
+  const listUsersFn = useServerFn(listAssignableUsers);
+
+  const { data: assignableUsers = [] } = useQuery<UserOption[]>({
+    queryKey: ["assignable-users"],
+    queryFn: () => listUsersFn(),
+    staleTime: 5 * 60 * 1000,
+  });
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["onboarding-workflow", workflowId],
