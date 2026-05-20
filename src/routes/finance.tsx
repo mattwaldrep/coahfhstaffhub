@@ -309,6 +309,17 @@ function ReportsTab({ year }: { year: number }) {
       .order("month", { ascending: true })
       .order("created_at", { ascending: false });
     setReports((data ?? []) as Report[]);
+    const { data: catData } = await supabase
+      .from("budget_categories")
+      .select("annual_budget,updated_at")
+      .eq("fiscal_year", year);
+    const arr = (catData ?? []) as { annual_budget: number; updated_at: string | null }[];
+    const total = arr.reduce((s, c) => s + Number(c.annual_budget ?? 0), 0);
+    const latest = arr.reduce<string | null>((acc, c) => {
+      if (!c.updated_at) return acc;
+      return !acc || c.updated_at > acc ? c.updated_at : acc;
+    }, null);
+    setAnnualMeta({ count: arr.length, updatedAt: latest, total });
   }
 
   async function upload(e: React.FormEvent) {
