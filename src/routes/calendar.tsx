@@ -1550,7 +1550,7 @@ function WeekStrip({
   );
 }
 
-function ListView({ occurrences, conflictMap, onPickEvent }: { occurrences: Occurrence[]; conflictMap: Map<string, number>; onPickEvent: (o: Occurrence) => void }) {
+function ListView({ occurrences, conflictMap, onPickEvent, readinessOf }: { occurrences: Occurrence[]; conflictMap: Map<string, number>; onPickEvent: (o: Occurrence) => void; readinessOf: (occ: Occurrence) => ReturnType<typeof scoreEvent> }) {
   if (occurrences.length === 0) {
     return (
       <div className="bg-surface border border-border rounded-2xl p-2">
