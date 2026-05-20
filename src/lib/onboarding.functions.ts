@@ -341,14 +341,17 @@ export const addAdHocTask = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertCore(context.supabase, context.userId);
-    const { data: sib } = await supabaseAdmin
+    let sibQ: any = supabaseAdmin
       .from("onboarding_tasks")
       .select("sort_order")
       .eq("workflow_id", data.workflow_id)
       .eq("section_name", data.section_name)
-      .is("parent_task_id", data.parent_task_id ?? null)
       .order("sort_order", { ascending: false })
       .limit(1);
+    sibQ = data.parent_task_id
+      ? sibQ.eq("parent_task_id", data.parent_task_id)
+      : sibQ.is("parent_task_id", null);
+    const { data: sib } = await sibQ;
     const sort = ((sib?.[0]?.sort_order as number | undefined) ?? 0) + 10;
     const { error } = await supabaseAdmin.from("onboarding_tasks").insert({
       workflow_id: data.workflow_id,
