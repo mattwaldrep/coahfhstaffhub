@@ -165,6 +165,12 @@ function parseRows(rows: string[][]): AnnualBudgetParseResult {
       }
     }
 
+    if (!currentKind) {
+      // Couldn't determine section — skip rather than misclassify
+      ignored.push(name);
+      continue;
+    }
+
     const meta = getBudgetLineMeta(name, currentKind);
 
     // Skip rollup parents and empty placeholder accounts (no budget set)
@@ -174,12 +180,6 @@ function parseRows(rows: string[][]): AnnualBudgetParseResult {
     }
 
     if (meta.isRollup) {
-      ignored.push(name);
-      continue;
-    }
-
-    if (!currentKind) {
-      // Couldn't determine section — skip rather than misclassify
       ignored.push(name);
       continue;
     }
