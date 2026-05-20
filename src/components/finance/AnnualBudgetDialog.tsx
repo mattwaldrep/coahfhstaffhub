@@ -37,6 +37,7 @@ type RowState = {
   categoryId: string | null;
   createAs: string | null;
   ignored: boolean;
+  classification: BudgetClassification;
 };
 
 export function AnnualBudgetDialog({
