@@ -357,12 +357,7 @@ function CalendarBody() {
     setRooms((rs ?? []) as Room[]);
     setAllTemplates(((tpls ?? []) as unknown) as ChecklistTemplate[]);
     setAllTemplateItems(((tplItems ?? []) as unknown) as TemplateItem[]);
-    const attMap = new Map<string, string[]>();
-    for (const row of ((atts ?? []) as unknown as Array<{ event_id: string; template_id: string }>)) {
-      (attMap.get(row.event_id) ?? attMap.set(row.event_id, []).get(row.event_id)!).push(row.template_id);
-    }
-    setEventTemplateAttachments(attMap);
-    setAllTemplateStateRows(((states ?? []) as unknown) as Array<{ event_id: string; template_item_id: string; occurrence_date: string; done: boolean }>);
+    void atts; void states;
   }
 
 
