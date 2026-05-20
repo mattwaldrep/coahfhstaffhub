@@ -382,34 +382,35 @@ function CalendarBody() {
     setRooms((rs ?? []) as Room[]);
     setAllTemplates(((tpls ?? []) as unknown) as ChecklistTemplate[]);
     setAllTemplateItems(((tplItems ?? []) as unknown) as TemplateItem[]);
-    void atts; void states;
-  }
 
-
-  async function loadChecklist(eventId: string) {
-    const { data } = await supabase
+    // Per-event ad-hoc checklist counts (for readiness scoring everywhere)
+    const { data: cli } = await supabase
       .from("event_checklist_items")
-      .select("*")
-      .eq("event_id", eventId)
-      .order("position", { ascending: true });
-    setChecklist(data ?? []);
-  }
-
-  async function loadTemplatesForEvent(eventId: string, occurrenceDate: Date) {
-    const dateKey = format(occurrenceDate, "yyyy-MM-dd");
-    const [{ data: atts }, { data: states }] = await Promise.all([
-      supabase.from("event_template_attachments" as any).select("template_id").eq("event_id", eventId),
-      supabase.from("event_template_item_state" as any)
-        .select("template_item_id, done")
-        .eq("event_id", eventId)
-        .eq("occurrence_date", dateKey),
-    ]);
-    setEventTemplateIds(((atts ?? []) as unknown as Array<{ template_id: string }>).map((a) => a.template_id));
-    const m: Record<string, boolean> = {};
-    for (const row of ((states ?? []) as unknown as Array<{ template_item_id: string; done: boolean }>)) {
-      m[`${row.template_item_id}:${dateKey}`] = row.done;
+      .select("event_id, done");
+    const cMap = new Map<string, { total: number; done: number }>();
+    for (const row of (cli ?? []) as Array<{ event_id: string; done: boolean }>) {
+      const cur = cMap.get(row.event_id) ?? { total: 0, done: 0 };
+      cur.total += 1;
+      if (row.done) cur.done += 1;
+      cMap.set(row.event_id, cur);
     }
-    setTemplateStates(m);
+    eventChecklistMap.current = cMap;
+
+    // Per-event template attachments
+    const aMap = new Map<string, string[]>();
+    for (const row of (atts ?? []) as unknown as Array<{ event_id: string; template_id: string }>) {
+      const arr = aMap.get(row.event_id) ?? [];
+      arr.push(row.template_id);
+      aMap.set(row.event_id, arr);
+    }
+    eventAttachmentsMap.current = aMap;
+
+    // Per-occurrence template item state
+    const sMap = new Map<string, boolean>();
+    for (const row of (states ?? []) as unknown as Array<{ event_id: string; template_item_id: string; occurrence_date: string; done: boolean }>) {
+      sMap.set(`${row.event_id}:${row.template_item_id}:${row.occurrence_date}`, row.done);
+    }
+    templateStateMap.current = sMap;
   }
 
   function openNew(date?: Date) {
