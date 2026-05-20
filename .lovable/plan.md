@@ -1,43 +1,56 @@
-## What's wrong
+## Goal
 
-The QBO export groups rows under section headers ("Income", "Cost of Goods Sold", "Expense", "Other Income", "Other Expense"). The current importer ignores those headers and dumps every line into one flat list of "budget categories." The dashboard then sums **everything** as one annual budget number — so tithes/offering revenue gets added on top of payroll and rent. That's why the totals look nonsensical.
+When you save a class series, it automatically appears on the calendar as a recurring event — no manual "Add to calendar" step. Each series owns one calendar event whose RRULE drives every weekly/biweekly/monthly occurrence.
 
-It also imports rollup parents and $0 placeholder accounts, which clutters the category list.
+## How it works
 
-## Fix
+The calendar already supports rich recurrence on `calendar_events` (rrule + recurrence_end_date + excluded_dates) and the views expand RRULEs at render time. We'll piggyback on that instead of materializing dozens of rows per class.
 
-### 1. Schema: tag each category
-Add `kind` to `budget_categories`:
-- `income` — revenue accounts (Income, Other Income)
-- `expense` — spending accounts (Cost of Goods Sold, Expense, Other Expense)
+```text
+class_series  ──owns──▶  calendar_events (1 row, rrule)
+                              │
+                              └─ expanded weekly on the calendar
+                              └─ skipped dates via excluded_dates
+                              └─ per-occurrence notes already supported
+```
 
-Default existing rows to `expense` (legacy data is cleared anyway).
+## Changes
 
-### 2. Parser: track the current section
-Walk the sheet top-to-bottom. Whenever column A is a section header at indent 0 (`Income`, `Cost of Goods Sold`, `Expense`, `Other Income`, `Other Expense`), flip an `kind` flag. Tag each subsequent leaf line with that kind. Skip:
-- Section headers themselves
-- "Total …" subtotal rows (already ignored)
-- Rows whose annual is `0` or blank (parent rollups and unused accounts)
+**1. Schema (migration on `class_series`)**
+- `start_date date` — series start (DTSTART for the rrule)
+- `end_date date NULL` — optional series end (UNTIL)
+- `freq text` — `WEEKLY` | `MONTHLY`
+- `interval int default 1` — every N weeks/months (covers biweekly)
+- `byweekday text[]` — `['MO','WE']` etc.
+- `bysetpos int NULL` — e.g. `2` for "2nd weekday of month"
+- `excluded_dates date[] default '{}'` — skipped holidays/breaks
+- `calendar_event_id uuid NULL` — the auto-generated event row
+- Keep existing `weekday`, `start_time`, `end_time`, defaults — still used as the template.
 
-### 3. Review dialog: show the split
-In `AnnualBudgetDialog`, group the parsed lines into two tables — **Income** and **Expense** — each with its own subtotal. The user can still un-check rows they don't want imported.
+**2. Classes page (`/calendar/classes`)**
+Expand the add/edit form with a recurrence section:
+- Date range (start required, end optional)
+- Frequency: Weekly / Every N weeks (biweekly) / Monthly by weekday
+- Weekday multi-select (Mon/Tue/…)
+- "Position in month" selector when monthly (1st/2nd/3rd/4th/last)
+- Skip dates list (add/remove specific dates)
+- Time fields already exist
 
-### 4. Server function: persist the kind
-`applyAnnualBudget` writes `kind` alongside `annual_budget` when creating/updating `budget_categories`.
+Add an Edit action (currently only add + archive + delete).
 
-### 5. Dashboard cards: stop combining them
-On `/finance`, replace the single "Annual budget" total with three numbers:
-- **Annual income budget** = sum of `kind = 'income'`
-- **Annual expense budget** = sum of `kind = 'expense'`
-- **Projected surplus / (deficit)** = income − expense
+**3. Sync logic (new `src/server/class-series.functions.ts`)**
+- `upsertClassSeries({...})` — writes the series, builds the RRULE from its fields, then upserts the matching `calendar_events` row:
+  - `sub_calendar='classes'`, `category='Class'`, `class_series_id=<series.id>`
+  - `title`, `leader_name`, `childcare_needed`, room (via `event_rooms`) all sourced from series defaults
+  - `start_at`/`end_at` from start_date + start_time/end_time
+  - `rrule`, `recurrence_end_date`, `excluded_dates` from the recurrence fields
+- `deleteClassSeries(id)` — deletes the linked calendar event then the series.
+- `archiveClassSeries(id, active)` — when archived, also clears `rrule` (or deletes the event) so it stops appearing on the calendar.
 
-Budget-vs-actuals lists also split into Income and Expense sections so a $200k tithes line never sits next to a $25k rent line in the same ranking.
+**4. Wire the page to use the new functions**
+Replace the direct `supabase.from('class_series').insert/update/delete` calls with the server-fn calls so calendar sync happens server-side in one transaction.
 
-### Out of scope
-- No changes to the monthly snapshot importer's math (it still just writes YTD actual/budget per category — those categories now carry a `kind`, which lets the dashboard group them correctly automatically).
-- No re-import of historical data needed; the finance module was just wiped.
-
-### Technical notes
-- Migration adds `kind text not null default 'expense' check (kind in ('income','expense'))` on `budget_categories`.
-- `parse-qbo-budget.ts` returns `lines: { name, annualBudget, indent, kind }[]`.
-- `finance_snapshot_lines` doesn't need a `kind` column — it joins to `budget_categories` for kind.
+## Notes & non-goals
+- Per-occurrence overrides (e.g. "this Tuesday has a substitute teacher") stay as a Phase 2 item — same as today's recurring events.
+- Existing class series rows get sensible defaults (weekly, no end date, no skips) so nothing breaks; you can edit them to refine.
+- Readiness scoring is unchanged — class events still need teacher/room/childcare.
