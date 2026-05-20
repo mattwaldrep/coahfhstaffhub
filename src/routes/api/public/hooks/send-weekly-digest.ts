@@ -78,7 +78,7 @@ export const Route = createFileRoute("/api/public/hooks/send-weekly-digest")({
         // ---- Build HTML body ----
         const gaps = events.filter(
           (e) =>
-            e.sub_calendar === "classes" &&
+            e.category === "Class" &&
             (!e.leader_name || (e.childcare_needed && !e.childcare_arranged)),
         );
 
