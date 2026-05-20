@@ -98,15 +98,28 @@ export function AnnualBudgetDialog({
     }
   }
 
-  const incomeRows = rows.filter((r) => r.line.kind === "income");
-  const expenseRows = rows.filter((r) => r.line.kind === "expense");
+  const sections: { key: BudgetClassification; rows: RowState[] }[] = (
+    ["operating_income", "bridge_income", "operating_expense", "designated_expense"] as BudgetClassification[]
+  ).map((key) => ({ key, rows: rows.filter((r) => r.classification === key) }));
+
+  const sumActive = (rs: RowState[]) =>
+    rs.filter((r) => !r.ignored).reduce((s, r) => s + r.line.annualBudget, 0);
+
+  const opIncomeTotal = sumActive(sections[0].rows);
+  const bridgeTotal = sumActive(sections[1].rows);
+  const opExpenseTotal = sumActive(sections[2].rows);
+  const designatedTotal = sumActive(sections[3].rows);
 
   const stats = {
     matched: rows.filter((r) => !r.ignored && r.categoryId).length,
     create: rows.filter((r) => !r.ignored && !r.categoryId && r.createAs).length,
     skipped: rows.filter((r) => r.ignored).length,
-    incomeTotal: incomeRows.filter((r) => !r.ignored).reduce((s, r) => s + r.line.annualBudget, 0),
-    expenseTotal: expenseRows.filter((r) => !r.ignored).reduce((s, r) => s + r.line.annualBudget, 0),
+    opIncomeTotal,
+    bridgeTotal,
+    opExpenseTotal,
+    designatedTotal,
+    coreLocalMargin: opIncomeTotal - opExpenseTotal,
+    netOperating: opIncomeTotal + bridgeTotal - opExpenseTotal,
   };
 
   async function handleApply() {
@@ -119,6 +132,7 @@ export function AnnualBudgetDialog({
           createAs: r.categoryId ? null : (r.createAs ?? r.line.name),
           annualBudget: r.line.annualBudget,
           kind: r.line.kind,
+          classification: r.classification,
         }));
       if (!lines.length) {
         toast.error("Nothing to import");
