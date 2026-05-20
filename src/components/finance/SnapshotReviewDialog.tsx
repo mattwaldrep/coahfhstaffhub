@@ -62,7 +62,7 @@ export function SnapshotReviewDialog({
   const [error, setError] = useState<string | null>(null);
   const [fiscalYear, setFiscalYear] = useState(defaultFiscalYear);
   const [asOfMonth, setAsOfMonth] = useState(defaultMonth);
-  const [fullYear, setFullYear] = useState(false);
+  // (full-year option removed — annual budgets are now owned by the Annual Budget import)
   const [rows, setRows] = useState<RowState[]>([]);
   const [ignored, setIgnored] = useState<string[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
