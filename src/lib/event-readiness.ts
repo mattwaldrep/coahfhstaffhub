@@ -47,14 +47,21 @@ export function scoreEvent(e: ReadinessEvent): ReadinessResult {
     if (hasRoom(e)) score += 25;
     else missing.push("Room");
   } else {
-    // General events: leader and room are optional. Only the checklist gates
-    // readiness, and only when one exists. Events with no checklist are ready.
+    // General events: leader (40) + room (30) + checklist (30).
+    // If no checklist exists, its 30 points are awarded automatically so
+    // events without a checklist aren't penalized for it.
+    if (teacherFrom(e)) score += 40;
+    else missing.push("Leader");
+
+    if (hasRoom(e)) score += 30;
+    else missing.push("Room");
+
     const total = e.checklist_total ?? 0;
     const done = e.checklist_done ?? 0;
     if (total === 0) {
-      score = 100;
+      score += 30;
     } else {
-      score = Math.round((done / total) * 100);
+      score += Math.round((done / total) * 30);
       if (done < total) missing.push(`Checklist (${done}/${total})`);
     }
   }
