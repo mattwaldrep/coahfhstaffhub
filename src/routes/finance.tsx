@@ -18,6 +18,7 @@ import { Plus, Upload, Trash2, FileText, Download, ShieldAlert, Sparkles, Info }
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { SnapshotReviewDialog } from "@/components/finance/SnapshotReviewDialog";
+import { AnnualBudgetDialog } from "@/components/finance/AnnualBudgetDialog";
 import { currentFiscalYear, fiscalMonthIndex, fiscalYearRangeLabel } from "@/lib/fiscal-year";
 
 export const Route = createFileRoute("/finance")({
