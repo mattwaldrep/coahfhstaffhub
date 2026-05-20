@@ -1,79 +1,88 @@
-# Continue the 12-feature upgrade
+# Robust finance report ingestion
 
-Phase 1 partially landed (inline fixer, undoable hook, empty-state component, dashboard + meeting alerts). Below is the remaining work, grouped so each chunk is shippable on its own.
+## Problem
 
-## Phase 1 — finish polish (no migrations)
+Today, uploading a PDF to **Finance → Monthly reports** just drops a file in storage. Nothing reads it, so **Budget vs. actuals** stays empty and you can't tell why. You expected the upload to feed the grid.
 
-1. **Wire `useUndoableAction` into destructive flows**
-   - Calendar event delete (`/calendar` dialog "Delete")
-   - Action item "Mark complete" and delete on `/meeting`
-   - Sunday Review item dismiss
-   - Each: optimistic remove from list, 5s toast with Undo, rollback on failure.
+## What your reports actually contain
 
-2. **Empty states everywhere**
-   - Audit lists: calendar day/week with no events, meeting sections (action items, prayer, announcements, Sunday Review), `/decisions` (future), dashboard "Classes needing attention" already done.
-   - Each empty list uses `<EmptyState>` with icon, one-line copy, primary action button (e.g. "Add event", "Add action item").
+The April PDF you uploaded is a Parable "Management Report" with these usable sections:
 
-3. **Mobile pass**
-   - Calendar event dialog → switch to `Sheet` (bottom) under `md`.
-   - `/meeting` sections → single column stack, sticky section nav.
-   - Sidebar → confirm Sheet trigger works at 375px; tighten paddings.
-   - Calendar month grid → horizontal scroll wrapper + larger touch targets on day cells.
-   - Verify on 375x812 with browser tools.
+- **Statement of Activity by Month Summary** — every category × every month of the FY in one table (Jul 2025 → Apr 2026), with a Total column. This is the gold mine for populating the grid.
+- **Budget vs. Actuals YTD Summary** — annual budget per category (so we can refresh `annual_budget` too, if you want).
+- **Budget vs. Actuals Last Month Detail** — single-month actuals + budget per line.
 
-## Phase 2 — calendar smarts (3 migrations)
+So the parser can populate **many months at once**, not just one.
 
-4. **Conflict detection** (`src/lib/event-conflicts.ts`)
-   - Pure function: given events list + candidate event, return conflicts where time overlaps AND (same room OR same `leader_name`).
-   - Show amber banner in event dialog + small "!" chip on calendar tiles. Non-blocking.
+## How it will work
 
-5. **Rooms & resource booking** (migration 1)
-   - New `rooms` table (`name`, `capacity`, `notes`, `active`).
-   - New `event_rooms` join (`event_id`, `room_id`).
-   - RLS: authenticated read; admin write (reuse existing `has_role`).
-   - Seed common rooms. Multi-select picker in event dialog. New `/rooms` admin page (list + add/edit/archive).
-   - Feeds into conflict detection.
+```text
+Upload PDF ──► Parse on server ──► Review screen ──► Write to grid
+                                       │
+                                       └─ unmatched categories listed,
+                                          user picks: map to existing,
+                                          create new, or skip
+```
 
-6. **Recurring-class roster** (migration 2)
-   - New `class_series` table (`name`, `weekday`, `start_time`, `end_time`, `default_teacher_name`, `default_childcare_needed`, `default_room_id`, `active`).
-   - New `/calendar/classes` admin page.
-   - When creating a calendar event tied to a series, prefill from defaults; surface "uses series default" badge.
+### 1. Server-side parser (`src/server/finance-parse.functions.ts`)
+- New `createServerFn` `parseFinanceReport({ reportId })` using `pdfjs-dist` (already in the project for metrics parsing — Worker-compatible, no native deps).
+- Downloads the PDF from storage via `supabaseAdmin`, extracts text per page grouped by Y coord (same approach as `src/lib/parse-metrics-pdf.ts`).
+- Recognizes two report shapes:
+  - **Parable "Statement of Activity by Month"** → returns `{ rows: [{ name, fiscal_year, monthly: {1: 1234.56, …} }] }`.
+  - **Generic single-month list** (fallback) → returns `{ rows: [{ name, month, amount }] }`.
+- Detects fiscal year from header text (`For the period ended … 2026`) and the column months.
+- Stores the parsed structure in `finance_reports.parsed_metrics` (column already exists) so a second click doesn't re-parse.
+- Returns a preview: matched rows, unmatched rows, totals, detected period.
 
-7. **Event readiness score** (`src/lib/event-readiness.ts`)
-   - Class events: teacher(25) + childcare(25) + room(25) + leader(25).
-   - General events: leader(40) + room(30) + checklist(30).
-   - Show as colored ring on calendar chips and a "Readiness" column on the calendar list view; tooltip explains missing pieces.
+### 2. Auto-match logic (server)
+- Normalize names: lowercase, strip GL-account prefixes (`4000 Tithes & Offering` → `tithes & offering`), collapse whitespace, drop punctuation.
+- Match against existing `budget_categories` for that fiscal year by:
+  1. Exact normalized name
+  2. Case-insensitive substring (both directions)
+  3. Tiny edit-distance (≤2) for typos
+- Skip noise rows: `Total Revenue`, `GROSS PROFIT`, `Total Expenditures`, `NET …`, `Uncategorized …` (configurable).
 
-## Phase 3 — comms & insights (2 migrations)
+### 3. Review UI (in `src/routes/finance.tsx` Reports tab)
+- New "Import to budget" button on each uploaded report card (only enabled once parsed).
+- Opens a dialog showing:
+  - **Detected period** (FY + months covered) with a confirm/override.
+  - **Matched** (green): `Source name → Category name`, with monthly amounts preview, "uncheck to skip" toggle.
+  - **Unmatched** (amber): each row gets a `<Select>` to map to an existing category, a "Create as new category" button, or "Skip".
+  - **Ignored** (collapsed): totals/subtotals rows we filtered out, so it's transparent.
+- "Import" button writes via a second server fn `applyFinanceImport({ reportId, mappings, overwrite })`:
+  - For each (category, month) it **upserts** `budget_actuals` (replace existing amount for that cell — show a "will overwrite N existing cells" warning before commit).
+  - Creates any new categories the user requested.
+  - Records `imported_at` + `imported_by` on `finance_reports` so the card shows "Imported May 20".
 
-8. **Voting / decisions log** (migration 3)
-   - New `decisions` table (`meeting_id`, `title`, `motion_text`, `outcome`, `vote_yes`, `vote_no`, `vote_abstain`, `decided_by`, `decided_at`).
-   - RLS: authenticated read; recorder write.
-   - New `/decisions` route with search + filter by outcome / date / meeting.
-   - Inline "Record decision" button inside `/meeting`.
+### 4. UX polish on the Reports tab
+- File-shape badge on each card: `Unparsed`, `Parsed — ready to import`, `Imported`.
+- Auto-trigger parse right after upload finishes (so the common case is one click: upload → review → import).
+- Show parse errors inline ("Couldn't find a recognized table — open the file to import manually").
+- Accept `.pdf`, `.xlsx`, `.csv` in the file picker; only PDF is parsed in v1, others stay store-only with a clear "Manual entry only" badge (XLSX/CSV can come later).
 
-9. **Weekly digest email — same to all staff**
-   - Lovable Emails template: this week's events, classes still needing teacher/childcare, open action items, top readiness gaps.
-   - Server route `src/routes/api/public/hooks/send-weekly-digest.ts` (apikey-gated via `process.env.DIGEST_WEBHOOK_SECRET`).
-   - pg_cron job: Sundays 19:00 local → POSTs to the stable preview/prod URL.
-   - Admin "Send digest now" button on `/settings`.
+### 5. Schema additions (one small migration)
 
-10. **Sunday Review nudges by role** (migration 4)
-    - New `sunday_review_nudges` table (`role`, `section`, `weekday_offset`, `active`).
-    - Admin UI on `/settings` (per role: which sections they own, when to remind).
-    - Digest includes the per-role "Your Sunday Review section is due" line (still one shared email body — each row just lists role assignments).
+```sql
+alter table public.finance_reports
+  add column if not exists imported_at timestamptz,
+  add column if not exists imported_by uuid;
 
-11. **Attendance trends dashboard** (no migration — uses existing `weekly_metrics`)
-    - New `/trends` route.
-    - Pull 12 months via existing `fetchWeeksInRange` from `src/integrations/metrics/client.ts`.
-    - Small-multiple `recharts` line charts: attendance, giving, first-step cards, etc.
-    - YoY delta chips, simple annotations for missing weeks.
+create unique index if not exists budget_actuals_unique_cell
+  on public.budget_actuals (category_id, fiscal_year, month);
+```
 
-## Out of scope (confirmed earlier)
-- Per-person digest personalization
-- Auto-assignment of teachers
-- SMS / push notifications
-- Realtime conflict checks during drag-and-drop
+The unique index makes the upsert safe and prevents double-entry from a re-import.
 
-## Suggested order
-Phase 1 finish → Phase 2 in order (conflicts uses rooms; readiness uses rooms + series) → Phase 3 in order (digest uses decisions + readiness data).
+## Out of scope (call out so you can ask for it later)
+
+- XLSX / CSV parsing (only PDF in v1).
+- Touching `annual_budget` from the report (we'll only write monthly actuals; budgets stay user-edited unless you ask).
+- Auto-importing without the review screen.
+
+## Files touched
+
+- `src/server/finance-parse.functions.ts` *(new)* — parser + apply server fns
+- `src/lib/parse-finance-pdf.ts` *(new)* — pure text-extraction helpers, mirrors `parse-metrics-pdf.ts`
+- `src/routes/finance.tsx` — Reports tab: badges, "Import to budget" button, review dialog
+- `src/components/finance/ImportReviewDialog.tsx` *(new)* — the mapping UI
+- one migration for `imported_at/by` + unique index

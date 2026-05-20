@@ -1135,6 +1135,8 @@ export type Database = {
           file_path: string
           fiscal_year: number
           id: string
+          imported_at: string | null
+          imported_by: string | null
           label: string | null
           mime_type: string | null
           month: number
@@ -1148,6 +1150,8 @@ export type Database = {
           file_path: string
           fiscal_year: number
           id?: string
+          imported_at?: string | null
+          imported_by?: string | null
           label?: string | null
           mime_type?: string | null
           month: number
@@ -1161,6 +1165,8 @@ export type Database = {
           file_path?: string
           fiscal_year?: number
           id?: string
+          imported_at?: string | null
+          imported_by?: string | null
           label?: string | null
           mime_type?: string | null
           month?: number
