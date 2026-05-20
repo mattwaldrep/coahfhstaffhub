@@ -18,12 +18,15 @@ import { Plus, Upload, Trash2, FileText, Download, ShieldAlert, Sparkles, Info }
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { SnapshotReviewDialog } from "@/components/finance/SnapshotReviewDialog";
+import { currentFiscalYear, fiscalMonthIndex, fiscalYearRangeLabel } from "@/lib/fiscal-year";
 
 export const Route = createFileRoute("/finance")({
   component: FinancePage,
 });
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+// Calendar year of a (fiscal_year, month) cell. Jul–Dec belong to fy-1; Jan–Jun belong to fy.
+const calYearOf = (fy: number, month: number) => (month >= 7 ? fy - 1 : fy);
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n || 0);
 const pct = (n: number) => `${Math.round(n * 100)}%`;
@@ -38,7 +41,7 @@ function FinancePage() { return <AppShell><Body /></AppShell>; }
 function Body() {
   const { hasRole, loading } = useAuth();
   const isCore = hasRole("core");
-  const [year, setYear] = useState<number>(new Date().getFullYear());
+  const [year, setYear] = useState<number>(currentFiscalYear());
 
   if (loading) return null;
   if (!isCore) {
@@ -52,19 +55,24 @@ function Body() {
     );
   }
 
-  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i);
+  const currentFy = currentFiscalYear();
+  const years = Array.from({ length: 5 }, (_, i) => currentFy - 2 + i);
 
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-3xl font-display font-bold">Finance</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Upload monthly QBO Budget vs. Actuals exports to track YTD performance.</p>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Upload monthly QBO Budget vs. Actuals exports to track YTD performance. Fiscal year runs July&nbsp;1&nbsp;–&nbsp;June&nbsp;30.
+          </p>
         </div>
         <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
-          <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {years.map((y) => <SelectItem key={y} value={String(y)}>FY {y}</SelectItem>)}
+            {years.map((y) => (
+              <SelectItem key={y} value={String(y)}>FY {y} ({fiscalYearRangeLabel(y)})</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -139,7 +147,8 @@ function DashboardTab({ year }: { year: number }) {
     const annualBudget = cats.reduce((s, c) => s + Number(c.annual_budget), 0);
     const ytdActual = selectedLines.reduce((s, l) => s + Number(l.ytd_actual), 0);
     const ytdBudget = selectedLines.reduce((s, l) => s + Number(l.ytd_budget), 0);
-    const monthsElapsed = selectedSnapshot?.as_of_month ?? 0;
+    const asOf = selectedSnapshot?.as_of_month;
+    const monthsElapsed = asOf ? fiscalMonthIndex(asOf) : 0;
     const yearPace = monthsElapsed / 12;
     const spendPace = annualBudget > 0 ? ytdActual / annualBudget : 0;
     return { annualBudget, ytdActual, ytdBudget, monthsElapsed, yearPace, spendPace };
@@ -161,14 +170,17 @@ function DashboardTab({ year }: { year: number }) {
     <>
       <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
         <div className="text-sm text-muted-foreground">
-          Showing snapshot <strong className="text-foreground">{MONTHS[(selectedSnapshot?.as_of_month ?? 1) - 1]} {year}</strong>
+          Showing snapshot <strong className="text-foreground">
+            {selectedSnapshot ? `${MONTHS[selectedSnapshot.as_of_month - 1]} ${calYearOf(year, selectedSnapshot.as_of_month)}` : "—"}
+          </strong>
+          <span className="ml-2 text-xs">FY {year} · {fiscalYearRangeLabel(year)}</span>
         </div>
         <Select value={selectedSnapshotId ?? ""} onValueChange={setSelectedSnapshotId}>
-          <SelectTrigger className="w-48"><SelectValue placeholder="Snapshot" /></SelectTrigger>
+          <SelectTrigger className="w-56"><SelectValue placeholder="Snapshot" /></SelectTrigger>
           <SelectContent>
             {snapshots.map((s) => (
               <SelectItem key={s.id} value={s.id}>
-                As of {MONTHS[s.as_of_month - 1]} {s.fiscal_year}
+                As of {MONTHS[s.as_of_month - 1]} {calYearOf(s.fiscal_year, s.as_of_month)}
               </SelectItem>
             ))}
           </SelectContent>

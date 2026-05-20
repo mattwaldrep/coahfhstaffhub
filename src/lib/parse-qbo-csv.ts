@@ -56,40 +56,54 @@ function isTotalRow(name: string): boolean {
 function detectHeaderInfo(text: string): { asOfMonth?: number; fiscalYear?: number; fullYear: boolean } {
   const lower = text.toLowerCase();
   let asOfMonth: number | undefined;
-  let fiscalYear: number | undefined;
+  let asOfYear: number | undefined;
   let fullYear = false;
 
-  // Date range like "January 2026 - April 2026" or "Jan - Apr 2026"
-  const yearMatch = lower.match(/\b(20\d{2})\b/g);
-  if (yearMatch && yearMatch.length) {
-    fiscalYear = Number(yearMatch[yearMatch.length - 1]);
-  }
-
-  // Find latest month mentioned
-  let lastMonthIdx = -1;
-  for (let i = 0; i < MONTH_NAMES.length; i++) {
-    const m = MONTH_NAMES[i];
-    const re = new RegExp(`\\b${m}\\b|\\b${m.slice(0, 3)}\\b`, "g");
-    let match;
-    while ((match = re.exec(lower)) !== null) {
-      if (match.index > lastMonthIdx) {
-        lastMonthIdx = match.index;
-        asOfMonth = i + 1;
+  // Find the LATEST (month, year) pair mentioned in the header band.
+  // Examples we need to handle:
+  //   "July, 2025-April, 2026"        -> as-of = April 2026
+  //   "Jul 2025 - Apr 2026"           -> as-of = Apr 2026
+  //   "April 2026"                    -> as-of = April 2026
+  const monthYearRe = new RegExp(
+    `\\b(january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|sept|october|oct|november|nov|december|dec)\\b[\\s,]*?(20\\d{2})`,
+    "g",
+  );
+  let m: RegExpExecArray | null;
+  let lastIdx = -1;
+  while ((m = monthYearRe.exec(lower)) !== null) {
+    if (m.index > lastIdx) {
+      lastIdx = m.index;
+      const name = m[1];
+      const idx = MONTH_NAMES.findIndex((n) => n === name || n.slice(0, 3) === name || (name === "sept" && n === "september"));
+      if (idx >= 0) {
+        asOfMonth = idx + 1;
+        asOfYear = Number(m[2]);
       }
     }
   }
 
-  // Full year heuristic: mentions January..December, or "fiscal year", or as-of December
+  // Fiscal year = the FY that contains (asOfYear, asOfMonth). Church FY = Jul–Jun, named by ending year.
+  // Imported lazily to avoid a circular import.
+  let fiscalYear: number | undefined;
+  if (asOfMonth && asOfYear) {
+    fiscalYear = asOfMonth >= 7 ? asOfYear + 1 : asOfYear;
+  } else {
+    // Fallback: take last 4-digit year and assume it's the ending calendar year
+    const years = lower.match(/\b(20\d{2})\b/g);
+    if (years && years.length) fiscalYear = Number(years[years.length - 1]);
+  }
+
+  // Full-FY heuristic: range spans Jul..Jun, or text mentions "fiscal year"
   if (
-    asOfMonth === 12 ||
     /\bfiscal year\b/.test(lower) ||
-    (/\bjanuary\b|\bjan\b/.test(lower) && /\bdecember\b|\bdec\b/.test(lower))
+    (/\bjuly\b|\bjul\b/.test(lower) && /\bjune\b|\bjun\b/.test(lower))
   ) {
     fullYear = true;
   }
 
   return { asOfMonth, fiscalYear, fullYear };
 }
+
 
 export function parseQboCsv(csvText: string): QboParseResult {
   const parsed = Papa.parse<string[]>(csvText, {
