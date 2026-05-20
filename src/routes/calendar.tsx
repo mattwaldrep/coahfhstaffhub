@@ -283,6 +283,9 @@ function CalendarBody() {
   const [classSeries, setClassSeries] = useState<ClassSeries[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const eventRoomsMap = useRef<Map<string, string[]>>(new Map());
+  const eventChecklistMap = useRef<Map<string, { total: number; done: number }>>(new Map());
+  const eventAttachmentsMap = useRef<Map<string, string[]>>(new Map());
+  const templateStateMap = useRef<Map<string, boolean>>(new Map()); // key: `${event_id}:${item_id}:${YYYY-MM-DD}`
   const undo = useUndoableAction();
 
   // Checklist templates
@@ -290,6 +293,28 @@ function CalendarBody() {
   const [allTemplateItems, setAllTemplateItems] = useState<TemplateItem[]>([]);
   const [eventTemplateIds, setEventTemplateIds] = useState<string[]>([]); // attached to current form event
   const [templateStates, setTemplateStates] = useState<Record<string, boolean>>({}); // key: `${item_id}:${YYYY-MM-DD}`
+
+  function readinessFor(occ: Occurrence) {
+    const roomIds = eventRoomsMap.current.get(occ.id) ?? [];
+    const has_room = roomIds.length > 0 || (occ.room_needed ?? "").trim().length > 0;
+    const adHoc = eventChecklistMap.current.get(occ.id) ?? { total: 0, done: 0 };
+    const tplIds = eventAttachmentsMap.current.get(occ.id) ?? [];
+    const tplItems = allTemplateItems.filter((i) => tplIds.includes(i.template_id));
+    const dateKey = format(occ.occurrence_date, "yyyy-MM-dd");
+    let tplDone = 0;
+    for (const it of tplItems) {
+      if (templateStateMap.current.get(`${occ.id}:${it.id}:${dateKey}`)) tplDone++;
+    }
+    return scoreEvent({
+      category: occ.category,
+      leader_name: occ.leader_name,
+      childcare_needed: occ.childcare_needed,
+      childcare_arranged: occ.childcare_arranged,
+      has_room,
+      checklist_total: adHoc.total + tplItems.length,
+      checklist_done: adHoc.done + tplDone,
+    });
+  }
 
 
   const range = useMemo(() => {
