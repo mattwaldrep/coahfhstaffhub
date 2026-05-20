@@ -1176,6 +1176,92 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_snapshot_lines: {
+        Row: {
+          annual_budget: number | null
+          category_id: string
+          created_at: string
+          id: string
+          snapshot_id: string
+          ytd_actual: number
+          ytd_budget: number
+        }
+        Insert: {
+          annual_budget?: number | null
+          category_id: string
+          created_at?: string
+          id?: string
+          snapshot_id: string
+          ytd_actual?: number
+          ytd_budget?: number
+        }
+        Update: {
+          annual_budget?: number | null
+          category_id?: string
+          created_at?: string
+          id?: string
+          snapshot_id?: string
+          ytd_actual?: number
+          ytd_budget?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_snapshot_lines_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "budget_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_snapshot_lines_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "finance_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_snapshots: {
+        Row: {
+          as_of_month: number
+          created_at: string
+          created_by: string | null
+          fiscal_year: number
+          id: string
+          notes: string | null
+          source_report_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          as_of_month: number
+          created_at?: string
+          created_by?: string | null
+          fiscal_year: number
+          id?: string
+          notes?: string | null
+          source_report_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          as_of_month?: number
+          created_at?: string
+          created_by?: string | null
+          fiscal_year?: number
+          id?: string
+          notes?: string | null
+          source_report_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_snapshots_source_report_id_fkey"
+            columns: ["source_report_id"]
+            isOneToOne: false
+            referencedRelation: "finance_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_event_notes: {
         Row: {
           created_at: string
