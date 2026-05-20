@@ -28,6 +28,7 @@ import {
   Gavel,
   TrendingUp,
   GraduationCap,
+  ListChecks,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
