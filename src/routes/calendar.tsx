@@ -458,11 +458,19 @@ function CalendarBody() {
       church_covering: form.church_covering || null,
       childcare_needed: form.childcare_needed,
       childcare_arranged: form.childcare_arranged,
+      class_series_id: form.class_series_id || null,
     };
-    const { error } = form.id
-      ? await supabase.from("calendar_events").update(payload).eq("id", form.id)
-      : await supabase.from("calendar_events").insert(payload);
-    if (error) { toast.error(error.message); return; }
+    const result = form.id
+      ? await supabase.from("calendar_events").update(payload).eq("id", form.id).select("id").single()
+      : await supabase.from("calendar_events").insert(payload).select("id").single();
+    if (result.error) { toast.error(result.error.message); return; }
+    const savedId = result.data?.id ?? form.id;
+    if (savedId) {
+      await supabase.from("event_rooms").delete().eq("event_id", savedId);
+      if (form.room_ids.length > 0) {
+        await supabase.from("event_rooms").insert(form.room_ids.map((rid) => ({ event_id: savedId, room_id: rid })));
+      }
+    }
     const gaps = classGaps(form);
     if (gaps.length > 0) {
       toast.warning(`Saved. Still needed: ${gaps.join(", ")}.`);
@@ -472,6 +480,7 @@ function CalendarBody() {
     setOpen(false);
     load();
   }
+
 
   async function remove() {
     if (!form.id) return;
