@@ -504,6 +504,13 @@ function ReportsTab({ year }: { year: number }) {
           onApplied={() => { setImporting(null); load(); }}
         />
       )}
+
+      <AnnualBudgetDialog
+        open={annualOpen}
+        onOpenChange={setAnnualOpen}
+        fiscalYear={year}
+        onApplied={() => { setAnnualOpen(false); load(); }}
+      />
     </>
   );
 }
