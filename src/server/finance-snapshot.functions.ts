@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { inferClassification } from "@/lib/budget-classification";
 
 const LineSchema = z.object({
   categoryId: z.string().uuid().nullable(),
