@@ -1137,9 +1137,30 @@ function ReadinessBadge({ value }: { value: string }) {
   );
 }
 
-function EventChip({ occ, compact }: { occ: Occurrence; compact?: boolean }) {
+function EventChip({ occ, compact, conflictCount, checklistInfo }: {
+  occ: Occurrence;
+  compact?: boolean;
+  conflictCount?: number;
+  checklistInfo?: { total: number; done: number };
+}) {
   const cal = SUB_CALS.find((s) => s.value === occ.sub_calendar)!;
   const gaps = classGaps(occ);
+  const readiness = scoreEvent({
+    category: occ.category,
+    leader_name: occ.leader_name,
+    childcare_needed: occ.childcare_needed,
+    childcare_arranged: occ.childcare_arranged,
+    room_needed: occ.room_needed,
+    checklist_total: checklistInfo?.total ?? 0,
+    checklist_done: checklistInfo?.done ?? 0,
+  });
+  const ringColor = readiness.level === "ready" ? "bg-emerald-500" : readiness.level === "warning" ? "bg-amber-500" : "bg-destructive";
+  const titleBits = [
+    `${readiness.score}% ready`,
+    readiness.missing.length ? `Missing: ${readiness.missing.join(", ")}` : "",
+    gaps.length ? `Class needs: ${gaps.join(", ")}` : "",
+    conflictCount ? `${conflictCount} conflict${conflictCount === 1 ? "" : "s"}` : "",
+  ].filter(Boolean).join(" · ");
   return (
     <div
       className={`text-[10px] truncate px-1.5 py-0.5 rounded hover:opacity-80 flex items-center gap-1 ${compact ? "" : ""}`}
@@ -1147,11 +1168,10 @@ function EventChip({ occ, compact }: { occ: Occurrence; compact?: boolean }) {
         background: `color-mix(in oklab, ${cal.color} 22%, transparent)`,
         color: `color-mix(in oklab, ${cal.color} 90%, white)`,
       }}
-      title={gaps.length ? `Class needs: ${gaps.join(", ")}` : undefined}
+      title={titleBits || undefined}
     >
-      {gaps.length > 0 && (
-        <span className="inline-block w-1.5 h-1.5 rounded-full bg-warning shrink-0" />
-      )}
+      <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${ringColor}`} />
+      {conflictCount ? <AlertTriangle className="w-2.5 h-2.5 text-amber-500 shrink-0" /> : null}
       <span className="truncate">
         {!occ.all_day && <>{format(occ.occurrence_date, "h:mm")} </>}
         {occ.title}
@@ -1161,10 +1181,11 @@ function EventChip({ occ, compact }: { occ: Occurrence; compact?: boolean }) {
 }
 
 function MonthGrid({
-  cursor, occurrences, onPickDay, onPickEvent, canEdit,
+  cursor, occurrences, conflictMap, onPickDay, onPickEvent, canEdit,
 }: {
   cursor: Date;
   occurrences: Occurrence[];
+  conflictMap: Map<string, number>;
   onPickDay: (d: Date) => void;
   onPickEvent: (o: Occurrence) => void;
   canEdit: boolean;
@@ -1199,7 +1220,7 @@ function MonthGrid({
               <div className="space-y-0.5 overflow-hidden">
                 {dayEvents.slice(0, 3).map((o, i) => (
                   <div key={`${o.id}-${i}`} onClick={(e) => { e.stopPropagation(); onPickEvent(o); }}>
-                    <EventChip occ={o} />
+                    <EventChip occ={o} conflictCount={conflictMap.get(`${o.id}-${o.occurrence_date.getTime()}`)} />
                   </div>
                 ))}
                 {dayEvents.length > 3 && (
@@ -1213,6 +1234,7 @@ function MonthGrid({
     </div>
   );
 }
+
 
 function WeekStrip({
   cursor, occurrences, onPickDay, onPickEvent, canEdit,
