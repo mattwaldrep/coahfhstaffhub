@@ -290,9 +290,6 @@ function CalendarBody() {
   const [allTemplateItems, setAllTemplateItems] = useState<TemplateItem[]>([]);
   const [eventTemplateIds, setEventTemplateIds] = useState<string[]>([]); // attached to current form event
   const [templateStates, setTemplateStates] = useState<Record<string, boolean>>({}); // key: `${item_id}:${YYYY-MM-DD}`
-  // For chips: map of `${event_id}` -> { total, done } counts of template items at next-upcoming occurrence
-  const [eventTemplateAttachments, setEventTemplateAttachments] = useState<Map<string, string[]>>(new Map());
-  const [allTemplateStateRows, setAllTemplateStateRows] = useState<Array<{ event_id: string; template_item_id: string; occurrence_date: string; done: boolean }>>([]);
 
 
   const range = useMemo(() => {
