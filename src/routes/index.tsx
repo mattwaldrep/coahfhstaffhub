@@ -265,22 +265,32 @@ function Dashboard() {
               <AlertTriangle className="w-4 h-4 text-warning" /> Alerts
             </h2>
             {classAlerts.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No active alerts. Event readiness and missions risk will surface here.
-              </p>
+              <EmptyState
+                compact
+                title="All clear"
+                description="No classes are missing a teacher or childcare in the next 60 days."
+              />
             ) : (
               <ul className="space-y-2">
                 {classAlerts.map((a) => (
-                  <li key={`${a.id}-${a.date.toISOString()}`} className="text-sm">
-                    <Link to="/calendar" className="flex items-start justify-between gap-3 hover:bg-background/40 rounded-md p-1 -m-1">
-                      <div className="min-w-0">
-                        <div className="font-medium truncate">{a.title}</div>
-                        <div className="text-xs text-warning">Needs {a.gaps.join(" + ")}</div>
-                      </div>
-                      <div className="text-xs text-muted-foreground shrink-0">
-                        {format(a.date, "EEE, MMM d")}
-                      </div>
-                    </Link>
+                  <li key={`${a.id}-${a.date.toISOString()}`} className="text-sm flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">{a.title}</div>
+                      <InlineClassFixer
+                        event={{
+                          id: a.id,
+                          title: a.title,
+                          leader_name: a.leader_name,
+                          childcare_needed: a.childcare_needed,
+                          childcare_arranged: a.childcare_arranged,
+                        }}
+                        gaps={a.gaps}
+                        onSaved={() => setAlertsTick((t) => t + 1)}
+                      />
+                    </div>
+                    <div className="text-xs text-muted-foreground shrink-0 pt-0.5">
+                      {format(a.date, "EEE, MMM d")}
+                    </div>
                   </li>
                 ))}
               </ul>
