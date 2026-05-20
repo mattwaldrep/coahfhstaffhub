@@ -656,6 +656,8 @@ function CalendarBody() {
       church_covering: form.church_covering || null,
       childcare_needed: form.childcare_needed,
       childcare_arranged: form.childcare_arranged,
+      room_not_needed: form.room_not_needed,
+      leader_not_needed: form.leader_not_needed,
     });
     if (insertErr) { toast.error(insertErr.message); return; }
     // 2) Add original occurrence date to excluded_dates on the series
