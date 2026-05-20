@@ -334,7 +334,7 @@ function CalendarBody() {
 
   async function load() {
     // Fetch events overlapping range, plus any recurring (which may have started earlier)
-    const [{ data }, { data: er }, { data: cs }, { data: rs }] = await Promise.all([
+    const [{ data }, { data: er }, { data: cs }, { data: rs }, { data: tpls }, { data: tplItems }, { data: atts }, { data: states }] = await Promise.all([
       supabase
         .from("calendar_events")
         .select("*")
@@ -343,6 +343,10 @@ function CalendarBody() {
       supabase.from("event_rooms").select("event_id, room_id"),
       supabase.from("class_series").select("id, name, default_leader_name, default_teacher_name, default_childcare_needed, default_room_id").eq("active", true).order("name"),
       supabase.from("rooms").select("id, name").eq("active", true).order("name"),
+      supabase.from("checklist_templates" as any).select("*").order("name"),
+      supabase.from("checklist_template_items" as any).select("*").order("position"),
+      supabase.from("event_template_attachments" as any).select("event_id, template_id"),
+      supabase.from("event_template_item_state" as any).select("event_id, template_item_id, occurrence_date, done"),
     ]);
     setEvents(data ?? []);
     const map = new Map<string, string[]>();
@@ -354,6 +358,14 @@ function CalendarBody() {
     eventRoomsMap.current = map;
     setClassSeries((cs ?? []) as ClassSeries[]);
     setRooms((rs ?? []) as Room[]);
+    setAllTemplates(((tpls ?? []) as unknown) as ChecklistTemplate[]);
+    setAllTemplateItems(((tplItems ?? []) as unknown) as TemplateItem[]);
+    const attMap = new Map<string, string[]>();
+    for (const row of ((atts ?? []) as unknown as Array<{ event_id: string; template_id: string }>)) {
+      (attMap.get(row.event_id) ?? attMap.set(row.event_id, []).get(row.event_id)!).push(row.template_id);
+    }
+    setEventTemplateAttachments(attMap);
+    setAllTemplateStateRows(((states ?? []) as unknown) as Array<{ event_id: string; template_item_id: string; occurrence_date: string; done: boolean }>);
   }
 
 
@@ -364,6 +376,23 @@ function CalendarBody() {
       .eq("event_id", eventId)
       .order("position", { ascending: true });
     setChecklist(data ?? []);
+  }
+
+  async function loadTemplatesForEvent(eventId: string, occurrenceDate: Date) {
+    const dateKey = format(occurrenceDate, "yyyy-MM-dd");
+    const [{ data: atts }, { data: states }] = await Promise.all([
+      supabase.from("event_template_attachments" as any).select("template_id").eq("event_id", eventId),
+      supabase.from("event_template_item_state" as any)
+        .select("template_item_id, done")
+        .eq("event_id", eventId)
+        .eq("occurrence_date", dateKey),
+    ]);
+    setEventTemplateIds(((atts ?? []) as unknown as Array<{ template_id: string }>).map((a) => a.template_id));
+    const m: Record<string, boolean> = {};
+    for (const row of ((states ?? []) as unknown as Array<{ template_item_id: string; done: boolean }>)) {
+      m[`${row.template_item_id}:${dateKey}`] = row.done;
+    }
+    setTemplateStates(m);
   }
 
   function openNew(date?: Date) {
