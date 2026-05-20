@@ -253,6 +253,7 @@ function CalendarBody() {
   const [editingOccurrence, setEditingOccurrence] = useState<Date | null>(null);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [newItem, setNewItem] = useState("");
+  const undo = useUndoableAction();
 
   const range = useMemo(() => {
     if (view === "week") {
