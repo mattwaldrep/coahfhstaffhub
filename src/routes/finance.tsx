@@ -448,7 +448,11 @@ function ReportsTab({ year }: { year: number }) {
       <div className="bg-surface border border-border rounded-2xl p-4 mb-4 flex items-center justify-between gap-3 flex-wrap">
         <div className="min-w-0">
           <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Annual budget — FY {year}</div>
-          <div className="text-xl font-display font-semibold tabular-nums mt-0.5">{fmt(annualMeta.total)}</div>
+          <div className="flex items-baseline gap-3 mt-0.5 flex-wrap">
+            <div><span className="text-[11px] text-muted-foreground mr-1">Income</span><span className="text-lg font-display font-semibold tabular-nums text-emerald-600">{fmt(annualMeta.income)}</span></div>
+            <div><span className="text-[11px] text-muted-foreground mr-1">Expense</span><span className="text-lg font-display font-semibold tabular-nums text-rose-600">{fmt(annualMeta.expense)}</span></div>
+            <div><span className="text-[11px] text-muted-foreground mr-1">Net</span><span className={`text-lg font-display font-semibold tabular-nums ${annualMeta.income - annualMeta.expense < 0 ? "text-destructive" : ""}`}>{fmt(annualMeta.income - annualMeta.expense)}</span></div>
+          </div>
           <div className="text-[11px] text-muted-foreground mt-0.5">
             {annualMeta.count > 0
               ? <>{annualMeta.count} categories · last updated {annualMeta.updatedAt ? format(new Date(annualMeta.updatedAt), "MMM d, yyyy") : "—"}</>
