@@ -18,7 +18,7 @@ function deepLinkFor(eventId: string) {
 async function composeTaskFields(checklistItemId: string, overrideOccurrence?: string | null) {
   const { data: item, error: itemErr } = await supabaseAdmin
     .from("event_checklist_items")
-    .select("id, label, event_id, due_date")
+    .select("id, label, event_id, due_date, action_item_id, done")
     .eq("id", checklistItemId)
     .maybeSingle();
   if (itemErr || !item) throw new Error("Checklist item not found");
