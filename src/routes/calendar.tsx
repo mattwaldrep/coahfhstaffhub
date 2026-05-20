@@ -643,9 +643,27 @@ function CalendarBody() {
       {view === "list" && <ListView occurrences={visible} onPickEvent={openEdit} />}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto sm:rounded-lg max-sm:!w-screen max-sm:!max-w-none max-sm:!h-[100dvh] max-sm:!rounded-none max-sm:!max-h-none">
           <DialogHeader>
-            <DialogTitle>{form.id ? "Edit event" : "Add event"}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="truncate">{form.id ? "Edit event" : "Add event"}</span>
+              {form.id && (() => {
+                const r = scoreEvent({
+                  category: form.category,
+                  leader_name: form.leader_name,
+                  childcare_needed: form.childcare_needed,
+                  childcare_arranged: form.childcare_arranged,
+                  room_needed: form.room_needed,
+                  checklist_total: checklist.length,
+                  checklist_done: checklist.filter((i) => i.done).length,
+                });
+                return (
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${readinessColor(r.level)}`} title={r.missing.join(", ") || "Ready"}>
+                    {r.score}% {r.level === "ready" ? "ready" : r.missing[0] ? `· need ${r.missing[0].toLowerCase()}` : ""}
+                  </span>
+                );
+              })()}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-2">
