@@ -94,12 +94,20 @@ function Dashboard() {
         const rows = (data ?? []) as Array<EventRowLike & { childcare_needed: boolean; childcare_arranged: boolean }>;
         const occurrences = expandEvents(rows, new Date(), horizonEnd);
         const alerts = occurrences
-          .map((o) => ({ id: o.id, title: o.title, date: o.occurrence_date, gaps: classGaps(o) }))
+          .map((o) => ({
+            id: o.id,
+            title: o.title,
+            date: o.occurrence_date,
+            gaps: classGaps(o),
+            leader_name: o.leader_name ?? null,
+            childcare_needed: (o as { childcare_needed?: boolean }).childcare_needed ?? false,
+            childcare_arranged: (o as { childcare_arranged?: boolean }).childcare_arranged ?? false,
+          }))
           .filter((a) => a.gaps.length > 0)
           .slice(0, 8);
         setClassAlerts(alerts);
       });
-  }, []);
+  }, [alertsTick]);
 
   // Live metrics from Church Metrics — last 4 weeks vs preceding 4 weeks
   useEffect(() => {
