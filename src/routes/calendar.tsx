@@ -109,7 +109,9 @@ type EventRow = {
   church_covering: string | null;
   childcare_needed: boolean;
   childcare_arranged: boolean;
+  class_series_id: string | null;
 };
+
 
 type Occurrence = EventRow & { occurrence_date: Date };
 
