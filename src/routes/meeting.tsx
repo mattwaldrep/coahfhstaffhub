@@ -178,8 +178,21 @@ function MeetingPage() {
     await supabase.from("agenda_items").update({ status: next }).eq("id", item.id);
   };
 
-  const removeAgenda = async (id: string) => {
-    await supabase.from("agenda_items").delete().eq("id", id);
+  const removeAgenda = (id: string) => {
+    const item = agenda.find((a) => a.id === id);
+    if (!item) return;
+    undo({
+      optimistic: () => {
+        setAgenda((prev) => prev.filter((a) => a.id !== id));
+        return item;
+      },
+      rollback: (snap) => setAgenda((prev) => [...prev, snap].sort((a, b) => a.position - b.position)),
+      commit: async () => {
+        const { error } = await supabase.from("agenda_items").delete().eq("id", id);
+        if (error) throw new Error(error.message);
+      },
+      message: "Agenda item removed",
+    });
   };
 
   const editAgenda = async (id: string, title: string) => {
