@@ -200,6 +200,24 @@ export function AnnualBudgetDialog({
                       </SelectContent>
                     </Select>
                   </td>
+                  <td className="pl-3 py-1.5 w-44">
+                    <Select
+                      value={r.classification}
+                      onValueChange={(v) => {
+                        const next = [...rows];
+                        next[idx] = { ...r, classification: v as BudgetClassification };
+                        setRows(next);
+                      }}
+                    >
+                      <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="operating_income">Operating income</SelectItem>
+                        <SelectItem value="bridge_income">Bridge income</SelectItem>
+                        <SelectItem value="operating_expense">Operating expense</SelectItem>
+                        <SelectItem value="designated_expense">Designated (fund-raised)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </td>
                 </tr>
               );
             })}
