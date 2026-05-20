@@ -32,6 +32,7 @@ const emptyEvent = () => ({
   action_note: "", pco_registration: false,
   missions_team_needed: false, church_covering: "",
   other_listings: "" as string,
+  room_not_needed: false, leader_not_needed: false,
 });
 
 function Editor() {
