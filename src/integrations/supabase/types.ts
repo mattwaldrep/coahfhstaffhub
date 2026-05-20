@@ -1755,6 +1755,161 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_tasks: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_completed: boolean
+          is_skipped: boolean
+          parent_task_id: string | null
+          section_name: string
+          skipped_reason: string | null
+          sort_order: number
+          source_template_id: string | null
+          task_name: string
+          updated_at: string
+          workflow_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_completed?: boolean
+          is_skipped?: boolean
+          parent_task_id?: string | null
+          section_name: string
+          skipped_reason?: string | null
+          sort_order?: number
+          source_template_id?: string | null
+          task_name: string
+          updated_at?: string
+          workflow_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_completed?: boolean
+          is_skipped?: boolean
+          parent_task_id?: string | null
+          section_name?: string
+          skipped_reason?: string | null
+          sort_order?: number
+          source_template_id?: string | null
+          task_name?: string
+          updated_at?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_tasks_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_onsite_only: boolean
+          parent_id: string | null
+          section_name: string
+          sort_order: number
+          task_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_onsite_only?: boolean
+          parent_id?: string | null
+          section_name: string
+          sort_order?: number
+          task_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_onsite_only?: boolean
+          parent_id?: string | null
+          section_name?: string
+          sort_order?: number
+          task_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_templates_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_workflows: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          hire_type: string
+          id: string
+          new_hire_email: string | null
+          new_hire_name: string
+          start_date: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          hire_type: string
+          id?: string
+          new_hire_email?: string | null
+          new_hire_name: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          hire_type?: string
+          id?: string
+          new_hire_email?: string | null
+          new_hire_name?: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       pco_pastoral_notes: {
         Row: {
           author_id: string | null
