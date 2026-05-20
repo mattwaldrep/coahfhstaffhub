@@ -1082,12 +1082,20 @@ function CalendarBody() {
                   value={form.leader_name}
                   onChange={(e) => setForm({ ...form, leader_name: e.target.value })}
                   placeholder={form.category === "Class" ? "Who's teaching?" : ""}
+                  disabled={form.leader_not_needed}
                 />
-                {form.category === "Class" && !form.leader_name && (
+                {form.category === "Class" && !form.leader_name && !form.leader_not_needed && (
                   <p className="text-[11px] text-warning">
                     Needed for classes — you can save without it, but it'll be flagged.
                   </p>
                 )}
+                <label className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                  <Switch
+                    checked={form.leader_not_needed}
+                    onCheckedChange={(v) => setForm({ ...form, leader_not_needed: v })}
+                  />
+                  No {form.category === "Class" ? "teacher" : "leader"} needed
+                </label>
               </div>
               <div className="space-y-2">
                 <Label>Location</Label>
