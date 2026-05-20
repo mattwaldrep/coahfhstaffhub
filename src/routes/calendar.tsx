@@ -432,11 +432,23 @@ function CalendarBody() {
 
   async function remove() {
     if (!form.id) return;
-    const { error } = await supabase.from("calendar_events").delete().eq("id", form.id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Event deleted");
+    const id = form.id;
+    const prev = events;
     setOpen(false);
-    load();
+    undo({
+      optimistic: () => {
+        setEvents((list) => list.filter((e) => e.id !== id));
+        return prev;
+      },
+      rollback: (snap) => setEvents(snap),
+      commit: async () => {
+        const { error } = await supabase.from("calendar_events").delete().eq("id", id);
+        if (error) throw new Error(error.message);
+        load();
+      },
+      message: "Event deleted",
+      description: "Tap undo to restore.",
+    });
   }
 
   async function skipOccurrence() {
