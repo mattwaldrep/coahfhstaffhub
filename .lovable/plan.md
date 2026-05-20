@@ -1,56 +1,70 @@
 ## Goal
 
-When you save a class series, it automatically appears on the calendar as a recurring event — no manual "Add to calendar" step. Each series owns one calendar event whose RRULE drives every weekly/biweekly/monthly occurrence.
+Create reusable **checklist templates** (e.g., "Pot Luck setup", "Class week prep") and attach them to any event or class series. For recurring classes, completion is tracked **per week**.
 
-## How it works
+## Tables (new)
 
-The calendar already supports rich recurrence on `calendar_events` (rrule + recurrence_end_date + excluded_dates) and the views expand RRULEs at render time. We'll piggyback on that instead of materializing dozens of rows per class.
+- **`checklist_templates`** — name, description, created_by
+- **`checklist_template_items`** — template_id, label, position
+- **`event_template_attachments`** — event_id + template_id (link table; live attachment)
+- **`event_template_item_state`** — event_id + template_item_id + occurrence_date + done
+  - `occurrence_date` is the date of that specific week's occurrence (for a one-off event, it equals the event's own date)
+  - Composite unique key on (event_id, template_item_id, occurrence_date)
 
-```text
-class_series  ──owns──▶  calendar_events (1 row, rrule)
-                              │
-                              └─ expanded weekly on the calendar
-                              └─ skipped dates via excluded_dates
-                              └─ per-occurrence notes already supported
-```
+Existing `event_checklist_items` stays — it continues to hold one-off ad-hoc items added directly to a single event.
 
-## Changes
+## How templates resolve at view time
 
-**1. Schema (migration on `class_series`)**
-- `start_date date` — series start (DTSTART for the rrule)
-- `end_date date NULL` — optional series end (UNTIL)
-- `freq text` — `WEEKLY` | `MONTHLY`
-- `interval int default 1` — every N weeks/months (covers biweekly)
-- `byweekday text[]` — `['MO','WE']` etc.
-- `bysetpos int NULL` — e.g. `2` for "2nd weekday of month"
-- `excluded_dates date[] default '{}'` — skipped holidays/breaks
-- `calendar_event_id uuid NULL` — the auto-generated event row
-- Keep existing `weekday`, `start_time`, `end_time`, defaults — still used as the template.
+For an event occurrence on date D, the rendered checklist = 
 
-**2. Classes page (`/calendar/classes`)**
-Expand the add/edit form with a recurrence section:
-- Date range (start required, end optional)
-- Frequency: Weekly / Every N weeks (biweekly) / Monthly by weekday
-- Weekday multi-select (Mon/Tue/…)
-- "Position in month" selector when monthly (1st/2nd/3rd/4th/last)
-- Skip dates list (add/remove specific dates)
-- Time fields already exist
+1. Ad-hoc items from `event_checklist_items` (existing behavior)
+2. Plus: for each attached template, all `checklist_template_items` joined to the per-occurrence state row keyed by (event_id, item_id, D). Missing state row → `done = false`.
 
-Add an Edit action (currently only add + archive + delete).
+Checking a template item creates/updates one row in `event_template_item_state` for that occurrence_date only — next week starts fresh.
 
-**3. Sync logic (new `src/server/class-series.functions.ts`)**
-- `upsertClassSeries({...})` — writes the series, builds the RRULE from its fields, then upserts the matching `calendar_events` row:
-  - `sub_calendar='classes'`, `category='Class'`, `class_series_id=<series.id>`
-  - `title`, `leader_name`, `childcare_needed`, room (via `event_rooms`) all sourced from series defaults
-  - `start_at`/`end_at` from start_date + start_time/end_time
-  - `rrule`, `recurrence_end_date`, `excluded_dates` from the recurrence fields
-- `deleteClassSeries(id)` — deletes the linked calendar event then the series.
-- `archiveClassSeries(id, active)` — when archived, also clears `rrule` (or deletes the event) so it stops appearing on the calendar.
+## UI
 
-**4. Wire the page to use the new functions**
-Replace the direct `supabase.from('class_series').insert/update/delete` calls with the server-fn calls so calendar sync happens server-side in one transaction.
+**1. New page `/settings/checklists`** (core role)
+- List all templates
+- Create / edit / delete templates with their item lists
+- Reorderable items (drag or up/down)
 
-## Notes & non-goals
-- Per-occurrence overrides (e.g. "this Tuesday has a substitute teacher") stay as a Phase 2 item — same as today's recurring events.
-- Existing class series rows get sensible defaults (weekly, no end date, no skips) so nothing breaks; you can edit them to refine.
-- Readiness scoring is unchanged — class events still need teacher/room/childcare.
+**2. Calendar event dialog (`src/routes/calendar.tsx`)**
+Add a "Templates" section above the existing Readiness checklist:
+- Multi-select of available templates → writes to `event_template_attachments`
+- Renders attached template items grouped by template name, each with a checkbox bound to per-occurrence state
+- For non-recurring events, occurrence_date = the event's start date
+- For recurring events viewed from a specific date chip, pass that occurrence_date down (calendar already has occurrence_date in EventChip)
+
+**3. Class series dialog (`src/routes/calendar_.classes.tsx`)**
+Add the same "Templates" multi-select. Saving writes attachments against the series' linked `calendar_event_id`.
+
+## Readiness scoring (`src/lib/event-readiness.ts`)
+
+Update `checklist_total` and `checklist_done` calculations everywhere they're computed:
+
+- Total = ad-hoc items + sum of template items across attached templates
+- Done = ad-hoc items done + per-occurrence done states for template items
+
+For event-level summaries (no specific occurrence), use the next upcoming occurrence's date as the lookup key (matches what the calendar chips already do).
+
+## Server functions (new `src/server/checklist-templates.functions.ts`)
+
+- `listTemplates()` — for selectors
+- `upsertTemplate({ id?, name, description, items })` — manage template + items atomically
+- `deleteTemplate(id)`
+- `setEventTemplates({ event_id, template_ids })` — replace attachments
+- `setTemplateItemState({ event_id, item_id, occurrence_date, done })` — toggle per-occurrence state
+
+All gated by `core` role.
+
+## RLS
+
+- Templates + items: readable by all authenticated, writable by core
+- Attachments + per-occurrence state: same as calendar_events (readable by authenticated, writable by core)
+
+## Out of scope (this turn)
+
+- Drag-and-drop reorder (use up/down buttons instead — simpler, ships now)
+- Assigning checklist items to specific people
+- Notifications when items remain undone on the day of the event

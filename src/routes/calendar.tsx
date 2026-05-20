@@ -137,6 +137,9 @@ type ClassSeries = {
 
 type Room = { id: string; name: string };
 
+type ChecklistTemplate = { id: string; name: string; description: string | null };
+type TemplateItem = { id: string; template_id: string; label: string; position: number };
+
 type FormState = {
   id?: string;
   title: string;
@@ -282,6 +285,12 @@ function CalendarBody() {
   const eventRoomsMap = useRef<Map<string, string[]>>(new Map());
   const undo = useUndoableAction();
 
+  // Checklist templates
+  const [allTemplates, setAllTemplates] = useState<ChecklistTemplate[]>([]);
+  const [allTemplateItems, setAllTemplateItems] = useState<TemplateItem[]>([]);
+  const [eventTemplateIds, setEventTemplateIds] = useState<string[]>([]); // attached to current form event
+  const [templateStates, setTemplateStates] = useState<Record<string, boolean>>({}); // key: `${item_id}:${YYYY-MM-DD}`
+
 
   const range = useMemo(() => {
     if (view === "week") {
@@ -322,7 +331,7 @@ function CalendarBody() {
 
   async function load() {
     // Fetch events overlapping range, plus any recurring (which may have started earlier)
-    const [{ data }, { data: er }, { data: cs }, { data: rs }] = await Promise.all([
+    const [{ data }, { data: er }, { data: cs }, { data: rs }, { data: tpls }, { data: tplItems }, { data: atts }, { data: states }] = await Promise.all([
       supabase
         .from("calendar_events")
         .select("*")
@@ -331,6 +340,10 @@ function CalendarBody() {
       supabase.from("event_rooms").select("event_id, room_id"),
       supabase.from("class_series").select("id, name, default_leader_name, default_teacher_name, default_childcare_needed, default_room_id").eq("active", true).order("name"),
       supabase.from("rooms").select("id, name").eq("active", true).order("name"),
+      supabase.from("checklist_templates" as any).select("*").order("name"),
+      supabase.from("checklist_template_items" as any).select("*").order("position"),
+      supabase.from("event_template_attachments" as any).select("event_id, template_id"),
+      supabase.from("event_template_item_state" as any).select("event_id, template_item_id, occurrence_date, done"),
     ]);
     setEvents(data ?? []);
     const map = new Map<string, string[]>();
@@ -342,6 +355,9 @@ function CalendarBody() {
     eventRoomsMap.current = map;
     setClassSeries((cs ?? []) as ClassSeries[]);
     setRooms((rs ?? []) as Room[]);
+    setAllTemplates(((tpls ?? []) as unknown) as ChecklistTemplate[]);
+    setAllTemplateItems(((tplItems ?? []) as unknown) as TemplateItem[]);
+    void atts; void states;
   }
 
 
@@ -354,6 +370,23 @@ function CalendarBody() {
     setChecklist(data ?? []);
   }
 
+  async function loadTemplatesForEvent(eventId: string, occurrenceDate: Date) {
+    const dateKey = format(occurrenceDate, "yyyy-MM-dd");
+    const [{ data: atts }, { data: states }] = await Promise.all([
+      supabase.from("event_template_attachments" as any).select("template_id").eq("event_id", eventId),
+      supabase.from("event_template_item_state" as any)
+        .select("template_item_id, done")
+        .eq("event_id", eventId)
+        .eq("occurrence_date", dateKey),
+    ]);
+    setEventTemplateIds(((atts ?? []) as unknown as Array<{ template_id: string }>).map((a) => a.template_id));
+    const m: Record<string, boolean> = {};
+    for (const row of ((states ?? []) as unknown as Array<{ template_item_id: string; done: boolean }>)) {
+      m[`${row.template_item_id}:${dateKey}`] = row.done;
+    }
+    setTemplateStates(m);
+  }
+
   function openNew(date?: Date) {
     if (!canEdit) return;
     const base = date ?? new Date();
@@ -361,6 +394,8 @@ function CalendarBody() {
     setForm(emptyForm(format(base, "yyyy-MM-dd'T'HH:mm")));
     setEditingOccurrence(null);
     setChecklist([]);
+    setEventTemplateIds([]);
+    setTemplateStates({});
     setOpen(true);
   }
 
@@ -420,6 +455,7 @@ function CalendarBody() {
 
     setEditingOccurrence(occ.occurrence_date);
     loadChecklist(ev.id);
+    loadTemplatesForEvent(ev.id, occ.occurrence_date);
     setOpen(true);
   }
 
@@ -596,6 +632,57 @@ function CalendarBody() {
     const { error } = await supabase.from("event_checklist_items").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
     loadChecklist(form.id!);
+  }
+
+  function currentOccurrenceDate(): Date {
+    if (editingOccurrence) return editingOccurrence;
+    if (form.start_at) {
+      const datePart = form.start_at.slice(0, 10);
+      return new Date(`${datePart}T12:00:00`);
+    }
+    return new Date();
+  }
+
+  async function toggleEventTemplate(templateId: string, attached: boolean) {
+    if (!form.id) { toast.error("Save the event first"); return; }
+    if (attached) {
+      const { error } = await supabase
+        .from("event_template_attachments" as any)
+        .delete()
+        .eq("event_id", form.id)
+        .eq("template_id", templateId);
+      if (error) { toast.error(error.message); return; }
+      setEventTemplateIds((ids) => ids.filter((i) => i !== templateId));
+    } else {
+      const { error } = await supabase
+        .from("event_template_attachments" as any)
+        .insert({ event_id: form.id, template_id: templateId });
+      if (error) { toast.error(error.message); return; }
+      setEventTemplateIds((ids) => [...ids, templateId]);
+    }
+    load();
+  }
+
+  async function toggleTemplateItem(itemId: string, currentlyDone: boolean) {
+    if (!form.id) return;
+    const occDate = currentOccurrenceDate();
+    const dateKey = format(occDate, "yyyy-MM-dd");
+    const next = !currentlyDone;
+    // Optimistic
+    setTemplateStates((s) => ({ ...s, [`${itemId}:${dateKey}`]: next }));
+    const { error } = await supabase
+      .from("event_template_item_state" as any)
+      .upsert(
+        { event_id: form.id, template_item_id: itemId, occurrence_date: dateKey, done: next },
+        { onConflict: "event_id,template_item_id,occurrence_date" },
+      );
+    if (error) {
+      toast.error(error.message);
+      setTemplateStates((s) => ({ ...s, [`${itemId}:${dateKey}`]: currentlyDone }));
+    } else {
+      // Refresh aggregate data for chips
+      load();
+    }
   }
 
   const occurrences = useMemo(
@@ -778,14 +865,19 @@ function CalendarBody() {
             <DialogTitle className="flex items-center gap-2">
               <span className="truncate">{form.id ? "Edit event" : "Add event"}</span>
               {form.id && (() => {
+                const occDate = currentOccurrenceDate();
+                const dateKey = format(occDate, "yyyy-MM-dd");
+                const tplItems = allTemplateItems.filter((i) => eventTemplateIds.includes(i.template_id));
+                const tplTotal = tplItems.length;
+                const tplDone = tplItems.filter((i) => templateStates[`${i.id}:${dateKey}`]).length;
                 const r = scoreEvent({
                   category: form.category,
                   leader_name: form.leader_name,
                   childcare_needed: form.childcare_needed,
                   childcare_arranged: form.childcare_arranged,
                   room_needed: form.room_needed,
-                  checklist_total: checklist.length,
-                  checklist_done: checklist.filter((i) => i.done).length,
+                  checklist_total: checklist.length + tplTotal,
+                  checklist_done: checklist.filter((i) => i.done).length + tplDone,
                 });
                 return (
                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${readinessColor(r.level)}`} title={r.missing.join(", ") || "Ready"}>
@@ -1104,11 +1196,84 @@ function CalendarBody() {
               )}
             </div>
 
+            {/* Checklist Templates */}
+            {form.id && (
+              <div className="space-y-3 rounded-xl border border-border p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="text-sm font-medium">Checklist templates</Label>
+                  <Link to="/checklists" className="text-xs text-muted-foreground underline">
+                    Manage templates
+                  </Link>
+                </div>
+
+                {allTemplates.length === 0 ? (
+                  <div className="text-xs text-muted-foreground">
+                    No templates yet. <Link to="/checklists" className="underline">Create one</Link>.
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {allTemplates.map((t) => {
+                      const on = eventTemplateIds.includes(t.id);
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => toggleEventTemplate(t.id, on)}
+                          className={`text-xs px-2 py-1 rounded-full border ${
+                            on ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"
+                          }`}
+                        >
+                          {on ? "✓ " : "+ "}{t.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {eventTemplateIds.length > 0 && (() => {
+                  const occDate = currentOccurrenceDate();
+                  const dateKey = format(occDate, "yyyy-MM-dd");
+                  return (
+                    <div className="space-y-3 pt-1">
+                      <div className="text-xs text-muted-foreground">
+                        State shown for{" "}
+                        <span className="font-medium text-foreground">{format(occDate, "MMM d, yyyy")}</span>
+                        {form.recurs ? " (this occurrence only)" : ""}
+                      </div>
+                      {eventTemplateIds.map((tid) => {
+                        const tpl = allTemplates.find((t) => t.id === tid);
+                        if (!tpl) return null;
+                        const its = allTemplateItems.filter((i) => i.template_id === tid);
+                        return (
+                          <div key={tid} className="space-y-1">
+                            <div className="text-xs font-medium">{tpl.name}</div>
+                            {its.length === 0 ? (
+                              <div className="text-xs text-muted-foreground italic pl-1">(no items)</div>
+                            ) : its.map((it) => {
+                              const done = !!templateStates[`${it.id}:${dateKey}`];
+                              return (
+                                <div key={it.id} className="flex items-center gap-2 pl-1">
+                                  <Checkbox checked={done} onCheckedChange={() => toggleTemplateItem(it.id, done)} />
+                                  <span className={`flex-1 text-sm ${done ? "line-through text-muted-foreground" : ""}`}>
+                                    {it.label}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
             {/* Checklist */}
             {form.id && (
               <div className="space-y-2 rounded-xl border border-border p-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Readiness checklist</Label>
+                  <Label className="text-sm font-medium">Ad-hoc checklist</Label>
                   <ReadinessBadge value={deriveReadiness(checklist, form.readiness)} />
                 </div>
                 <div className="space-y-1">
@@ -1127,7 +1292,7 @@ function CalendarBody() {
                 </div>
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Add an item…"
+                    placeholder="Add a one-off item…"
                     value={newItem}
                     onChange={(e) => setNewItem(e.target.value)}
                     onKeyDown={(e) => {
