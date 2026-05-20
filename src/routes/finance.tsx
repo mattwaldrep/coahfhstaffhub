@@ -491,6 +491,26 @@ function ReportsTab({ year }: { year: number }) {
             <div><span className="text-[11px] text-muted-foreground mr-1">Net</span><span className={`text-lg font-display font-semibold tabular-nums ${annualMeta.income - annualMeta.expense < 0 ? "text-destructive" : ""}`}>{fmt(annualMeta.income - annualMeta.expense)}</span></div>
           </div>
           <div className="text-[11px] text-muted-foreground mt-0.5">
+            Above the line only — operating income &amp; expense (5000–8000). Excludes 9500-series designated fund trackers.
+          </div>
+          {annualMeta.designated > 0 && (
+            <div className="mt-1">
+              <button
+                type="button"
+                onClick={() => setShowDesignated((v) => !v)}
+                className="text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+              >
+                {showDesignated ? "Hide" : "Show"} designated fund trackers (below the line)
+              </button>
+              {showDesignated && (
+                <div className="mt-1 text-[11px] text-muted-foreground">
+                  <span className="mr-2">Designated expense (9500 series): <span className="tabular-nums text-foreground">{fmt(annualMeta.designated)}</span></span>
+                  <span className="block opacity-80 mt-0.5">Internal bookkeeping for fund drawdowns (Cameron Sardano, Matt Waldrep, Steven Castello CP). Not real operational outlays — excluded from the Expense total above.</span>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="text-[11px] text-muted-foreground mt-1">
             {annualMeta.count > 0
               ? <>{annualMeta.count} categories · last updated {annualMeta.updatedAt ? format(new Date(annualMeta.updatedAt), "MMM d, yyyy") : "—"}</>
               : <>Not imported yet — upload QBO's Budget Overview to seed annual budgets.</>}
