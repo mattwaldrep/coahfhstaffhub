@@ -58,16 +58,16 @@ export const upsertTemplateNode = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       return { ok: true, id: data.id };
     }
-    // Compute sort_order at end of siblings if not provided
     let sort = data.sort_order;
     if (sort === undefined) {
-      const { data: siblings } = await supabaseAdmin
+      let q: any = supabaseAdmin
         .from("onboarding_templates")
         .select("sort_order")
         .eq("section_name", data.section_name)
-        .is("parent_id", data.parent_id ?? null)
         .order("sort_order", { ascending: false })
         .limit(1);
+      q = data.parent_id ? q.eq("parent_id", data.parent_id) : q.is("parent_id", null);
+      const { data: siblings } = await q;
       sort = ((siblings?.[0]?.sort_order as number | undefined) ?? 0) + 10;
     }
     const { data: ins, error } = await supabaseAdmin
