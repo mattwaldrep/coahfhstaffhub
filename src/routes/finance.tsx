@@ -14,8 +14,10 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Upload, Trash2, FileText, Download, ShieldAlert } from "lucide-react";
+import { Plus, Upload, Trash2, FileText, Download, ShieldAlert, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { ImportReviewDialog } from "@/components/finance/ImportReviewDialog";
 
 export const Route = createFileRoute("/finance")({
   component: FinancePage,
