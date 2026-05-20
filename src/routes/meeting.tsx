@@ -496,6 +496,8 @@ function MeetingPage() {
               </form>
             </StandingSection>
 
+            <MeetingDecisionsSection meetingId={meeting.id} />
+
             {/* Notes */}
             <StandingSection title="Meeting Notes" subtitle="General notes for the whole meeting." defaultOpen={false}>
               <textarea
@@ -732,5 +734,164 @@ function AgendaRow({
         <Trash2 className="w-4 h-4" />
       </button>
     </div>
+  );
+}
+
+type DecisionRow = {
+  id: string;
+  title: string;
+  outcome: string;
+  motion_text: string | null;
+  vote_yes: number;
+  vote_no: number;
+  vote_abstain: number;
+  decided_at: string | null;
+};
+
+function MeetingDecisionsSection({ meetingId }: { meetingId: string }) {
+  const [rows, setRows] = useState<DecisionRow[]>([]);
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [motion, setMotion] = useState("");
+  const [outcome, setOutcome] = useState("passed");
+  const [yes, setYes] = useState("");
+  const [no, setNo] = useState("");
+  const [abstain, setAbstain] = useState("");
+  const undo = useUndoableAction();
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("decisions")
+        .select("id,title,outcome,motion_text,vote_yes,vote_no,vote_abstain,decided_at")
+        .eq("meeting_id", meetingId)
+        .order("created_at", { ascending: true });
+      setRows((data ?? []) as DecisionRow[]);
+    })();
+  }, [meetingId]);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim()) return;
+    const { data, error } = await supabase
+      .from("decisions")
+      .insert({
+        meeting_id: meetingId,
+        title: title.trim(),
+        motion_text: motion.trim() || null,
+        outcome,
+        vote_yes: Number(yes) || 0,
+        vote_no: Number(no) || 0,
+        vote_abstain: Number(abstain) || 0,
+        decided_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+    if (error) return toast.error(error.message);
+    setRows((r) => [...r, data as DecisionRow]);
+    setTitle(""); setMotion(""); setOutcome("passed"); setYes(""); setNo(""); setAbstain("");
+    setOpen(false);
+    toast.success("Decision recorded");
+  }
+
+  function remove(id: string) {
+    const row = rows.find((r) => r.id === id);
+    if (!row) return;
+    undo({
+      optimistic: () => { setRows((rs) => rs.filter((r) => r.id !== id)); return row; },
+      rollback: (snap) => setRows((rs) => [...rs, snap]),
+      commit: async () => {
+        const { error } = await supabase.from("decisions").delete().eq("id", id);
+        if (error) throw new Error(error.message);
+      },
+      message: "Decision removed",
+    });
+  }
+
+  const outcomeClass = (o: string) =>
+    o === "passed" ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30"
+    : o === "failed" ? "bg-destructive/15 text-destructive border-destructive/30"
+    : o === "tabled" ? "bg-amber-500/15 text-amber-700 border-amber-500/30"
+    : "bg-muted text-muted-foreground border-border";
+
+  return (
+    <StandingSection
+      title="Decisions"
+      subtitle="Motions, votes, and outcomes recorded in this meeting."
+      defaultOpen={false}
+    >
+      <ul className="space-y-2">
+        {rows.map((d) => (
+          <li key={d.id} className="group flex items-start gap-3 border rounded-md p-3 bg-card">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-medium text-sm">{d.title}</span>
+                <span className={cn("text-xs px-2 py-0.5 rounded border", outcomeClass(d.outcome))}>{d.outcome}</span>
+                <span className="text-xs font-mono text-muted-foreground">
+                  {d.vote_yes}–{d.vote_no}{d.vote_abstain > 0 ? ` (${d.vote_abstain} abst.)` : ""}
+                </span>
+              </div>
+              {d.motion_text && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{d.motion_text}</p>}
+            </div>
+            <button
+              onClick={() => remove(d.id)}
+              className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+              aria-label="Delete"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </li>
+        ))}
+        {rows.length === 0 && !open && (
+          <li className="text-sm text-muted-foreground py-2">No decisions recorded yet.</li>
+        )}
+      </ul>
+
+      {open ? (
+        <form onSubmit={save} className="mt-4 space-y-2 border rounded-md p-3 bg-muted/30">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Decision title"
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+            required
+            autoFocus
+          />
+          <textarea
+            value={motion}
+            onChange={(e) => setMotion(e.target.value)}
+            placeholder="Motion text (optional)"
+            rows={2}
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <select
+              value={outcome}
+              onChange={(e) => setOutcome(e.target.value)}
+              className="bg-background border border-border rounded-lg px-2 py-2 text-sm"
+            >
+              <option value="passed">Passed</option>
+              <option value="failed">Failed</option>
+              <option value="tabled">Tabled</option>
+              <option value="pending">Pending</option>
+            </select>
+            <input type="number" min="0" value={yes} onChange={(e) => setYes(e.target.value)} placeholder="Yes"
+              className="bg-background border border-border rounded-lg px-2 py-2 text-sm" />
+            <input type="number" min="0" value={no} onChange={(e) => setNo(e.target.value)} placeholder="No"
+              className="bg-background border border-border rounded-lg px-2 py-2 text-sm" />
+            <input type="number" min="0" value={abstain} onChange={(e) => setAbstain(e.target.value)} placeholder="Abst."
+              className="bg-background border border-border rounded-lg px-2 py-2 text-sm" />
+          </div>
+          <div className="flex gap-2">
+            <Button type="submit" size="sm">Save decision</Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+          </div>
+        </form>
+      ) : (
+        <Button size="sm" variant="outline" className="mt-3" onClick={() => setOpen(true)}>
+          <Plus className="w-4 h-4 mr-1" /> Record decision
+        </Button>
+      )}
+    </StandingSection>
   );
 }
