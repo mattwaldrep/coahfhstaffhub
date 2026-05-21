@@ -160,6 +160,137 @@ function getWelcomeEmailDraft(trip: Trip): EmailDraft {
   return { to, subject: WELCOME_SUBJECT, body };
 }
 
+function fmtDateLong(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso + "T12:00:00");
+  return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+}
+
+function daysBetween(start: string | null, end: string | null): string[] {
+  if (!start || !end) return [];
+  const out: string[] = [];
+  const s = new Date(start + "T12:00:00");
+  const e = new Date(end + "T12:00:00");
+  for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+    out.push(d.toISOString().slice(0, 10));
+  }
+  return out;
+}
+
+const TRACK_LABEL: Record<string, string> = Object.fromEntries(
+  OUTREACH_TRACK_OPTIONS.map((o) => [o.value, o.label]),
+);
+
+function buildDraftItinerary(form: Form | Trip): string {
+  const church = (form.church_name || "[Insert Partner Church Name]").trim();
+  const dateRange = form.start_date && form.end_date
+    ? `${fmtDateLong(form.start_date)} – ${fmtDateLong(form.end_date)}`
+    : "[Insert Trip Dates]";
+  const focus = form.primary_focus?.trim() || "[Insert Main Ministry or Outreach Focus]";
+  const teamSize = form.team_headcount
+    ? `${form.team_headcount}${form.adults_count || form.students_count ? ` (${form.adults_count ?? 0} adults / ${form.students_count ?? 0} students)` : ""}`
+    : "[Insert Range]";
+  const tracks = (form.outreach_tracks ?? []).map((t) => TRACK_LABEL[t] ?? t).filter(Boolean);
+  const tracksLine = tracks.length ? tracks.join(", ") : "[Insert Ministry Partner or Focus]";
+  const windowLine = form.daily_window_start && form.daily_window_end
+    ? `Daily window: ${form.daily_window_start}–${form.daily_window_end}`
+    : "";
+
+  const days = daysBetween(form.start_date, form.end_date);
+  const dayBlocks = (days.length
+    ? days.map((iso, i) => {
+        const d = new Date(iso + "T12:00:00");
+        const label = d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+        let theme = "[Theme or Focus for the Day]";
+        let lines = ["• [Morning Activity]", "• [Afternoon Activity]", "• [Evening Activity or Debrief]"];
+        if (i === days.length - 1) {
+          theme = "Worship & Departure";
+          lines = ["• [Setup time and worship details]", "• [Departure information]"];
+        } else if (i === days.length - 2 && days.length >= 3) {
+          theme = "Rest & Sightseeing";
+          lines = ["• [Suggested free time / cultural experiences]"];
+        }
+        return `${label} – ${theme}\n${lines.join("\n")}`;
+      })
+    : [
+        "[Day of Week], [Date] – [Theme or Focus for the Day]\n• [Morning Activity]\n• [Afternoon Activity]\n• [Evening Activity or Debrief]",
+        "[Day of Week], [Date] – Rest & Sightseeing\n• [Suggested free time activities or optional cultural experiences]",
+        "[Day of Week], [Date] – Worship & Departure\n• [Setup Time and Worship Details]\n• [Departure Information]",
+      ]
+  ).join("\n\n");
+
+  return [
+    `Missions Team Plan`,
+    ``,
+    `Partner Church: ${church}`,
+    `Dates: ${dateRange}`,
+    `Location: Boston, Massachusetts`,
+    `Host: City on a Hill Forest Hills`,
+    `Primary Ministry Focus: ${focus}`,
+    ``,
+    `PURPOSE`,
+    `To partner with City on a Hill Forest Hills in serving the city of Boston through gospel-centered outreach, relational ministry, and practical support. Teams will help strengthen ongoing ministry partnerships, encourage local church planters, and bless our neighbors through intentional service.`,
+    ``,
+    `TRIP OVERVIEW`,
+    `During your time in Boston, your team will:`,
+    `• Serve alongside COAH Forest Hills in multiple ministry contexts.`,
+    `• Support our partnership with ${tracksLine}.`,
+    `• Join in neighborhood outreach at local transit stations.`,
+    `• Spend focused time with our church planting resident, Cam Sardano, or another ministry leader.`,
+    `• Participate in and support Sunday worship at COAH Forest Hills.`,
+    ``,
+    `SCHEDULE OVERVIEW`,
+    dayBlocks,
+    ``,
+    `TEAM LOGISTICS`,
+    `Team Size: ${teamSize}`,
+    `Lodging: T-accessible Airbnb near Forest Hills, Jamaica Plain, or Roslindale${form.lodging_status ? ` — ${form.lodging_status}` : ""}`,
+    `Transportation: MBTA (Boston's subway/bus system). We'll provide orientation, maps, and assistance with CharlieCards.${form.transport_status ? ` ${form.transport_status}` : ""}`,
+    `Meals: Coordinated by team; dinner plans with COAH FH for select ministry nights`,
+    `Airport: Boston Logan International (BOS)`,
+    `Free Day Suggestions: Boston Common, Seaport District, Museum of Fine Arts, Freedom Trail`,
+    windowLine,
+    ``,
+    `PRIMARY CONTACTS`,
+    `Matt Waldrep — Executive & Worship Pastor`,
+    `matt@coahforesthills.org | (617) 435-6456`,
+    ``,
+    `Cam Sardano — Church Planting Resident`,
+    `cam@coahforesthills.org | (781) 635-6834`,
+    ``,
+    `NEXT STEPS`,
+    `Once the team is confirmed:`,
+    `• COAH FH will provide a finalized detailed schedule one month before arrival.`,
+    `• COAH FH will coordinate local logistics for outreach supplies and event prep.`,
+    `• The partner church will handle lodging and travel arrangements.`,
+    ``,
+    `We're excited to serve alongside you and see how God uses this partnership to advance the gospel in Boston.`,
+  ].filter((l) => l !== undefined).join("\n");
+}
+
+const ITINERARY_SUBJECT_PREFIX = "Draft Itinerary —";
+
+function getItineraryEmailDraft(trip: Trip, itinerary: string): EmailDraft {
+  const to = trip.leader_email ?? "";
+  const subject = `${ITINERARY_SUBJECT_PREFIX} ${trip.church_name} Boston Mission Trip`;
+  const leader = trip.leader_name?.trim() || "team";
+  const body =
+    `Hi ${leader},\n\n` +
+    `Following up from our planning call — please find below a draft itinerary for your team's trip to Boston. ` +
+    `Read through it with your leaders and let me know what to adjust (timing, focus, activities, additions). ` +
+    `Once you give us the green light, we'll lock it in and start coordinating logistics on our end.\n\n` +
+    `------------------------------------------------------------\n` +
+    `${itinerary}\n` +
+    `------------------------------------------------------------\n\n` +
+    `Reply with any changes or questions. Looking forward to serving alongside you.\n\n` +
+    `Matt Waldrep\n` +
+    `Worship & Executive Pastor\n` +
+    `City on a Hill Forest Hills\n` +
+    `coahforesthills.org`;
+  return { to, subject, body };
+}
+
+
 type Form = Omit<Trip, "id" | "position" | "inquiry_token" | "inquiry_submitted_at"> & { id?: string };
 
 const emptyForm = (): Form => ({
