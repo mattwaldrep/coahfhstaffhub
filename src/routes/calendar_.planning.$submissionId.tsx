@@ -127,8 +127,8 @@ function Editor() {
       pco_registration: form.pco_registration,
       missions_team_needed: form.missions_team_needed,
       church_covering: form.church_covering || null,
-      other_listings: form.other_listings
-        ? form.other_listings.split(",").map(s => s.trim()).filter(Boolean) : [],
+      other_listings: form.other_listings,
+      social_ads: form.social_ads,
       room_not_needed: form.room_not_needed,
       leader_not_needed: form.leader_not_needed,
     };
