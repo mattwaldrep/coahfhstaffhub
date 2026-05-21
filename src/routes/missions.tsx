@@ -126,12 +126,6 @@ function getWelcomeEmailDraft(trip: Trip): EmailDraft {
   return { to, subject: WELCOME_SUBJECT, body };
 }
 
-function welcomeMailtoHref(trip: Trip): string {
-  const { to, subject, body } = getWelcomeEmailDraft(trip);
-  const qs = `subject=${encodeURIComponent(WELCOME_SUBJECT)}&body=${encodeURIComponent(body)}`;
-  return `mailto:${to}?${qs}`;
-}
-
 type Form = Omit<Trip, "id" | "position" | "inquiry_token" | "inquiry_submitted_at"> & { id?: string };
 
 const emptyForm = (): Form => ({
@@ -589,20 +583,13 @@ function Body() {
                 >
                   Copy body
                 </Button>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => copyDraftValue("Full email", `To: ${emailDraft.to}\nSubject: ${emailDraft.subject}\n\n${emailDraft.body}`)}
-                  >
-                    Copy everything
-                  </Button>
-                  {emailDraft.to && (
-                    <Button type="button" onClick={() => { window.location.href = welcomeMailtoHref(emailDraftTrip!); }}>
-                      Open mail app
-                    </Button>
-                  )}
-                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => copyDraftValue("Full email", `To: ${emailDraft.to}\nSubject: ${emailDraft.subject}\n\n${emailDraft.body}`)}
+                >
+                  Copy everything
+                </Button>
               </DialogFooter>
             </div>
           )}
