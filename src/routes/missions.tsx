@@ -161,6 +161,8 @@ function Body() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [open, setOpen] = useState(false);
   const [emailDraftTrip, setEmailDraftTrip] = useState<Trip | null>(null);
+  const [sendingGmail, setSendingGmail] = useState(false);
+  const sendGmail = useServerFn(sendGmailMessage);
   const [form, setForm] = useState<Form>(emptyForm());
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
