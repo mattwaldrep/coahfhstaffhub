@@ -1037,6 +1037,8 @@ function InquiryPanel({ trip }: { trip: Trip }) {
       </div>
       <a
         href={welcomeMailtoHref(trip)}
+        target="_blank"
+        rel="noreferrer"
         className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border bg-surface hover:bg-background/60 transition"
       >
         <Send className="w-3.5 h-3.5" />
