@@ -495,6 +495,10 @@ function Body() {
               </div>
             </div>
 
+            {editingTrip && (
+              <InquiryPanel trip={editingTrip} />
+            )}
+
             <div className="rounded-xl border border-border p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-medium">Readiness checklist</Label>
