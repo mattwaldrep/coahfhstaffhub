@@ -603,19 +603,29 @@ function Body() {
                 <Textarea readOnly rows={14} value={emailDraft.body} />
               </div>
               <DialogFooter className="flex sm:justify-between gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => copyDraftValue("Email body", emailDraft.body)}
+                  >
+                    Copy body
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => copyDraftValue("Full email", `To: ${emailDraft.to}\nSubject: ${emailDraft.subject}\n\n${emailDraft.body}`)}
+                  >
+                    Copy everything
+                  </Button>
+                </div>
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={() => copyDraftValue("Email body", emailDraft.body)}
+                  onClick={handleSendGmail}
+                  disabled={sendingGmail || !emailDraft.to}
                 >
-                  Copy body
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => copyDraftValue("Full email", `To: ${emailDraft.to}\nSubject: ${emailDraft.subject}\n\n${emailDraft.body}`)}
-                >
-                  Copy everything
+                  <Send className="w-4 h-4 mr-1.5" />
+                  {sendingGmail ? "Sending…" : "Send via Gmail"}
                 </Button>
               </DialogFooter>
             </div>
