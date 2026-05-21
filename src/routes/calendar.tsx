@@ -304,6 +304,8 @@ function CalendarBody() {
   const [form, setForm] = useState<FormState>(emptyForm());
   const [editingOccurrence, setEditingOccurrence] = useState<Date | null>(null);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
+  const [editingChecklistId, setEditingChecklistId] = useState<string | null>(null);
+  const [editingChecklistLabel, setEditingChecklistLabel] = useState("");
   const [newItem, setNewItem] = useState("");
   const [classSeries, setClassSeries] = useState<ClassSeries[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
