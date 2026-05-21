@@ -1,0 +1,2 @@
+ALTER TABLE public.calendar_events ADD COLUMN IF NOT EXISTS social_ads boolean NOT NULL DEFAULT false;
+ALTER TABLE public.calendar_proposed_events ADD COLUMN IF NOT EXISTS social_ads boolean NOT NULL DEFAULT false;

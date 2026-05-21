@@ -93,6 +93,15 @@ const READINESS_COLORS: Record<string, string> = {
   red: "oklch(0.65 0.22 25)",
 };
 
+const LISTING_CHANNELS: { key: string; label: string }[] = [
+  { key: "pco", label: "PCO" },
+  { key: "eventbrite", label: "Eventbrite" },
+  { key: "google", label: "Google" },
+  { key: "community_cals", label: "Community Cals" },
+  { key: "socials", label: "Socials" },
+];
+const LISTING_LABEL = new Map(LISTING_CHANNELS.map((c) => [c.key, c.label]));
+
 const WEEKDAYS = [
   { v: "SU", label: "S" },
   { v: "MO", label: "M" },
@@ -120,6 +129,7 @@ type EventRow = {
   recurrence_end_date: string | null;
   excluded_dates: string[];
   other_listings: string[];
+  social_ads: boolean;
   room_needed: string | null;
   action_note: string | null;
   missions_team_needed: boolean;
@@ -181,7 +191,8 @@ type FormState = {
   byweekday: string[];
   bysetpos: string;
   recurrence_end_date: string;
-  other_listings: string;
+  other_listings: string[];
+  social_ads: boolean;
   room_needed: string;
   action_note: string;
   missions_team_needed: boolean;
@@ -212,7 +223,8 @@ const emptyForm = (start = ""): FormState => ({
   byweekday: [],
   bysetpos: "",
   recurrence_end_date: "",
-  other_listings: "",
+  other_listings: [],
+  social_ads: false,
   room_needed: "",
   action_note: "",
   missions_team_needed: false,
@@ -555,7 +567,8 @@ function CalendarBody() {
       recurs: !!ev.rrule,
       freq, interval, byweekday, bysetpos,
       recurrence_end_date: ev.recurrence_end_date ?? "",
-      other_listings: (ev.other_listings ?? []).join(", "),
+      other_listings: ev.other_listings ?? [],
+      social_ads: (ev as any).social_ads ?? false,
       room_needed: ev.room_needed ?? "",
       action_note: ev.action_note ?? "",
       missions_team_needed: ev.missions_team_needed ?? false,
@@ -603,9 +616,8 @@ function CalendarBody() {
       pco_registration: form.pco_registration,
       rrule,
       recurrence_end_date: form.recurrence_end_date || null,
-      other_listings: form.other_listings
-        ? form.other_listings.split(",").map((s) => s.trim()).filter(Boolean)
-        : [],
+      other_listings: form.other_listings,
+      social_ads: form.social_ads,
       room_needed: form.room_needed || null,
       action_note: form.action_note || null,
       missions_team_needed: form.missions_team_needed,
@@ -701,9 +713,8 @@ function CalendarBody() {
       pco_registration: form.pco_registration,
       rrule: null,
       recurrence_end_date: null,
-      other_listings: form.other_listings
-        ? form.other_listings.split(",").map((s) => s.trim()).filter(Boolean)
-        : [],
+      other_listings: form.other_listings,
+      social_ads: form.social_ads,
       room_needed: form.room_needed || null,
       action_note: form.action_note || null,
       missions_team_needed: form.missions_team_needed,
@@ -1102,10 +1113,6 @@ function CalendarBody() {
                 <Switch checked={form.all_day} onCheckedChange={(v) => setForm({ ...form, all_day: v })} />
                 All day
               </label>
-              <label className="flex items-center gap-2">
-                <Switch checked={form.pco_registration} onCheckedChange={(v) => setForm({ ...form, pco_registration: v })} />
-                PCO registration
-              </label>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -1192,12 +1199,37 @@ function CalendarBody() {
             <div className="space-y-3 rounded-xl border border-border p-3">
               <Label className="text-sm font-medium">Logistics</Label>
               <div className="space-y-2">
-                <Label className="text-xs">Other listings (comma-separated)</Label>
-                <Input
-                  placeholder="e.g. Google Business, Eventbrite"
-                  value={form.other_listings}
-                  onChange={(e) => setForm({ ...form, other_listings: e.target.value })}
-                />
+                <Label className="text-xs">Promote / list on</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {LISTING_CHANNELS.map((c) => {
+                    const checked = c.key === "pco"
+                      ? form.pco_registration
+                      : form.other_listings.includes(c.key);
+                    const toggle = (v: boolean) => {
+                      if (c.key === "pco") {
+                        setForm({ ...form, pco_registration: v });
+                      } else {
+                        const next = v
+                          ? Array.from(new Set([...form.other_listings, c.key]))
+                          : form.other_listings.filter((k) => k !== c.key);
+                        setForm({ ...form, other_listings: next });
+                      }
+                    };
+                    return (
+                      <label key={c.key} className="flex items-center gap-2 text-sm">
+                        <Switch checked={checked} onCheckedChange={toggle} />
+                        {c.label}
+                      </label>
+                    );
+                  })}
+                  <label className="flex items-center gap-2 text-sm">
+                    <Switch
+                      checked={form.social_ads}
+                      onCheckedChange={(v) => setForm({ ...form, social_ads: v })}
+                    />
+                    Social ads
+                  </label>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label className="text-xs">Action / follow-up</Label>
@@ -1786,13 +1818,18 @@ function ListView({ occurrences, conflictMap, onPickEvent, readinessOf }: { occu
                 {o.pco_registration && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">PCO</span>
                 )}
+                {(o.other_listings ?? [])
+                  .filter((k) => LISTING_LABEL.has(k))
+                  .map((k) => (
+                    <span key={k} className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                      {LISTING_LABEL.get(k)}
+                    </span>
+                  ))}
+                {(o as any).social_ads && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-fuchsia-500/15 text-fuchsia-700">Social ads</span>
+                )}
                 {o.missions_team_needed && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/20 text-accent-foreground">Missions</span>
-                )}
-                {(o.other_listings ?? []).length > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
-                    +{o.other_listings.length} listing{o.other_listings.length === 1 ? "" : "s"}
-                  </span>
                 )}
                 {classGaps(o).length > 0 && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-warning/20 text-warning">

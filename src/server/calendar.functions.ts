@@ -37,6 +37,7 @@ const proposedEventSchema = z.object({
   missions_team_needed: z.boolean().default(false),
   church_covering: z.string().max(255).nullable().optional(),
   other_listings: z.array(z.string().max(255)).max(20).default([]),
+  social_ads: z.boolean().default(false),
   room_not_needed: z.boolean().default(false),
   leader_not_needed: z.boolean().default(false),
 });
@@ -303,6 +304,7 @@ export const reviewProposedEvent = createServerFn({ method: "POST" })
           missions_team_needed: prop.missions_team_needed,
           church_covering: prop.church_covering,
           other_listings: prop.other_listings ?? [],
+          social_ads: (prop as any).social_ads ?? false,
           room_not_needed: prop.room_not_needed ?? false,
           leader_not_needed: prop.leader_not_needed ?? false,
           created_by: context.userId,
@@ -413,6 +415,7 @@ export const bulkReviewSubmission = createServerFn({ method: "POST" })
             missions_team_needed: full.missions_team_needed,
             church_covering: full.church_covering,
             other_listings: full.other_listings ?? [],
+            social_ads: (full as any).social_ads ?? false,
             room_not_needed: full.room_not_needed ?? false,
             leader_not_needed: full.leader_not_needed ?? false,
             created_by: context.userId,

@@ -254,6 +254,7 @@ export type Database = {
           room_needed: string | null
           room_not_needed: boolean
           rrule: string | null
+          social_ads: boolean
           start_at: string
           sub_calendar: Database["public"]["Enums"]["sub_calendar"]
           title: string
@@ -285,6 +286,7 @@ export type Database = {
           room_needed?: string | null
           room_not_needed?: boolean
           rrule?: string | null
+          social_ads?: boolean
           start_at: string
           sub_calendar?: Database["public"]["Enums"]["sub_calendar"]
           title: string
@@ -316,6 +318,7 @@ export type Database = {
           room_needed?: string | null
           room_not_needed?: boolean
           rrule?: string | null
+          social_ads?: boolean
           start_at?: string
           sub_calendar?: Database["public"]["Enums"]["sub_calendar"]
           title?: string
@@ -476,6 +479,7 @@ export type Database = {
           reviewer_note: string | null
           room_needed: string | null
           room_not_needed: boolean
+          social_ads: boolean
           start_at: string
           status: Database["public"]["Enums"]["proposed_event_status"]
           sub_calendar: Database["public"]["Enums"]["sub_calendar"]
@@ -502,6 +506,7 @@ export type Database = {
           reviewer_note?: string | null
           room_needed?: string | null
           room_not_needed?: boolean
+          social_ads?: boolean
           start_at: string
           status?: Database["public"]["Enums"]["proposed_event_status"]
           sub_calendar: Database["public"]["Enums"]["sub_calendar"]
@@ -528,6 +533,7 @@ export type Database = {
           reviewer_note?: string | null
           room_needed?: string | null
           room_not_needed?: boolean
+          social_ads?: boolean
           start_at?: string
           status?: Database["public"]["Enums"]["proposed_event_status"]
           sub_calendar?: Database["public"]["Enums"]["sub_calendar"]
