@@ -1609,3 +1609,67 @@ function PlanningCallPanel({
     </div>
   );
 }
+
+function DraftItineraryPanel({
+  form,
+  setForm,
+  canEmail,
+  onEmail,
+}: {
+  form: Form;
+  setForm: React.Dispatch<React.SetStateAction<Form>>;
+  canEmail: boolean;
+  onEmail: () => void;
+}) {
+  function generate(overwrite: boolean) {
+    if (!overwrite && form.draft_itinerary) {
+      const ok = window.confirm("Replace the current draft itinerary with a fresh one generated from trip details?");
+      if (!ok) return;
+    }
+    setForm((f) => ({ ...f, draft_itinerary: buildDraftItinerary(f) }));
+    toast.success("Draft itinerary generated");
+  }
+
+  function copyAll() {
+    navigator.clipboard.writeText(form.draft_itinerary ?? "");
+    toast.success("Itinerary copied");
+  }
+
+  return (
+    <div className="rounded-xl border border-border p-3 space-y-3">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <Label className="text-sm font-medium">Draft itinerary</Label>
+        <div className="flex gap-2 flex-wrap">
+          <Button type="button" size="sm" variant="outline" onClick={() => generate(!form.draft_itinerary)}>
+            {form.draft_itinerary ? "Regenerate" : "Generate from template"}
+          </Button>
+          {form.draft_itinerary && (
+            <Button type="button" size="sm" variant="outline" onClick={copyAll}>
+              Copy
+            </Button>
+          )}
+          <Button
+            type="button"
+            size="sm"
+            onClick={onEmail}
+            disabled={!canEmail || !form.draft_itinerary}
+            title={!canEmail ? "Save trip with a leader email first" : ""}
+          >
+            <Send className="w-4 h-4 mr-1.5" /> Email to team
+          </Button>
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Auto-fills from trip dates, focus, headcount, and outreach tracks. Edit freely before sending — the email body will use exactly what's here.
+      </p>
+      <Textarea
+        rows={18}
+        className="font-mono text-xs"
+        placeholder="Click 'Generate from template' to start, then edit as needed."
+        value={form.draft_itinerary ?? ""}
+        onChange={(e) => setForm({ ...form, draft_itinerary: e.target.value })}
+      />
+    </div>
+  );
+}
+
