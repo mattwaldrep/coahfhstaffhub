@@ -519,7 +519,7 @@ function Body() {
             </div>
 
             {editingTrip && (
-              <InquiryPanel trip={editingTrip} />
+              <InquiryPanel trip={editingTrip} onCompose={() => setEmailDraftTrip(editingTrip)} />
             )}
 
             <div className="rounded-xl border border-border p-3 space-y-2">
@@ -1078,9 +1078,8 @@ function EmptyState({ label }: { label: string }) {
 }
 
 
-function InquiryPanel({ trip }: { trip: Trip }) {
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const formUrl = `${origin}/inquiry/${trip.inquiry_token}`;
+function InquiryPanel({ trip, onCompose }: { trip: Trip; onCompose: () => void }) {
+  const formUrl = inquiryFormUrl(trip);
   const submitted = !!trip.inquiry_submitted_at;
   const anyResponses = !!((trip as any).vision || (trip as any).church_context || (trip as any).alternate_dates);
   return (
@@ -1120,15 +1119,14 @@ function InquiryPanel({ trip }: { trip: Trip }) {
           <ExternalLink className="w-4 h-4" />
         </a>
       </div>
-      <a
-        href={welcomeMailtoHref(trip)}
-        target="_blank"
-        rel="noreferrer"
+      <button
+        type="button"
+        onClick={onCompose}
         className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border bg-surface hover:bg-background/60 transition"
       >
         <Send className="w-3.5 h-3.5" />
         Compose welcome email
-      </a>
+      </button>
       {anyResponses && (
         <div className="space-y-2 pt-2 border-t border-border">
           <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Team responses</div>
