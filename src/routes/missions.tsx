@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
+import { sendGmailMessage } from "@/lib/gmail-send.functions";
 import {
   format, isPast, isThisMonth, isWithinInterval, startOfMonth, endOfMonth,
   addMonths, subMonths, startOfDay, isSameMonth, isSameYear,
@@ -159,6 +161,8 @@ function Body() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [open, setOpen] = useState(false);
   const [emailDraftTrip, setEmailDraftTrip] = useState<Trip | null>(null);
+  const [sendingGmail, setSendingGmail] = useState(false);
+  const sendGmail = useServerFn(sendGmailMessage);
   const [form, setForm] = useState<Form>(emptyForm());
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
@@ -302,6 +306,29 @@ function Body() {
   function copyDraftValue(label: string, value: string) {
     navigator.clipboard.writeText(value);
     toast.success(`${label} copied`);
+  }
+
+  async function handleSendGmail() {
+    if (!emailDraft || !emailDraftTrip) return;
+    if (!emailDraft.to) {
+      toast.error("No recipient email on this trip");
+      return;
+    }
+    setSendingGmail(true);
+    try {
+      await sendGmail({ data: { to: emailDraft.to, subject: emailDraft.subject, body: emailDraft.body } });
+      toast.success(`Email sent to ${emailDraft.to}`);
+      // Mark the welcome_email step as done
+      const nextSteps = { ...emailDraftTrip.steps, welcome_email: true };
+      await supabase.from("mission_trips").update({ steps: nextSteps }).eq("id", emailDraftTrip.id);
+      setTrips((prev) => prev.map((t) => t.id === emailDraftTrip.id ? { ...t, steps: nextSteps } : t));
+      setEmailDraftTrip(null);
+    } catch (err) {
+      console.error(err);
+      toast.error(err instanceof Error ? err.message : "Failed to send email");
+    } finally {
+      setSendingGmail(false);
+    }
   }
 
   const byStatus = useMemo(() => {
@@ -576,19 +603,29 @@ function Body() {
                 <Textarea readOnly rows={14} value={emailDraft.body} />
               </div>
               <DialogFooter className="flex sm:justify-between gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => copyDraftValue("Email body", emailDraft.body)}
+                  >
+                    Copy body
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => copyDraftValue("Full email", `To: ${emailDraft.to}\nSubject: ${emailDraft.subject}\n\n${emailDraft.body}`)}
+                  >
+                    Copy everything
+                  </Button>
+                </div>
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={() => copyDraftValue("Email body", emailDraft.body)}
+                  onClick={handleSendGmail}
+                  disabled={sendingGmail || !emailDraft.to}
                 >
-                  Copy body
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => copyDraftValue("Full email", `To: ${emailDraft.to}\nSubject: ${emailDraft.subject}\n\n${emailDraft.body}`)}
-                >
-                  Copy everything
+                  <Send className="w-4 h-4 mr-1.5" />
+                  {sendingGmail ? "Sending…" : "Send via Gmail"}
                 </Button>
               </DialogFooter>
             </div>
