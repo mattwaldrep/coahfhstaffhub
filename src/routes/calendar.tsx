@@ -647,6 +647,15 @@ function CalendarBody() {
       if (form.room_ids.length > 0) {
         await supabase.from("event_rooms").insert(form.room_ids.map((rid) => ({ event_id: savedId, room_id: rid })));
       }
+      // Reconcile listing-channel checklist items with currently-enabled toggles
+      const enabledChannels: string[] = [
+        ...(form.pco_registration ? ["pco"] : []),
+        ...form.other_listings,
+        ...(form.social_ads ? ["social_ads"] : []),
+      ];
+      for (const key of Object.keys(LISTING_CHECKLIST_LABEL)) {
+        await syncListingChecklist(savedId, key, enabledChannels.includes(key));
+      }
     }
     const gaps = classGaps(form);
     if (gaps.length > 0) {
