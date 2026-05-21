@@ -268,6 +268,20 @@ function Body() {
       itinerary_file_name: t.itinerary_file_name ?? null,
       notes: t.notes ?? "",
       steps: { ...Object.fromEntries(STEPS.map((s) => [s.key, false])), ...(t.steps ?? {}) },
+      planning_call_at: t.planning_call_at,
+      team_headcount: t.team_headcount,
+      adults_count: t.adults_count,
+      students_count: t.students_count,
+      lodging_status: t.lodging_status ?? "",
+      transport_status: t.transport_status ?? "",
+      daily_window_start: t.daily_window_start,
+      daily_window_end: t.daily_window_end,
+      outreach_tracks: t.outreach_tracks ?? [],
+      comms_preference: t.comms_preference ?? "",
+      itinerary_owner: t.itinerary_owner ?? "",
+      itinerary_due_date: t.itinerary_due_date,
+      dietary_flags: t.dietary_flags ?? "",
+      planning_notes: t.planning_notes ?? {},
     });
     setOpen(true);
   }
