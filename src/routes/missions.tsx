@@ -92,7 +92,38 @@ type Trip = {
   position: number;
   inquiry_token: string;
   inquiry_submitted_at: string | null;
+  planning_call_at: string | null;
+  team_headcount: number | null;
+  adults_count: number | null;
+  students_count: number | null;
+  lodging_status: string | null;
+  transport_status: string | null;
+  daily_window_start: string | null;
+  daily_window_end: string | null;
+  outreach_tracks: string[];
+  comms_preference: string | null;
+  itinerary_owner: string | null;
+  itinerary_due_date: string | null;
+  dietary_flags: string | null;
+  planning_notes: Record<string, string>;
 };
+
+const OUTREACH_TRACK_OPTIONS = [
+  { value: "transit", label: "Transit evangelism" },
+  { value: "prayer_walk", label: "Prayer walk" },
+  { value: "surveys", label: "Surveys" },
+  { value: "service_project", label: "Service project" },
+];
+
+const PLANNING_NOTE_SECTIONS: { key: string; label: string }[] = [
+  { key: "prayer", label: "Prayer" },
+  { key: "team_snapshot", label: "Team snapshot (headcount, leaders, lodging/transport)" },
+  { key: "goals", label: "Goals & outcomes — what would 'fruitful' look like?" },
+  { key: "schedule", label: "Schedule & constraints (dates/hours, arrival/departure)" },
+  { key: "outreach", label: "Outreach track discussion" },
+  { key: "supplies", label: "Supplies & budget (printing, snacks/water, CharlieCards, contingency)" },
+  { key: "next_steps", label: "Next steps — who does what by when" },
+];
 
 const WELCOME_SUBJECT = "Let's Plan Your Trip to City On A Hill";
 
@@ -145,6 +176,20 @@ const emptyForm = (): Form => ({
   itinerary_file_name: null,
   notes: "",
   steps: Object.fromEntries(STEPS.map((s) => [s.key, false])),
+  planning_call_at: null,
+  team_headcount: null,
+  adults_count: null,
+  students_count: null,
+  lodging_status: "",
+  transport_status: "",
+  daily_window_start: null,
+  daily_window_end: null,
+  outreach_tracks: [],
+  comms_preference: "",
+  itinerary_owner: "",
+  itinerary_due_date: null,
+  dietary_flags: "",
+  planning_notes: {},
 });
 
 function MissionsPage() {
@@ -223,6 +268,20 @@ function Body() {
       itinerary_file_name: t.itinerary_file_name ?? null,
       notes: t.notes ?? "",
       steps: { ...Object.fromEntries(STEPS.map((s) => [s.key, false])), ...(t.steps ?? {}) },
+      planning_call_at: t.planning_call_at,
+      team_headcount: t.team_headcount,
+      adults_count: t.adults_count,
+      students_count: t.students_count,
+      lodging_status: t.lodging_status ?? "",
+      transport_status: t.transport_status ?? "",
+      daily_window_start: t.daily_window_start,
+      daily_window_end: t.daily_window_end,
+      outreach_tracks: t.outreach_tracks ?? [],
+      comms_preference: t.comms_preference ?? "",
+      itinerary_owner: t.itinerary_owner ?? "",
+      itinerary_due_date: t.itinerary_due_date,
+      dietary_flags: t.dietary_flags ?? "",
+      planning_notes: t.planning_notes ?? {},
     });
     setOpen(true);
   }
@@ -244,6 +303,20 @@ function Body() {
       itinerary_file_name: form.itinerary_file_name,
       notes: form.notes || null,
       steps: form.steps,
+      planning_call_at: form.planning_call_at || null,
+      team_headcount: form.team_headcount,
+      adults_count: form.adults_count,
+      students_count: form.students_count,
+      lodging_status: form.lodging_status || null,
+      transport_status: form.transport_status || null,
+      daily_window_start: form.daily_window_start || null,
+      daily_window_end: form.daily_window_end || null,
+      outreach_tracks: form.outreach_tracks ?? [],
+      comms_preference: form.comms_preference || null,
+      itinerary_owner: form.itinerary_owner || null,
+      itinerary_due_date: form.itinerary_due_date || null,
+      dietary_flags: form.dietary_flags || null,
+      planning_notes: form.planning_notes ?? {},
     };
     const { error } = form.id
       ? await supabase.from("mission_trips").update(payload).eq("id", form.id)
@@ -542,6 +615,9 @@ function Body() {
             {editingTrip && (
               <InquiryPanel trip={editingTrip} onCompose={() => setEmailDraftTrip(editingTrip)} />
             )}
+
+            <PlanningCallPanel form={form} setForm={setForm} />
+
 
             <div className="rounded-xl border border-border p-3 space-y-2">
               <div className="flex items-center justify-between">
@@ -1174,6 +1250,196 @@ function ResponseField({ label, value }: { label: string; value: string }) {
     <div>
       <div className="text-[11px] font-medium text-muted-foreground">{label}</div>
       <div className="text-sm whitespace-pre-wrap">{value}</div>
+    </div>
+  );
+}
+
+function PlanningCallPanel({
+  form,
+  setForm,
+}: {
+  form: Form;
+  setForm: React.Dispatch<React.SetStateAction<Form>>;
+}) {
+  function toIntOrNull(v: string): number | null {
+    if (v === "") return null;
+    const n = parseInt(v, 10);
+    return Number.isFinite(n) ? n : null;
+  }
+  function toggleTrack(value: string, checked: boolean) {
+    setForm((f) => {
+      const set = new Set(f.outreach_tracks ?? []);
+      if (checked) set.add(value); else set.delete(value);
+      return { ...f, outreach_tracks: Array.from(set) };
+    });
+  }
+  function setNote(key: string, value: string) {
+    setForm((f) => ({ ...f, planning_notes: { ...(f.planning_notes ?? {}), [key]: value } }));
+  }
+
+  // Planning call date input wants "YYYY-MM-DDTHH:mm"
+  const planningCallLocal = form.planning_call_at
+    ? form.planning_call_at.slice(0, 16)
+    : "";
+
+  return (
+    <div className="rounded-xl border border-border p-3 space-y-4 bg-background/40">
+      <div className="flex items-center justify-between">
+        <Label className="text-sm font-medium">Planning call</Label>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2 col-span-2 sm:col-span-1">
+          <Label className="text-xs">Call date & time</Label>
+          <Input
+            type="datetime-local"
+            value={planningCallLocal}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                planning_call_at: e.target.value ? new Date(e.target.value).toISOString() : null,
+              })
+            }
+          />
+        </div>
+        <div className="space-y-2 col-span-2 sm:col-span-1">
+          <Label className="text-xs">Comms preference</Label>
+          <Select
+            value={form.comms_preference || "unset"}
+            onValueChange={(v) => setForm({ ...form, comms_preference: v === "unset" ? "" : v })}
+          >
+            <SelectTrigger><SelectValue placeholder="Choose…" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unset">Not set</SelectItem>
+              <SelectItem value="email">Email</SelectItem>
+              <SelectItem value="text">Text</SelectItem>
+              <SelectItem value="both">Both</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs">Total headcount</Label>
+          <Input
+            type="number" min={0}
+            value={form.team_headcount ?? ""}
+            onChange={(e) => setForm({ ...form, team_headcount: toIntOrNull(e.target.value) })}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-2">
+            <Label className="text-xs">Adults</Label>
+            <Input
+              type="number" min={0}
+              value={form.adults_count ?? ""}
+              onChange={(e) => setForm({ ...form, adults_count: toIntOrNull(e.target.value) })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs">Students</Label>
+            <Input
+              type="number" min={0}
+              value={form.students_count ?? ""}
+              onChange={(e) => setForm({ ...form, students_count: toIntOrNull(e.target.value) })}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs">Lodging status</Label>
+          <Input
+            value={form.lodging_status ?? ""}
+            placeholder="e.g. AirBnB booked"
+            onChange={(e) => setForm({ ...form, lodging_status: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs">Transport status</Label>
+          <Input
+            value={form.transport_status ?? ""}
+            placeholder="e.g. Rental van, T passes"
+            onChange={(e) => setForm({ ...form, transport_status: e.target.value })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs">Daily start</Label>
+          <Input
+            type="time"
+            value={form.daily_window_start ?? ""}
+            onChange={(e) => setForm({ ...form, daily_window_start: e.target.value || null })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs">Daily end</Label>
+          <Input
+            type="time"
+            value={form.daily_window_end ?? ""}
+            onChange={(e) => setForm({ ...form, daily_window_end: e.target.value || null })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs">Itinerary owner</Label>
+          <Input
+            value={form.itinerary_owner ?? ""}
+            placeholder="Who drafts the itinerary?"
+            onChange={(e) => setForm({ ...form, itinerary_owner: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs">Itinerary due</Label>
+          <Input
+            type="date"
+            value={form.itinerary_due_date ?? ""}
+            onChange={(e) => setForm({ ...form, itinerary_due_date: e.target.value || null })}
+          />
+        </div>
+
+        <div className="space-y-2 col-span-2">
+          <Label className="text-xs">Dietary / allergy flags</Label>
+          <Textarea
+            rows={2}
+            value={form.dietary_flags ?? ""}
+            placeholder="Vegetarian x2, nut allergy, gluten-free…"
+            onChange={(e) => setForm({ ...form, dietary_flags: e.target.value })}
+          />
+        </div>
+
+        <div className="space-y-2 col-span-2">
+          <Label className="text-xs">Outreach tracks</Label>
+          <div className="grid grid-cols-2 gap-1.5">
+            {OUTREACH_TRACK_OPTIONS.map((o) => {
+              const checked = (form.outreach_tracks ?? []).includes(o.value);
+              return (
+                <label key={o.value} className="flex items-center gap-2 text-sm py-1">
+                  <Checkbox
+                    checked={checked}
+                    onCheckedChange={(v) => toggleTrack(o.value, !!v)}
+                  />
+                  <span>{o.label}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-3 pt-2 border-t border-border">
+        <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+          Agenda notes
+        </div>
+        {PLANNING_NOTE_SECTIONS.map((s) => (
+          <div key={s.key} className="space-y-1.5">
+            <Label className="text-xs">{s.label}</Label>
+            <Textarea
+              rows={2}
+              value={form.planning_notes?.[s.key] ?? ""}
+              onChange={(e) => setNote(s.key, e.target.value)}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

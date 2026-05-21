@@ -1673,80 +1673,122 @@ export type Database = {
       }
       mission_trips: {
         Row: {
+          adults_count: number | null
           alternate_dates: string | null
           church_context: string | null
           church_name: string
+          comms_preference: string | null
           created_at: string
           created_by: string | null
+          daily_window_end: string | null
+          daily_window_start: string | null
+          dietary_flags: string | null
           end_date: string | null
           id: string
           inquiry_submitted_at: string | null
           inquiry_token: string
+          itinerary_due_date: string | null
           itinerary_file_name: string | null
           itinerary_file_path: string | null
           itinerary_link: string | null
+          itinerary_owner: string | null
           leader_email: string | null
           leader_name: string | null
           leader_phone: string | null
+          lodging_status: string | null
           notes: string | null
+          outreach_tracks: string[]
+          planning_call_at: string | null
+          planning_notes: Json
           position: number
           primary_focus: string | null
           start_date: string | null
           status: Database["public"]["Enums"]["trip_status"]
           steps: Json
+          students_count: number | null
+          team_headcount: number | null
           team_number: string | null
+          transport_status: string | null
           updated_at: string
           vision: string | null
         }
         Insert: {
+          adults_count?: number | null
           alternate_dates?: string | null
           church_context?: string | null
           church_name: string
+          comms_preference?: string | null
           created_at?: string
           created_by?: string | null
+          daily_window_end?: string | null
+          daily_window_start?: string | null
+          dietary_flags?: string | null
           end_date?: string | null
           id?: string
           inquiry_submitted_at?: string | null
           inquiry_token?: string
+          itinerary_due_date?: string | null
           itinerary_file_name?: string | null
           itinerary_file_path?: string | null
           itinerary_link?: string | null
+          itinerary_owner?: string | null
           leader_email?: string | null
           leader_name?: string | null
           leader_phone?: string | null
+          lodging_status?: string | null
           notes?: string | null
+          outreach_tracks?: string[]
+          planning_call_at?: string | null
+          planning_notes?: Json
           position?: number
           primary_focus?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["trip_status"]
           steps?: Json
+          students_count?: number | null
+          team_headcount?: number | null
           team_number?: string | null
+          transport_status?: string | null
           updated_at?: string
           vision?: string | null
         }
         Update: {
+          adults_count?: number | null
           alternate_dates?: string | null
           church_context?: string | null
           church_name?: string
+          comms_preference?: string | null
           created_at?: string
           created_by?: string | null
+          daily_window_end?: string | null
+          daily_window_start?: string | null
+          dietary_flags?: string | null
           end_date?: string | null
           id?: string
           inquiry_submitted_at?: string | null
           inquiry_token?: string
+          itinerary_due_date?: string | null
           itinerary_file_name?: string | null
           itinerary_file_path?: string | null
           itinerary_link?: string | null
+          itinerary_owner?: string | null
           leader_email?: string | null
           leader_name?: string | null
           leader_phone?: string | null
+          lodging_status?: string | null
           notes?: string | null
+          outreach_tracks?: string[]
+          planning_call_at?: string | null
+          planning_notes?: Json
           position?: number
           primary_focus?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["trip_status"]
           steps?: Json
+          students_count?: number | null
+          team_headcount?: number | null
           team_number?: string | null
+          transport_status?: string | null
           updated_at?: string
           vision?: string | null
         }
