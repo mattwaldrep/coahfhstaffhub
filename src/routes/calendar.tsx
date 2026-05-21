@@ -1729,6 +1729,58 @@ function CalendarBody() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={!!pendingRoom}
+        onOpenChange={(o) => { if (!o) setPendingRoom(null); }}
+      >
+        <AlertDialogContent>
+          {pendingRoom?.step === "request" ? (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Room request submitted?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Please confirm that a room request has been submitted for{" "}
+                  <span className="font-medium">{pendingRoom?.name}</span>.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() =>
+                    setPendingRoom((p) => (p ? { ...p, step: "approval" } : p))
+                  }
+                >
+                  Yes, submitted
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          ) : (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Approval received?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Please confirm that approval has been received for{" "}
+                  <span className="font-medium">{pendingRoom?.name}</span>.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    if (pendingRoom) {
+                      setForm((f) => ({ ...f, room_ids: [...f.room_ids, pendingRoom.id] }));
+                    }
+                    setPendingRoom(null);
+                  }}
+                >
+                  Yes, approved
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          )}
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
