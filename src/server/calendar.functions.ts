@@ -37,6 +37,7 @@ const proposedEventSchema = z.object({
   missions_team_needed: z.boolean().default(false),
   church_covering: z.string().max(255).nullable().optional(),
   other_listings: z.array(z.string().max(255)).max(20).default([]),
+  social_ads: z.boolean().default(false),
   room_not_needed: z.boolean().default(false),
   leader_not_needed: z.boolean().default(false),
 });
