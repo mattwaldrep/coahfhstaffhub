@@ -1396,9 +1396,44 @@ function CalendarBody() {
                       <div key={item.id} className="flex items-center gap-2 group rounded-md border border-border/60 px-2 py-1.5">
                         <Checkbox checked={item.done} onCheckedChange={() => toggleChecklistItem(item)} />
                         <div className="flex-1 min-w-0">
-                          <div className={`text-sm truncate ${item.done ? "line-through text-muted-foreground" : ""}`}>
-                            {item.label}
-                          </div>
+                          {editingChecklistId === item.id ? (
+                            <Input
+                              autoFocus
+                              value={editingChecklistLabel}
+                              onChange={(e) => setEditingChecklistLabel(e.target.value)}
+                              onBlur={async () => {
+                                const next = editingChecklistLabel.trim();
+                                setEditingChecklistId(null);
+                                if (!next || next === item.label) return;
+                                const { error } = await supabase
+                                  .from("event_checklist_items")
+                                  .update({ label: next })
+                                  .eq("id", item.id);
+                                if (error) { toast.error(error.message); return; }
+                                if (item.action_item_id) {
+                                  await supabase
+                                    .from("action_items")
+                                    .update({ title: next })
+                                    .eq("id", item.action_item_id);
+                                }
+                                if (form.id) loadChecklist(form.id);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") { e.preventDefault(); (e.target as HTMLInputElement).blur(); }
+                                if (e.key === "Escape") { setEditingChecklistId(null); }
+                              }}
+                              className="h-7 text-sm"
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => { setEditingChecklistId(item.id); setEditingChecklistLabel(item.label); }}
+                              className={`block w-full text-left text-sm truncate hover:text-foreground ${item.done ? "line-through text-muted-foreground" : ""}`}
+                              title="Click to edit"
+                            >
+                              {item.label}
+                            </button>
+                          )}
                           {(assigneeLabel || item.due_date || item.action_item_id) && (
                             <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
                               {assigneeLabel && <span>👤 {assigneeLabel}</span>}
