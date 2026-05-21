@@ -102,6 +102,15 @@ const LISTING_CHANNELS: { key: string; label: string }[] = [
 ];
 const LISTING_LABEL = new Map(LISTING_CHANNELS.map((c) => [c.key, c.label]));
 
+const COMMS_CHANNELS: { key: string; label: string }[] = [
+  { key: "direct_email", label: "Direct Email" },
+  { key: "push_notification", label: "Push Notification" },
+  { key: "sunday_slide", label: "Sunday Slide" },
+  { key: "sunday_announcement", label: "Sunday Announcement" },
+  { key: "newsletter", label: "Newsletter" },
+  { key: "text_message", label: "Text Message" },
+];
+
 const LISTING_CHECKLIST_LABEL: Record<string, string> = {
   pco: "Set up PCO registration",
   eventbrite: "List on Eventbrite",
@@ -109,6 +118,12 @@ const LISTING_CHECKLIST_LABEL: Record<string, string> = {
   community_cals: "List on community calendars",
   socials: "Post on socials",
   social_ads: "Run social ads",
+  direct_email: "Send direct email",
+  push_notification: "Send push notification",
+  sunday_slide: "Add to Sunday slides",
+  sunday_announcement: "Add to Sunday announcements",
+  newsletter: "Include in newsletter",
+  text_message: "Send text message",
 };
 
 const WEEKDAYS = [
@@ -1284,6 +1299,27 @@ function CalendarBody() {
                     />
                     Social ads
                   </label>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Communicate via</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {COMMS_CHANNELS.map((c) => {
+                    const checked = form.other_listings.includes(c.key);
+                    const toggle = (v: boolean) => {
+                      const next = v
+                        ? Array.from(new Set([...form.other_listings, c.key]))
+                        : form.other_listings.filter((k) => k !== c.key);
+                      setForm({ ...form, other_listings: next });
+                      if (form.id) syncListingChecklist(form.id, c.key, v);
+                    };
+                    return (
+                      <label key={c.key} className="flex items-center gap-2 text-sm">
+                        <Switch checked={checked} onCheckedChange={toggle} />
+                        {c.label}
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
               <label className="flex items-center gap-2 text-sm">
