@@ -191,7 +191,8 @@ type FormState = {
   byweekday: string[];
   bysetpos: string;
   recurrence_end_date: string;
-  other_listings: string;
+  other_listings: string[];
+  social_ads: boolean;
   room_needed: string;
   action_note: string;
   missions_team_needed: boolean;
