@@ -719,11 +719,12 @@ function CalendarBody() {
   }
 
   async function toggleChecklistItem(item: ChecklistItem) {
-    const { error } = await supabase
-      .from("event_checklist_items")
-      .update({ done: !item.done })
-      .eq("id", item.id);
-    if (error) { toast.error(error.message); return; }
+    try {
+      await setDoneFn({ data: { checklistItemId: item.id, done: !item.done } });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to update");
+      return;
+    }
     loadChecklist(form.id!);
   }
 
