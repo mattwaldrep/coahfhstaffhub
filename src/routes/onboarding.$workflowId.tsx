@@ -382,6 +382,7 @@ function WorkflowDetail() {
         })}
       </div>
     </div>
+    </AppShell>
   );
 }
 
