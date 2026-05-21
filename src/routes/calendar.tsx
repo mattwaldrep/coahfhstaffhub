@@ -1165,10 +1165,8 @@ function CalendarBody() {
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label>Notes</Label>
-              <Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-            </div>
+
+
 
             {/* Logistics */}
             <div className="space-y-3 rounded-xl border border-border p-3">
