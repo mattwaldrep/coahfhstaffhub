@@ -339,6 +339,8 @@ function Body() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [open, setOpen] = useState(false);
   const [emailDraftTrip, setEmailDraftTrip] = useState<Trip | null>(null);
+  const [emailKind, setEmailKind] = useState<"welcome" | "itinerary">("welcome");
+  const [itineraryEmailBody, setItineraryEmailBody] = useState<string>("");
   const [sendingGmail, setSendingGmail] = useState(false);
   const sendGmail = useServerFn(sendGmailMessage);
   const [form, setForm] = useState<Form>(emptyForm());
