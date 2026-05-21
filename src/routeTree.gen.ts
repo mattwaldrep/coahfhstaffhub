@@ -29,6 +29,7 @@ import { Route as OnboardingIndexRouteImport } from './routes/onboarding.index'
 import { Route as ElderIndexRouteImport } from './routes/elder.index'
 import { Route as OnboardingTemplatesRouteImport } from './routes/onboarding.templates'
 import { Route as OnboardingWorkflowIdRouteImport } from './routes/onboarding.$workflowId'
+import { Route as InquiryTokenRouteImport } from './routes/inquiry.$token'
 import { Route as ElderSettingsRouteImport } from './routes/elder.settings'
 import { Route as ElderPastoralCareRouteImport } from './routes/elder.pastoral-care'
 import { Route as ElderMeetingsRouteImport } from './routes/elder.meetings'
@@ -45,6 +46,7 @@ import { Route as ApiPublicHooksSyncGoogleTasksRouteImport } from './routes/api/
 import { Route as ApiPublicHooksSundayReviewNudgeRouteImport } from './routes/api/public/hooks.sunday-review-nudge'
 import { Route as ApiPublicHooksSendWeeklyDigestRouteImport } from './routes/api/public/hooks/send-weekly-digest'
 import { Route as ApiPublicHooksActionItemsDigestRouteImport } from './routes/api/public/hooks.action-items-digest'
+import { Route as ApiPublicMissionsInquiryTokenRouteImport } from './routes/api/public/missions/inquiry.$token'
 
 const UsersRoute = UsersRouteImport.update({
   id: '/users',
@@ -146,6 +148,11 @@ const OnboardingWorkflowIdRoute = OnboardingWorkflowIdRouteImport.update({
   path: '/onboarding/$workflowId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InquiryTokenRoute = InquiryTokenRouteImport.update({
+  id: '/inquiry/$token',
+  path: '/inquiry/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ElderSettingsRoute = ElderSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -231,6 +238,12 @@ const ApiPublicHooksActionItemsDigestRoute =
     path: '/api/public/hooks/action-items-digest',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicMissionsInquiryTokenRoute =
+  ApiPublicMissionsInquiryTokenRouteImport.update({
+    id: '/api/public/missions/inquiry/$token',
+    path: '/api/public/missions/inquiry/$token',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -256,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/elder/meetings': typeof ElderMeetingsRouteWithChildren
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
+  '/inquiry/$token': typeof InquiryTokenRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/elder/': typeof ElderIndexRoute
@@ -269,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
   '/api/public/hooks/sync-google-tasks': typeof ApiPublicHooksSyncGoogleTasksRoute
+  '/api/public/missions/inquiry/$token': typeof ApiPublicMissionsInquiryTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -292,6 +307,7 @@ export interface FileRoutesByTo {
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
+  '/inquiry/$token': typeof InquiryTokenRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/elder': typeof ElderIndexRoute
@@ -305,6 +321,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
   '/api/public/hooks/sync-google-tasks': typeof ApiPublicHooksSyncGoogleTasksRoute
+  '/api/public/missions/inquiry/$token': typeof ApiPublicMissionsInquiryTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -331,6 +348,7 @@ export interface FileRoutesById {
   '/elder/meetings': typeof ElderMeetingsRouteWithChildren
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
+  '/inquiry/$token': typeof InquiryTokenRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/elder/': typeof ElderIndexRoute
@@ -344,6 +362,7 @@ export interface FileRoutesById {
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
   '/api/public/hooks/sync-google-tasks': typeof ApiPublicHooksSyncGoogleTasksRoute
+  '/api/public/missions/inquiry/$token': typeof ApiPublicMissionsInquiryTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -371,6 +390,7 @@ export interface FileRouteTypes {
     | '/elder/meetings'
     | '/elder/pastoral-care'
     | '/elder/settings'
+    | '/inquiry/$token'
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
     | '/elder/'
@@ -384,6 +404,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/send-weekly-digest'
     | '/api/public/hooks/sunday-review-nudge'
     | '/api/public/hooks/sync-google-tasks'
+    | '/api/public/missions/inquiry/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -407,6 +428,7 @@ export interface FileRouteTypes {
     | '/elder/archive'
     | '/elder/pastoral-care'
     | '/elder/settings'
+    | '/inquiry/$token'
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
     | '/elder'
@@ -420,6 +442,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/send-weekly-digest'
     | '/api/public/hooks/sunday-review-nudge'
     | '/api/public/hooks/sync-google-tasks'
+    | '/api/public/missions/inquiry/$token'
   id:
     | '__root__'
     | '/'
@@ -445,6 +468,7 @@ export interface FileRouteTypes {
     | '/elder/meetings'
     | '/elder/pastoral-care'
     | '/elder/settings'
+    | '/inquiry/$token'
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
     | '/elder/'
@@ -458,6 +482,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/send-weekly-digest'
     | '/api/public/hooks/sunday-review-nudge'
     | '/api/public/hooks/sync-google-tasks'
+    | '/api/public/missions/inquiry/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -480,6 +505,7 @@ export interface RootRouteChildren {
   CalendarClassesRoute: typeof CalendarClassesRoute
   CalendarPlanningRoute: typeof CalendarPlanningRouteWithChildren
   CalendarPublicRoute: typeof CalendarPublicRoute
+  InquiryTokenRoute: typeof InquiryTokenRoute
   OnboardingWorkflowIdRoute: typeof OnboardingWorkflowIdRoute
   OnboardingTemplatesRoute: typeof OnboardingTemplatesRoute
   OnboardingIndexRoute: typeof OnboardingIndexRoute
@@ -488,6 +514,7 @@ export interface RootRouteChildren {
   ApiPublicHooksSendWeeklyDigestRoute: typeof ApiPublicHooksSendWeeklyDigestRoute
   ApiPublicHooksSundayReviewNudgeRoute: typeof ApiPublicHooksSundayReviewNudgeRoute
   ApiPublicHooksSyncGoogleTasksRoute: typeof ApiPublicHooksSyncGoogleTasksRoute
+  ApiPublicMissionsInquiryTokenRoute: typeof ApiPublicMissionsInquiryTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -632,6 +659,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingWorkflowIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/inquiry/$token': {
+      id: '/inquiry/$token'
+      path: '/inquiry/$token'
+      fullPath: '/inquiry/$token'
+      preLoaderRoute: typeof InquiryTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/elder/settings': {
       id: '/elder/settings'
       path: '/settings'
@@ -744,6 +778,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksActionItemsDigestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/missions/inquiry/$token': {
+      id: '/api/public/missions/inquiry/$token'
+      path: '/api/public/missions/inquiry/$token'
+      fullPath: '/api/public/missions/inquiry/$token'
+      preLoaderRoute: typeof ApiPublicMissionsInquiryTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -812,6 +853,7 @@ const rootRouteChildren: RootRouteChildren = {
   CalendarClassesRoute: CalendarClassesRoute,
   CalendarPlanningRoute: CalendarPlanningRouteWithChildren,
   CalendarPublicRoute: CalendarPublicRoute,
+  InquiryTokenRoute: InquiryTokenRoute,
   OnboardingWorkflowIdRoute: OnboardingWorkflowIdRoute,
   OnboardingTemplatesRoute: OnboardingTemplatesRoute,
   OnboardingIndexRoute: OnboardingIndexRoute,
@@ -820,17 +862,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSendWeeklyDigestRoute: ApiPublicHooksSendWeeklyDigestRoute,
   ApiPublicHooksSundayReviewNudgeRoute: ApiPublicHooksSundayReviewNudgeRoute,
   ApiPublicHooksSyncGoogleTasksRoute: ApiPublicHooksSyncGoogleTasksRoute,
+  ApiPublicMissionsInquiryTokenRoute: ApiPublicMissionsInquiryTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

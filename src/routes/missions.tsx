@@ -21,7 +21,7 @@ import {
 import {
   Plus, Trash2, ExternalLink, Mail, Phone, Upload, FileText, X as XIcon,
   LayoutGrid, List, Table as TableIcon, CalendarDays, ChevronLeft, ChevronRight,
-  ArrowUpDown,
+  ArrowUpDown, Copy, Send,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -88,9 +88,36 @@ type Trip = {
   notes: string | null;
   steps: Record<string, boolean>;
   position: number;
+  inquiry_token: string;
+  inquiry_submitted_at: string | null;
 };
 
-type Form = Omit<Trip, "id" | "position"> & { id?: string };
+const WELCOME_SUBJECT = "Let's Plan Your Trip to City On A Hill";
+
+function buildWelcomeEmailBody(formUrl: string) {
+  return (
+    `Hello,\n\n` +
+    `Thanks for reaching out about serving with us! We're excited to host your team in Boston! We are genuinely excited whenever a team considers joining us in the work here. As a young church plant in one of the most diverse and spiritually complex cities in America, we view missions teams as running one mile of our marathon alongside us—they are partners in planting seeds of gospel hope. Your presence not only strengthens our hands for practical ministry, but also gives our neighbors a tangible picture of the wider body of Christ praying for and investing in this city. Please take a few moments and complete this form to give us a high level understanding of what kind of trip you're looking to take with us:\n\n` +
+    `${formUrl}\n\n` +
+    `NEXT STEP (Schedule A Planning Call)\n\n` +
+    `• Please pick a 30-min slot here: https://calendar.app.google/LZCEYki3L1maEbKLA\n\n` +
+    `Thanks, and talk soon!\n` +
+    `Matt Waldrep\n` +
+    `Worship & Executive Pastor\n` +
+    `coahforesthills.org`
+  );
+}
+
+function welcomeMailtoHref(trip: Trip): string {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const formUrl = `${origin}/inquiry/${trip.inquiry_token}`;
+  const body = buildWelcomeEmailBody(formUrl);
+  const to = trip.leader_email ?? "";
+  const qs = `subject=${encodeURIComponent(WELCOME_SUBJECT)}&body=${encodeURIComponent(body)}`;
+  return `mailto:${encodeURIComponent(to)}?${qs}`;
+}
+
+type Form = Omit<Trip, "id" | "position" | "inquiry_token" | "inquiry_submitted_at"> & { id?: string };
 
 const emptyForm = (): Form => ({
   church_name: "",
@@ -123,6 +150,7 @@ function Body() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Form>(emptyForm());
+  const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
   const [uploading, setUploading] = useState(false);
   const [view, setView] = useState<ViewMode>(() => {
@@ -157,12 +185,14 @@ function Body() {
 
   function openNew() {
     if (!canEdit) return;
+    setEditingTrip(null);
     setForm(emptyForm());
     setOpen(true);
   }
 
   function openEdit(t: Trip) {
     if (!canEdit) return;
+    setEditingTrip(t);
     setForm({
       id: t.id,
       church_name: t.church_name,
@@ -465,6 +495,10 @@ function Body() {
               </div>
             </div>
 
+            {editingTrip && (
+              <InquiryPanel trip={editingTrip} />
+            )}
+
             <div className="rounded-xl border border-border p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-medium">Readiness checklist</Label>
@@ -544,7 +578,7 @@ function TripCard({
       </div>
       <div className="flex items-center gap-1.5 mt-2 text-muted-foreground">
         {trip.leader_email && (
-          <a href={`mailto:${trip.leader_email}`} onClick={(e) => e.stopPropagation()} title={trip.leader_email}
+          <a href={welcomeMailtoHref(trip)} onClick={(e) => e.stopPropagation()} title={`Email ${trip.leader_email} – welcome template`}
             className="hover:text-foreground"><Mail className="w-3 h-3" /></a>
         )}
         {trip.leader_phone && (
@@ -703,7 +737,7 @@ function TimelineRow({ trip, onClick }: { trip: Trip; onClick: () => void }) {
       </div>
       <div className="flex items-center gap-1.5 text-muted-foreground">
         {trip.leader_email && (
-          <a href={`mailto:${trip.leader_email}`} onClick={(e) => e.stopPropagation()} className="hover:text-foreground">
+          <a href={welcomeMailtoHref(trip)} onClick={(e) => e.stopPropagation()} className="hover:text-foreground" title="Email welcome template">
             <Mail className="w-3.5 h-3.5" />
           </a>
         )}
@@ -958,3 +992,79 @@ function EmptyState({ label }: { label: string }) {
   );
 }
 
+
+function InquiryPanel({ trip }: { trip: Trip }) {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const formUrl = `${origin}/inquiry/${trip.inquiry_token}`;
+  const submitted = !!trip.inquiry_submitted_at;
+  const anyResponses = !!((trip as any).vision || (trip as any).church_context || (trip as any).alternate_dates);
+  return (
+    <div className="rounded-xl border border-border p-3 space-y-3 bg-background/40">
+      <div className="flex items-center justify-between gap-2">
+        <Label className="text-sm font-medium">Planning questionnaire</Label>
+        {submitted ? (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary">
+            Submitted {format(new Date(trip.inquiry_submitted_at!), "MMM d, yyyy")}
+          </span>
+        ) : (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+            Awaiting response
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-2 text-sm bg-background/60 border border-border rounded-lg px-3 py-2">
+        <input readOnly value={formUrl} className="flex-1 bg-transparent outline-none text-xs text-muted-foreground" />
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(formUrl);
+            toast.success("Link copied");
+          }}
+          className="text-muted-foreground hover:text-foreground"
+          title="Copy link"
+        >
+          <Copy className="w-4 h-4" />
+        </button>
+        <a
+          href={formUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="text-muted-foreground hover:text-foreground"
+          title="Open form"
+        >
+          <ExternalLink className="w-4 h-4" />
+        </a>
+      </div>
+      <a
+        href={welcomeMailtoHref(trip)}
+        className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border bg-surface hover:bg-background/60 transition"
+      >
+        <Send className="w-3.5 h-3.5" />
+        Compose welcome email
+      </a>
+      {anyResponses && (
+        <div className="space-y-2 pt-2 border-t border-border">
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Team responses</div>
+          {(trip as any).alternate_dates && (
+            <ResponseField label="Alternate dates" value={(trip as any).alternate_dates} />
+          )}
+          {(trip as any).vision && (
+            <ResponseField label="Vision & hope" value={(trip as any).vision} />
+          )}
+          {(trip as any).church_context && (
+            <ResponseField label="About the church" value={(trip as any).church_context} />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ResponseField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[11px] font-medium text-muted-foreground">{label}</div>
+      <div className="text-sm whitespace-pre-wrap">{value}</div>
+    </div>
+  );
+}

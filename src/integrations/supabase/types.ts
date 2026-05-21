@@ -1673,11 +1673,15 @@ export type Database = {
       }
       mission_trips: {
         Row: {
+          alternate_dates: string | null
+          church_context: string | null
           church_name: string
           created_at: string
           created_by: string | null
           end_date: string | null
           id: string
+          inquiry_submitted_at: string | null
+          inquiry_token: string
           itinerary_file_name: string | null
           itinerary_file_path: string | null
           itinerary_link: string | null
@@ -1692,13 +1696,18 @@ export type Database = {
           steps: Json
           team_number: string | null
           updated_at: string
+          vision: string | null
         }
         Insert: {
+          alternate_dates?: string | null
+          church_context?: string | null
           church_name: string
           created_at?: string
           created_by?: string | null
           end_date?: string | null
           id?: string
+          inquiry_submitted_at?: string | null
+          inquiry_token?: string
           itinerary_file_name?: string | null
           itinerary_file_path?: string | null
           itinerary_link?: string | null
@@ -1713,13 +1722,18 @@ export type Database = {
           steps?: Json
           team_number?: string | null
           updated_at?: string
+          vision?: string | null
         }
         Update: {
+          alternate_dates?: string | null
+          church_context?: string | null
           church_name?: string
           created_at?: string
           created_by?: string | null
           end_date?: string | null
           id?: string
+          inquiry_submitted_at?: string | null
+          inquiry_token?: string
           itinerary_file_name?: string | null
           itinerary_file_path?: string | null
           itinerary_link?: string | null
@@ -1734,6 +1748,7 @@ export type Database = {
           steps?: Json
           team_number?: string | null
           updated_at?: string
+          vision?: string | null
         }
         Relationships: []
       }
