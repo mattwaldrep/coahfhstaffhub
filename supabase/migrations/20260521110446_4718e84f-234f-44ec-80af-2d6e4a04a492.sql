@@ -1,0 +1,15 @@
+ALTER TABLE public.mission_trips
+  ADD COLUMN IF NOT EXISTS planning_call_at timestamptz,
+  ADD COLUMN IF NOT EXISTS team_headcount integer,
+  ADD COLUMN IF NOT EXISTS adults_count integer,
+  ADD COLUMN IF NOT EXISTS students_count integer,
+  ADD COLUMN IF NOT EXISTS lodging_status text,
+  ADD COLUMN IF NOT EXISTS transport_status text,
+  ADD COLUMN IF NOT EXISTS daily_window_start time,
+  ADD COLUMN IF NOT EXISTS daily_window_end time,
+  ADD COLUMN IF NOT EXISTS outreach_tracks text[] NOT NULL DEFAULT '{}'::text[],
+  ADD COLUMN IF NOT EXISTS comms_preference text,
+  ADD COLUMN IF NOT EXISTS itinerary_owner text,
+  ADD COLUMN IF NOT EXISTS itinerary_due_date date,
+  ADD COLUMN IF NOT EXISTS dietary_flags text,
+  ADD COLUMN IF NOT EXISTS planning_notes jsonb NOT NULL DEFAULT '{}'::jsonb;
