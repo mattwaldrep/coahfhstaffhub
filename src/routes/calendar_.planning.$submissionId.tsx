@@ -25,13 +25,22 @@ export const Route = createFileRoute("/calendar_/planning/$submissionId")({
   component: () => <AppShell><Editor /></AppShell>,
 });
 
+const LISTING_CHANNELS: { key: string; label: string }[] = [
+  { key: "pco", label: "PCO" },
+  { key: "eventbrite", label: "Eventbrite" },
+  { key: "google", label: "Google" },
+  { key: "community_cals", label: "Community Cals" },
+  { key: "socials", label: "Socials" },
+];
+
 const emptyEvent = () => ({
   title: "", description: "", sub_calendar: "general",
   start_at: "", end_at: "", all_day: false, category: "",
   leader_name: "", location: "", room_needed: "",
   action_note: "", pco_registration: false,
   missions_team_needed: false, church_covering: "",
-  other_listings: "" as string,
+  other_listings: [] as string[],
+  social_ads: false,
   room_not_needed: false, leader_not_needed: false,
 });
 
