@@ -737,7 +737,7 @@ function TimelineRow({ trip, onClick }: { trip: Trip; onClick: () => void }) {
       </div>
       <div className="flex items-center gap-1.5 text-muted-foreground">
         {trip.leader_email && (
-          <a href={welcomeMailtoHref(trip)} onClick={(e) => e.stopPropagation()} className="hover:text-foreground" title="Email welcome template">
+          <a href={welcomeMailtoHref(trip)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="hover:text-foreground" title="Email welcome template">
             <Mail className="w-3.5 h-3.5" />
           </a>
         )}
