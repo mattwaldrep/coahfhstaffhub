@@ -67,6 +67,9 @@ import { AlertTriangle } from "lucide-react";
 
 
 export const Route = createFileRoute("/calendar")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    event: typeof s.event === "string" ? s.event : undefined,
+  }),
   component: CalendarPage,
 });
 
