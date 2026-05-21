@@ -320,6 +320,7 @@ function Body() {
       itinerary_due_date: form.itinerary_due_date || null,
       dietary_flags: form.dietary_flags || null,
       planning_notes: form.planning_notes ?? {},
+      draft_itinerary: form.draft_itinerary || null,
     };
     const { error } = form.id
       ? await supabase.from("mission_trips").update(payload).eq("id", form.id)
