@@ -1644,7 +1644,14 @@ function CalendarBody() {
               </div>
             )}
 
-            {form.id && <EventComments eventId={form.id} userId={user?.id ?? null} />}
+            {form.id && (
+              <EventComments
+                eventId={form.id}
+                userId={user?.id ?? null}
+                assignableUsers={assignableUsers}
+                onTaskCreated={() => form.id && loadChecklist(form.id)}
+              />
+            )}
 
             <DialogFooter className="flex sm:justify-between gap-2 flex-wrap">
               <div className="flex gap-2">
