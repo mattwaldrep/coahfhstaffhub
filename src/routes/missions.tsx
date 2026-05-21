@@ -378,10 +378,13 @@ function Body() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [open, setOpen] = useState(false);
   const [emailDraftTrip, setEmailDraftTrip] = useState<Trip | null>(null);
-  const [emailKind, setEmailKind] = useState<"welcome" | "itinerary">("welcome");
+  const [emailKind, setEmailKind] = useState<"welcome" | "itinerary" | "final_schedule">("welcome");
   const [itineraryEmailBody, setItineraryEmailBody] = useState<string>("");
+  const [finalScheduleDocUrl, setFinalScheduleDocUrl] = useState<string>("");
   const [sendingGmail, setSendingGmail] = useState(false);
+  const [syncingDoc, setSyncingDoc] = useState(false);
   const sendGmail = useServerFn(sendGmailMessage);
+  const syncDoc = useServerFn(syncItineraryDoc);
   const [form, setForm] = useState<Form>(emptyForm());
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
