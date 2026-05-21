@@ -94,6 +94,12 @@ type Trip = {
 
 const WELCOME_SUBJECT = "Let's Plan Your Trip to City On A Hill";
 
+type EmailDraft = {
+  to: string;
+  subject: string;
+  body: string;
+};
+
 function buildWelcomeEmailBody(formUrl: string) {
   return (
     `Hello,\n\n` +
@@ -108,11 +114,20 @@ function buildWelcomeEmailBody(formUrl: string) {
   );
 }
 
-function welcomeMailtoHref(trip: Trip): string {
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const formUrl = `${origin}/inquiry/${trip.inquiry_token}`;
+function inquiryFormUrl(trip: Trip): string {
+  const path = `/inquiry/${trip.inquiry_token}`;
+  return typeof window === "undefined" ? path : `${window.location.origin}${path}`;
+}
+
+function getWelcomeEmailDraft(trip: Trip): EmailDraft {
+  const formUrl = inquiryFormUrl(trip);
   const body = buildWelcomeEmailBody(formUrl);
   const to = trip.leader_email ?? "";
+  return { to, subject: WELCOME_SUBJECT, body };
+}
+
+function welcomeMailtoHref(trip: Trip): string {
+  const { to, subject, body } = getWelcomeEmailDraft(trip);
   const qs = `subject=${encodeURIComponent(WELCOME_SUBJECT)}&body=${encodeURIComponent(body)}`;
   return `mailto:${to}?${qs}`;
 }
@@ -149,6 +164,7 @@ function Body() {
   const canEdit = hasRole("core") || hasRole("meeting");
   const [trips, setTrips] = useState<Trip[]>([]);
   const [open, setOpen] = useState(false);
+  const [emailDraftTrip, setEmailDraftTrip] = useState<Trip | null>(null);
   const [form, setForm] = useState<Form>(emptyForm());
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
@@ -287,6 +303,12 @@ function Body() {
     () => statusFilter === "all" ? trips : trips.filter((t) => t.status === statusFilter),
     [trips, statusFilter],
   );
+  const emailDraft = emailDraftTrip ? getWelcomeEmailDraft(emailDraftTrip) : null;
+
+  function copyDraftValue(label: string, value: string) {
+    navigator.clipboard.writeText(value);
+    toast.success(`${label} copied`);
+  }
 
   const byStatus = useMemo(() => {
     const m: Record<Status, Trip[]> = {
@@ -379,6 +401,7 @@ function Body() {
                     trip={t}
                     onClick={() => openEdit(t)}
                     onMove={(s) => moveTrip(t, s)}
+                    onCompose={() => setEmailDraftTrip(t)}
                     canEdit={canEdit}
                   />
                 ))}
@@ -392,7 +415,7 @@ function Body() {
       )}
 
       {view === "timeline" && (
-        <TimelineView trips={filteredTrips} showPast={showPast} onOpen={openEdit} />
+        <TimelineView trips={filteredTrips} showPast={showPast} onOpen={openEdit} onCompose={setEmailDraftTrip} />
       )}
 
       {view === "table" && (
@@ -526,6 +549,63 @@ function Body() {
               <Button type="submit">{form.id ? "Save changes" : "Add trip"}</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!emailDraftTrip} onOpenChange={(next) => { if (!next) setEmailDraftTrip(null); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Welcome email draft</DialogTitle>
+          </DialogHeader>
+          {emailDraft && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>To</Label>
+                <div className="flex gap-2">
+                  <Input readOnly value={emailDraft.to} />
+                  <Button type="button" variant="outline" onClick={() => copyDraftValue("Recipient", emailDraft.to)}>
+                    Copy
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Subject</Label>
+                <div className="flex gap-2">
+                  <Input readOnly value={emailDraft.subject} />
+                  <Button type="button" variant="outline" onClick={() => copyDraftValue("Subject", emailDraft.subject)}>
+                    Copy
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Body</Label>
+                <Textarea readOnly rows={14} value={emailDraft.body} />
+              </div>
+              <DialogFooter className="flex sm:justify-between gap-2 flex-wrap">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => copyDraftValue("Email body", emailDraft.body)}
+                >
+                  Copy body
+                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => copyDraftValue("Full email", `To: ${emailDraft.to}\nSubject: ${emailDraft.subject}\n\n${emailDraft.body}`)}
+                  >
+                    Copy everything
+                  </Button>
+                  {emailDraft.to && (
+                    <Button type="button" onClick={() => { window.location.href = welcomeMailtoHref(emailDraftTrip!); }}>
+                      Open mail app
+                    </Button>
+                  )}
+                </div>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>
