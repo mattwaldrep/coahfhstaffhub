@@ -307,6 +307,7 @@ function CalendarBody() {
   const [assignableUsers, setAssignableUsers] = useState<UserOption[]>([]);
   const assignFn = useServerFn(assignChecklistItem);
   const unassignFn = useServerFn(unassignChecklistItem);
+  const setDoneFn = useServerFn(setChecklistItemDone);
   const eventRoomsMap = useRef<Map<string, string[]>>(new Map());
   const eventChecklistMap = useRef<Map<string, { total: number; done: number }>>(new Map());
   const eventAttachmentsMap = useRef<Map<string, string[]>>(new Map());
