@@ -1678,6 +1678,9 @@ export type Database = {
           church_context: string | null
           church_name: string
           comms_preference: string | null
+          confirm_checklist: Json
+          coordinator_on_call_name: string | null
+          coordinator_on_call_phone: string | null
           created_at: string
           created_by: string | null
           daily_window_end: string | null
@@ -1719,6 +1722,9 @@ export type Database = {
           church_context?: string | null
           church_name: string
           comms_preference?: string | null
+          confirm_checklist?: Json
+          coordinator_on_call_name?: string | null
+          coordinator_on_call_phone?: string | null
           created_at?: string
           created_by?: string | null
           daily_window_end?: string | null
@@ -1760,6 +1766,9 @@ export type Database = {
           church_context?: string | null
           church_name?: string
           comms_preference?: string | null
+          confirm_checklist?: Json
+          coordinator_on_call_name?: string | null
+          coordinator_on_call_phone?: string | null
           created_at?: string
           created_by?: string | null
           daily_window_end?: string | null

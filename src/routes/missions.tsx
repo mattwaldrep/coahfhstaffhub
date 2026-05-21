@@ -107,6 +107,9 @@ type Trip = {
   dietary_flags: string | null;
   planning_notes: Record<string, string>;
   draft_itinerary: string | null;
+  coordinator_on_call_name: string | null;
+  coordinator_on_call_phone: string | null;
+  confirm_checklist: Record<string, boolean>;
 };
 
 const OUTREACH_TRACK_OPTIONS = [
@@ -124,6 +127,12 @@ const PLANNING_NOTE_SECTIONS: { key: string; label: string }[] = [
   { key: "outreach", label: "Outreach track discussion" },
   { key: "supplies", label: "Supplies & budget (printing, snacks/water, CharlieCards, contingency)" },
   { key: "next_steps", label: "Next steps — who does what by when" },
+];
+
+const CONFIRM_CHECKLIST_ITEMS: { key: string; label: string }[] = [
+  { key: "staff_leads_assigned", label: "Primary staff lead named for every itinerary activity" },
+  { key: "meeting_points_clear", label: "Meeting points & times are unambiguous" },
+  { key: "supplies_updated", label: "Supplies list updated to match the schedule" },
 ];
 
 const WELCOME_SUBJECT = "Let's Plan Your Trip to City On A Hill";
@@ -323,6 +332,9 @@ const emptyForm = (): Form => ({
   dietary_flags: "",
   planning_notes: {},
   draft_itinerary: "",
+  coordinator_on_call_name: "",
+  coordinator_on_call_phone: "",
+  confirm_checklist: {},
 });
 
 function MissionsPage() {
@@ -418,6 +430,9 @@ function Body() {
       dietary_flags: t.dietary_flags ?? "",
       planning_notes: t.planning_notes ?? {},
       draft_itinerary: t.draft_itinerary ?? "",
+      coordinator_on_call_name: t.coordinator_on_call_name ?? "",
+      coordinator_on_call_phone: t.coordinator_on_call_phone ?? "",
+      confirm_checklist: t.confirm_checklist ?? {},
     });
     setOpen(true);
   }
@@ -454,6 +469,9 @@ function Body() {
       dietary_flags: form.dietary_flags || null,
       planning_notes: form.planning_notes ?? {},
       draft_itinerary: form.draft_itinerary || null,
+      coordinator_on_call_name: form.coordinator_on_call_name || null,
+      coordinator_on_call_phone: form.coordinator_on_call_phone || null,
+      confirm_checklist: form.confirm_checklist ?? {},
     };
     const { error } = form.id
       ? await supabase.from("mission_trips").update(payload).eq("id", form.id)
@@ -781,6 +799,10 @@ function Body() {
                 openItineraryEmail(editingTrip, form.draft_itinerary || buildDraftItinerary(form));
               }}
             />
+
+            <PreTripConfirmPanel form={form} setForm={setForm} />
+
+
 
 
 
@@ -1672,4 +1694,69 @@ function DraftItineraryPanel({
     </div>
   );
 }
+
+function PreTripConfirmPanel({
+  form,
+  setForm,
+}: {
+  form: Form;
+  setForm: React.Dispatch<React.SetStateAction<Form>>;
+}) {
+  const checklist = form.confirm_checklist ?? {};
+  const hasCoordinator = !!(form.coordinator_on_call_name?.trim() && form.coordinator_on_call_phone?.trim());
+  const itemsDone = CONFIRM_CHECKLIST_ITEMS.filter((i) => checklist[i.key]).length + (hasCoordinator ? 1 : 0);
+  const total = CONFIRM_CHECKLIST_ITEMS.length + 1;
+
+  function toggle(key: string, v: boolean) {
+    setForm((f) => ({ ...f, confirm_checklist: { ...(f.confirm_checklist ?? {}), [key]: v } }));
+  }
+
+  return (
+    <div className="rounded-xl border border-border p-3 space-y-3">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <Label className="text-sm font-medium">Pre-trip confirmation</Label>
+        <span className="text-[11px] px-2 py-0.5 rounded-full bg-background/60 border border-border text-muted-foreground">
+          {itemsDone}/{total} ready
+        </span>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Final sign-offs before the team arrives. Use this once the itinerary is locked.
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Missions coordinator on-call — name</Label>
+          <Input
+            value={form.coordinator_on_call_name ?? ""}
+            onChange={(e) => setForm({ ...form, coordinator_on_call_name: e.target.value })}
+            placeholder="e.g. Matt Waldrep"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Missions coordinator on-call — phone</Label>
+          <Input
+            value={form.coordinator_on_call_phone ?? ""}
+            onChange={(e) => setForm({ ...form, coordinator_on_call_phone: e.target.value })}
+            placeholder="(617) 555-1234"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        {CONFIRM_CHECKLIST_ITEMS.map((item) => (
+          <label key={item.key} className="flex items-start gap-2 text-sm py-1">
+            <Checkbox
+              checked={!!checklist[item.key]}
+              onCheckedChange={(v) => toggle(item.key, !!v)}
+            />
+            <span className={checklist[item.key] ? "line-through text-muted-foreground" : ""}>
+              {item.label}
+            </span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 
