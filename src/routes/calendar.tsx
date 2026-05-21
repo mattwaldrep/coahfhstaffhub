@@ -2175,7 +2175,7 @@ function EventComments({
           <Textarea
             ref={textareaRef}
             rows={2}
-            placeholder={userId ? "Add a comment… use @ to mention" : "Sign in to comment"}
+            placeholder={userId ? "Add a comment… @ to mention, / to add a task" : "Sign in to comment"}
             value={body}
             onChange={handleChange}
             onKeyDown={(e) => {
