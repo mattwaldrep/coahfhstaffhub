@@ -303,6 +303,20 @@ function Body() {
       itinerary_file_name: form.itinerary_file_name,
       notes: form.notes || null,
       steps: form.steps,
+      planning_call_at: form.planning_call_at || null,
+      team_headcount: form.team_headcount,
+      adults_count: form.adults_count,
+      students_count: form.students_count,
+      lodging_status: form.lodging_status || null,
+      transport_status: form.transport_status || null,
+      daily_window_start: form.daily_window_start || null,
+      daily_window_end: form.daily_window_end || null,
+      outreach_tracks: form.outreach_tracks ?? [],
+      comms_preference: form.comms_preference || null,
+      itinerary_owner: form.itinerary_owner || null,
+      itinerary_due_date: form.itinerary_due_date || null,
+      dietary_flags: form.dietary_flags || null,
+      planning_notes: form.planning_notes ?? {},
     };
     const { error } = form.id
       ? await supabase.from("mission_trips").update(payload).eq("id", form.id)
