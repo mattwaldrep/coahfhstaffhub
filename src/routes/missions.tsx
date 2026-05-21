@@ -117,7 +117,7 @@ function welcomeMailtoHref(trip: Trip): string {
   return `mailto:${encodeURIComponent(to)}?${qs}`;
 }
 
-type Form = Omit<Trip, "id" | "position"> & { id?: string };
+type Form = Omit<Trip, "id" | "position" | "inquiry_token" | "inquiry_submitted_at"> & { id?: string };
 
 const emptyForm = (): Form => ({
   church_name: "",
