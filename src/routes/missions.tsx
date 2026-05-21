@@ -92,7 +92,38 @@ type Trip = {
   position: number;
   inquiry_token: string;
   inquiry_submitted_at: string | null;
+  planning_call_at: string | null;
+  team_headcount: number | null;
+  adults_count: number | null;
+  students_count: number | null;
+  lodging_status: string | null;
+  transport_status: string | null;
+  daily_window_start: string | null;
+  daily_window_end: string | null;
+  outreach_tracks: string[];
+  comms_preference: string | null;
+  itinerary_owner: string | null;
+  itinerary_due_date: string | null;
+  dietary_flags: string | null;
+  planning_notes: Record<string, string>;
 };
+
+const OUTREACH_TRACK_OPTIONS = [
+  { value: "transit", label: "Transit evangelism" },
+  { value: "prayer_walk", label: "Prayer walk" },
+  { value: "surveys", label: "Surveys" },
+  { value: "service_project", label: "Service project" },
+];
+
+const PLANNING_NOTE_SECTIONS: { key: string; label: string }[] = [
+  { key: "prayer", label: "Prayer" },
+  { key: "team_snapshot", label: "Team snapshot (headcount, leaders, lodging/transport)" },
+  { key: "goals", label: "Goals & outcomes — what would 'fruitful' look like?" },
+  { key: "schedule", label: "Schedule & constraints (dates/hours, arrival/departure)" },
+  { key: "outreach", label: "Outreach track discussion" },
+  { key: "supplies", label: "Supplies & budget (printing, snacks/water, CharlieCards, contingency)" },
+  { key: "next_steps", label: "Next steps — who does what by when" },
+];
 
 const WELCOME_SUBJECT = "Let's Plan Your Trip to City On A Hill";
 
