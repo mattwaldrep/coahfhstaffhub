@@ -1216,10 +1216,15 @@ function CalendarBody() {
                           <button
                             key={r.id}
                             type="button"
-                            onClick={() => setForm({
-                              ...form,
-                              room_ids: on ? form.room_ids.filter((x) => x !== r.id) : [...form.room_ids, r.id],
-                            })}
+                            onClick={() => {
+                              if (on) {
+                                setForm({ ...form, room_ids: form.room_ids.filter((x) => x !== r.id) });
+                              } else if (r.name.trim().toLowerCase() !== "office") {
+                                setPendingRoom({ id: r.id, name: r.name, step: "request" });
+                              } else {
+                                setForm({ ...form, room_ids: [...form.room_ids, r.id] });
+                              }
+                            }}
                             className={`text-xs px-2.5 py-1 rounded-full border transition ${
                               on ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"
                             }`}
