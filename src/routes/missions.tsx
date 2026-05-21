@@ -1734,11 +1734,21 @@ function DraftItineraryPanel({
   setForm,
   canEmail,
   onEmail,
+  docUrl,
+  syncingDoc,
+  onSyncDoc,
+  canSyncDoc,
+  onSendFinalSchedule,
 }: {
   form: Form;
   setForm: React.Dispatch<React.SetStateAction<Form>>;
   canEmail: boolean;
   onEmail: () => void;
+  docUrl: string | null;
+  syncingDoc: boolean;
+  onSyncDoc: () => Promise<string | null>;
+  canSyncDoc: boolean;
+  onSendFinalSchedule: () => Promise<void>;
 }) {
   function generate(overwrite: boolean) {
     if (!overwrite && form.draft_itinerary) {
@@ -1770,16 +1780,17 @@ function DraftItineraryPanel({
           <Button
             type="button"
             size="sm"
+            variant="outline"
             onClick={onEmail}
             disabled={!canEmail || !form.draft_itinerary}
             title={!canEmail ? "Save trip with a leader email first" : ""}
           >
-            <Send className="w-4 h-4 mr-1.5" /> Email to team
+            <Send className="w-4 h-4 mr-1.5" /> Email draft
           </Button>
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
-        Auto-fills from trip dates, focus, headcount, and outreach tracks. Edit freely before sending — the email body will use exactly what's here.
+        Auto-fills from trip dates, focus, headcount, and outreach tracks. Edit freely — the Google Doc and emails will use exactly what's here.
       </p>
       <Textarea
         rows={18}
@@ -1788,9 +1799,54 @@ function DraftItineraryPanel({
         value={form.draft_itinerary ?? ""}
         onChange={(e) => setForm({ ...form, draft_itinerary: e.target.value })}
       />
+
+      <div className="rounded-lg border border-border bg-background/40 p-3 space-y-2">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="text-xs font-medium">Final schedule (Google Doc)</div>
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => onSyncDoc()}
+              disabled={!canSyncDoc || syncingDoc}
+              title={!canSyncDoc ? "Save the trip first" : ""}
+            >
+              <FileUp className="w-4 h-4 mr-1.5" />
+              {syncingDoc ? "Syncing…" : docUrl ? "Update Google Doc" : "Create Google Doc"}
+            </Button>
+            {docUrl && (
+              <Button type="button" size="sm" variant="outline" asChild>
+                <a href={docUrl} target="_blank" rel="noreferrer">
+                  <ExternalLink className="w-4 h-4 mr-1.5" /> Open
+                </a>
+              </Button>
+            )}
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => onSendFinalSchedule()}
+              disabled={!canEmail || syncingDoc}
+              title={!canEmail ? "Save trip with a leader email first" : ""}
+            >
+              <Send className="w-4 h-4 mr-1.5" /> Send final schedule
+            </Button>
+          </div>
+        </div>
+        {docUrl ? (
+          <p className="text-[11px] text-muted-foreground break-all">
+            {docUrl} — make sure sharing is set to <strong>Anyone with the link can view</strong> in Google Docs.
+          </p>
+        ) : (
+          <p className="text-[11px] text-muted-foreground">
+            Creates a Google Doc from the draft above, then sends the Final Schedule & Trip Guide email linking to it.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
+
 
 function PreTripConfirmPanel({
   form,
