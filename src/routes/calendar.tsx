@@ -102,6 +102,15 @@ const LISTING_CHANNELS: { key: string; label: string }[] = [
 ];
 const LISTING_LABEL = new Map(LISTING_CHANNELS.map((c) => [c.key, c.label]));
 
+const LISTING_CHECKLIST_LABEL: Record<string, string> = {
+  pco: "Set up PCO registration",
+  eventbrite: "List on Eventbrite",
+  google: "List on Google",
+  community_cals: "List on community calendars",
+  socials: "Post on socials",
+  social_ads: "Run social ads",
+};
+
 const WEEKDAYS = [
   { v: "SU", label: "S" },
   { v: "MO", label: "M" },
