@@ -32,6 +32,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -350,6 +360,7 @@ function CalendarBody() {
   const [newItem, setNewItem] = useState("");
   const [classSeries, setClassSeries] = useState<ClassSeries[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [pendingRoom, setPendingRoom] = useState<{ id: string; name: string; step: "request" | "approval" } | null>(null);
   const [assignableUsers, setAssignableUsers] = useState<UserOption[]>([]);
   const assignFn = useServerFn(assignChecklistItem);
   const unassignFn = useServerFn(unassignChecklistItem);
@@ -1205,10 +1216,15 @@ function CalendarBody() {
                           <button
                             key={r.id}
                             type="button"
-                            onClick={() => setForm({
-                              ...form,
-                              room_ids: on ? form.room_ids.filter((x) => x !== r.id) : [...form.room_ids, r.id],
-                            })}
+                            onClick={() => {
+                              if (on) {
+                                setForm({ ...form, room_ids: form.room_ids.filter((x) => x !== r.id) });
+                              } else if (r.name.trim().toLowerCase() !== "office") {
+                                setPendingRoom({ id: r.id, name: r.name, step: "request" });
+                              } else {
+                                setForm({ ...form, room_ids: [...form.room_ids, r.id] });
+                              }
+                            }}
                             className={`text-xs px-2.5 py-1 rounded-full border transition ${
                               on ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"
                             }`}
@@ -1713,6 +1729,58 @@ function CalendarBody() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={!!pendingRoom}
+        onOpenChange={(o) => { if (!o) setPendingRoom(null); }}
+      >
+        <AlertDialogContent>
+          {pendingRoom?.step === "request" ? (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Room request submitted?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Please confirm that a room request has been submitted for{" "}
+                  <span className="font-medium">{pendingRoom?.name}</span>.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() =>
+                    setPendingRoom((p) => (p ? { ...p, step: "approval" } : p))
+                  }
+                >
+                  Yes, submitted
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          ) : (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Approval received?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Please confirm that approval has been received for{" "}
+                  <span className="font-medium">{pendingRoom?.name}</span>.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    if (pendingRoom) {
+                      setForm((f) => ({ ...f, room_ids: [...f.room_ids, pendingRoom.id] }));
+                    }
+                    setPendingRoom(null);
+                  }}
+                >
+                  Yes, approved
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          )}
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
