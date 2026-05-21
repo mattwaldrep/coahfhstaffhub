@@ -1279,15 +1279,6 @@ function CalendarBody() {
                   </label>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label className="text-xs">Action / follow-up</Label>
-                <Textarea
-                  rows={2}
-                  placeholder="What needs to happen for this event?"
-                  value={form.action_note}
-                  onChange={(e) => setForm({ ...form, action_note: e.target.value })}
-                />
-              </div>
               <label className="flex items-center gap-2 text-sm">
                 <Switch
                   checked={form.missions_team_needed}
