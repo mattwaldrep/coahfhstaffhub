@@ -992,3 +992,79 @@ function EmptyState({ label }: { label: string }) {
   );
 }
 
+
+function InquiryPanel({ trip }: { trip: Trip }) {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const formUrl = `${origin}/inquiry/${trip.inquiry_token}`;
+  const submitted = !!trip.inquiry_submitted_at;
+  const anyResponses = !!((trip as any).vision || (trip as any).church_context || (trip as any).alternate_dates);
+  return (
+    <div className="rounded-xl border border-border p-3 space-y-3 bg-background/40">
+      <div className="flex items-center justify-between gap-2">
+        <Label className="text-sm font-medium">Planning questionnaire</Label>
+        {submitted ? (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary">
+            Submitted {format(new Date(trip.inquiry_submitted_at!), "MMM d, yyyy")}
+          </span>
+        ) : (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+            Awaiting response
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-2 text-sm bg-background/60 border border-border rounded-lg px-3 py-2">
+        <input readOnly value={formUrl} className="flex-1 bg-transparent outline-none text-xs text-muted-foreground" />
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(formUrl);
+            toast.success("Link copied");
+          }}
+          className="text-muted-foreground hover:text-foreground"
+          title="Copy link"
+        >
+          <Copy className="w-4 h-4" />
+        </button>
+        <a
+          href={formUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="text-muted-foreground hover:text-foreground"
+          title="Open form"
+        >
+          <ExternalLink className="w-4 h-4" />
+        </a>
+      </div>
+      <a
+        href={welcomeMailtoHref(trip)}
+        className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border bg-surface hover:bg-background/60 transition"
+      >
+        <Send className="w-3.5 h-3.5" />
+        Compose welcome email
+      </a>
+      {anyResponses && (
+        <div className="space-y-2 pt-2 border-t border-border">
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Team responses</div>
+          {(trip as any).alternate_dates && (
+            <ResponseField label="Alternate dates" value={(trip as any).alternate_dates} />
+          )}
+          {(trip as any).vision && (
+            <ResponseField label="Vision & hope" value={(trip as any).vision} />
+          )}
+          {(trip as any).church_context && (
+            <ResponseField label="About the church" value={(trip as any).church_context} />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ResponseField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[11px] font-medium text-muted-foreground">{label}</div>
+      <div className="text-sm whitespace-pre-wrap">{value}</div>
+    </div>
+  );
+}
