@@ -361,6 +361,8 @@ function CalendarBody() {
   const [classSeries, setClassSeries] = useState<ClassSeries[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [pendingRoom, setPendingRoom] = useState<{ id: string; name: string; step: "request" | "approval" } | null>(null);
+  const [roomRequestSubmitted, setRoomRequestSubmitted] = useState(false);
+  const [roomApprovalReceived, setRoomApprovalReceived] = useState(false);
   const [assignableUsers, setAssignableUsers] = useState<UserOption[]>([]);
   const assignFn = useServerFn(assignChecklistItem);
   const unassignFn = useServerFn(unassignChecklistItem);
