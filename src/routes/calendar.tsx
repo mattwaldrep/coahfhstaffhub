@@ -1199,12 +1199,37 @@ function CalendarBody() {
             <div className="space-y-3 rounded-xl border border-border p-3">
               <Label className="text-sm font-medium">Logistics</Label>
               <div className="space-y-2">
-                <Label className="text-xs">Other listings (comma-separated)</Label>
-                <Input
-                  placeholder="e.g. Google Business, Eventbrite"
-                  value={form.other_listings}
-                  onChange={(e) => setForm({ ...form, other_listings: e.target.value })}
-                />
+                <Label className="text-xs">Promote / list on</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {LISTING_CHANNELS.map((c) => {
+                    const checked = c.key === "pco"
+                      ? form.pco_registration
+                      : form.other_listings.includes(c.key);
+                    const toggle = (v: boolean) => {
+                      if (c.key === "pco") {
+                        setForm({ ...form, pco_registration: v });
+                      } else {
+                        const next = v
+                          ? Array.from(new Set([...form.other_listings, c.key]))
+                          : form.other_listings.filter((k) => k !== c.key);
+                        setForm({ ...form, other_listings: next });
+                      }
+                    };
+                    return (
+                      <label key={c.key} className="flex items-center gap-2 text-sm">
+                        <Switch checked={checked} onCheckedChange={toggle} />
+                        {c.label}
+                      </label>
+                    );
+                  })}
+                  <label className="flex items-center gap-2 text-sm">
+                    <Switch
+                      checked={form.social_ads}
+                      onCheckedChange={(v) => setForm({ ...form, social_ads: v })}
+                    />
+                    Social ads
+                  </label>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label className="text-xs">Action / follow-up</Label>
