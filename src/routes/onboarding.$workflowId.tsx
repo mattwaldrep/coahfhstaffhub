@@ -56,6 +56,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AppShell } from "@/components/AppShell";
 
 type UserOption = { id: string; full_name: string | null; email: string | null };
 
