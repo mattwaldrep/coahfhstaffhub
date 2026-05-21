@@ -332,6 +332,9 @@ const emptyForm = (): Form => ({
   dietary_flags: "",
   planning_notes: {},
   draft_itinerary: "",
+  coordinator_on_call_name: "",
+  coordinator_on_call_phone: "",
+  confirm_checklist: {},
 });
 
 function MissionsPage() {
