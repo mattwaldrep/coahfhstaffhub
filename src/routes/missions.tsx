@@ -308,6 +308,29 @@ function Body() {
     toast.success(`${label} copied`);
   }
 
+  async function handleSendGmail() {
+    if (!emailDraft || !emailDraftTrip) return;
+    if (!emailDraft.to) {
+      toast.error("No recipient email on this trip");
+      return;
+    }
+    setSendingGmail(true);
+    try {
+      await sendGmail({ data: { to: emailDraft.to, subject: emailDraft.subject, body: emailDraft.body } });
+      toast.success(`Email sent to ${emailDraft.to}`);
+      // Mark the welcome_email step as done
+      const nextSteps = { ...emailDraftTrip.steps, welcome_email: true };
+      await supabase.from("mission_trips").update({ steps: nextSteps }).eq("id", emailDraftTrip.id);
+      setTrips((prev) => prev.map((t) => t.id === emailDraftTrip.id ? { ...t, steps: nextSteps } : t));
+      setEmailDraftTrip(null);
+    } catch (err) {
+      console.error(err);
+      toast.error(err instanceof Error ? err.message : "Failed to send email");
+    } finally {
+      setSendingGmail(false);
+    }
+  }
+
   const byStatus = useMemo(() => {
     const m: Record<Status, Trip[]> = {
       not_started: [], tbc: [], pre_trip: [], in_field: [], complete: [], cancelled: [],
