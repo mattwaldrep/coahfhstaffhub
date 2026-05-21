@@ -1113,10 +1113,6 @@ function CalendarBody() {
                 <Switch checked={form.all_day} onCheckedChange={(v) => setForm({ ...form, all_day: v })} />
                 All day
               </label>
-              <label className="flex items-center gap-2">
-                <Switch checked={form.pco_registration} onCheckedChange={(v) => setForm({ ...form, pco_registration: v })} />
-                PCO registration
-              </label>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
