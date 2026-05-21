@@ -304,6 +304,7 @@ export const reviewProposedEvent = createServerFn({ method: "POST" })
           missions_team_needed: prop.missions_team_needed,
           church_covering: prop.church_covering,
           other_listings: prop.other_listings ?? [],
+          social_ads: (prop as any).social_ads ?? false,
           room_not_needed: prop.room_not_needed ?? false,
           leader_not_needed: prop.leader_not_needed ?? false,
           created_by: context.userId,
