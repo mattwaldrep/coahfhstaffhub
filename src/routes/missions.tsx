@@ -800,6 +800,10 @@ function Body() {
               }}
             />
 
+            <PreTripConfirmPanel form={form} setForm={setForm} />
+
+
+
 
 
 
