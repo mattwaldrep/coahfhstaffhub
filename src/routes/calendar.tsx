@@ -864,12 +864,14 @@ function CalendarBody() {
     [events, range.start.getTime(), range.end.getTime()],
   );
 
+  const startOfToday = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d; }, []);
   const visible = occurrences.filter((o) => {
     const cals = [o.sub_calendar, ...(o.other_listings ?? [])];
     if (!cals.some((c) => filters[c])) return false;
     if (categoryFilter !== "all" && o.category !== categoryFilter) return false;
     if (flagFilter === "pco" && !o.pco_registration) return false;
     if (flagFilter === "missions" && !o.missions_team_needed) return false;
+    if (hidePast && o.occurrence_date < startOfToday) return false;
     return true;
   });
 
