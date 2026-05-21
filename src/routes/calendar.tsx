@@ -1301,6 +1301,27 @@ function CalendarBody() {
                   </label>
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Communicate via</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {COMMS_CHANNELS.map((c) => {
+                    const checked = form.other_listings.includes(c.key);
+                    const toggle = (v: boolean) => {
+                      const next = v
+                        ? Array.from(new Set([...form.other_listings, c.key]))
+                        : form.other_listings.filter((k) => k !== c.key);
+                      setForm({ ...form, other_listings: next });
+                      if (form.id) syncListingChecklist(form.id, c.key, v);
+                    };
+                    return (
+                      <label key={c.key} className="flex items-center gap-2 text-sm">
+                        <Switch checked={checked} onCheckedChange={toggle} />
+                        {c.label}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
               <label className="flex items-center gap-2 text-sm">
                 <Switch
                   checked={form.missions_team_needed}
