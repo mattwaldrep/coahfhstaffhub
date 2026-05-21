@@ -56,6 +56,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   assignChecklistItem,
   unassignChecklistItem,
+  setChecklistItemDone,
 } from "@/lib/checklist-tasks.functions";
 
 import { toast } from "sonner";
