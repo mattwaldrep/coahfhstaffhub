@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { sendGmailMessage } from "@/lib/gmail-send.functions";
+import { syncItineraryDoc } from "@/lib/itinerary-doc.functions";
 import {
   format, isPast, isThisMonth, isWithinInterval, startOfMonth, endOfMonth,
   addMonths, subMonths, startOfDay, isSameMonth, isSameYear,
