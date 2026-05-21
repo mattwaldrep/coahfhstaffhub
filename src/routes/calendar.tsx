@@ -1818,13 +1818,18 @@ function ListView({ occurrences, conflictMap, onPickEvent, readinessOf }: { occu
                 {o.pco_registration && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">PCO</span>
                 )}
+                {(o.other_listings ?? [])
+                  .filter((k) => LISTING_LABEL.has(k))
+                  .map((k) => (
+                    <span key={k} className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                      {LISTING_LABEL.get(k)}
+                    </span>
+                  ))}
+                {(o as any).social_ads && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-fuchsia-500/15 text-fuchsia-700">Social ads</span>
+                )}
                 {o.missions_team_needed && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/20 text-accent-foreground">Missions</span>
-                )}
-                {(o.other_listings ?? []).length > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
-                    +{o.other_listings.length} listing{o.other_listings.length === 1 ? "" : "s"}
-                  </span>
                 )}
                 {classGaps(o).length > 0 && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-warning/20 text-warning">
