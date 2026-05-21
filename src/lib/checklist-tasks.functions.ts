@@ -233,3 +233,52 @@ export const relabelChecklistItem = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+export const setChecklistItemDone = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ checklistItemId: z.string().uuid(), done: z.boolean() }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { error } = await supabaseAdmin
+      .from("event_checklist_items")
+      .update({ done: data.done })
+      .eq("id", data.checklistItemId);
+    if (error) throw new Error(error.message);
+
+    // If linked to an action_item that's been pushed to Google Tasks,
+    // mirror the status to Google so the pull-sync doesn't revert it.
+    const { data: item } = await supabaseAdmin
+      .from("event_checklist_items")
+      .select("action_item_id")
+      .eq("id", data.checklistItemId)
+      .maybeSingle();
+    if (item?.action_item_id) {
+      const { data: ai } = await supabaseAdmin
+        .from("action_items")
+        .select("assignee_id, google_task_id")
+        .eq("id", item.action_item_id)
+        .maybeSingle();
+      if (ai?.google_task_id && ai.assignee_id) {
+        try {
+          const { ensureAccessTokenForUser } = await import("@/server/google-tasks.server");
+          const accessToken = await ensureAccessTokenForUser(ai.assignee_id);
+          await fetch(
+            `https://tasks.googleapis.com/tasks/v1/lists/@default/tasks/${ai.google_task_id}`,
+            {
+              method: "PATCH",
+              headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+              body: JSON.stringify(
+                data.done
+                  ? { status: "completed" }
+                  : { status: "needsAction", completed: null },
+              ),
+            },
+          );
+        } catch {
+          // best-effort; app state is already authoritative
+        }
+      }
+    }
+    return { ok: true };
+  });

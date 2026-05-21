@@ -56,6 +56,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   assignChecklistItem,
   unassignChecklistItem,
+  setChecklistItemDone,
 } from "@/lib/checklist-tasks.functions";
 
 import { toast } from "sonner";
@@ -306,6 +307,7 @@ function CalendarBody() {
   const [assignableUsers, setAssignableUsers] = useState<UserOption[]>([]);
   const assignFn = useServerFn(assignChecklistItem);
   const unassignFn = useServerFn(unassignChecklistItem);
+  const setDoneFn = useServerFn(setChecklistItemDone);
   const eventRoomsMap = useRef<Map<string, string[]>>(new Map());
   const eventChecklistMap = useRef<Map<string, { total: number; done: number }>>(new Map());
   const eventAttachmentsMap = useRef<Map<string, string[]>>(new Map());
@@ -717,11 +719,12 @@ function CalendarBody() {
   }
 
   async function toggleChecklistItem(item: ChecklistItem) {
-    const { error } = await supabase
-      .from("event_checklist_items")
-      .update({ done: !item.done })
-      .eq("id", item.id);
-    if (error) { toast.error(error.message); return; }
+    try {
+      await setDoneFn({ data: { checklistItemId: item.id, done: !item.done } });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to update");
+      return;
+    }
     loadChecklist(form.id!);
   }
 
