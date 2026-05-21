@@ -361,6 +361,8 @@ function CalendarBody() {
   const [classSeries, setClassSeries] = useState<ClassSeries[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [pendingRoom, setPendingRoom] = useState<{ id: string; name: string; step: "request" | "approval" } | null>(null);
+  const [roomRequestSubmitted, setRoomRequestSubmitted] = useState(false);
+  const [roomApprovalReceived, setRoomApprovalReceived] = useState(false);
   const [assignableUsers, setAssignableUsers] = useState<UserOption[]>([]);
   const assignFn = useServerFn(assignChecklistItem);
   const unassignFn = useServerFn(unassignChecklistItem);
@@ -1206,41 +1208,63 @@ function CalendarBody() {
               <div className="space-y-2">
                 <Label>Location</Label>
                 <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
-                {rooms.length > 0 && (
-                  <div className="space-y-2 pt-2">
-                    <Label className="text-xs">Rooms</Label>
-                    <div className={`flex flex-wrap gap-1.5 ${form.room_not_needed ? "opacity-50 pointer-events-none" : ""}`}>
-                      {rooms.map((r) => {
-                        const on = form.room_ids.includes(r.id);
-                        return (
-                          <button
-                            key={r.id}
-                            type="button"
-                            onClick={() => {
-                              if (on) {
-                                setForm({ ...form, room_ids: form.room_ids.filter((x) => x !== r.id) });
-                              } else if (r.name.trim().toLowerCase() !== "office") {
-                                setPendingRoom({ id: r.id, name: r.name, step: "request" });
-                              } else {
-                                setForm({ ...form, room_ids: [...form.room_ids, r.id] });
-                              }
-                            }}
-                            className={`text-xs px-2.5 py-1 rounded-full border transition ${
-                              on ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"
-                            }`}
-                          >{r.name}</button>
-                        );
-                      })}
+                {rooms.length > 0 && (() => {
+                  const nonOfficeSelected = form.room_ids.some((id) => {
+                    const r = rooms.find((rm) => rm.id === id);
+                    return r && r.name.trim().toLowerCase() !== "office";
+                  });
+                  return (
+                    <div className="space-y-2 pt-2">
+                      <Label className="text-xs">Rooms</Label>
+                      <div className={`flex flex-wrap gap-1.5 ${form.room_not_needed ? "opacity-50 pointer-events-none" : ""}`}>
+                        {rooms.map((r) => {
+                          const on = form.room_ids.includes(r.id);
+                          return (
+                            <button
+                              key={r.id}
+                              type="button"
+                              onClick={() => {
+                                if (on) {
+                                  setForm({ ...form, room_ids: form.room_ids.filter((x) => x !== r.id) });
+                                } else {
+                                  setForm({ ...form, room_ids: [...form.room_ids, r.id] });
+                                }
+                              }}
+                              className={`text-xs px-2.5 py-1 rounded-full border transition ${
+                                on ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"
+                              }`}
+                            >{r.name}</button>
+                          );
+                        })}
+                      </div>
+                      {nonOfficeSelected && (
+                        <div className="space-y-1.5 pt-2 pl-1">
+                          <label className="flex items-center gap-2 text-xs">
+                            <Checkbox
+                              checked={roomRequestSubmitted}
+                              onCheckedChange={(v) => setRoomRequestSubmitted(v === true)}
+                            />
+                            Room request submitted
+                          </label>
+                          <label className="flex items-center gap-2 text-xs">
+                            <Checkbox
+                              checked={roomApprovalReceived}
+                              onCheckedChange={(v) => setRoomApprovalReceived(v === true)}
+                            />
+                            Approval received
+                          </label>
+                        </div>
+                      )}
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                        <Switch
+                          checked={form.room_not_needed}
+                          onCheckedChange={(v) => setForm({ ...form, room_not_needed: v })}
+                        />
+                        No room needed (e.g. holiday / FYI)
+                      </label>
                     </div>
-                    <label className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
-                      <Switch
-                        checked={form.room_not_needed}
-                        onCheckedChange={(v) => setForm({ ...form, room_not_needed: v })}
-                      />
-                      No room needed (e.g. holiday / FYI)
-                    </label>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
 
@@ -1730,57 +1754,6 @@ function CalendarBody() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog
-        open={!!pendingRoom}
-        onOpenChange={(o) => { if (!o) setPendingRoom(null); }}
-      >
-        <AlertDialogContent>
-          {pendingRoom?.step === "request" ? (
-            <>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Room request submitted?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Please confirm that a room request has been submitted for{" "}
-                  <span className="font-medium">{pendingRoom?.name}</span>.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() =>
-                    setPendingRoom((p) => (p ? { ...p, step: "approval" } : p))
-                  }
-                >
-                  Yes, submitted
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </>
-          ) : (
-            <>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Approval received?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Please confirm that approval has been received for{" "}
-                  <span className="font-medium">{pendingRoom?.name}</span>.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    if (pendingRoom) {
-                      setForm((f) => ({ ...f, room_ids: [...f.room_ids, pendingRoom.id] }));
-                    }
-                    setPendingRoom(null);
-                  }}
-                >
-                  Yes, approved
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </>
-          )}
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
