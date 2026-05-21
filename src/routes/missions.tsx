@@ -649,7 +649,7 @@ function Body() {
                     trip={t}
                     onClick={() => openEdit(t)}
                     onMove={(s) => moveTrip(t, s)}
-                    onCompose={() => setEmailDraftTrip(t)}
+                    onCompose={() => openWelcomeEmail(t)}
                     canEdit={canEdit}
                   />
                 ))}
@@ -767,7 +767,7 @@ function Body() {
             </div>
 
             {editingTrip && (
-              <InquiryPanel trip={editingTrip} onCompose={() => setEmailDraftTrip(editingTrip)} />
+              <InquiryPanel trip={editingTrip} onCompose={() => openWelcomeEmail(editingTrip)} />
             )}
 
             <PlanningCallPanel form={form} setForm={setForm} />
