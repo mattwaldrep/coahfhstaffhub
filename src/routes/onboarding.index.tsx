@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AppShell } from "@/components/AppShell";
 import { listWorkflows, launchWorkflow } from "@/lib/onboarding.functions";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
@@ -79,6 +80,7 @@ function OnboardingPage() {
   );
 
   return (
+    <AppShell>
     <div className="container mx-auto py-6 space-y-6">
       <header className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
@@ -223,5 +225,6 @@ function OnboardingPage() {
         </div>
       )}
     </div>
+    </AppShell>
   );
 }

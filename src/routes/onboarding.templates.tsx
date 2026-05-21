@@ -36,6 +36,7 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { AppShell } from "@/components/AppShell";
 
 export const Route = createFileRoute("/onboarding/templates")({
   component: TemplateEditor,
@@ -165,6 +166,7 @@ function TemplateEditor() {
   };
 
   return (
+    <AppShell>
     <div className="container mx-auto py-6 space-y-6 max-w-4xl">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" asChild>
@@ -305,6 +307,7 @@ function TemplateEditor() {
         </DialogContent>
       </Dialog>
     </div>
+    </AppShell>
   );
 }
 
