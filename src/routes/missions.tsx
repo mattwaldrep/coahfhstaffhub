@@ -176,6 +176,20 @@ const emptyForm = (): Form => ({
   itinerary_file_name: null,
   notes: "",
   steps: Object.fromEntries(STEPS.map((s) => [s.key, false])),
+  planning_call_at: null,
+  team_headcount: null,
+  adults_count: null,
+  students_count: null,
+  lodging_status: "",
+  transport_status: "",
+  daily_window_start: null,
+  daily_window_end: null,
+  outreach_tracks: [],
+  comms_preference: "",
+  itinerary_owner: "",
+  itinerary_due_date: null,
+  dietary_flags: "",
+  planning_notes: {},
 });
 
 function MissionsPage() {
