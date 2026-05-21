@@ -63,31 +63,31 @@ export const Route = createFileRoute("/api/public/missions/inquiry/$token")({
           return new Response(JSON.stringify({ error: "Link not found" }), { status: 404 });
         }
 
-        const updates: Record<string, unknown> = {
-          church_name: d.church_name,
-          leader_name: d.leader_name,
-          leader_phone: d.leader_phone,
-          leader_email: d.leader_email,
-          start_date: d.start_date || null,
-          end_date: d.end_date || null,
-          alternate_dates: d.alternate_dates || null,
-          vision: d.vision,
-          church_context: d.church_context,
-          inquiry_submitted_at: new Date().toISOString(),
-        };
-
-        // Mark the questionnaire step complete on the readiness checklist.
         const { data: existing } = await supabaseAdmin
           .from("mission_trips")
           .select("steps")
           .eq("id", trip.id)
           .single();
-        const steps = { ...(existing?.steps as Record<string, boolean> ?? {}), questionnaire_received: true };
-        updates.steps = steps;
+        const steps = {
+          ...((existing?.steps as Record<string, boolean> | null) ?? {}),
+          questionnaire_received: true,
+        };
 
         const { error } = await supabaseAdmin
           .from("mission_trips")
-          .update(updates)
+          .update({
+            church_name: d.church_name,
+            leader_name: d.leader_name,
+            leader_phone: d.leader_phone,
+            leader_email: d.leader_email,
+            start_date: d.start_date || null,
+            end_date: d.end_date || null,
+            alternate_dates: d.alternate_dates || null,
+            vision: d.vision,
+            church_context: d.church_context,
+            inquiry_submitted_at: new Date().toISOString(),
+            steps,
+          })
           .eq("id", trip.id);
         if (error) {
           return new Response(JSON.stringify({ error: error.message }), { status: 500 });
