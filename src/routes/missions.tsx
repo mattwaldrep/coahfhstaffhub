@@ -625,11 +625,12 @@ function ProgressBadge({ steps }: { steps: Record<string, boolean> }) {
 }
 
 function TripCard({
-  trip, onClick, onMove, canEdit,
+  trip, onClick, onMove, onCompose, canEdit,
 }: {
   trip: Trip;
   onClick: () => void;
   onMove: (s: Status) => void;
+  onCompose: () => void;
   canEdit: boolean;
 }) {
   const done = STEPS.filter((s) => trip.steps?.[s.key]).length;
@@ -658,8 +659,12 @@ function TripCard({
       </div>
       <div className="flex items-center gap-1.5 mt-2 text-muted-foreground">
         {trip.leader_email && (
-          <a href={welcomeMailtoHref(trip)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} title={`Email ${trip.leader_email} – welcome template`}
-            className="hover:text-foreground"><Mail className="w-3 h-3" /></a>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onCompose(); }}
+            title={`Email ${trip.leader_email} – welcome template`}
+            className="hover:text-foreground"
+          ><Mail className="w-3 h-3" /></button>
         )}
         {trip.leader_phone && (
           <a href={`tel:${trip.leader_phone}`} onClick={(e) => e.stopPropagation()} title={trip.leader_phone}
@@ -742,8 +747,8 @@ function bucketTrip(t: Trip): GroupKey {
 }
 
 function TimelineView({
-  trips, showPast, onOpen,
-}: { trips: Trip[]; showPast: boolean; onOpen: (t: Trip) => void }) {
+  trips, showPast, onOpen, onCompose,
+}: { trips: Trip[]; showPast: boolean; onOpen: (t: Trip) => void; onCompose: (t: Trip) => void }) {
   const groups = useMemo(() => {
     const m = new Map<GroupKey, Trip[]>();
     for (const t of trips) {
@@ -781,7 +786,7 @@ function TimelineView({
           </div>
           <div className="space-y-2">
             {groups.get(g.key)!.map((t) => (
-              <TimelineRow key={t.id} trip={t} onClick={() => onOpen(t)} />
+              <TimelineRow key={t.id} trip={t} onClick={() => onOpen(t)} onCompose={() => onCompose(t)} />
             ))}
           </div>
         </section>
@@ -790,7 +795,7 @@ function TimelineView({
   );
 }
 
-function TimelineRow({ trip, onClick }: { trip: Trip; onClick: () => void }) {
+function TimelineRow({ trip, onClick, onCompose }: { trip: Trip; onClick: () => void; onCompose: () => void }) {
   const pct = readinessPct(trip.steps);
   return (
     <div
@@ -817,9 +822,9 @@ function TimelineRow({ trip, onClick }: { trip: Trip; onClick: () => void }) {
       </div>
       <div className="flex items-center gap-1.5 text-muted-foreground">
         {trip.leader_email && (
-          <a href={welcomeMailtoHref(trip)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="hover:text-foreground" title="Email welcome template">
+          <button type="button" onClick={(e) => { e.stopPropagation(); onCompose(); }} className="hover:text-foreground" title="Email welcome template">
             <Mail className="w-3.5 h-3.5" />
-          </a>
+          </button>
         )}
         {trip.leader_phone && (
           <a href={`tel:${trip.leader_phone}`} onClick={(e) => e.stopPropagation()} className="hover:text-foreground">
