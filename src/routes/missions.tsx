@@ -937,7 +937,7 @@ function Body() {
       <Dialog open={!!emailDraftTrip} onOpenChange={(next) => { if (!next) setEmailDraftTrip(null); }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{emailKind === "itinerary" ? "Send draft itinerary" : "Welcome email draft"}</DialogTitle>
+            <DialogTitle>{emailKind === "itinerary" ? "Send draft itinerary" : emailKind === "final_schedule" ? "Send final schedule & trip guide" : "Welcome email draft"}</DialogTitle>
           </DialogHeader>
           {emailDraft && (
             <div className="space-y-4">
