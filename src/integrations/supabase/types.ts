@@ -1683,6 +1683,7 @@ export type Database = {
           daily_window_end: string | null
           daily_window_start: string | null
           dietary_flags: string | null
+          draft_itinerary: string | null
           end_date: string | null
           id: string
           inquiry_submitted_at: string | null
@@ -1723,6 +1724,7 @@ export type Database = {
           daily_window_end?: string | null
           daily_window_start?: string | null
           dietary_flags?: string | null
+          draft_itinerary?: string | null
           end_date?: string | null
           id?: string
           inquiry_submitted_at?: string | null
@@ -1763,6 +1765,7 @@ export type Database = {
           daily_window_end?: string | null
           daily_window_start?: string | null
           dietary_flags?: string | null
+          draft_itinerary?: string | null
           end_date?: string | null
           id?: string
           inquiry_submitted_at?: string | null
