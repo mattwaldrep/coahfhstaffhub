@@ -438,6 +438,8 @@ function Body() {
       coordinator_on_call_name: t.coordinator_on_call_name ?? "",
       coordinator_on_call_phone: t.coordinator_on_call_phone ?? "",
       confirm_checklist: t.confirm_checklist ?? {},
+      itinerary_doc_id: t.itinerary_doc_id ?? null,
+      itinerary_doc_url: t.itinerary_doc_url ?? null,
     });
     setOpen(true);
   }
