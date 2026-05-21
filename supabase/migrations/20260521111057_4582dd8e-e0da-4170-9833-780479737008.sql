@@ -1,0 +1,1 @@
+ALTER TABLE public.mission_trips ADD COLUMN IF NOT EXISTS draft_itinerary text;
