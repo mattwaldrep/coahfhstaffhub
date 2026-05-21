@@ -961,6 +961,10 @@ function CalendarBody() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Switch checked={hidePast} onCheckedChange={setHidePast} />
+            Hide past
+          </label>
           <div className="flex rounded-full border border-border overflow-hidden">
             {(["month", "week", "list"] as const).map((v) => (
               <button
