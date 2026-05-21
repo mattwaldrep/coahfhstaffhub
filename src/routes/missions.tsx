@@ -479,6 +479,8 @@ function Body() {
       coordinator_on_call_name: form.coordinator_on_call_name || null,
       coordinator_on_call_phone: form.coordinator_on_call_phone || null,
       confirm_checklist: form.confirm_checklist ?? {},
+      itinerary_doc_id: form.itinerary_doc_id,
+      itinerary_doc_url: form.itinerary_doc_url,
     };
     const { error } = form.id
       ? await supabase.from("mission_trips").update(payload).eq("id", form.id)
