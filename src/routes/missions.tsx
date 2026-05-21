@@ -185,12 +185,14 @@ function Body() {
 
   function openNew() {
     if (!canEdit) return;
+    setEditingTrip(null);
     setForm(emptyForm());
     setOpen(true);
   }
 
   function openEdit(t: Trip) {
     if (!canEdit) return;
+    setEditingTrip(t);
     setForm({
       id: t.id,
       church_name: t.church_name,
