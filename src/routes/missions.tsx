@@ -111,6 +111,8 @@ type Trip = {
   coordinator_on_call_name: string | null;
   coordinator_on_call_phone: string | null;
   confirm_checklist: Record<string, boolean>;
+  itinerary_doc_id: string | null;
+  itinerary_doc_url: string | null;
 };
 
 const OUTREACH_TRACK_OPTIONS = [
