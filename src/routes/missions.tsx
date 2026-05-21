@@ -114,7 +114,7 @@ function welcomeMailtoHref(trip: Trip): string {
   const body = buildWelcomeEmailBody(formUrl);
   const to = trip.leader_email ?? "";
   const qs = `subject=${encodeURIComponent(WELCOME_SUBJECT)}&body=${encodeURIComponent(body)}`;
-  return `mailto:${encodeURIComponent(to)}?${qs}`;
+  return `mailto:${to}?${qs}`;
 }
 
 type Form = Omit<Trip, "id" | "position" | "inquiry_token" | "inquiry_submitted_at"> & { id?: string };
