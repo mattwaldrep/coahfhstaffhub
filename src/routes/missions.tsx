@@ -107,6 +107,9 @@ type Trip = {
   dietary_flags: string | null;
   planning_notes: Record<string, string>;
   draft_itinerary: string | null;
+  coordinator_on_call_name: string | null;
+  coordinator_on_call_phone: string | null;
+  confirm_checklist: Record<string, boolean>;
 };
 
 const OUTREACH_TRACK_OPTIONS = [
