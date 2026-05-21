@@ -287,7 +287,7 @@ function CalendarPage() {
 }
 
 function CalendarBody() {
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
   const canEdit = hasRole("core");
   const [view, setView] = useState<"month" | "week" | "list">("month");
   const [cursor, setCursor] = useState(new Date());
