@@ -129,6 +129,7 @@ type EventRow = {
   recurrence_end_date: string | null;
   excluded_dates: string[];
   other_listings: string[];
+  social_ads: boolean;
   room_needed: string | null;
   action_note: string | null;
   missions_team_needed: boolean;
