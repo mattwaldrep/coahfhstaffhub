@@ -171,6 +171,7 @@ function WorkflowDetail() {
   const w = data.workflow;
 
   return (
+    <AppShell>
     <div className="container mx-auto py-6 space-y-6 max-w-4xl">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" asChild>
