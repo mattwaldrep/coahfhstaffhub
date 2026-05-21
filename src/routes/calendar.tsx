@@ -67,6 +67,9 @@ import { AlertTriangle } from "lucide-react";
 
 
 export const Route = createFileRoute("/calendar")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    event: typeof s.event === "string" ? s.event : undefined,
+  }),
   component: CalendarPage,
 });
 
@@ -289,6 +292,9 @@ function CalendarPage() {
 function CalendarBody() {
   const { hasRole, user } = useAuth();
   const canEdit = hasRole("core");
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const handledEventRef = useRef<string | null>(null);
   const [view, setView] = useState<"month" | "week" | "list">("month");
   const [cursor, setCursor] = useState(new Date());
   const [events, setEvents] = useState<EventRow[]>([]);
@@ -301,6 +307,8 @@ function CalendarBody() {
   const [form, setForm] = useState<FormState>(emptyForm());
   const [editingOccurrence, setEditingOccurrence] = useState<Date | null>(null);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
+  const [editingChecklistId, setEditingChecklistId] = useState<string | null>(null);
+  const [editingChecklistLabel, setEditingChecklistLabel] = useState("");
   const [newItem, setNewItem] = useState("");
   const [classSeries, setClassSeries] = useState<ClassSeries[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -393,6 +401,17 @@ function CalendarBody() {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [range.start.getTime(), range.end.getTime()]);
+
+  useEffect(() => {
+    const target = search.event;
+    if (!target || handledEventRef.current === target) return;
+    const ev = events.find((e) => e.id === target);
+    if (!ev) return;
+    handledEventRef.current = target;
+    openEdit({ ...ev, occurrence_date: new Date(ev.start_at) } as Occurrence);
+    navigate({ search: (prev: { event?: string }) => ({ ...prev, event: undefined }), replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.event, events]);
 
   async function load() {
     // Fetch events overlapping range, plus any recurring (which may have started earlier)
@@ -1172,14 +1191,6 @@ function CalendarBody() {
             <div className="space-y-3 rounded-xl border border-border p-3">
               <Label className="text-sm font-medium">Logistics</Label>
               <div className="space-y-2">
-                <Label className="text-xs">Church covering</Label>
-                <Input
-                  placeholder="e.g. Family Hope, COAH:LM, Both"
-                  value={form.church_covering}
-                  onChange={(e) => setForm({ ...form, church_covering: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
                 <Label className="text-xs">Other listings (comma-separated)</Label>
                 <Input
                   placeholder="e.g. Google Business, Eventbrite"
@@ -1203,6 +1214,16 @@ function CalendarBody() {
                 />
                 Missions team needed
               </label>
+              {form.missions_team_needed && (
+                <div className="space-y-2">
+                  <Label className="text-xs">Church covering</Label>
+                  <Input
+                    placeholder="e.g. Family Hope, COAH:LM, Both"
+                    value={form.church_covering}
+                    onChange={(e) => setForm({ ...form, church_covering: e.target.value })}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Recurrence */}
@@ -1389,9 +1410,44 @@ function CalendarBody() {
                       <div key={item.id} className="flex items-center gap-2 group rounded-md border border-border/60 px-2 py-1.5">
                         <Checkbox checked={item.done} onCheckedChange={() => toggleChecklistItem(item)} />
                         <div className="flex-1 min-w-0">
-                          <div className={`text-sm truncate ${item.done ? "line-through text-muted-foreground" : ""}`}>
-                            {item.label}
-                          </div>
+                          {editingChecklistId === item.id ? (
+                            <Input
+                              autoFocus
+                              value={editingChecklistLabel}
+                              onChange={(e) => setEditingChecklistLabel(e.target.value)}
+                              onBlur={async () => {
+                                const next = editingChecklistLabel.trim();
+                                setEditingChecklistId(null);
+                                if (!next || next === item.label) return;
+                                const { error } = await supabase
+                                  .from("event_checklist_items")
+                                  .update({ label: next })
+                                  .eq("id", item.id);
+                                if (error) { toast.error(error.message); return; }
+                                if (item.action_item_id) {
+                                  await supabase
+                                    .from("action_items")
+                                    .update({ title: next })
+                                    .eq("id", item.action_item_id);
+                                }
+                                if (form.id) loadChecklist(form.id);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") { e.preventDefault(); (e.target as HTMLInputElement).blur(); }
+                                if (e.key === "Escape") { setEditingChecklistId(null); }
+                              }}
+                              className="h-7 text-sm"
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => { setEditingChecklistId(item.id); setEditingChecklistLabel(item.label); }}
+                              className={`block w-full text-left text-sm truncate hover:text-foreground ${item.done ? "line-through text-muted-foreground" : ""}`}
+                              title="Click to edit"
+                            >
+                              {item.label}
+                            </button>
+                          )}
                           {(assigneeLabel || item.due_date || item.action_item_id) && (
                             <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
                               {assigneeLabel && <span>👤 {assigneeLabel}</span>}

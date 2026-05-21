@@ -183,21 +183,27 @@ function Dashboard() {
             ) : (
               <ul className="divide-y divide-border">
                 {events.map((e) => (
-                  <li key={e.id} className="py-3 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span
-                        className="w-2 h-2 rounded-full shrink-0"
-                        style={{ background: SUB_CAL_VAR[e.sub_calendar] }}
-                      />
-                      <span className="font-medium truncate">{e.title}</span>
-                      <span className="text-xs text-muted-foreground shrink-0">
-                        · {SUB_CAL_LABEL[e.sub_calendar]}
-                      </span>
-                      {e.readiness && <ReadinessDot r={e.readiness} />}
-                    </div>
-                    <div className="text-sm text-muted-foreground shrink-0">
-                      {format(new Date(e.start_at), "EEE p")}
-                    </div>
+                  <li key={e.id}>
+                    <Link
+                      to="/calendar"
+                      search={{ event: e.id }}
+                      className="py-3 flex items-center justify-between gap-4 hover:bg-background/40 rounded-md px-2 -mx-2"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{ background: SUB_CAL_VAR[e.sub_calendar] }}
+                        />
+                        <span className="font-medium truncate">{e.title}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          · {SUB_CAL_LABEL[e.sub_calendar]}
+                        </span>
+                        {e.readiness && <ReadinessDot r={e.readiness} />}
+                      </div>
+                      <div className="text-sm text-muted-foreground shrink-0">
+                        {format(new Date(e.start_at), "EEE p")}
+                      </div>
+                    </Link>
                   </li>
                 ))}
               </ul>
