@@ -566,6 +566,8 @@ function Body() {
   const emailDraft = emailDraftTrip
     ? (emailKind === "itinerary"
         ? getItineraryEmailDraft(emailDraftTrip, itineraryEmailBody || emailDraftTrip.draft_itinerary || buildDraftItinerary(emailDraftTrip))
+        : emailKind === "final_schedule"
+        ? getFinalScheduleEmailDraft(emailDraftTrip, finalScheduleDocUrl || emailDraftTrip.itinerary_doc_url || "")
         : getWelcomeEmailDraft(emailDraftTrip))
     : null;
 
@@ -586,6 +588,50 @@ function Body() {
     setEmailDraftTrip(trip);
   }
 
+  function openFinalScheduleEmail(trip: Trip, docUrl: string) {
+    setEmailKind("final_schedule");
+    setFinalScheduleDocUrl(docUrl);
+    setEmailDraftTrip(trip);
+  }
+
+  async function handleSyncDoc(): Promise<string | null> {
+    if (!editingTrip) {
+      toast.error("Save the trip first");
+      return null;
+    }
+    const content = form.draft_itinerary || buildDraftItinerary(form);
+    if (!content.trim()) {
+      toast.error("Draft itinerary is empty");
+      return null;
+    }
+    const title = `${form.church_name || "Missions Team"} — Boston Trip Itinerary`;
+    setSyncingDoc(true);
+    try {
+      const res = await syncDoc({
+        data: {
+          tripId: editingTrip.id,
+          title,
+          content,
+          existingDocId: form.itinerary_doc_id,
+        },
+      });
+      setForm((f) => ({ ...f, itinerary_doc_id: res.docId, itinerary_doc_url: res.url }));
+      await supabase
+        .from("mission_trips")
+        .update({ itinerary_doc_id: res.docId, itinerary_doc_url: res.url })
+        .eq("id", editingTrip.id);
+      setTrips((prev) => prev.map((t) => t.id === editingTrip.id ? { ...t, itinerary_doc_id: res.docId, itinerary_doc_url: res.url } : t));
+      toast.success(form.itinerary_doc_id ? "Google Doc updated" : "Google Doc created");
+      return res.url;
+    } catch (err) {
+      console.error(err);
+      toast.error(err instanceof Error ? err.message : "Failed to sync Google Doc");
+      return null;
+    } finally {
+      setSyncingDoc(false);
+    }
+  }
+
   async function handleSendGmail() {
     if (!emailDraft || !emailDraftTrip) return;
     if (!emailDraft.to) {
@@ -596,7 +642,10 @@ function Body() {
     try {
       await sendGmail({ data: { to: emailDraft.to, subject: emailDraft.subject, body: emailDraft.body } });
       toast.success(`Email sent to ${emailDraft.to}`);
-      const stepKey = emailKind === "itinerary" ? "send_final_schedule" : "welcome_email";
+      const stepKey =
+        emailKind === "final_schedule" ? "send_final_schedule"
+        : emailKind === "itinerary" ? "draft_schedule"
+        : "welcome_email";
       const nextSteps = { ...emailDraftTrip.steps, [stepKey]: true };
       await supabase.from("mission_trips").update({ steps: nextSteps }).eq("id", emailDraftTrip.id);
       setTrips((prev) => prev.map((t) => t.id === emailDraftTrip.id ? { ...t, steps: nextSteps } : t));
