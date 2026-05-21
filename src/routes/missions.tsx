@@ -106,6 +106,7 @@ type Trip = {
   itinerary_due_date: string | null;
   dietary_flags: string | null;
   planning_notes: Record<string, string>;
+  draft_itinerary: string | null;
 };
 
 const OUTREACH_TRACK_OPTIONS = [
