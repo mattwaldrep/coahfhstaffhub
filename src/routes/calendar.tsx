@@ -1173,8 +1173,39 @@ function CalendarBody() {
               <div className="space-y-2">
                 <Label>Location</Label>
                 <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+                {rooms.length > 0 && (
+                  <div className="space-y-2 pt-2">
+                    <Label className="text-xs">Rooms</Label>
+                    <div className={`flex flex-wrap gap-1.5 ${form.room_not_needed ? "opacity-50 pointer-events-none" : ""}`}>
+                      {rooms.map((r) => {
+                        const on = form.room_ids.includes(r.id);
+                        return (
+                          <button
+                            key={r.id}
+                            type="button"
+                            onClick={() => setForm({
+                              ...form,
+                              room_ids: on ? form.room_ids.filter((x) => x !== r.id) : [...form.room_ids, r.id],
+                            })}
+                            className={`text-xs px-2.5 py-1 rounded-full border transition ${
+                              on ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"
+                            }`}
+                          >{r.name}</button>
+                        );
+                      })}
+                    </div>
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                      <Switch
+                        checked={form.room_not_needed}
+                        onCheckedChange={(v) => setForm({ ...form, room_not_needed: v })}
+                      />
+                      No room needed (e.g. holiday / FYI)
+                    </label>
+                  </div>
+                )}
               </div>
             </div>
+
 
             {form.category === "Class" && (
               <div className="space-y-3 rounded-xl border border-border p-3">
