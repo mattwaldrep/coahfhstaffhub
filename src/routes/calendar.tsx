@@ -402,6 +402,17 @@ function CalendarBody() {
     return () => { supabase.removeChannel(ch); };
   }, [range.start.getTime(), range.end.getTime()]);
 
+  useEffect(() => {
+    const target = search.event;
+    if (!target || handledEventRef.current === target) return;
+    const ev = events.find((e) => e.id === target);
+    if (!ev) return;
+    handledEventRef.current = target;
+    openEdit({ ...ev, occurrence_date: new Date(ev.start_at) } as Occurrence);
+    navigate({ search: (prev) => ({ ...prev, event: undefined }), replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.event, events]);
+
   async function load() {
     // Fetch events overlapping range, plus any recurring (which may have started earlier)
     const [{ data }, { data: er }, { data: cs }, { data: rs }, { data: tpls }, { data: tplItems }, { data: atts }, { data: states }] = await Promise.all([
