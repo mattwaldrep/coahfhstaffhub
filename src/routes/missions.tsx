@@ -1695,3 +1695,68 @@ function DraftItineraryPanel({
   );
 }
 
+function PreTripConfirmPanel({
+  form,
+  setForm,
+}: {
+  form: Form;
+  setForm: React.Dispatch<React.SetStateAction<Form>>;
+}) {
+  const checklist = form.confirm_checklist ?? {};
+  const hasCoordinator = !!(form.coordinator_on_call_name?.trim() && form.coordinator_on_call_phone?.trim());
+  const itemsDone = CONFIRM_CHECKLIST_ITEMS.filter((i) => checklist[i.key]).length + (hasCoordinator ? 1 : 0);
+  const total = CONFIRM_CHECKLIST_ITEMS.length + 1;
+
+  function toggle(key: string, v: boolean) {
+    setForm((f) => ({ ...f, confirm_checklist: { ...(f.confirm_checklist ?? {}), [key]: v } }));
+  }
+
+  return (
+    <div className="rounded-xl border border-border p-3 space-y-3">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <Label className="text-sm font-medium">Pre-trip confirmation</Label>
+        <span className="text-[11px] px-2 py-0.5 rounded-full bg-background/60 border border-border text-muted-foreground">
+          {itemsDone}/{total} ready
+        </span>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Final sign-offs before the team arrives. Use this once the itinerary is locked.
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Missions coordinator on-call — name</Label>
+          <Input
+            value={form.coordinator_on_call_name ?? ""}
+            onChange={(e) => setForm({ ...form, coordinator_on_call_name: e.target.value })}
+            placeholder="e.g. Matt Waldrep"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Missions coordinator on-call — phone</Label>
+          <Input
+            value={form.coordinator_on_call_phone ?? ""}
+            onChange={(e) => setForm({ ...form, coordinator_on_call_phone: e.target.value })}
+            placeholder="(617) 555-1234"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        {CONFIRM_CHECKLIST_ITEMS.map((item) => (
+          <label key={item.key} className="flex items-start gap-2 text-sm py-1">
+            <Checkbox
+              checked={!!checklist[item.key]}
+              onCheckedChange={(v) => toggle(item.key, !!v)}
+            />
+            <span className={checklist[item.key] ? "line-through text-muted-foreground" : ""}>
+              {item.label}
+            </span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
