@@ -318,6 +318,7 @@ function CalendarBody() {
   const navigate = Route.useNavigate();
   const handledEventRef = useRef<string | null>(null);
   const [view, setView] = useState<"month" | "week" | "list">("month");
+  const [hidePast, setHidePast] = useState(false);
   const [cursor, setCursor] = useState(new Date());
   const [events, setEvents] = useState<EventRow[]>([]);
   const [filters, setFilters] = useState<Record<string, boolean>>({
@@ -864,12 +865,14 @@ function CalendarBody() {
     [events, range.start.getTime(), range.end.getTime()],
   );
 
+  const startOfToday = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d; }, []);
   const visible = occurrences.filter((o) => {
     const cals = [o.sub_calendar, ...(o.other_listings ?? [])];
     if (!cals.some((c) => filters[c])) return false;
     if (categoryFilter !== "all" && o.category !== categoryFilter) return false;
     if (flagFilter === "pco" && !o.pco_registration) return false;
     if (flagFilter === "missions" && !o.missions_team_needed) return false;
+    if (hidePast && o.occurrence_date < startOfToday) return false;
     return true;
   });
 
@@ -958,6 +961,10 @@ function CalendarBody() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Switch checked={hidePast} onCheckedChange={setHidePast} />
+            Hide past
+          </label>
           <div className="flex rounded-full border border-border overflow-hidden">
             {(["month", "week", "list"] as const).map((v) => (
               <button
