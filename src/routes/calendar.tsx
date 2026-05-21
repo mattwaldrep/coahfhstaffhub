@@ -58,6 +58,7 @@ import {
   unassignChecklistItem,
   setChecklistItemDone,
 } from "@/lib/checklist-tasks.functions";
+import { notifyCommentMentions } from "@/lib/event-comments.functions";
 
 import { toast } from "sonner";
 import { useUndoableAction } from "@/lib/use-undoable-action";
