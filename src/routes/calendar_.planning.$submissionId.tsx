@@ -302,11 +302,6 @@ function Editor() {
                 <Label>Church covering</Label>
                 <Input value={form.church_covering} onChange={(e) => setForm({ ...form, church_covering: e.target.value })} />
               </div>
-              <div className="space-y-2">
-                <Label>Other listings</Label>
-                <Input placeholder="comma-separated" value={form.other_listings}
-                  onChange={(e) => setForm({ ...form, other_listings: e.target.value })} />
-              </div>
             </div>
             <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
               <label className="flex items-center gap-2">
@@ -326,15 +321,39 @@ function Editor() {
               <Label>Action / follow-up</Label>
               <Textarea rows={2} value={form.action_note} onChange={(e) => setForm({ ...form, action_note: e.target.value })} />
             </div>
-            <div className="flex gap-6 text-sm">
-              <label className="flex items-center gap-2">
-                <Switch checked={form.pco_registration} onCheckedChange={(v) => setForm({ ...form, pco_registration: v })} />
-                PCO registration
-              </label>
-              <label className="flex items-center gap-2">
-                <Switch checked={form.missions_team_needed} onCheckedChange={(v) => setForm({ ...form, missions_team_needed: v })} />
-                Missions team
-              </label>
+            <div className="space-y-2">
+              <Label>Promote / list on</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {LISTING_CHANNELS.map((c) => {
+                  const checked = c.key === "pco"
+                    ? form.pco_registration
+                    : form.other_listings.includes(c.key);
+                  const toggle = (v: boolean) => {
+                    if (c.key === "pco") {
+                      setForm({ ...form, pco_registration: v });
+                    } else {
+                      const next = v
+                        ? Array.from(new Set([...form.other_listings, c.key]))
+                        : form.other_listings.filter((k) => k !== c.key);
+                      setForm({ ...form, other_listings: next });
+                    }
+                  };
+                  return (
+                    <label key={c.key} className="flex items-center gap-2 text-sm">
+                      <Switch checked={checked} onCheckedChange={toggle} />
+                      {c.label}
+                    </label>
+                  );
+                })}
+                <label className="flex items-center gap-2 text-sm">
+                  <Switch checked={form.social_ads} onCheckedChange={(v) => setForm({ ...form, social_ads: v })} />
+                  Social ads
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Switch checked={form.missions_team_needed} onCheckedChange={(v) => setForm({ ...form, missions_team_needed: v })} />
+                  Missions team
+                </label>
+              </div>
             </div>
           </div>
           <DialogFooter>
