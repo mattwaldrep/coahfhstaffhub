@@ -1508,6 +1508,8 @@ function CalendarBody() {
               </div>
             )}
 
+            {form.id && <EventComments eventId={form.id} userId={user?.id ?? null} />}
+
             <DialogFooter className="flex sm:justify-between gap-2 flex-wrap">
               <div className="flex gap-2">
                 {form.id && (
