@@ -571,7 +571,7 @@ function TripCard({
       </div>
       <div className="flex items-center gap-1.5 mt-2 text-muted-foreground">
         {trip.leader_email && (
-          <a href={`mailto:${trip.leader_email}`} onClick={(e) => e.stopPropagation()} title={trip.leader_email}
+          <a href={welcomeMailtoHref(trip)} onClick={(e) => e.stopPropagation()} title={`Email ${trip.leader_email} – welcome template`}
             className="hover:text-foreground"><Mail className="w-3 h-3" /></a>
         )}
         {trip.leader_phone && (
@@ -730,7 +730,7 @@ function TimelineRow({ trip, onClick }: { trip: Trip; onClick: () => void }) {
       </div>
       <div className="flex items-center gap-1.5 text-muted-foreground">
         {trip.leader_email && (
-          <a href={`mailto:${trip.leader_email}`} onClick={(e) => e.stopPropagation()} className="hover:text-foreground">
+          <a href={welcomeMailtoHref(trip)} onClick={(e) => e.stopPropagation()} className="hover:text-foreground" title="Email welcome template">
             <Mail className="w-3.5 h-3.5" />
           </a>
         )}
