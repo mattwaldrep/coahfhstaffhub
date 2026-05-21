@@ -80,6 +80,7 @@ function OnboardingPage() {
   );
 
   return (
+    <AppShell>
     <div className="container mx-auto py-6 space-y-6">
       <header className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
