@@ -58,6 +58,7 @@ import {
   unassignChecklistItem,
   setChecklistItemDone,
 } from "@/lib/checklist-tasks.functions";
+import { notifyCommentMentions } from "@/lib/event-comments.functions";
 
 import { toast } from "sonner";
 import { useUndoableAction } from "@/lib/use-undoable-action";
@@ -1827,11 +1828,20 @@ type CommentRow = {
   author_name?: string | null;
 };
 
+type MentionUser = { id: string; full_name: string | null; email: string };
+
 function EventComments({ eventId, userId }: { eventId: string; userId: string | null }) {
   const [items, setItems] = useState<CommentRow[]>([]);
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
+  const [users, setUsers] = useState<MentionUser[]>([]);
+  const [mentionOpen, setMentionOpen] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [mentionStart, setMentionStart] = useState<number | null>(null);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const notifyMentions = useServerFn(notifyCommentMentions);
 
   const load = async () => {
     setLoading(true);
@@ -1857,6 +1867,68 @@ function EventComments({ eventId, userId }: { eventId: string; userId: string | 
 
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [eventId]);
 
+  useEffect(() => {
+    supabase.from("profiles").select("id, full_name, email").order("full_name").then(({ data }) => {
+      setUsers((data ?? []) as MentionUser[]);
+    });
+  }, []);
+
+  const filteredUsers = useMemo(() => {
+    const q = mentionQuery.toLowerCase();
+    const list = q
+      ? users.filter((u) => (u.full_name ?? "").toLowerCase().includes(q) || u.email.toLowerCase().includes(q))
+      : users;
+    return list.slice(0, 6);
+  }, [users, mentionQuery]);
+
+  const extractMentions = (text: string): string[] => {
+    const ids = new Set<string>();
+    for (const u of users) {
+      const name = u.full_name?.trim();
+      if (name && new RegExp(`@${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(text)) {
+        ids.add(u.id);
+      }
+    }
+    return Array.from(ids);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    const pos = e.target.selectionStart ?? val.length;
+    setBody(val);
+    const before = val.slice(0, pos);
+    const m = before.match(/@([\w'’\- ]*)$/);
+    if (m) {
+      setMentionStart(pos - m[0].length);
+      setMentionQuery(m[1]);
+      setMentionOpen(true);
+      setActiveIdx(0);
+    } else {
+      setMentionOpen(false);
+      setMentionStart(null);
+    }
+  };
+
+  const insertMention = (u: MentionUser) => {
+    if (mentionStart === null) return;
+    const name = u.full_name || u.email;
+    const before = body.slice(0, mentionStart);
+    const after = body.slice((textareaRef.current?.selectionStart) ?? body.length);
+    const next = `${before}@${name} ${after}`;
+    setBody(next);
+    setMentionOpen(false);
+    setMentionStart(null);
+    setMentionQuery("");
+    requestAnimationFrame(() => {
+      const ta = textareaRef.current;
+      if (ta) {
+        const caret = before.length + name.length + 2;
+        ta.focus();
+        ta.setSelectionRange(caret, caret);
+      }
+    });
+  };
+
   const post = async () => {
     const text = body.trim();
     if (!text || !userId) return;
@@ -1866,6 +1938,12 @@ function EventComments({ eventId, userId }: { eventId: string; userId: string | 
       .insert({ event_id: eventId, author_id: userId, body: text });
     setPosting(false);
     if (error) { toast.error(error.message); return; }
+    const mentioned = extractMentions(text).filter((id) => id !== userId);
+    if (mentioned.length) {
+      notifyMentions({ data: { eventId, commentBody: text, mentionedUserIds: mentioned } })
+        .then((r) => { if (r?.sent) toast.success(`Notified ${r.sent} ${r.sent === 1 ? "person" : "people"}`); })
+        .catch((e) => console.error("notifyCommentMentions failed", e));
+    }
     setBody("");
     load();
   };
@@ -1874,6 +1952,24 @@ function EventComments({ eventId, userId }: { eventId: string; userId: string | 
     const { error } = await supabase.from("event_comments").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
     setItems((prev) => prev.filter((c) => c.id !== id));
+  };
+
+  const renderBody = (text: string) => {
+    const names = users.map((u) => u.full_name).filter(Boolean) as string[];
+    if (names.length === 0) return text;
+    const re = new RegExp(`@(${names.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\b`, "g");
+    const parts: React.ReactNode[] = [];
+    let last = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text))) {
+      if (m.index > last) parts.push(text.slice(last, m.index));
+      parts.push(
+        <span key={m.index} className="bg-primary/10 text-primary rounded px-1 font-medium">@{m[1]}</span>,
+      );
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) parts.push(text.slice(last));
+    return parts;
   };
 
   return (
@@ -1891,7 +1987,7 @@ function EventComments({ eventId, userId }: { eventId: string; userId: string | 
                 <span className="font-medium text-foreground">{c.author_name ?? "Someone"}</span>
                 <span>{format(new Date(c.created_at), "MMM d, h:mm a")}</span>
               </div>
-              <div className="whitespace-pre-wrap break-words">{c.body}</div>
+              <div className="whitespace-pre-wrap break-words">{renderBody(c.body)}</div>
             </div>
             {c.author_id === userId && (
               <button
@@ -1907,18 +2003,42 @@ function EventComments({ eventId, userId }: { eventId: string; userId: string | 
         ))}
       </div>
       <div className="flex gap-2">
-        <Textarea
-          rows={2}
-          placeholder={userId ? "Add a comment…" : "Sign in to comment"}
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-              e.preventDefault(); post();
-            }
-          }}
-          disabled={!userId || posting}
-        />
+        <div className="relative flex-1">
+          <Textarea
+            ref={textareaRef}
+            rows={2}
+            placeholder={userId ? "Add a comment… use @ to mention" : "Sign in to comment"}
+            value={body}
+            onChange={handleChange}
+            onKeyDown={(e) => {
+              if (mentionOpen && filteredUsers.length > 0) {
+                if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx((i) => (i + 1) % filteredUsers.length); return; }
+                if (e.key === "ArrowUp") { e.preventDefault(); setActiveIdx((i) => (i - 1 + filteredUsers.length) % filteredUsers.length); return; }
+                if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); insertMention(filteredUsers[activeIdx]); return; }
+                if (e.key === "Escape") { e.preventDefault(); setMentionOpen(false); return; }
+              }
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault(); post();
+              }
+            }}
+            disabled={!userId || posting}
+          />
+          {mentionOpen && filteredUsers.length > 0 && (
+            <div className="absolute bottom-full left-0 mb-1 w-64 rounded-lg border border-border bg-popover shadow-md z-50 overflow-hidden">
+              {filteredUsers.map((u, i) => (
+                <button
+                  key={u.id}
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); insertMention(u); }}
+                  className={`w-full text-left px-3 py-1.5 text-sm flex flex-col ${i === activeIdx ? "bg-accent" : "hover:bg-accent/50"}`}
+                >
+                  <span className="font-medium">{u.full_name || u.email}</span>
+                  {u.full_name && <span className="text-[11px] text-muted-foreground">{u.email}</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <Button type="button" size="sm" onClick={post} disabled={!userId || posting || !body.trim()}>
           Post
         </Button>
