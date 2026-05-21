@@ -1302,7 +1302,7 @@ function CalendarBody() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs">Communicate via</Label>
+                <Label className="text-xs">Comms Channels</Label>
                 <div className="grid grid-cols-2 gap-2">
                   {COMMS_CHANNELS.map((c) => {
                     const checked = form.other_listings.includes(c.key);
