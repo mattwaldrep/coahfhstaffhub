@@ -225,5 +225,6 @@ function OnboardingPage() {
         </div>
       )}
     </div>
+    </AppShell>
   );
 }
