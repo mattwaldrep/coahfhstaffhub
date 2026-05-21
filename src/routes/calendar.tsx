@@ -713,9 +713,8 @@ function CalendarBody() {
       pco_registration: form.pco_registration,
       rrule: null,
       recurrence_end_date: null,
-      other_listings: form.other_listings
-        ? form.other_listings.split(",").map((s) => s.trim()).filter(Boolean)
-        : [],
+      other_listings: form.other_listings,
+      social_ads: form.social_ads,
       room_needed: form.room_needed || null,
       action_note: form.action_note || null,
       missions_team_needed: form.missions_team_needed,
