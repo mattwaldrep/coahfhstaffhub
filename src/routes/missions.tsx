@@ -114,7 +114,7 @@ function welcomeMailtoHref(trip: Trip): string {
   const body = buildWelcomeEmailBody(formUrl);
   const to = trip.leader_email ?? "";
   const qs = `subject=${encodeURIComponent(WELCOME_SUBJECT)}&body=${encodeURIComponent(body)}`;
-  return `mailto:${encodeURIComponent(to)}?${qs}`;
+  return `mailto:${to}?${qs}`;
 }
 
 type Form = Omit<Trip, "id" | "position" | "inquiry_token" | "inquiry_submitted_at"> & { id?: string };
@@ -578,7 +578,7 @@ function TripCard({
       </div>
       <div className="flex items-center gap-1.5 mt-2 text-muted-foreground">
         {trip.leader_email && (
-          <a href={welcomeMailtoHref(trip)} onClick={(e) => e.stopPropagation()} title={`Email ${trip.leader_email} – welcome template`}
+          <a href={welcomeMailtoHref(trip)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} title={`Email ${trip.leader_email} – welcome template`}
             className="hover:text-foreground"><Mail className="w-3 h-3" /></a>
         )}
         {trip.leader_phone && (
@@ -737,7 +737,7 @@ function TimelineRow({ trip, onClick }: { trip: Trip; onClick: () => void }) {
       </div>
       <div className="flex items-center gap-1.5 text-muted-foreground">
         {trip.leader_email && (
-          <a href={welcomeMailtoHref(trip)} onClick={(e) => e.stopPropagation()} className="hover:text-foreground" title="Email welcome template">
+          <a href={welcomeMailtoHref(trip)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="hover:text-foreground" title="Email welcome template">
             <Mail className="w-3.5 h-3.5" />
           </a>
         )}
@@ -1037,6 +1037,8 @@ function InquiryPanel({ trip }: { trip: Trip }) {
       </div>
       <a
         href={welcomeMailtoHref(trip)}
+        target="_blank"
+        rel="noreferrer"
         className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border bg-surface hover:bg-background/60 transition"
       >
         <Send className="w-3.5 h-3.5" />
