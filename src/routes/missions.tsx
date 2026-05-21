@@ -302,6 +302,28 @@ function getItineraryEmailDraft(trip: Trip, itinerary: string): EmailDraft {
   return { to, subject, body };
 }
 
+const FINAL_SCHEDULE_SUBJECT = "Final Schedule & Trip Guide";
+
+function getFinalScheduleEmailDraft(trip: Trip, docUrl: string): EmailDraft {
+  const to = trip.leader_email ?? "";
+  const body =
+    `Hello,\n\n` +
+    `We're excited to welcome your team to Boston! Here is the link to your Missions Team Schedule, which includes your detailed itinerary & A Ministry Guide with cultural notes and key information about how the team serves during your time here.\n\n` +
+    `${docUrl}\n\n` +
+    `Please review the schedule & guide with your team before arrival. It contains:\n\n` +
+    `- Schedule overview with times and meeting points\n` +
+    `- Ministry posture and cultural expectations\n` +
+    `- Contact information for team leaders\n\n` +
+    `If you have any last-minute questions or needs, don't hesitate to reach out. We're grateful for your partnership and can't wait to see how God uses your team during this trip.\n\n` +
+    `See you soon in Boston!\n\n` +
+    `Matt Waldrep\n` +
+    `Executive Pastor\n` +
+    `City on a Hill Forest Hills`;
+  return { to, subject: FINAL_SCHEDULE_SUBJECT, body };
+}
+
+
+
 
 type Form = Omit<Trip, "id" | "position" | "inquiry_token" | "inquiry_submitted_at"> & { id?: string };
 
