@@ -94,6 +94,12 @@ type Trip = {
 
 const WELCOME_SUBJECT = "Let's Plan Your Trip to City On A Hill";
 
+type EmailDraft = {
+  to: string;
+  subject: string;
+  body: string;
+};
+
 function buildWelcomeEmailBody(formUrl: string) {
   return (
     `Hello,\n\n` +
@@ -108,13 +114,16 @@ function buildWelcomeEmailBody(formUrl: string) {
   );
 }
 
-function welcomeMailtoHref(trip: Trip): string {
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const formUrl = `${origin}/inquiry/${trip.inquiry_token}`;
+function inquiryFormUrl(trip: Trip): string {
+  const path = `/inquiry/${trip.inquiry_token}`;
+  return typeof window === "undefined" ? path : `${window.location.origin}${path}`;
+}
+
+function getWelcomeEmailDraft(trip: Trip): EmailDraft {
+  const formUrl = inquiryFormUrl(trip);
   const body = buildWelcomeEmailBody(formUrl);
   const to = trip.leader_email ?? "";
-  const qs = `subject=${encodeURIComponent(WELCOME_SUBJECT)}&body=${encodeURIComponent(body)}`;
-  return `mailto:${to}?${qs}`;
+  return { to, subject: WELCOME_SUBJECT, body };
 }
 
 type Form = Omit<Trip, "id" | "position" | "inquiry_token" | "inquiry_submitted_at"> & { id?: string };
@@ -149,6 +158,7 @@ function Body() {
   const canEdit = hasRole("core") || hasRole("meeting");
   const [trips, setTrips] = useState<Trip[]>([]);
   const [open, setOpen] = useState(false);
+  const [emailDraftTrip, setEmailDraftTrip] = useState<Trip | null>(null);
   const [form, setForm] = useState<Form>(emptyForm());
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
@@ -287,6 +297,12 @@ function Body() {
     () => statusFilter === "all" ? trips : trips.filter((t) => t.status === statusFilter),
     [trips, statusFilter],
   );
+  const emailDraft = emailDraftTrip ? getWelcomeEmailDraft(emailDraftTrip) : null;
+
+  function copyDraftValue(label: string, value: string) {
+    navigator.clipboard.writeText(value);
+    toast.success(`${label} copied`);
+  }
 
   const byStatus = useMemo(() => {
     const m: Record<Status, Trip[]> = {
@@ -379,6 +395,7 @@ function Body() {
                     trip={t}
                     onClick={() => openEdit(t)}
                     onMove={(s) => moveTrip(t, s)}
+                    onCompose={() => setEmailDraftTrip(t)}
                     canEdit={canEdit}
                   />
                 ))}
@@ -392,7 +409,7 @@ function Body() {
       )}
 
       {view === "timeline" && (
-        <TimelineView trips={filteredTrips} showPast={showPast} onOpen={openEdit} />
+        <TimelineView trips={filteredTrips} showPast={showPast} onOpen={openEdit} onCompose={setEmailDraftTrip} />
       )}
 
       {view === "table" && (
@@ -496,7 +513,7 @@ function Body() {
             </div>
 
             {editingTrip && (
-              <InquiryPanel trip={editingTrip} />
+              <InquiryPanel trip={editingTrip} onCompose={() => setEmailDraftTrip(editingTrip)} />
             )}
 
             <div className="rounded-xl border border-border p-3 space-y-2">
@@ -528,6 +545,56 @@ function Body() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!emailDraftTrip} onOpenChange={(next) => { if (!next) setEmailDraftTrip(null); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Welcome email draft</DialogTitle>
+          </DialogHeader>
+          {emailDraft && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>To</Label>
+                <div className="flex gap-2">
+                  <Input readOnly value={emailDraft.to} />
+                  <Button type="button" variant="outline" onClick={() => copyDraftValue("Recipient", emailDraft.to)}>
+                    Copy
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Subject</Label>
+                <div className="flex gap-2">
+                  <Input readOnly value={emailDraft.subject} />
+                  <Button type="button" variant="outline" onClick={() => copyDraftValue("Subject", emailDraft.subject)}>
+                    Copy
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Body</Label>
+                <Textarea readOnly rows={14} value={emailDraft.body} />
+              </div>
+              <DialogFooter className="flex sm:justify-between gap-2 flex-wrap">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => copyDraftValue("Email body", emailDraft.body)}
+                >
+                  Copy body
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => copyDraftValue("Full email", `To: ${emailDraft.to}\nSubject: ${emailDraft.subject}\n\n${emailDraft.body}`)}
+                >
+                  Copy everything
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -545,11 +612,12 @@ function ProgressBadge({ steps }: { steps: Record<string, boolean> }) {
 }
 
 function TripCard({
-  trip, onClick, onMove, canEdit,
+  trip, onClick, onMove, onCompose, canEdit,
 }: {
   trip: Trip;
   onClick: () => void;
   onMove: (s: Status) => void;
+  onCompose: () => void;
   canEdit: boolean;
 }) {
   const done = STEPS.filter((s) => trip.steps?.[s.key]).length;
@@ -578,8 +646,12 @@ function TripCard({
       </div>
       <div className="flex items-center gap-1.5 mt-2 text-muted-foreground">
         {trip.leader_email && (
-          <a href={welcomeMailtoHref(trip)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} title={`Email ${trip.leader_email} – welcome template`}
-            className="hover:text-foreground"><Mail className="w-3 h-3" /></a>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onCompose(); }}
+            title={`Email ${trip.leader_email} – welcome template`}
+            className="hover:text-foreground"
+          ><Mail className="w-3 h-3" /></button>
         )}
         {trip.leader_phone && (
           <a href={`tel:${trip.leader_phone}`} onClick={(e) => e.stopPropagation()} title={trip.leader_phone}
@@ -662,8 +734,8 @@ function bucketTrip(t: Trip): GroupKey {
 }
 
 function TimelineView({
-  trips, showPast, onOpen,
-}: { trips: Trip[]; showPast: boolean; onOpen: (t: Trip) => void }) {
+  trips, showPast, onOpen, onCompose,
+}: { trips: Trip[]; showPast: boolean; onOpen: (t: Trip) => void; onCompose: (t: Trip) => void }) {
   const groups = useMemo(() => {
     const m = new Map<GroupKey, Trip[]>();
     for (const t of trips) {
@@ -701,7 +773,7 @@ function TimelineView({
           </div>
           <div className="space-y-2">
             {groups.get(g.key)!.map((t) => (
-              <TimelineRow key={t.id} trip={t} onClick={() => onOpen(t)} />
+              <TimelineRow key={t.id} trip={t} onClick={() => onOpen(t)} onCompose={() => onCompose(t)} />
             ))}
           </div>
         </section>
@@ -710,7 +782,7 @@ function TimelineView({
   );
 }
 
-function TimelineRow({ trip, onClick }: { trip: Trip; onClick: () => void }) {
+function TimelineRow({ trip, onClick, onCompose }: { trip: Trip; onClick: () => void; onCompose: () => void }) {
   const pct = readinessPct(trip.steps);
   return (
     <div
@@ -737,9 +809,9 @@ function TimelineRow({ trip, onClick }: { trip: Trip; onClick: () => void }) {
       </div>
       <div className="flex items-center gap-1.5 text-muted-foreground">
         {trip.leader_email && (
-          <a href={welcomeMailtoHref(trip)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="hover:text-foreground" title="Email welcome template">
+          <button type="button" onClick={(e) => { e.stopPropagation(); onCompose(); }} className="hover:text-foreground" title="Email welcome template">
             <Mail className="w-3.5 h-3.5" />
-          </a>
+          </button>
         )}
         {trip.leader_phone && (
           <a href={`tel:${trip.leader_phone}`} onClick={(e) => e.stopPropagation()} className="hover:text-foreground">
@@ -993,9 +1065,8 @@ function EmptyState({ label }: { label: string }) {
 }
 
 
-function InquiryPanel({ trip }: { trip: Trip }) {
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const formUrl = `${origin}/inquiry/${trip.inquiry_token}`;
+function InquiryPanel({ trip, onCompose }: { trip: Trip; onCompose: () => void }) {
+  const formUrl = inquiryFormUrl(trip);
   const submitted = !!trip.inquiry_submitted_at;
   const anyResponses = !!((trip as any).vision || (trip as any).church_context || (trip as any).alternate_dates);
   return (
@@ -1035,15 +1106,14 @@ function InquiryPanel({ trip }: { trip: Trip }) {
           <ExternalLink className="w-4 h-4" />
         </a>
       </div>
-      <a
-        href={welcomeMailtoHref(trip)}
-        target="_blank"
-        rel="noreferrer"
+      <button
+        type="button"
+        onClick={onCompose}
         className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border bg-surface hover:bg-background/60 transition"
       >
         <Send className="w-3.5 h-3.5" />
         Compose welcome email
-      </a>
+      </button>
       {anyResponses && (
         <div className="space-y-2 pt-2 border-t border-border">
           <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Team responses</div>
