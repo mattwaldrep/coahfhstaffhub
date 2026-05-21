@@ -511,11 +511,27 @@ function Body() {
     () => statusFilter === "all" ? trips : trips.filter((t) => t.status === statusFilter),
     [trips, statusFilter],
   );
-  const emailDraft = emailDraftTrip ? getWelcomeEmailDraft(emailDraftTrip) : null;
+  const emailDraft = emailDraftTrip
+    ? (emailKind === "itinerary"
+        ? getItineraryEmailDraft(emailDraftTrip, itineraryEmailBody || emailDraftTrip.draft_itinerary || buildDraftItinerary(emailDraftTrip))
+        : getWelcomeEmailDraft(emailDraftTrip))
+    : null;
 
   function copyDraftValue(label: string, value: string) {
     navigator.clipboard.writeText(value);
     toast.success(`${label} copied`);
+  }
+
+  function openWelcomeEmail(trip: Trip) {
+    setEmailKind("welcome");
+    setItineraryEmailBody("");
+    setEmailDraftTrip(trip);
+  }
+
+  function openItineraryEmail(trip: Trip, itinerary: string) {
+    setEmailKind("itinerary");
+    setItineraryEmailBody(itinerary);
+    setEmailDraftTrip(trip);
   }
 
   async function handleSendGmail() {
@@ -528,8 +544,8 @@ function Body() {
     try {
       await sendGmail({ data: { to: emailDraft.to, subject: emailDraft.subject, body: emailDraft.body } });
       toast.success(`Email sent to ${emailDraft.to}`);
-      // Mark the welcome_email step as done
-      const nextSteps = { ...emailDraftTrip.steps, welcome_email: true };
+      const stepKey = emailKind === "itinerary" ? "send_final_schedule" : "welcome_email";
+      const nextSteps = { ...emailDraftTrip.steps, [stepKey]: true };
       await supabase.from("mission_trips").update({ steps: nextSteps }).eq("id", emailDraftTrip.id);
       setTrips((prev) => prev.map((t) => t.id === emailDraftTrip.id ? { ...t, steps: nextSteps } : t));
       setEmailDraftTrip(null);
@@ -540,6 +556,7 @@ function Body() {
       setSendingGmail(false);
     }
   }
+
 
   const byStatus = useMemo(() => {
     const m: Record<Status, Trip[]> = {
