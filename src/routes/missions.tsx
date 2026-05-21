@@ -88,7 +88,34 @@ type Trip = {
   notes: string | null;
   steps: Record<string, boolean>;
   position: number;
+  inquiry_token: string;
+  inquiry_submitted_at: string | null;
 };
+
+const WELCOME_SUBJECT = "Let's Plan Your Trip to City On A Hill";
+
+function buildWelcomeEmailBody(formUrl: string) {
+  return (
+    `Hello,\n\n` +
+    `Thanks for reaching out about serving with us! We're excited to host your team in Boston! We are genuinely excited whenever a team considers joining us in the work here. As a young church plant in one of the most diverse and spiritually complex cities in America, we view missions teams as running one mile of our marathon alongside us—they are partners in planting seeds of gospel hope. Your presence not only strengthens our hands for practical ministry, but also gives our neighbors a tangible picture of the wider body of Christ praying for and investing in this city. Please take a few moments and complete this form to give us a high level understanding of what kind of trip you're looking to take with us:\n\n` +
+    `${formUrl}\n\n` +
+    `NEXT STEP (Schedule A Planning Call)\n\n` +
+    `• Please pick a 30-min slot here: https://calendar.app.google/LZCEYki3L1maEbKLA\n\n` +
+    `Thanks, and talk soon!\n` +
+    `Matt Waldrep\n` +
+    `Worship & Executive Pastor\n` +
+    `coahforesthills.org`
+  );
+}
+
+function welcomeMailtoHref(trip: Trip): string {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const formUrl = `${origin}/inquiry/${trip.inquiry_token}`;
+  const body = buildWelcomeEmailBody(formUrl);
+  const to = trip.leader_email ?? "";
+  const qs = `subject=${encodeURIComponent(WELCOME_SUBJECT)}&body=${encodeURIComponent(body)}`;
+  return `mailto:${encodeURIComponent(to)}?${qs}`;
+}
 
 type Form = Omit<Trip, "id" | "position"> & { id?: string };
 
