@@ -578,7 +578,7 @@ function TripCard({
       </div>
       <div className="flex items-center gap-1.5 mt-2 text-muted-foreground">
         {trip.leader_email && (
-          <a href={welcomeMailtoHref(trip)} onClick={(e) => e.stopPropagation()} title={`Email ${trip.leader_email} – welcome template`}
+          <a href={welcomeMailtoHref(trip)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} title={`Email ${trip.leader_email} – welcome template`}
             className="hover:text-foreground"><Mail className="w-3 h-3" /></a>
         )}
         {trip.leader_phone && (
