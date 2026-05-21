@@ -318,6 +318,7 @@ function CalendarBody() {
   const navigate = Route.useNavigate();
   const handledEventRef = useRef<string | null>(null);
   const [view, setView] = useState<"month" | "week" | "list">("month");
+  const [hidePast, setHidePast] = useState(false);
   const [cursor, setCursor] = useState(new Date());
   const [events, setEvents] = useState<EventRow[]>([]);
   const [filters, setFilters] = useState<Record<string, boolean>>({
