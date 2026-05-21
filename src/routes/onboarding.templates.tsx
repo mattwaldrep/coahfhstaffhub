@@ -36,6 +36,7 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { AppShell } from "@/components/AppShell";
 
 export const Route = createFileRoute("/onboarding/templates")({
   component: TemplateEditor,
