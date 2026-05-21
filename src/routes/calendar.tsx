@@ -2015,6 +2015,66 @@ function EventComments({
       setMentionOpen(false);
       setMentionStart(null);
     }
+    // Slash command: `/` at start-of-line or after whitespace opens the task picker
+    const slash = before.match(/(?:^|\s)\/([^\n/]*)$/);
+    if (slash && !m) {
+      const startIdx = pos - slash[1].length - 1;
+      setSlashStart(startIdx);
+      setTaskTitle(slash[1]);
+      setSlashOpen(true);
+    } else if (slashOpen && !slash) {
+      setSlashOpen(false);
+      setSlashStart(null);
+    }
+  };
+
+  const createTaskFromSlash = async () => {
+    const title = taskTitle.trim();
+    if (!title || !userId || slashStart === null) return;
+    setCreatingTask(true);
+    try {
+      const { data: inserted, error } = await supabase
+        .from("event_checklist_items")
+        .insert({ event_id: eventId, label: title, position: 999 })
+        .select("id")
+        .single();
+      if (error || !inserted) throw new Error(error?.message ?? "Failed to create task");
+      if (taskAssignee) {
+        try {
+          await assignFn({
+            data: {
+              checklistItemId: inserted.id,
+              assigneeId: taskAssignee,
+              dueDate: taskDue || null,
+            },
+          });
+        } catch (e: any) {
+          toast.error(e?.message ?? "Task created but assignment failed");
+        }
+      } else if (taskDue) {
+        await supabase
+          .from("event_checklist_items")
+          .update({ due_date: taskDue })
+          .eq("id", inserted.id);
+      }
+      // Replace `/query` segment with a task marker so the comment references it
+      const before = body.slice(0, slashStart);
+      const taPos = textareaRef.current?.selectionStart ?? body.length;
+      const after = body.slice(taPos);
+      const marker = `📋 ${title}`;
+      setBody(`${before}${marker}${after}`);
+      setSlashOpen(false);
+      setSlashStart(null);
+      setTaskTitle("");
+      setTaskAssignee("");
+      setTaskDue("");
+      toast.success("Task added to checklist");
+      onTaskCreated?.();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to create task");
+    } finally {
+      setCreatingTask(false);
+    }
   };
 
   const insertMention = (u: MentionUser) => {
