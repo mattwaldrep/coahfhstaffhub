@@ -191,6 +191,7 @@ const emptyForm = (): Form => ({
   itinerary_due_date: null,
   dietary_flags: "",
   planning_notes: {},
+  draft_itinerary: "",
 });
 
 function MissionsPage() {
