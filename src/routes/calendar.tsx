@@ -1175,14 +1175,6 @@ function CalendarBody() {
             <div className="space-y-3 rounded-xl border border-border p-3">
               <Label className="text-sm font-medium">Logistics</Label>
               <div className="space-y-2">
-                <Label className="text-xs">Church covering</Label>
-                <Input
-                  placeholder="e.g. Family Hope, COAH:LM, Both"
-                  value={form.church_covering}
-                  onChange={(e) => setForm({ ...form, church_covering: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
                 <Label className="text-xs">Other listings (comma-separated)</Label>
                 <Input
                   placeholder="e.g. Google Business, Eventbrite"
@@ -1206,6 +1198,16 @@ function CalendarBody() {
                 />
                 Missions team needed
               </label>
+              {form.missions_team_needed && (
+                <div className="space-y-2">
+                  <Label className="text-xs">Church covering</Label>
+                  <Input
+                    placeholder="e.g. Family Hope, COAH:LM, Both"
+                    value={form.church_covering}
+                    onChange={(e) => setForm({ ...form, church_covering: e.target.value })}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Recurrence */}
