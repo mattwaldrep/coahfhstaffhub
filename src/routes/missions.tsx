@@ -772,6 +772,18 @@ function Body() {
 
             <PlanningCallPanel form={form} setForm={setForm} />
 
+            <DraftItineraryPanel
+              form={form}
+              setForm={setForm}
+              canEmail={!!editingTrip && !!form.leader_email}
+              onEmail={() => {
+                if (!editingTrip) return;
+                openItineraryEmail(editingTrip, form.draft_itinerary || buildDraftItinerary(form));
+              }}
+            />
+
+
+
 
             <div className="rounded-xl border border-border p-3 space-y-2">
               <div className="flex items-center justify-between">
