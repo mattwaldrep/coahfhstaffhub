@@ -102,6 +102,15 @@ const LISTING_CHANNELS: { key: string; label: string }[] = [
 ];
 const LISTING_LABEL = new Map(LISTING_CHANNELS.map((c) => [c.key, c.label]));
 
+const LISTING_CHECKLIST_LABEL: Record<string, string> = {
+  pco: "Set up PCO registration",
+  eventbrite: "List on Eventbrite",
+  google: "List on Google",
+  community_cals: "List on community calendars",
+  socials: "Post on socials",
+  social_ads: "Run social ads",
+};
+
 const WEEKDAYS = [
   { v: "SU", label: "S" },
   { v: "MO", label: "M" },
@@ -638,6 +647,15 @@ function CalendarBody() {
       if (form.room_ids.length > 0) {
         await supabase.from("event_rooms").insert(form.room_ids.map((rid) => ({ event_id: savedId, room_id: rid })));
       }
+      // Reconcile listing-channel checklist items with currently-enabled toggles
+      const enabledChannels: string[] = [
+        ...(form.pco_registration ? ["pco"] : []),
+        ...form.other_listings,
+        ...(form.social_ads ? ["social_ads"] : []),
+      ];
+      for (const key of Object.keys(LISTING_CHECKLIST_LABEL)) {
+        await syncListingChecklist(savedId, key, enabledChannels.includes(key));
+      }
     }
     const gaps = classGaps(form);
     if (gaps.length > 0) {
@@ -747,6 +765,31 @@ function CalendarBody() {
     if (error) { toast.error(error.message); return; }
     setNewItem("");
     loadChecklist(form.id);
+  }
+
+  async function syncListingChecklist(eventId: string, channelKey: string, enabled: boolean) {
+    const label = LISTING_CHECKLIST_LABEL[channelKey];
+    if (!label) return;
+    if (enabled) {
+      const { data: existing } = await supabase
+        .from("event_checklist_items")
+        .select("id")
+        .eq("event_id", eventId)
+        .eq("label", label)
+        .maybeSingle();
+      if (!existing) {
+        await supabase
+          .from("event_checklist_items")
+          .insert({ event_id: eventId, label, position: checklist.length });
+      }
+    } else {
+      await supabase
+        .from("event_checklist_items")
+        .delete()
+        .eq("event_id", eventId)
+        .eq("label", label);
+    }
+    if (form.id === eventId) loadChecklist(eventId);
   }
 
   async function toggleChecklistItem(item: ChecklistItem) {
@@ -1214,6 +1257,7 @@ function CalendarBody() {
                           : form.other_listings.filter((k) => k !== c.key);
                         setForm({ ...form, other_listings: next });
                       }
+                      if (form.id) syncListingChecklist(form.id, c.key, v);
                     };
                     return (
                       <label key={c.key} className="flex items-center gap-2 text-sm">
@@ -1225,7 +1269,10 @@ function CalendarBody() {
                   <label className="flex items-center gap-2 text-sm">
                     <Switch
                       checked={form.social_ads}
-                      onCheckedChange={(v) => setForm({ ...form, social_ads: v })}
+                      onCheckedChange={(v) => {
+                        setForm({ ...form, social_ads: v });
+                        if (form.id) syncListingChecklist(form.id, "social_ads", v);
+                      }}
                     />
                     Social ads
                   </label>
@@ -1597,7 +1644,14 @@ function CalendarBody() {
               </div>
             )}
 
-            {form.id && <EventComments eventId={form.id} userId={user?.id ?? null} />}
+            {form.id && (
+              <EventComments
+                eventId={form.id}
+                userId={user?.id ?? null}
+                assignableUsers={assignableUsers}
+                onTaskCreated={() => form.id && loadChecklist(form.id)}
+              />
+            )}
 
             <DialogFooter className="flex sm:justify-between gap-2 flex-wrap">
               <div className="flex gap-2">
@@ -1867,7 +1921,17 @@ type CommentRow = {
 
 type MentionUser = { id: string; full_name: string | null; email: string };
 
-function EventComments({ eventId, userId }: { eventId: string; userId: string | null }) {
+function EventComments({
+  eventId,
+  userId,
+  assignableUsers = [],
+  onTaskCreated,
+}: {
+  eventId: string;
+  userId: string | null;
+  assignableUsers?: UserOption[];
+  onTaskCreated?: () => void;
+}) {
   const [items, setItems] = useState<CommentRow[]>([]);
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(true);
@@ -1877,8 +1941,15 @@ function EventComments({ eventId, userId }: { eventId: string; userId: string | 
   const [mentionQuery, setMentionQuery] = useState("");
   const [mentionStart, setMentionStart] = useState<number | null>(null);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [slashOpen, setSlashOpen] = useState(false);
+  const [slashStart, setSlashStart] = useState<number | null>(null);
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskAssignee, setTaskAssignee] = useState<string>("");
+  const [taskDue, setTaskDue] = useState<string>("");
+  const [creatingTask, setCreatingTask] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const notifyMentions = useServerFn(notifyCommentMentions);
+  const assignFn = useServerFn(assignChecklistItem);
 
   const load = async () => {
     setLoading(true);
@@ -1943,6 +2014,66 @@ function EventComments({ eventId, userId }: { eventId: string; userId: string | 
     } else {
       setMentionOpen(false);
       setMentionStart(null);
+    }
+    // Slash command: `/` at start-of-line or after whitespace opens the task picker
+    const slash = before.match(/(?:^|\s)\/([^\n/]*)$/);
+    if (slash && !m) {
+      const startIdx = pos - slash[1].length - 1;
+      setSlashStart(startIdx);
+      setTaskTitle(slash[1]);
+      setSlashOpen(true);
+    } else if (slashOpen && !slash) {
+      setSlashOpen(false);
+      setSlashStart(null);
+    }
+  };
+
+  const createTaskFromSlash = async () => {
+    const title = taskTitle.trim();
+    if (!title || !userId || slashStart === null) return;
+    setCreatingTask(true);
+    try {
+      const { data: inserted, error } = await supabase
+        .from("event_checklist_items")
+        .insert({ event_id: eventId, label: title, position: 999 })
+        .select("id")
+        .single();
+      if (error || !inserted) throw new Error(error?.message ?? "Failed to create task");
+      if (taskAssignee) {
+        try {
+          await assignFn({
+            data: {
+              checklistItemId: inserted.id,
+              assigneeId: taskAssignee,
+              dueDate: taskDue || null,
+            },
+          });
+        } catch (e: any) {
+          toast.error(e?.message ?? "Task created but assignment failed");
+        }
+      } else if (taskDue) {
+        await supabase
+          .from("event_checklist_items")
+          .update({ due_date: taskDue })
+          .eq("id", inserted.id);
+      }
+      // Replace `/query` segment with a task marker so the comment references it
+      const before = body.slice(0, slashStart);
+      const taPos = textareaRef.current?.selectionStart ?? body.length;
+      const after = body.slice(taPos);
+      const marker = `📋 ${title}`;
+      setBody(`${before}${marker}${after}`);
+      setSlashOpen(false);
+      setSlashStart(null);
+      setTaskTitle("");
+      setTaskAssignee("");
+      setTaskDue("");
+      toast.success("Task added to checklist");
+      onTaskCreated?.();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to create task");
+    } finally {
+      setCreatingTask(false);
     }
   };
 
@@ -2044,7 +2175,7 @@ function EventComments({ eventId, userId }: { eventId: string; userId: string | 
           <Textarea
             ref={textareaRef}
             rows={2}
-            placeholder={userId ? "Add a comment… use @ to mention" : "Sign in to comment"}
+            placeholder={userId ? "Add a comment… @ to mention, / to add a task" : "Sign in to comment"}
             value={body}
             onChange={handleChange}
             onKeyDown={(e) => {
@@ -2073,6 +2204,43 @@ function EventComments({ eventId, userId }: { eventId: string; userId: string | 
                   {u.full_name && <span className="text-[11px] text-muted-foreground">{u.email}</span>}
                 </button>
               ))}
+            </div>
+          )}
+          {slashOpen && (
+            <div className="absolute bottom-full left-0 mb-1 w-80 rounded-lg border border-border bg-popover shadow-md z-50 p-3 space-y-2">
+              <div className="text-[11px] font-medium text-muted-foreground">New task for this event</div>
+              <Input
+                autoFocus
+                placeholder="Task title"
+                value={taskTitle}
+                onChange={(e) => setTaskTitle(e.target.value)}
+                className="h-8"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <Select value={taskAssignee || "_none"} onValueChange={(v) => setTaskAssignee(v === "_none" ? "" : v)}>
+                  <SelectTrigger className="h-8"><SelectValue placeholder="Assignee" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">Unassigned</SelectItem>
+                    {assignableUsers.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="date"
+                  value={taskDue}
+                  onChange={(e) => setTaskDue(e.target.value)}
+                  className="h-8"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" size="sm" variant="ghost" onClick={() => { setSlashOpen(false); setSlashStart(null); }}>
+                  Cancel
+                </Button>
+                <Button type="button" size="sm" onClick={createTaskFromSlash} disabled={creatingTask || !taskTitle.trim()}>
+                  {creatingTask ? "Adding…" : "Add task"}
+                </Button>
+              </div>
             </div>
           )}
         </div>
