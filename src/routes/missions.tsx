@@ -663,7 +663,7 @@ function Body() {
       )}
 
       {view === "timeline" && (
-        <TimelineView trips={filteredTrips} showPast={showPast} onOpen={openEdit} onCompose={setEmailDraftTrip} />
+        <TimelineView trips={filteredTrips} showPast={showPast} onOpen={openEdit} onCompose={openWelcomeEmail} />
       )}
 
       {view === "table" && (
