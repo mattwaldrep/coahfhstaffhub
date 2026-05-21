@@ -881,7 +881,21 @@ function Body() {
                 if (!editingTrip) return;
                 openItineraryEmail(editingTrip, form.draft_itinerary || buildDraftItinerary(form));
               }}
+              docUrl={form.itinerary_doc_url}
+              syncingDoc={syncingDoc}
+              onSyncDoc={handleSyncDoc}
+              canSyncDoc={!!editingTrip && !!(form.draft_itinerary || form.start_date)}
+              onSendFinalSchedule={async () => {
+                if (!editingTrip) return;
+                let url = form.itinerary_doc_url;
+                if (!url) {
+                  url = await handleSyncDoc();
+                  if (!url) return;
+                }
+                openFinalScheduleEmail(editingTrip, url);
+              }}
             />
+
 
             <PreTripConfirmPanel form={form} setForm={setForm} />
 
