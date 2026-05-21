@@ -1691,6 +1691,8 @@ export type Database = {
           id: string
           inquiry_submitted_at: string | null
           inquiry_token: string
+          itinerary_doc_id: string | null
+          itinerary_doc_url: string | null
           itinerary_due_date: string | null
           itinerary_file_name: string | null
           itinerary_file_path: string | null
@@ -1735,6 +1737,8 @@ export type Database = {
           id?: string
           inquiry_submitted_at?: string | null
           inquiry_token?: string
+          itinerary_doc_id?: string | null
+          itinerary_doc_url?: string | null
           itinerary_due_date?: string | null
           itinerary_file_name?: string | null
           itinerary_file_path?: string | null
@@ -1779,6 +1783,8 @@ export type Database = {
           id?: string
           inquiry_submitted_at?: string | null
           inquiry_token?: string
+          itinerary_doc_id?: string | null
+          itinerary_doc_url?: string | null
           itinerary_due_date?: string | null
           itinerary_file_name?: string | null
           itinerary_file_path?: string | null

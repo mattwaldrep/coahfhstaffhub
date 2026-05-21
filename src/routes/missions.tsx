@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { sendGmailMessage } from "@/lib/gmail-send.functions";
+import { syncItineraryDoc } from "@/lib/itinerary-doc.functions";
 import {
   format, isPast, isThisMonth, isWithinInterval, startOfMonth, endOfMonth,
   addMonths, subMonths, startOfDay, isSameMonth, isSameYear,
@@ -23,7 +24,7 @@ import {
 import {
   Plus, Trash2, ExternalLink, Mail, Phone, Upload, FileText, X as XIcon,
   LayoutGrid, List, Table as TableIcon, CalendarDays, ChevronLeft, ChevronRight,
-  ArrowUpDown, Copy, Send,
+  ArrowUpDown, Copy, Send, FileUp,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -110,6 +111,8 @@ type Trip = {
   coordinator_on_call_name: string | null;
   coordinator_on_call_phone: string | null;
   confirm_checklist: Record<string, boolean>;
+  itinerary_doc_id: string | null;
+  itinerary_doc_url: string | null;
 };
 
 const OUTREACH_TRACK_OPTIONS = [
@@ -299,6 +302,28 @@ function getItineraryEmailDraft(trip: Trip, itinerary: string): EmailDraft {
   return { to, subject, body };
 }
 
+const FINAL_SCHEDULE_SUBJECT = "Final Schedule & Trip Guide";
+
+function getFinalScheduleEmailDraft(trip: Trip, docUrl: string): EmailDraft {
+  const to = trip.leader_email ?? "";
+  const body =
+    `Hello,\n\n` +
+    `We're excited to welcome your team to Boston! Here is the link to your Missions Team Schedule, which includes your detailed itinerary & A Ministry Guide with cultural notes and key information about how the team serves during your time here.\n\n` +
+    `${docUrl}\n\n` +
+    `Please review the schedule & guide with your team before arrival. It contains:\n\n` +
+    `- Schedule overview with times and meeting points\n` +
+    `- Ministry posture and cultural expectations\n` +
+    `- Contact information for team leaders\n\n` +
+    `If you have any last-minute questions or needs, don't hesitate to reach out. We're grateful for your partnership and can't wait to see how God uses your team during this trip.\n\n` +
+    `See you soon in Boston!\n\n` +
+    `Matt Waldrep\n` +
+    `Executive Pastor\n` +
+    `City on a Hill Forest Hills`;
+  return { to, subject: FINAL_SCHEDULE_SUBJECT, body };
+}
+
+
+
 
 type Form = Omit<Trip, "id" | "position" | "inquiry_token" | "inquiry_submitted_at"> & { id?: string };
 
@@ -335,6 +360,8 @@ const emptyForm = (): Form => ({
   coordinator_on_call_name: "",
   coordinator_on_call_phone: "",
   confirm_checklist: {},
+  itinerary_doc_id: null,
+  itinerary_doc_url: null,
 });
 
 function MissionsPage() {
@@ -351,10 +378,13 @@ function Body() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [open, setOpen] = useState(false);
   const [emailDraftTrip, setEmailDraftTrip] = useState<Trip | null>(null);
-  const [emailKind, setEmailKind] = useState<"welcome" | "itinerary">("welcome");
+  const [emailKind, setEmailKind] = useState<"welcome" | "itinerary" | "final_schedule">("welcome");
   const [itineraryEmailBody, setItineraryEmailBody] = useState<string>("");
+  const [finalScheduleDocUrl, setFinalScheduleDocUrl] = useState<string>("");
   const [sendingGmail, setSendingGmail] = useState(false);
+  const [syncingDoc, setSyncingDoc] = useState(false);
   const sendGmail = useServerFn(sendGmailMessage);
+  const syncDoc = useServerFn(syncItineraryDoc);
   const [form, setForm] = useState<Form>(emptyForm());
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
@@ -433,6 +463,8 @@ function Body() {
       coordinator_on_call_name: t.coordinator_on_call_name ?? "",
       coordinator_on_call_phone: t.coordinator_on_call_phone ?? "",
       confirm_checklist: t.confirm_checklist ?? {},
+      itinerary_doc_id: t.itinerary_doc_id ?? null,
+      itinerary_doc_url: t.itinerary_doc_url ?? null,
     });
     setOpen(true);
   }
@@ -472,6 +504,8 @@ function Body() {
       coordinator_on_call_name: form.coordinator_on_call_name || null,
       coordinator_on_call_phone: form.coordinator_on_call_phone || null,
       confirm_checklist: form.confirm_checklist ?? {},
+      itinerary_doc_id: form.itinerary_doc_id,
+      itinerary_doc_url: form.itinerary_doc_url,
     };
     const { error } = form.id
       ? await supabase.from("mission_trips").update(payload).eq("id", form.id)
@@ -532,6 +566,8 @@ function Body() {
   const emailDraft = emailDraftTrip
     ? (emailKind === "itinerary"
         ? getItineraryEmailDraft(emailDraftTrip, itineraryEmailBody || emailDraftTrip.draft_itinerary || buildDraftItinerary(emailDraftTrip))
+        : emailKind === "final_schedule"
+        ? getFinalScheduleEmailDraft(emailDraftTrip, finalScheduleDocUrl || emailDraftTrip.itinerary_doc_url || "")
         : getWelcomeEmailDraft(emailDraftTrip))
     : null;
 
@@ -552,6 +588,50 @@ function Body() {
     setEmailDraftTrip(trip);
   }
 
+  function openFinalScheduleEmail(trip: Trip, docUrl: string) {
+    setEmailKind("final_schedule");
+    setFinalScheduleDocUrl(docUrl);
+    setEmailDraftTrip(trip);
+  }
+
+  async function handleSyncDoc(): Promise<string | null> {
+    if (!editingTrip) {
+      toast.error("Save the trip first");
+      return null;
+    }
+    const content = form.draft_itinerary || buildDraftItinerary(form);
+    if (!content.trim()) {
+      toast.error("Draft itinerary is empty");
+      return null;
+    }
+    const title = `${form.church_name || "Missions Team"} — Boston Trip Itinerary`;
+    setSyncingDoc(true);
+    try {
+      const res = await syncDoc({
+        data: {
+          tripId: editingTrip.id,
+          title,
+          content,
+          existingDocId: form.itinerary_doc_id,
+        },
+      });
+      setForm((f) => ({ ...f, itinerary_doc_id: res.docId, itinerary_doc_url: res.url }));
+      await supabase
+        .from("mission_trips")
+        .update({ itinerary_doc_id: res.docId, itinerary_doc_url: res.url })
+        .eq("id", editingTrip.id);
+      setTrips((prev) => prev.map((t) => t.id === editingTrip.id ? { ...t, itinerary_doc_id: res.docId, itinerary_doc_url: res.url } : t));
+      toast.success(form.itinerary_doc_id ? "Google Doc updated" : "Google Doc created");
+      return res.url;
+    } catch (err) {
+      console.error(err);
+      toast.error(err instanceof Error ? err.message : "Failed to sync Google Doc");
+      return null;
+    } finally {
+      setSyncingDoc(false);
+    }
+  }
+
   async function handleSendGmail() {
     if (!emailDraft || !emailDraftTrip) return;
     if (!emailDraft.to) {
@@ -562,7 +642,10 @@ function Body() {
     try {
       await sendGmail({ data: { to: emailDraft.to, subject: emailDraft.subject, body: emailDraft.body } });
       toast.success(`Email sent to ${emailDraft.to}`);
-      const stepKey = emailKind === "itinerary" ? "send_final_schedule" : "welcome_email";
+      const stepKey =
+        emailKind === "final_schedule" ? "send_final_schedule"
+        : emailKind === "itinerary" ? "draft_schedule"
+        : "welcome_email";
       const nextSteps = { ...emailDraftTrip.steps, [stepKey]: true };
       await supabase.from("mission_trips").update({ steps: nextSteps }).eq("id", emailDraftTrip.id);
       setTrips((prev) => prev.map((t) => t.id === emailDraftTrip.id ? { ...t, steps: nextSteps } : t));
@@ -798,7 +881,21 @@ function Body() {
                 if (!editingTrip) return;
                 openItineraryEmail(editingTrip, form.draft_itinerary || buildDraftItinerary(form));
               }}
+              docUrl={form.itinerary_doc_url}
+              syncingDoc={syncingDoc}
+              onSyncDoc={handleSyncDoc}
+              canSyncDoc={!!editingTrip && !!(form.draft_itinerary || form.start_date)}
+              onSendFinalSchedule={async () => {
+                if (!editingTrip) return;
+                let url = form.itinerary_doc_url;
+                if (!url) {
+                  url = await handleSyncDoc();
+                  if (!url) return;
+                }
+                openFinalScheduleEmail(editingTrip, url);
+              }}
             />
+
 
             <PreTripConfirmPanel form={form} setForm={setForm} />
 
@@ -840,7 +937,7 @@ function Body() {
       <Dialog open={!!emailDraftTrip} onOpenChange={(next) => { if (!next) setEmailDraftTrip(null); }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{emailKind === "itinerary" ? "Send draft itinerary" : "Welcome email draft"}</DialogTitle>
+            <DialogTitle>{emailKind === "itinerary" ? "Send draft itinerary" : emailKind === "final_schedule" ? "Send final schedule & trip guide" : "Welcome email draft"}</DialogTitle>
           </DialogHeader>
           {emailDraft && (
             <div className="space-y-4">
@@ -1637,11 +1734,21 @@ function DraftItineraryPanel({
   setForm,
   canEmail,
   onEmail,
+  docUrl,
+  syncingDoc,
+  onSyncDoc,
+  canSyncDoc,
+  onSendFinalSchedule,
 }: {
   form: Form;
   setForm: React.Dispatch<React.SetStateAction<Form>>;
   canEmail: boolean;
   onEmail: () => void;
+  docUrl: string | null;
+  syncingDoc: boolean;
+  onSyncDoc: () => Promise<string | null>;
+  canSyncDoc: boolean;
+  onSendFinalSchedule: () => Promise<void>;
 }) {
   function generate(overwrite: boolean) {
     if (!overwrite && form.draft_itinerary) {
@@ -1673,16 +1780,17 @@ function DraftItineraryPanel({
           <Button
             type="button"
             size="sm"
+            variant="outline"
             onClick={onEmail}
             disabled={!canEmail || !form.draft_itinerary}
             title={!canEmail ? "Save trip with a leader email first" : ""}
           >
-            <Send className="w-4 h-4 mr-1.5" /> Email to team
+            <Send className="w-4 h-4 mr-1.5" /> Email draft
           </Button>
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
-        Auto-fills from trip dates, focus, headcount, and outreach tracks. Edit freely before sending — the email body will use exactly what's here.
+        Auto-fills from trip dates, focus, headcount, and outreach tracks. Edit freely — the Google Doc and emails will use exactly what's here.
       </p>
       <Textarea
         rows={18}
@@ -1691,9 +1799,54 @@ function DraftItineraryPanel({
         value={form.draft_itinerary ?? ""}
         onChange={(e) => setForm({ ...form, draft_itinerary: e.target.value })}
       />
+
+      <div className="rounded-lg border border-border bg-background/40 p-3 space-y-2">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="text-xs font-medium">Final schedule (Google Doc)</div>
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => onSyncDoc()}
+              disabled={!canSyncDoc || syncingDoc}
+              title={!canSyncDoc ? "Save the trip first" : ""}
+            >
+              <FileUp className="w-4 h-4 mr-1.5" />
+              {syncingDoc ? "Syncing…" : docUrl ? "Update Google Doc" : "Create Google Doc"}
+            </Button>
+            {docUrl && (
+              <Button type="button" size="sm" variant="outline" asChild>
+                <a href={docUrl} target="_blank" rel="noreferrer">
+                  <ExternalLink className="w-4 h-4 mr-1.5" /> Open
+                </a>
+              </Button>
+            )}
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => onSendFinalSchedule()}
+              disabled={!canEmail || syncingDoc}
+              title={!canEmail ? "Save trip with a leader email first" : ""}
+            >
+              <Send className="w-4 h-4 mr-1.5" /> Send final schedule
+            </Button>
+          </div>
+        </div>
+        {docUrl ? (
+          <p className="text-[11px] text-muted-foreground break-all">
+            {docUrl} — make sure sharing is set to <strong>Anyone with the link can view</strong> in Google Docs.
+          </p>
+        ) : (
+          <p className="text-[11px] text-muted-foreground">
+            Creates a Google Doc from the draft above, then sends the Final Schedule & Trip Guide email linking to it.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
+
 
 function PreTripConfirmPanel({
   form,
