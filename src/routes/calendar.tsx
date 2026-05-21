@@ -758,6 +758,31 @@ function CalendarBody() {
     loadChecklist(form.id);
   }
 
+  async function syncListingChecklist(eventId: string, channelKey: string, enabled: boolean) {
+    const label = LISTING_CHECKLIST_LABEL[channelKey];
+    if (!label) return;
+    if (enabled) {
+      const { data: existing } = await supabase
+        .from("event_checklist_items")
+        .select("id")
+        .eq("event_id", eventId)
+        .eq("label", label)
+        .maybeSingle();
+      if (!existing) {
+        await supabase
+          .from("event_checklist_items")
+          .insert({ event_id: eventId, label, position: checklist.length });
+      }
+    } else {
+      await supabase
+        .from("event_checklist_items")
+        .delete()
+        .eq("event_id", eventId)
+        .eq("label", label);
+    }
+    if (form.id === eventId) loadChecklist(eventId);
+  }
+
   async function toggleChecklistItem(item: ChecklistItem) {
     try {
       await setDoneFn({ data: { checklistItemId: item.id, done: !item.done } });
