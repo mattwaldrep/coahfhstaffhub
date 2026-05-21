@@ -21,7 +21,7 @@ import {
 import {
   Plus, Trash2, ExternalLink, Mail, Phone, Upload, FileText, X as XIcon,
   LayoutGrid, List, Table as TableIcon, CalendarDays, ChevronLeft, ChevronRight,
-  ArrowUpDown,
+  ArrowUpDown, Copy, Send,
 } from "lucide-react";
 import { toast } from "sonner";
 
