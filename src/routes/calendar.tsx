@@ -1248,6 +1248,7 @@ function CalendarBody() {
                           : form.other_listings.filter((k) => k !== c.key);
                         setForm({ ...form, other_listings: next });
                       }
+                      if (form.id) syncListingChecklist(form.id, c.key, v);
                     };
                     return (
                       <label key={c.key} className="flex items-center gap-2 text-sm">
@@ -1259,7 +1260,10 @@ function CalendarBody() {
                   <label className="flex items-center gap-2 text-sm">
                     <Switch
                       checked={form.social_ads}
-                      onCheckedChange={(v) => setForm({ ...form, social_ads: v })}
+                      onCheckedChange={(v) => {
+                        setForm({ ...form, social_ads: v });
+                        if (form.id) syncListingChecklist(form.id, "social_ads", v);
+                      }}
                     />
                     Social ads
                   </label>
