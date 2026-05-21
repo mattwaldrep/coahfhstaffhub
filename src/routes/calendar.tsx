@@ -2206,6 +2206,43 @@ function EventComments({
               ))}
             </div>
           )}
+          {slashOpen && (
+            <div className="absolute bottom-full left-0 mb-1 w-80 rounded-lg border border-border bg-popover shadow-md z-50 p-3 space-y-2">
+              <div className="text-[11px] font-medium text-muted-foreground">New task for this event</div>
+              <Input
+                autoFocus
+                placeholder="Task title"
+                value={taskTitle}
+                onChange={(e) => setTaskTitle(e.target.value)}
+                className="h-8"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <Select value={taskAssignee || "_none"} onValueChange={(v) => setTaskAssignee(v === "_none" ? "" : v)}>
+                  <SelectTrigger className="h-8"><SelectValue placeholder="Assignee" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">Unassigned</SelectItem>
+                    {assignableUsers.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="date"
+                  value={taskDue}
+                  onChange={(e) => setTaskDue(e.target.value)}
+                  className="h-8"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" size="sm" variant="ghost" onClick={() => { setSlashOpen(false); setSlashStart(null); }}>
+                  Cancel
+                </Button>
+                <Button type="button" size="sm" onClick={createTaskFromSlash} disabled={creatingTask || !taskTitle.trim()}>
+                  {creatingTask ? "Adding…" : "Add task"}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
         <Button type="button" size="sm" onClick={post} disabled={!userId || posting || !body.trim()}>
           Post
