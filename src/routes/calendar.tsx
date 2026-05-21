@@ -1921,7 +1921,17 @@ type CommentRow = {
 
 type MentionUser = { id: string; full_name: string | null; email: string };
 
-function EventComments({ eventId, userId }: { eventId: string; userId: string | null }) {
+function EventComments({
+  eventId,
+  userId,
+  assignableUsers = [],
+  onTaskCreated,
+}: {
+  eventId: string;
+  userId: string | null;
+  assignableUsers?: UserOption[];
+  onTaskCreated?: () => void;
+}) {
   const [items, setItems] = useState<CommentRow[]>([]);
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(true);
@@ -1931,8 +1941,15 @@ function EventComments({ eventId, userId }: { eventId: string; userId: string | 
   const [mentionQuery, setMentionQuery] = useState("");
   const [mentionStart, setMentionStart] = useState<number | null>(null);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [slashOpen, setSlashOpen] = useState(false);
+  const [slashStart, setSlashStart] = useState<number | null>(null);
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskAssignee, setTaskAssignee] = useState<string>("");
+  const [taskDue, setTaskDue] = useState<string>("");
+  const [creatingTask, setCreatingTask] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const notifyMentions = useServerFn(notifyCommentMentions);
+  const assignFn = useServerFn(assignChecklistItem);
 
   const load = async () => {
     setLoading(true);
