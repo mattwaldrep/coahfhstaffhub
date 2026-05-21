@@ -129,6 +129,12 @@ const PLANNING_NOTE_SECTIONS: { key: string; label: string }[] = [
   { key: "next_steps", label: "Next steps — who does what by when" },
 ];
 
+const CONFIRM_CHECKLIST_ITEMS: { key: string; label: string }[] = [
+  { key: "staff_leads_assigned", label: "Primary staff lead named for every itinerary activity" },
+  { key: "meeting_points_clear", label: "Meeting points & times are unambiguous" },
+  { key: "supplies_updated", label: "Supplies list updated to match the schedule" },
+];
+
 const WELCOME_SUBJECT = "Let's Plan Your Trip to City On A Hill";
 
 type EmailDraft = {
