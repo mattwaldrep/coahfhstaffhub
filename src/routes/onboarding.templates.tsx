@@ -307,6 +307,7 @@ function TemplateEditor() {
         </DialogContent>
       </Dialog>
     </div>
+    </AppShell>
   );
 }
 
