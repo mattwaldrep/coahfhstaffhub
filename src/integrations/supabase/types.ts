@@ -1229,6 +1229,30 @@ export type Database = {
           },
         ]
       }
+      event_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          event_id: string
+          id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          event_id: string
+          id?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       event_rooms: {
         Row: {
           created_at: string
