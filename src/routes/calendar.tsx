@@ -409,7 +409,7 @@ function CalendarBody() {
     if (!ev) return;
     handledEventRef.current = target;
     openEdit({ ...ev, occurrence_date: new Date(ev.start_at) } as Occurrence);
-    navigate({ search: (prev) => ({ ...prev, event: undefined }), replace: true });
+    navigate({ search: (prev: { event?: string }) => ({ ...prev, event: undefined }), replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search.event, events]);
 
