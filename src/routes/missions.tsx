@@ -430,6 +430,9 @@ function Body() {
       dietary_flags: t.dietary_flags ?? "",
       planning_notes: t.planning_notes ?? {},
       draft_itinerary: t.draft_itinerary ?? "",
+      coordinator_on_call_name: t.coordinator_on_call_name ?? "",
+      coordinator_on_call_phone: t.coordinator_on_call_phone ?? "",
+      confirm_checklist: t.confirm_checklist ?? {},
     });
     setOpen(true);
   }
