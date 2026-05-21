@@ -287,7 +287,7 @@ function CalendarPage() {
 }
 
 function CalendarBody() {
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
   const canEdit = hasRole("core");
   const [view, setView] = useState<"month" | "week" | "list">("month");
   const [cursor, setCursor] = useState(new Date());
@@ -1165,10 +1165,8 @@ function CalendarBody() {
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label>Notes</Label>
-              <Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-            </div>
+
+
 
             {/* Logistics */}
             <div className="space-y-3 rounded-xl border border-border p-3">
@@ -1510,6 +1508,8 @@ function CalendarBody() {
               </div>
             )}
 
+            {form.id && <EventComments eventId={form.id} userId={user?.id ?? null} />}
+
             <DialogFooter className="flex sm:justify-between gap-2 flex-wrap">
               <div className="flex gap-2">
                 {form.id && (
@@ -1759,6 +1759,114 @@ function ListView({ occurrences, conflictMap, onPickEvent, readinessOf }: { occu
           </button>
         );
       })}
+    </div>
+  );
+}
+
+type CommentRow = {
+  id: string;
+  body: string;
+  author_id: string;
+  created_at: string;
+  author_name?: string | null;
+};
+
+function EventComments({ eventId, userId }: { eventId: string; userId: string | null }) {
+  const [items, setItems] = useState<CommentRow[]>([]);
+  const [body, setBody] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [posting, setPosting] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("event_comments")
+      .select("id,body,author_id,created_at")
+      .eq("event_id", eventId)
+      .order("created_at", { ascending: true });
+    if (error) { toast.error(error.message); setLoading(false); return; }
+    const rows = (data ?? []) as CommentRow[];
+    const ids = Array.from(new Set(rows.map((r) => r.author_id)));
+    if (ids.length) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", ids);
+      const map = new Map((profs ?? []).map((p: any) => [p.id, p.full_name || p.email]));
+      rows.forEach((r) => { r.author_name = map.get(r.author_id) ?? null; });
+    }
+    setItems(rows);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [eventId]);
+
+  const post = async () => {
+    const text = body.trim();
+    if (!text || !userId) return;
+    setPosting(true);
+    const { error } = await supabase
+      .from("event_comments")
+      .insert({ event_id: eventId, author_id: userId, body: text });
+    setPosting(false);
+    if (error) { toast.error(error.message); return; }
+    setBody("");
+    load();
+  };
+
+  const remove = async (id: string) => {
+    const { error } = await supabase.from("event_comments").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    setItems((prev) => prev.filter((c) => c.id !== id));
+  };
+
+  return (
+    <div className="space-y-3 rounded-xl border border-border p-3">
+      <Label className="text-sm font-medium">Comments</Label>
+      <div className="space-y-2 max-h-64 overflow-y-auto">
+        {loading && <div className="text-xs text-muted-foreground">Loading…</div>}
+        {!loading && items.length === 0 && (
+          <div className="text-xs text-muted-foreground">No comments yet. Start the thread below.</div>
+        )}
+        {items.map((c) => (
+          <div key={c.id} className="group flex items-start gap-2 text-sm">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                <span className="font-medium text-foreground">{c.author_name ?? "Someone"}</span>
+                <span>{format(new Date(c.created_at), "MMM d, h:mm a")}</span>
+              </div>
+              <div className="whitespace-pre-wrap break-words">{c.body}</div>
+            </div>
+            {c.author_id === userId && (
+              <button
+                type="button"
+                onClick={() => remove(c.id)}
+                className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+                title="Delete comment"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <Textarea
+          rows={2}
+          placeholder={userId ? "Add a comment…" : "Sign in to comment"}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault(); post();
+            }
+          }}
+          disabled={!userId || posting}
+        />
+        <Button type="button" size="sm" onClick={post} disabled={!userId || posting || !body.trim()}>
+          Post
+        </Button>
+      </div>
     </div>
   );
 }
