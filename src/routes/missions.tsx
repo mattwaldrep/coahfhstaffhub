@@ -338,6 +338,8 @@ const emptyForm = (): Form => ({
   coordinator_on_call_name: "",
   coordinator_on_call_phone: "",
   confirm_checklist: {},
+  itinerary_doc_id: null,
+  itinerary_doc_url: null,
 });
 
 function MissionsPage() {
