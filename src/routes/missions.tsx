@@ -284,6 +284,7 @@ function Body() {
       itinerary_due_date: t.itinerary_due_date,
       dietary_flags: t.dietary_flags ?? "",
       planning_notes: t.planning_notes ?? {},
+      draft_itinerary: t.draft_itinerary ?? "",
     });
     setOpen(true);
   }
