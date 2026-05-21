@@ -93,6 +93,15 @@ const READINESS_COLORS: Record<string, string> = {
   red: "oklch(0.65 0.22 25)",
 };
 
+const LISTING_CHANNELS: { key: string; label: string }[] = [
+  { key: "pco", label: "PCO" },
+  { key: "eventbrite", label: "Eventbrite" },
+  { key: "google", label: "Google" },
+  { key: "community_cals", label: "Community Cals" },
+  { key: "socials", label: "Socials" },
+];
+const LISTING_LABEL = new Map(LISTING_CHANNELS.map((c) => [c.key, c.label]));
+
 const WEEKDAYS = [
   { v: "SU", label: "S" },
   { v: "MO", label: "M" },
