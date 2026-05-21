@@ -469,6 +469,9 @@ function Body() {
       dietary_flags: form.dietary_flags || null,
       planning_notes: form.planning_notes ?? {},
       draft_itinerary: form.draft_itinerary || null,
+      coordinator_on_call_name: form.coordinator_on_call_name || null,
+      coordinator_on_call_phone: form.coordinator_on_call_phone || null,
+      confirm_checklist: form.confirm_checklist ?? {},
     };
     const { error } = form.id
       ? await supabase.from("mission_trips").update(payload).eq("id", form.id)
