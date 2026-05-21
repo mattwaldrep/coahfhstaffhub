@@ -292,6 +292,9 @@ function CalendarPage() {
 function CalendarBody() {
   const { hasRole, user } = useAuth();
   const canEdit = hasRole("core");
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const handledEventRef = useRef<string | null>(null);
   const [view, setView] = useState<"month" | "week" | "list">("month");
   const [cursor, setCursor] = useState(new Date());
   const [events, setEvents] = useState<EventRow[]>([]);
