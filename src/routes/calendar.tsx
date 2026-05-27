@@ -626,8 +626,8 @@ function CalendarBody() {
     setEditingOccurrence(occ.occurrence_date);
     loadChecklist(ev.id);
     loadTemplatesForEvent(ev.id, occ.occurrence_date);
-    setRoomRequestSubmitted(false);
-    setRoomApprovalReceived(false);
+    setRoomRequestSubmitted((ev as any).room_request_submitted ?? false);
+    setRoomApprovalReceived((ev as any).room_approval_received ?? false);
     setOpen(true);
   }
 
