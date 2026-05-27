@@ -1246,11 +1246,18 @@ function CalendarBody() {
               <div className="space-y-2">
                 <Label>{form.category === "Class" ? "Teacher" : "Leader"}</Label>
                 <Input
+                  list="leader-name-options"
                   value={form.leader_name}
                   onChange={(e) => setForm({ ...form, leader_name: e.target.value })}
-                  placeholder={form.category === "Class" ? "Who's teaching?" : ""}
+                  placeholder={form.category === "Class" ? "Who's teaching?" : "Pick a user or type a name"}
                   disabled={form.leader_not_needed}
                 />
+                <datalist id="leader-name-options">
+                  {assignableUsers
+                    .map((u) => u.full_name || u.email || "")
+                    .filter((n): n is string => !!n)
+                    .map((n) => <option key={n} value={n} />)}
+                </datalist>
                 {form.category === "Class" && !form.leader_name && !form.leader_not_needed && (
                   <p className="text-[11px] text-warning">
                     Needed for classes — you can save without it, but it'll be flagged.
