@@ -1026,6 +1026,26 @@ function CalendarBody() {
             <Switch checked={hidePast} onCheckedChange={setHidePast} />
             Hide past
           </label>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs"
+            onClick={() => {
+              if (!prefsKey) { toast.error("Sign in to save preferences"); return; }
+              try {
+                window.localStorage.setItem(
+                  prefsKey,
+                  JSON.stringify({ view, hidePast, filters, categoryFilter, flagFilter }),
+                );
+                toast.success("Saved as your default calendar view");
+              } catch {
+                toast.error("Could not save preferences");
+              }
+            }}
+          >
+            Save as default
+          </Button>
+
           <div className="flex rounded-full border border-border overflow-hidden">
             {(["month", "week", "list"] as const).map((v) => (
               <button
