@@ -172,6 +172,8 @@ type EventRow = {
   childcare_arranged: boolean;
   room_not_needed: boolean;
   leader_not_needed: boolean;
+  room_request_submitted: boolean;
+  room_approval_received: boolean;
   class_series_id: string | null;
 };
 
@@ -624,8 +626,8 @@ function CalendarBody() {
     setEditingOccurrence(occ.occurrence_date);
     loadChecklist(ev.id);
     loadTemplatesForEvent(ev.id, occ.occurrence_date);
-    setRoomRequestSubmitted(false);
-    setRoomApprovalReceived(false);
+    setRoomRequestSubmitted((ev as any).room_request_submitted ?? false);
+    setRoomApprovalReceived((ev as any).room_approval_received ?? false);
     setOpen(true);
   }
 
@@ -668,6 +670,8 @@ function CalendarBody() {
       childcare_arranged: form.childcare_arranged,
       room_not_needed: form.room_not_needed,
       leader_not_needed: form.leader_not_needed,
+      room_request_submitted: roomRequestSubmitted,
+      room_approval_received: roomApprovalReceived,
       class_series_id: form.class_series_id || null,
     };
     const result = form.id
@@ -774,6 +778,8 @@ function CalendarBody() {
       childcare_arranged: form.childcare_arranged,
       room_not_needed: form.room_not_needed,
       leader_not_needed: form.leader_not_needed,
+      room_request_submitted: roomRequestSubmitted,
+      room_approval_received: roomApprovalReceived,
     });
     if (insertErr) { toast.error(insertErr.message); return; }
     // 2) Add original occurrence date to excluded_dates on the series
