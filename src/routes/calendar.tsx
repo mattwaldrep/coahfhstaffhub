@@ -344,15 +344,28 @@ function CalendarBody() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const handledEventRef = useRef<string | null>(null);
-  const [view, setView] = useState<"month" | "week" | "list">("list");
-  const [hidePast, setHidePast] = useState(false);
+  const prefsKey = user?.id ? `calendar:prefs:${user.id}` : null;
+  const loadedPrefs = (() => {
+    if (typeof window === "undefined" || !prefsKey) return null;
+    try {
+      const raw = window.localStorage.getItem(prefsKey);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const [view, setView] = useState<"month" | "week" | "list">(loadedPrefs?.view ?? "list");
+  const [hidePast, setHidePast] = useState<boolean>(loadedPrefs?.hidePast ?? false);
   const [cursor, setCursor] = useState(new Date());
   const [events, setEvents] = useState<EventRow[]>([]);
-  const [filters, setFilters] = useState<Record<string, boolean>>({
-    forest_hills_main: true, coah_lm: true, youth: true, general: true,
-  });
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [flagFilter, setFlagFilter] = useState<"all" | "pco" | "missions">("all");
+  const [filters, setFilters] = useState<Record<string, boolean>>(
+    loadedPrefs?.filters ?? {
+      forest_hills_main: true, coah_lm: true, youth: true, general: true,
+    },
+  );
+  const [categoryFilter, setCategoryFilter] = useState<string>(loadedPrefs?.categoryFilter ?? "all");
+  const [flagFilter, setFlagFilter] = useState<"all" | "pco" | "missions">(loadedPrefs?.flagFilter ?? "all");
+
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [editingOccurrence, setEditingOccurrence] = useState<Date | null>(null);
@@ -1013,6 +1026,26 @@ function CalendarBody() {
             <Switch checked={hidePast} onCheckedChange={setHidePast} />
             Hide past
           </label>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs"
+            onClick={() => {
+              if (!prefsKey) { toast.error("Sign in to save preferences"); return; }
+              try {
+                window.localStorage.setItem(
+                  prefsKey,
+                  JSON.stringify({ view, hidePast, filters, categoryFilter, flagFilter }),
+                );
+                toast.success("Saved as your default calendar view");
+              } catch {
+                toast.error("Could not save preferences");
+              }
+            }}
+          >
+            Save as default
+          </Button>
+
           <div className="flex rounded-full border border-border overflow-hidden">
             {(["month", "week", "list"] as const).map((v) => (
               <button
