@@ -1083,17 +1083,23 @@ function CalendarBody() {
                 const tplItems = allTemplateItems.filter((i) => eventTemplateIds.includes(i.template_id));
                 const tplTotal = tplItems.length;
                 const tplDone = tplItems.filter((i) => templateStates[`${i.id}:${dateKey}`]).length;
-                const r = scoreEvent({
-                  category: form.category,
-                  leader_name: form.leader_name,
-                  childcare_needed: form.childcare_needed,
-                  childcare_arranged: form.childcare_arranged,
-                  has_room: form.room_ids.length > 0 || form.room_needed.trim().length > 0,
-                  room_not_needed: form.room_not_needed,
-                  leader_not_needed: form.leader_not_needed,
-                  checklist_total: checklist.length + tplTotal,
-                  checklist_done: checklist.filter((i) => i.done).length + tplDone,
-                });
+                 const nonOfficeSelected = form.room_ids.some((id) => {
+                   const r = rooms.find((rm) => rm.id === id);
+                   return r && r.name.trim().toLowerCase() !== "office";
+                 });
+                 const roomConfirmed = !nonOfficeSelected || (roomRequestSubmitted && roomApprovalReceived);
+                 const has_room = roomConfirmed && (form.room_ids.length > 0 || form.room_needed.trim().length > 0);
+                 const r = scoreEvent({
+                   category: form.category,
+                   leader_name: form.leader_name,
+                   childcare_needed: form.childcare_needed,
+                   childcare_arranged: form.childcare_arranged,
+                   has_room,
+                   room_not_needed: form.room_not_needed,
+                   leader_not_needed: form.leader_not_needed,
+                   checklist_total: checklist.length + tplTotal,
+                   checklist_done: checklist.filter((i) => i.done).length + tplDone,
+                 });
                 return (
                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${readinessColor(r.level)}`} title={r.missing.join(", ") || "Ready"}>
                     {r.score}% {r.level === "ready" ? "ready" : r.missing[0] ? `· need ${r.missing[0].toLowerCase()}` : ""}
