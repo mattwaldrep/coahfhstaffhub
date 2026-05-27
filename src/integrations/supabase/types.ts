@@ -251,8 +251,10 @@ export type Database = {
           pco_registration: boolean
           readiness: Database["public"]["Enums"]["readiness"] | null
           recurrence_end_date: string | null
+          room_approval_received: boolean
           room_needed: string | null
           room_not_needed: boolean
+          room_request_submitted: boolean
           rrule: string | null
           social_ads: boolean
           start_at: string
@@ -283,8 +285,10 @@ export type Database = {
           pco_registration?: boolean
           readiness?: Database["public"]["Enums"]["readiness"] | null
           recurrence_end_date?: string | null
+          room_approval_received?: boolean
           room_needed?: string | null
           room_not_needed?: boolean
+          room_request_submitted?: boolean
           rrule?: string | null
           social_ads?: boolean
           start_at: string
@@ -315,8 +319,10 @@ export type Database = {
           pco_registration?: boolean
           readiness?: Database["public"]["Enums"]["readiness"] | null
           recurrence_end_date?: string | null
+          room_approval_received?: boolean
           room_needed?: string | null
           room_not_needed?: boolean
+          room_request_submitted?: boolean
           rrule?: string | null
           social_ads?: boolean
           start_at?: string
