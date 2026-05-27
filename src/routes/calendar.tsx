@@ -559,6 +559,8 @@ function CalendarBody() {
     setChecklist([]);
     setEventTemplateIds([]);
     setTemplateStates({});
+    setRoomRequestSubmitted(false);
+    setRoomApprovalReceived(false);
     setOpen(true);
   }
 
