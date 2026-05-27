@@ -172,6 +172,8 @@ type EventRow = {
   childcare_arranged: boolean;
   room_not_needed: boolean;
   leader_not_needed: boolean;
+  room_request_submitted: boolean;
+  room_approval_received: boolean;
   class_series_id: string | null;
 };
 
