@@ -670,6 +670,8 @@ function CalendarBody() {
       childcare_arranged: form.childcare_arranged,
       room_not_needed: form.room_not_needed,
       leader_not_needed: form.leader_not_needed,
+      room_request_submitted: roomRequestSubmitted,
+      room_approval_received: roomApprovalReceived,
       class_series_id: form.class_series_id || null,
     };
     const result = form.id
