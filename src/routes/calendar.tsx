@@ -383,7 +383,16 @@ function CalendarBody() {
 
   function readinessFor(occ: Occurrence) {
     const roomIds = eventRoomsMap.current.get(occ.id) ?? [];
-    const has_room = roomIds.length > 0 || (occ.room_needed ?? "").trim().length > 0;
+    const nonOfficeSelected = roomIds.some((id) => {
+      const r = rooms.find((rm) => rm.id === id);
+      return r && r.name.toLowerCase() !== "office";
+    });
+    const roomConfirmed =
+      !nonOfficeSelected ||
+      (((occ as any).room_request_submitted ?? false) &&
+        ((occ as any).room_approval_received ?? false));
+    const has_room =
+      roomConfirmed && (roomIds.length > 0 || (occ.room_needed ?? "").trim().length > 0);
     const adHoc = eventChecklistMap.current.get(occ.id) ?? { total: 0, done: 0 };
     const tplIds = eventAttachmentsMap.current.get(occ.id) ?? [];
     const tplItems = allTemplateItems.filter((i) => tplIds.includes(i.template_id));
@@ -404,6 +413,7 @@ function CalendarBody() {
       checklist_done: adHoc.done + tplDone,
     });
   }
+
 
 
   const range = useMemo(() => {
