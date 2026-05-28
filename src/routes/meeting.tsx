@@ -33,7 +33,9 @@ import {
   ReviewTasksSection,
   SectionDivider,
   ClassesNeedingAttentionSection,
+  ThisSundaySection,
 } from "@/components/meeting/MeetingSections";
+
 
 export const Route = createFileRoute("/meeting")({
   component: MeetingPage,
@@ -437,7 +439,9 @@ function MeetingPage() {
               </div>
             </StandingSection>
 
+            <ThisSundaySection meetingDate={meeting.meeting_date} />
             <UpcomingEventsSection meetingId={meeting.id} />
+
             <ClassesNeedingAttentionSection />
 
             <SectionDivider label="Capture" />

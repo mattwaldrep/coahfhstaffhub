@@ -1301,6 +1301,33 @@ export type Database = {
           },
         ]
       }
+      event_sunday_slots: {
+        Row: {
+          channel: string
+          created_at: string
+          created_by: string | null
+          event_id: string
+          id: string
+          sunday_date: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          id?: string
+          sunday_date: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          id?: string
+          sunday_date?: string
+        }
+        Relationships: []
+      }
       event_template_attachments: {
         Row: {
           created_at: string

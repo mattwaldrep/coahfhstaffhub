@@ -62,6 +62,8 @@ import {
 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+
 import { useServerFn } from "@tanstack/react-start";
 import {
   assignChecklistItem,
@@ -117,9 +119,13 @@ const COMMS_CHANNELS: { key: string; label: string }[] = [
   { key: "push_notification", label: "Push Notification" },
   { key: "sunday_slide", label: "Sunday Slide" },
   { key: "sunday_announcement", label: "Sunday Announcement" },
+  { key: "ministry_highlight", label: "Ministry Highlight" },
   { key: "newsletter", label: "Newsletter" },
   { key: "text_message", label: "Text Message" },
 ];
+
+const SUNDAY_SLOT_CHANNELS = ["sunday_announcement", "ministry_highlight"] as const;
+type SundaySlotChannel = (typeof SUNDAY_SLOT_CHANNELS)[number];
 
 const LISTING_CHECKLIST_LABEL: Record<string, string> = {
   pco: "Set up PCO registration",
@@ -132,9 +138,11 @@ const LISTING_CHECKLIST_LABEL: Record<string, string> = {
   push_notification: "Send push notification",
   sunday_slide: "Add to Sunday slides",
   sunday_announcement: "Add to Sunday announcements",
+  ministry_highlight: "Feature as Ministry Highlight",
   newsletter: "Include in newsletter",
   text_message: "Send text message",
 };
+
 
 const WEEKDAYS = [
   { v: "SU", label: "S" },
@@ -330,6 +338,63 @@ function deriveReadiness(items: ChecklistItem[], manual: string | null): string 
   return "yellow";
 }
 
+function SundaySlotPicker({
+  dates,
+  onAdd,
+  onRemove,
+}: {
+  dates: string[];
+  onAdd: (iso: string) => void;
+  onRemove: (iso: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="ml-9 mt-1.5 space-y-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
+        {dates.length === 0 && (
+          <span className="text-xs text-muted-foreground">No Sundays scheduled yet.</span>
+        )}
+        {dates.map((iso) => (
+          <span
+            key={iso}
+            className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
+          >
+            {format(new Date(iso + "T12:00:00"), "MMM d, yyyy")}
+            <button
+              type="button"
+              onClick={() => onRemove(iso)}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Remove Sunday"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </span>
+        ))}
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button type="button" variant="outline" size="sm" className="h-6 px-2 text-xs">
+              <Plus className="h-3 w-3 mr-1" /> Add Sunday
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              disabled={(d: Date) => d.getDay() !== 0}
+              onSelect={(d: Date | undefined) => {
+                if (!d) return;
+                onAdd(format(d, "yyyy-MM-dd"));
+                setOpen(false);
+              }}
+              className="p-3 pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+  );
+}
+
+
 function CalendarPage() {
   return (
     <AppShell>
@@ -378,6 +443,15 @@ function CalendarBody() {
   const [pendingRoom, setPendingRoom] = useState<{ id: string; name: string; step: "request" | "approval" } | null>(null);
   const [roomRequestSubmitted, setRoomRequestSubmitted] = useState(false);
   const [roomApprovalReceived, setRoomApprovalReceived] = useState(false);
+  const [sundaySlots, setSundaySlots] = useState<Record<SundaySlotChannel, string[]>>({
+    sunday_announcement: [],
+    ministry_highlight: [],
+  });
+  const initialSundaySlots = useRef<Record<SundaySlotChannel, string[]>>({
+    sunday_announcement: [],
+    ministry_highlight: [],
+  });
+
   const [assignableUsers, setAssignableUsers] = useState<UserOption[]>([]);
   const assignFn = useServerFn(assignChecklistItem);
   const unassignFn = useServerFn(unassignChecklistItem);
@@ -586,7 +660,10 @@ function CalendarBody() {
     setTemplateStates({});
     setRoomRequestSubmitted(false);
     setRoomApprovalReceived(false);
+    setSundaySlots({ sunday_announcement: [], ministry_highlight: [] });
+    initialSundaySlots.current = { sunday_announcement: [], ministry_highlight: [] };
     setOpen(true);
+
   }
 
   function openEdit(occ: Occurrence) {
@@ -651,8 +728,30 @@ function CalendarBody() {
     loadTemplatesForEvent(ev.id, occ.occurrence_date);
     setRoomRequestSubmitted((ev as any).room_request_submitted ?? false);
     setRoomApprovalReceived((ev as any).room_approval_received ?? false);
+    loadSundaySlots(ev.id);
     setOpen(true);
   }
+
+  async function loadSundaySlots(eventId: string) {
+    const { data } = await supabase
+      .from("event_sunday_slots" as any)
+      .select("channel, sunday_date")
+      .eq("event_id", eventId);
+    const next: Record<SundaySlotChannel, string[]> = {
+      sunday_announcement: [],
+      ministry_highlight: [],
+    };
+    for (const row of ((data ?? []) as unknown as Array<{ channel: SundaySlotChannel; sunday_date: string }>)) {
+      if (next[row.channel]) next[row.channel].push(row.sunday_date);
+    }
+    for (const k of SUNDAY_SLOT_CHANNELS) next[k].sort();
+    setSundaySlots(next);
+    initialSundaySlots.current = {
+      sunday_announcement: [...next.sunday_announcement],
+      ministry_highlight: [...next.ministry_highlight],
+    };
+  }
+
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -716,7 +815,29 @@ function CalendarBody() {
       for (const key of Object.keys(LISTING_CHECKLIST_LABEL)) {
         await syncListingChecklist(savedId, key, enabledChannels.includes(key));
       }
+      // Reconcile Sunday slots (Ministry Highlight + Sunday Announcement)
+      for (const ch of SUNDAY_SLOT_CHANNELS) {
+        const enabled = form.other_listings.includes(ch);
+        const desired = enabled ? sundaySlots[ch] : [];
+        const prev = initialSundaySlots.current[ch] ?? [];
+        const toAdd = desired.filter((d) => !prev.includes(d));
+        const toRemove = prev.filter((d) => !desired.includes(d));
+        if (toRemove.length > 0) {
+          await supabase
+            .from("event_sunday_slots" as any)
+            .delete()
+            .eq("event_id", savedId)
+            .eq("channel", ch)
+            .in("sunday_date", toRemove);
+        }
+        if (toAdd.length > 0) {
+          await supabase
+            .from("event_sunday_slots" as any)
+            .insert(toAdd.map((d) => ({ event_id: savedId, channel: ch, sunday_date: d })));
+        }
+      }
     }
+
     const gaps = classGaps(form);
     if (gaps.length > 0) {
       toast.warning(`Saved. Still needed: ${gaps.join(", ")}.`);
@@ -1412,22 +1533,50 @@ function CalendarBody() {
                 <div className="grid grid-cols-2 gap-2">
                   {COMMS_CHANNELS.map((c) => {
                     const checked = form.other_listings.includes(c.key);
+                    const isSunday = (SUNDAY_SLOT_CHANNELS as readonly string[]).includes(c.key);
                     const toggle = (v: boolean) => {
                       const next = v
                         ? Array.from(new Set([...form.other_listings, c.key]))
                         : form.other_listings.filter((k) => k !== c.key);
                       setForm({ ...form, other_listings: next });
                       if (form.id) syncListingChecklist(form.id, c.key, v);
+                      if (isSunday && !v) {
+                        setSundaySlots((s) => ({ ...s, [c.key as SundaySlotChannel]: [] }));
+                      }
                     };
                     return (
-                      <label key={c.key} className="flex items-center gap-2 text-sm">
-                        <Switch checked={checked} onCheckedChange={toggle} />
-                        {c.label}
-                      </label>
+                      <div key={c.key} className={isSunday ? "col-span-2" : ""}>
+                        <label className="flex items-center gap-2 text-sm">
+                          <Switch checked={checked} onCheckedChange={toggle} />
+                          {c.label}
+                        </label>
+                        {isSunday && checked && (
+                          <SundaySlotPicker
+                            dates={sundaySlots[c.key as SundaySlotChannel]}
+                            onAdd={(iso) =>
+                              setSundaySlots((s) => ({
+                                ...s,
+                                [c.key as SundaySlotChannel]: Array.from(
+                                  new Set([...s[c.key as SundaySlotChannel], iso]),
+                                ).sort(),
+                              }))
+                            }
+                            onRemove={(iso) =>
+                              setSundaySlots((s) => ({
+                                ...s,
+                                [c.key as SundaySlotChannel]: s[c.key as SundaySlotChannel].filter(
+                                  (d) => d !== iso,
+                                ),
+                              }))
+                            }
+                          />
+                        )}
+                      </div>
                     );
                   })}
                 </div>
               </div>
+
               <label className="flex items-center gap-2 text-sm">
                 <Switch
                   checked={form.missions_team_needed}
