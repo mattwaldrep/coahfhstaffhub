@@ -338,6 +338,63 @@ function deriveReadiness(items: ChecklistItem[], manual: string | null): string 
   return "yellow";
 }
 
+function SundaySlotPicker({
+  dates,
+  onAdd,
+  onRemove,
+}: {
+  dates: string[];
+  onAdd: (iso: string) => void;
+  onRemove: (iso: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="ml-9 mt-1.5 space-y-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
+        {dates.length === 0 && (
+          <span className="text-xs text-muted-foreground">No Sundays scheduled yet.</span>
+        )}
+        {dates.map((iso) => (
+          <span
+            key={iso}
+            className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
+          >
+            {format(new Date(iso + "T12:00:00"), "MMM d, yyyy")}
+            <button
+              type="button"
+              onClick={() => onRemove(iso)}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Remove Sunday"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </span>
+        ))}
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button type="button" variant="outline" size="sm" className="h-6 px-2 text-xs">
+              <Plus className="h-3 w-3 mr-1" /> Add Sunday
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              disabled={(d: Date) => d.getDay() !== 0}
+              onSelect={(d: Date | undefined) => {
+                if (!d) return;
+                onAdd(format(d, "yyyy-MM-dd"));
+                setOpen(false);
+              }}
+              className="p-3 pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+  );
+}
+
+
 function CalendarPage() {
   return (
     <AppShell>
