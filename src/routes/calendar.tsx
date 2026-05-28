@@ -1476,22 +1476,50 @@ function CalendarBody() {
                 <div className="grid grid-cols-2 gap-2">
                   {COMMS_CHANNELS.map((c) => {
                     const checked = form.other_listings.includes(c.key);
+                    const isSunday = (SUNDAY_SLOT_CHANNELS as readonly string[]).includes(c.key);
                     const toggle = (v: boolean) => {
                       const next = v
                         ? Array.from(new Set([...form.other_listings, c.key]))
                         : form.other_listings.filter((k) => k !== c.key);
                       setForm({ ...form, other_listings: next });
                       if (form.id) syncListingChecklist(form.id, c.key, v);
+                      if (isSunday && !v) {
+                        setSundaySlots((s) => ({ ...s, [c.key as SundaySlotChannel]: [] }));
+                      }
                     };
                     return (
-                      <label key={c.key} className="flex items-center gap-2 text-sm">
-                        <Switch checked={checked} onCheckedChange={toggle} />
-                        {c.label}
-                      </label>
+                      <div key={c.key} className={isSunday ? "col-span-2" : ""}>
+                        <label className="flex items-center gap-2 text-sm">
+                          <Switch checked={checked} onCheckedChange={toggle} />
+                          {c.label}
+                        </label>
+                        {isSunday && checked && (
+                          <SundaySlotPicker
+                            dates={sundaySlots[c.key as SundaySlotChannel]}
+                            onAdd={(iso) =>
+                              setSundaySlots((s) => ({
+                                ...s,
+                                [c.key as SundaySlotChannel]: Array.from(
+                                  new Set([...s[c.key as SundaySlotChannel], iso]),
+                                ).sort(),
+                              }))
+                            }
+                            onRemove={(iso) =>
+                              setSundaySlots((s) => ({
+                                ...s,
+                                [c.key as SundaySlotChannel]: s[c.key as SundaySlotChannel].filter(
+                                  (d) => d !== iso,
+                                ),
+                              }))
+                            }
+                          />
+                        )}
+                      </div>
                     );
                   })}
                 </div>
               </div>
+
               <label className="flex items-center gap-2 text-sm">
                 <Switch
                   checked={form.missions_team_needed}
