@@ -559,6 +559,115 @@ export function UpcomingEventsSection({ meetingId }: { meetingId: string }) {
   );
 }
 
+/* ---------- This Sunday's slot (Ministry Highlight + Sunday Announcement) ---------- */
+
+const SUNDAY_SLOT_LABELS: Record<string, string> = {
+  ministry_highlight: "Ministry Highlight",
+  sunday_announcement: "Sunday Announcement",
+};
+
+export function ThisSundaySection({ meetingDate }: { meetingDate: string }) {
+  const targetSunday = useMemo(() => {
+    const d = new Date(meetingDate + "T12:00:00");
+    const day = d.getDay();
+    return addDays(startOfDay(d), (7 - day) % 7);
+  }, [meetingDate]);
+  const sundayIso = format(targetSunday, "yyyy-MM-dd");
+  const sundayLabel = format(targetSunday, "EEEE, MMM d");
+
+  const [rows, setRows] = useState<Array<{ channel: string; event_id: string; title: string }>>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const { data: slots } = await supabase
+        .from("event_sunday_slots" as any)
+        .select("channel, event_id")
+        .eq("sunday_date", sundayIso);
+      const slotRows = ((slots ?? []) as unknown as Array<{ channel: string; event_id: string }>);
+      const ids = Array.from(new Set(slotRows.map((s) => s.event_id)));
+      let titles: Record<string, string> = {};
+      if (ids.length > 0) {
+        const { data: evs } = await supabase
+          .from("calendar_events")
+          .select("id, title")
+          .in("id", ids);
+        for (const e of (evs ?? []) as Array<{ id: string; title: string }>) {
+          titles[e.id] = e.title;
+        }
+      }
+      if (!mounted) return;
+      setRows(
+        slotRows.map((s) => ({
+          channel: s.channel,
+          event_id: s.event_id,
+          title: titles[s.event_id] ?? "(untitled)",
+        })),
+      );
+      setLoaded(true);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [sundayIso]);
+
+  const grouped = useMemo(() => {
+    const m: Record<string, typeof rows> = { ministry_highlight: [], sunday_announcement: [] };
+    for (const r of rows) {
+      if (!m[r.channel]) m[r.channel] = [];
+      m[r.channel].push(r);
+    }
+    return m;
+  }, [rows]);
+
+  return (
+    <StandingSection
+      title="This Sunday's Slot"
+      subtitle={`Ministry Highlight and announcements scheduled for ${sundayLabel}.`}
+      badge={
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-normal">
+          {rows.length} {rows.length === 1 ? "item" : "items"}
+        </span>
+      }
+    >
+      {!loaded ? (
+        <div className="text-sm text-muted-foreground">Loading…</div>
+      ) : rows.length === 0 ? (
+        <div className="text-sm text-muted-foreground">Nothing scheduled for this Sunday yet.</div>
+      ) : (
+        <div className="space-y-4">
+          {(["ministry_highlight", "sunday_announcement"] as const).map((ch) => {
+            const items = grouped[ch] ?? [];
+            if (items.length === 0) return null;
+            return (
+              <div key={ch}>
+                <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
+                  {SUNDAY_SLOT_LABELS[ch]}
+                </h4>
+                <ul className="space-y-1">
+                  {items.map((it) => (
+                    <li key={`${it.event_id}-${ch}`} className="text-sm">
+                      <Link
+                        to="/calendar"
+                        search={{ event: it.event_id }}
+                        className="hover:underline"
+                      >
+                        {it.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </StandingSection>
+  );
+}
+
+
 /* ---------- 6. & 7. PCO link sections ---------- */
 
 export function LinkSection({
