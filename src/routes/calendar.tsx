@@ -117,9 +117,13 @@ const COMMS_CHANNELS: { key: string; label: string }[] = [
   { key: "push_notification", label: "Push Notification" },
   { key: "sunday_slide", label: "Sunday Slide" },
   { key: "sunday_announcement", label: "Sunday Announcement" },
+  { key: "ministry_highlight", label: "Ministry Highlight" },
   { key: "newsletter", label: "Newsletter" },
   { key: "text_message", label: "Text Message" },
 ];
+
+const SUNDAY_SLOT_CHANNELS = ["sunday_announcement", "ministry_highlight"] as const;
+type SundaySlotChannel = (typeof SUNDAY_SLOT_CHANNELS)[number];
 
 const LISTING_CHECKLIST_LABEL: Record<string, string> = {
   pco: "Set up PCO registration",
@@ -132,9 +136,11 @@ const LISTING_CHECKLIST_LABEL: Record<string, string> = {
   push_notification: "Send push notification",
   sunday_slide: "Add to Sunday slides",
   sunday_announcement: "Add to Sunday announcements",
+  ministry_highlight: "Feature as Ministry Highlight",
   newsletter: "Include in newsletter",
   text_message: "Send text message",
 };
+
 
 const WEEKDAYS = [
   { v: "SU", label: "S" },
