@@ -671,8 +671,30 @@ function CalendarBody() {
     loadTemplatesForEvent(ev.id, occ.occurrence_date);
     setRoomRequestSubmitted((ev as any).room_request_submitted ?? false);
     setRoomApprovalReceived((ev as any).room_approval_received ?? false);
+    loadSundaySlots(ev.id);
     setOpen(true);
   }
+
+  async function loadSundaySlots(eventId: string) {
+    const { data } = await supabase
+      .from("event_sunday_slots" as any)
+      .select("channel, sunday_date")
+      .eq("event_id", eventId);
+    const next: Record<SundaySlotChannel, string[]> = {
+      sunday_announcement: [],
+      ministry_highlight: [],
+    };
+    for (const row of ((data ?? []) as unknown as Array<{ channel: SundaySlotChannel; sunday_date: string }>)) {
+      if (next[row.channel]) next[row.channel].push(row.sunday_date);
+    }
+    for (const k of SUNDAY_SLOT_CHANNELS) next[k].sort();
+    setSundaySlots(next);
+    initialSundaySlots.current = {
+      sunday_announcement: [...next.sunday_announcement],
+      ministry_highlight: [...next.ministry_highlight],
+    };
+  }
+
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
