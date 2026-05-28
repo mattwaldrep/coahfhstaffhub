@@ -758,7 +758,29 @@ function CalendarBody() {
       for (const key of Object.keys(LISTING_CHECKLIST_LABEL)) {
         await syncListingChecklist(savedId, key, enabledChannels.includes(key));
       }
+      // Reconcile Sunday slots (Ministry Highlight + Sunday Announcement)
+      for (const ch of SUNDAY_SLOT_CHANNELS) {
+        const enabled = form.other_listings.includes(ch);
+        const desired = enabled ? sundaySlots[ch] : [];
+        const prev = initialSundaySlots.current[ch] ?? [];
+        const toAdd = desired.filter((d) => !prev.includes(d));
+        const toRemove = prev.filter((d) => !desired.includes(d));
+        if (toRemove.length > 0) {
+          await supabase
+            .from("event_sunday_slots" as any)
+            .delete()
+            .eq("event_id", savedId)
+            .eq("channel", ch)
+            .in("sunday_date", toRemove);
+        }
+        if (toAdd.length > 0) {
+          await supabase
+            .from("event_sunday_slots" as any)
+            .insert(toAdd.map((d) => ({ event_id: savedId, channel: ch, sunday_date: d })));
+        }
+      }
     }
+
     const gaps = classGaps(form);
     if (gaps.length > 0) {
       toast.warning(`Saved. Still needed: ${gaps.join(", ")}.`);
