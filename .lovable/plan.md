@@ -1,94 +1,55 @@
-## Staff Onboarding Module
+## What we're building
 
-A configurable onboarding system: a master template admins can edit, per-hire workflows cloned from that template, and a live checklist with skip + nested subtask support.
+1. A new **Ministry Highlight** communication channel on event cards (next to Sunday Announcement).
+2. When either **Ministry Highlight** or **Sunday Announcement** is checked on an event, prompt the user to pick one or more Sunday dates to schedule it for. Dates can be added/removed later by reopening the event.
+3. A new standing section in the weekly staff meeting — **This Sunday's Slot** — that lists every event scheduled for Ministry Highlight or Sunday Announcement on the Sunday that falls in the meeting's week.
 
-### 1. Database schema (one migration)
+## How it works
 
-**`onboarding_templates`** — master library of tasks (and nested subtasks).
-- `id`, `section_name text`, `task_name text`, `description text`
-- `is_onsite_only boolean default false`
-- `is_active boolean default true`
-- `parent_id uuid null` (self-FK for subtasks / nested subtasks — supports arbitrary depth)
-- `sort_order int`, `created_at`, `updated_at`
+### Event card
+- Add `{ key: "ministry_highlight", label: "Ministry Highlight" }` to `COMMS_CHANNELS` in `src/routes/calendar.tsx` and a matching entry in `LISTING_CHECKLIST_LABEL`.
+- When the user checks Ministry Highlight or Sunday Announcement, open a small inline scheduler underneath the checkbox: a date popover restricted to Sundays, plus a list of already-scheduled Sundays with remove buttons. Multiple Sundays allowed per channel per event. Unchecking the channel clears its dates.
+- Saving the event persists those dates to a new table (see below). The scheduled-Sundays UI also appears on read for any already-scheduled event.
 
-**`onboarding_workflows`** — one row per new hire.
-- `id`, `new_hire_name text`, `new_hire_email text null`, `user_id uuid null` (link to profiles if they have an account)
-- `hire_type text check in ('onsite','remote','hybrid')`
-- `status text` (`active`, `paused`, `completed`, `archived`)
-- `start_date date`, `created_by`, `created_at`, `updated_at`
+### Weekly meeting
+- Add a new `StandingSection` titled **This Sunday's Slot** in `src/routes/meeting.tsx`, rendered under "This Week" (next to UpcomingEventsSection).
+- It computes the Sunday whose week contains `meeting.meeting_date` (the upcoming Sunday on or after the meeting date) and lists any events scheduled for that Sunday, grouped by channel (Ministry Highlight / Sunday Announcement), each linking back to the event in the calendar.
+- Empty state: "Nothing scheduled for this Sunday yet."
 
-**`onboarding_tasks`** — live per-hire checklist, cloned at launch.
-- `id`, `workflow_id`, `section_name`, `task_name`, `description`
-- `is_completed boolean`, `completed_at`, `completed_by`
-- `is_skipped boolean`, `skipped_reason text null`
-- `parent_task_id uuid null` (mirrors template hierarchy)
-- `sort_order int`, `source_template_id uuid null` (for traceability)
+## Technical details
 
-RLS: `core` role manages everything; all authenticated staff can view (matches existing patterns like `event_checklist_items`). Add `set_updated_at` triggers.
+### Database (new migration)
+New table `public.event_sunday_slots`:
+- `id uuid pk`
+- `event_id uuid not null` (references `calendar_events.id` via app logic — matches existing pattern of no FKs)
+- `channel text not null check (channel in ('ministry_highlight','sunday_announcement'))`
+- `sunday_date date not null`
+- `created_at timestamptz not null default now()`
+- `created_by uuid`
+- unique `(event_id, channel, sunday_date)`
+- Index on `(sunday_date, channel)` for the meeting lookup.
+- `GRANT SELECT, INSERT, UPDATE, DELETE ON public.event_sunday_slots TO authenticated; GRANT ALL ... TO service_role;`
+- RLS: authenticated can SELECT all; core role can INSERT/UPDATE/DELETE (mirrors `event_rooms`).
 
-### 2. Seed data
+### `src/routes/calendar.tsx`
+- Extend `COMMS_CHANNELS` and `LISTING_CHECKLIST_LABEL` with `ministry_highlight`.
+- In the comms checkbox rendering blocks (around lines ~1370–1420), when the channel key is `ministry_highlight` or `sunday_announcement` AND the box is checked, render a Sunday-picker subcomponent below the row:
+  - shadcn `Popover` + `Calendar` with `mode="single"` and `disabled={(d) => d.getDay() !== 0}` (Sundays only). Selecting a date appends to the list.
+  - List of chips for each scheduled Sunday with `X` to remove.
+- Add state `sundaySlots: { ministry_highlight: string[]; sunday_announcement: string[] }` loaded from the new table when the event opens and saved alongside the event (diff against initial → inserts + deletes).
+- Unchecking the channel clears its slot list.
 
-A second migration seeds `onboarding_templates` with the full hierarchy from the spec (Arrival → End of Week Eval), preserving parent/child/grandchild nesting and flagging the four on-site-only tasks (Welcome Kit, Keys, Welcome Lunch — plus any others marked on-site). Welcome Kit description includes the supply list verbatim.
+### `src/routes/meeting.tsx` + `src/components/meeting/MeetingSections.tsx`
+- New component `ThisSundaySection({ meetingId, meetingDate })` in `MeetingSections.tsx`:
+  - Compute target Sunday = next Sunday on/after `meetingDate` (`addDays(meetingDate, (7 - day) % 7)`).
+  - Query `event_sunday_slots` where `sunday_date = targetSunday`, join titles from `calendar_events` (two queries).
+  - Render as a `StandingSection` with two sub-lists (Ministry Highlight, Sunday Announcement), each row showing event title + link to `/calendar?event=<id>`.
+- Wire it into `src/routes/meeting.tsx` under the "This Week" divider, before `UpcomingEventsSection`.
 
-### 3. Server functions (`src/lib/onboarding.functions.ts`)
+### Readiness scoring
+No change. Sunday slots are scheduling metadata, not readiness checks.
 
-All `requireSupabaseAuth` + core role check.
-
-- `listTemplate()` — full tree (active + inactive).
-- `upsertTemplateNode({ id?, parent_id?, section_name, task_name, description, is_onsite_only, sort_order })`
-- `setTemplateActive({ id, is_active })` — soft deactivate (preserves history).
-- `reorderTemplateNodes({ updates: [{id, sort_order, parent_id?}] })`
-- `launchWorkflow({ new_hire_name, hire_type, start_date, user_id? })` — clones every active template node into `onboarding_tasks`; if `hire_type='remote'`, sets `is_skipped=true, skipped_reason='Remote hire'` on `is_onsite_only` tasks (and their descendants).
-- `listWorkflows()` / `getWorkflow({ id })` — returns workflow + tasks tree + computed progress.
-- `setTaskCompleted({ task_id, completed })` / `setTaskSkipped({ task_id, skipped, reason? })`
-- `addAdHocTask({ workflow_id, parent_task_id?, section_name, task_name, description? })` — per-hire customization.
-- `archiveWorkflow({ id })`
-
-Progress math: `completed / (total - skipped)` over leaf tasks only (parents with children count via their children).
-
-### 4. Routes & UI
-
-**`/onboarding`** — dashboard.
-- "Launch onboarding" button (modal: name, hire type radio onsite/remote/hybrid, start date).
-- Cards/table of active workflows: name, hire type badge, start date, progress bar, status chip.
-- Filters: active / completed / archived.
-
-**`/onboarding/$workflowId`** — live checklist.
-- Header: name, hire type, start date, overall progress bar (excluding skipped), status menu (mark complete / archive).
-- Grouped by `section_name`. Each section collapsible.
-- Each task row: checkbox · title · description tooltip · **Skip** button (or "Unskip" if skipped) · ad-hoc add button on parents.
-- Skipped rows render grayed/strikethrough and don't count toward progress.
-- Subtasks visually indented (16px per depth level) with collapse chevron on any parent. Parent checkbox is tri-state derived from children; checking a parent cascades to unskipped children.
-- "Add ad-hoc task" inline at section + subtask level.
-
-**`/onboarding/templates`** — master editor (core only).
-- Tree view of sections → tasks → subtasks → nested subtasks.
-- Inline edit: name, description, on-site-only toggle, active toggle.
-- Drag-to-reorder within parent (or up/down buttons for simplicity v1).
-- "Add section", "Add task under…", "Add subtask under…".
-- Deactivated nodes shown faded with restore button; future workflows skip them, existing workflows untouched.
-
-Add `Onboarding` entry to `AppSidebar` (visible to `core` and `meeting`; editor link visible to `core` only).
-
-### 5. Components
-
-- `src/components/onboarding/LaunchWorkflowDialog.tsx`
-- `src/components/onboarding/TaskTree.tsx` — recursive renderer used by both live checklist and template editor (mode prop).
-- `src/components/onboarding/ProgressBar.tsx` — reusable, excludes skipped.
-- `src/components/onboarding/TemplateNodeRow.tsx`
-- `src/components/onboarding/TaskRow.tsx`
-
-### Technical notes
-
-- Cloning at launch (vs referencing template by FK) is intentional — matches the spec's "cloned from the master template" and lets admins edit templates later without retroactively changing in-flight onboardings.
-- `parent_id` self-FK on both `onboarding_templates` and `onboarding_tasks` supports the 3-level nesting in the spec (and beyond) without a separate subtasks table.
-- Remote auto-skip cascades to descendants of on-site-only parents at launch time, so a remote hire's progress isn't dragged down by unreachable children.
-- Skip is reversible (re-include in progress) via the same control.
-- No changes to existing modules; this is purely additive.
-
-### Out of scope (v1)
-
-- Email notifications to new hires / mentors.
-- Per-task assignees (everything is owned by the workflow's `created_by`).
-- Linking onboarding tasks into the existing `action_items` / Google Tasks sync — easy to add later using the same pattern as `checklist-tasks.functions.ts`.
-- Templates per role/department (single global template now; can add `template_set_id` later without breaking schema).
+## Out of scope
+- Notifications/reminders about upcoming highlight/announcement slots.
+- Editing slots from the meeting view (read-only there; edit on the event).
+- Exposing slots in the meeting recap email (can add later if useful).
