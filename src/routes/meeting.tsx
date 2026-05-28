@@ -439,7 +439,9 @@ function MeetingPage() {
               </div>
             </StandingSection>
 
+            <ThisSundaySection meetingDate={meeting.meeting_date} />
             <UpcomingEventsSection meetingId={meeting.id} />
+
             <ClassesNeedingAttentionSection />
 
             <SectionDivider label="Capture" />
