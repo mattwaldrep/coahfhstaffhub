@@ -603,7 +603,10 @@ function CalendarBody() {
     setTemplateStates({});
     setRoomRequestSubmitted(false);
     setRoomApprovalReceived(false);
+    setSundaySlots({ sunday_announcement: [], ministry_highlight: [] });
+    initialSundaySlots.current = { sunday_announcement: [], ministry_highlight: [] };
     setOpen(true);
+
   }
 
   function openEdit(occ: Occurrence) {
