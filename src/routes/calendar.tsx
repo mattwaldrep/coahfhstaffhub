@@ -386,6 +386,15 @@ function CalendarBody() {
   const [pendingRoom, setPendingRoom] = useState<{ id: string; name: string; step: "request" | "approval" } | null>(null);
   const [roomRequestSubmitted, setRoomRequestSubmitted] = useState(false);
   const [roomApprovalReceived, setRoomApprovalReceived] = useState(false);
+  const [sundaySlots, setSundaySlots] = useState<Record<SundaySlotChannel, string[]>>({
+    sunday_announcement: [],
+    ministry_highlight: [],
+  });
+  const initialSundaySlots = useRef<Record<SundaySlotChannel, string[]>>({
+    sunday_announcement: [],
+    ministry_highlight: [],
+  });
+
   const [assignableUsers, setAssignableUsers] = useState<UserOption[]>([]);
   const assignFn = useServerFn(assignChecklistItem);
   const unassignFn = useServerFn(unassignChecklistItem);
