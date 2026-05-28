@@ -33,7 +33,9 @@ import {
   ReviewTasksSection,
   SectionDivider,
   ClassesNeedingAttentionSection,
+  ThisSundaySection,
 } from "@/components/meeting/MeetingSections";
+
 
 export const Route = createFileRoute("/meeting")({
   component: MeetingPage,
