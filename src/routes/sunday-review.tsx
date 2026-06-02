@@ -246,10 +246,20 @@ function SundayReviewPage() {
               />
             </Field>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end items-center gap-2">
+              {isEditing && (
+                <>
+                  <span className="text-xs text-muted-foreground mr-auto">
+                    Editing existing submission for this date
+                  </span>
+                  <Button type="button" variant="ghost" onClick={() => setForm(emptyForm())}>
+                    New review
+                  </Button>
+                </>
+              )}
               <Button type="submit" disabled={saving}>
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Submit review
+                {isEditing ? "Update review" : "Submit review"}
               </Button>
             </div>
           </form>
