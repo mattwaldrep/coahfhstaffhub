@@ -1,8 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
-
-const loadServer = () => import("./users.server");
+import { assertCore, supabaseAdmin } from "./users.server";
 
 const ROLES = ["core", "meeting", "extended", "elder", "elder_candidate"] as const;
 type Role = (typeof ROLES)[number];
@@ -11,7 +10,6 @@ type Role = (typeof ROLES)[number];
 export const listUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { assertCore, supabaseAdmin } = await loadServer();
     await assertCore(context.supabase, context.userId);
     const [{ data: profiles }, { data: roles }] = await Promise.all([
       supabaseAdmin.from("profiles").select("id, email, full_name, avatar_url, created_at"),
@@ -38,7 +36,6 @@ export const setUserRole = createServerFn({ method: "POST" })
     z.object({ userId: z.string().uuid(), role: z.enum(STAFF_ROLES) }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { assertCore, supabaseAdmin } = await loadServer();
     await assertCore(context.supabase, context.userId);
     if (data.userId === context.userId) {
       const { count } = await supabaseAdmin
@@ -73,7 +70,6 @@ export const setUserElderTier = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { assertCore, supabaseAdmin } = await loadServer();
     await assertCore(context.supabase, context.userId);
     await supabaseAdmin
       .from("user_roles")
@@ -101,7 +97,6 @@ export const inviteUser = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { assertCore, supabaseAdmin } = await loadServer();
     await assertCore(context.supabase, context.userId);
     // Check if a user with this email already exists
     const { data: existingProfile } = await supabaseAdmin
@@ -143,7 +138,6 @@ export const removeUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ userId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { assertCore, supabaseAdmin } = await loadServer();
     await assertCore(context.supabase, context.userId);
     if (data.userId === context.userId) throw new Error("You cannot remove yourself");
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
