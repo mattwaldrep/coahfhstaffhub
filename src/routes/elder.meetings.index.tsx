@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Calendar as CalendarIcon, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { listElderMeetings, createElderMeeting, updateElderMeeting, deleteElderMeeting } from "@/server/elder.functions";
+import { listElderMeetings, createElderMeeting, updateElderMeeting, deleteElderMeeting } from "@/lib/elder.functions";
 
 function parseLocalDate(s: string) {
   const [y, m, d] = s.split("-").map(Number);

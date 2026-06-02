@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { listElderMeetings } from "@/server/elder.functions";
+import { listElderMeetings } from "@/lib/elder.functions";
 import { listCareList } from "@/server/pastoral-care.functions";
 import { CalendarDays, HeartHandshake, ScrollText, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";

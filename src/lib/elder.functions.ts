@@ -6,7 +6,7 @@ import {
   getElderTier,
   assertElderAccess,
   assertFullElder,
-} from "./elder.server";
+} from "@/server/elder.server";
 
 // ---------- Meetings ----------
 
