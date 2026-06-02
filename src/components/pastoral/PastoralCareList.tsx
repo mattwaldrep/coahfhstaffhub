@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import {
   listCareList, listPcoNotes, addPcoNote, deletePcoNote, updateSpiritualHealth,
-} from "@/server/pastoral-care.functions";
+} from "@/lib/pastoral-care.functions";
 import { supabase } from "@/integrations/supabase/client";
 
 const HEALTH_OPTIONS = ["Thriving", "Healthy", "Watch", "Struggling", "Crisis", "Unknown"];

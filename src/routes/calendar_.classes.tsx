@@ -19,7 +19,7 @@ import {
   upsertClassSeries,
   setClassSeriesActive,
   deleteClassSeries,
-} from "@/server/class-series.functions";
+} from "@/lib/class-series.functions";
 
 export const Route = createFileRoute("/calendar_/classes")({ component: ClassesPage });
 

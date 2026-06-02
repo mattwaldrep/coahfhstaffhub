@@ -16,7 +16,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   listPlanningCycles, getActiveCycle, createPlanningCycle, updatePlanningCycle,
   listSubmissionsForCycle, createSubmission,
-} from "@/server/calendar.functions";
+} from "@/lib/calendar.functions";
 import { toast } from "sonner";
 import { CalendarDays, Plus, ChevronRight } from "lucide-react";
 

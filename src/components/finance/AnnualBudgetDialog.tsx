@@ -14,7 +14,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { applyAnnualBudget } from "@/server/finance-budget.functions";
+import { applyAnnualBudget } from "@/lib/finance-budget.functions";
 import { parseQboBudget, type AnnualBudgetLine } from "@/lib/parse-qbo-budget";
 import { matchCategory } from "@/lib/parse-qbo-csv";
 import { CLASSIFICATION_LABEL, type BudgetClassification } from "@/lib/budget-classification";

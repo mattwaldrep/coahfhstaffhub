@@ -11,7 +11,7 @@ import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { parseFinancePdf, matchCategory, type ParsedFinanceReport, type ParsedFinanceRow, type CategoryRef } from "@/lib/parse-finance-pdf";
-import { applyFinanceImport } from "@/server/finance-import.functions";
+import { applyFinanceImport } from "@/lib/finance-import.functions";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const fmt = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n || 0);

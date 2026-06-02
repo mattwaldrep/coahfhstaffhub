@@ -14,7 +14,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { applyFinanceSnapshot } from "@/server/finance-snapshot.functions";
+import { applyFinanceSnapshot } from "@/lib/finance-snapshot.functions";
 import { parseQboCsv, matchCategory, type QboLine } from "@/lib/parse-qbo-csv";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];

@@ -16,7 +16,7 @@ import {
   getSubmission, addProposedEvent, updateProposedEvent,
   deleteProposedEvent, submitSubmission, deleteSubmission,
   listVisibleProposedEvents,
-} from "@/server/calendar.functions";
+} from "@/lib/calendar.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Trash2, ArrowLeft, AlertTriangle } from "lucide-react";

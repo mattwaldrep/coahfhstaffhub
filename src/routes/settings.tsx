@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, CheckCircle2, ExternalLink, Plug, Unplug, Mail, Bell, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { getGoogleAuthUrl, getGoogleConnection, disconnectGoogle, setGoogleAutoPush } from "@/server/google-tasks.functions";
+import { getGoogleAuthUrl, getGoogleConnection, disconnectGoogle, setGoogleAutoPush } from "@/lib/google-tasks.functions";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
