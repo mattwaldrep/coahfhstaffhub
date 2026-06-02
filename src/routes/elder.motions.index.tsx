@@ -13,7 +13,7 @@ import { Gavel, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
-export const Route = createFileRoute("/elder/motions")({ component: MotionsPage });
+export const Route = createFileRoute("/elder/motions/")({ component: MotionsPage });
 
 type Motion = Awaited<ReturnType<typeof listMotions>>[number];
 
