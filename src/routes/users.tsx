@@ -16,7 +16,7 @@ import { Plus, Trash2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import {
   listUsers, setUserRole, inviteUser, removeUser, setUserElderTier,
-} from "@/server/users.functions";
+} from "@/lib/users.functions";
 
 export const Route = createFileRoute("/users")({
   component: UsersPage,
