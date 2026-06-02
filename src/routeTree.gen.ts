@@ -32,6 +32,7 @@ import { Route as OnboardingWorkflowIdRouteImport } from './routes/onboarding.$w
 import { Route as InquiryTokenRouteImport } from './routes/inquiry.$token'
 import { Route as ElderSettingsRouteImport } from './routes/elder.settings'
 import { Route as ElderPastoralCareRouteImport } from './routes/elder.pastoral-care'
+import { Route as ElderMotionsRouteImport } from './routes/elder.motions'
 import { Route as ElderMeetingsRouteImport } from './routes/elder.meetings'
 import { Route as ElderArchiveRouteImport } from './routes/elder.archive'
 import { Route as CalendarPublicRouteImport } from './routes/calendar_.public'
@@ -163,6 +164,11 @@ const ElderPastoralCareRoute = ElderPastoralCareRouteImport.update({
   path: '/pastoral-care',
   getParentRoute: () => ElderRoute,
 } as any)
+const ElderMotionsRoute = ElderMotionsRouteImport.update({
+  id: '/motions',
+  path: '/motions',
+  getParentRoute: () => ElderRoute,
+} as any)
 const ElderMeetingsRoute = ElderMeetingsRouteImport.update({
   id: '/meetings',
   path: '/meetings',
@@ -267,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/calendar/public': typeof CalendarPublicRoute
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/meetings': typeof ElderMeetingsRouteWithChildren
+  '/elder/motions': typeof ElderMotionsRoute
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/inquiry/$token': typeof InquiryTokenRoute
@@ -305,6 +312,7 @@ export interface FileRoutesByTo {
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
   '/elder/archive': typeof ElderArchiveRoute
+  '/elder/motions': typeof ElderMotionsRoute
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/inquiry/$token': typeof InquiryTokenRoute
@@ -346,6 +354,7 @@ export interface FileRoutesById {
   '/calendar_/public': typeof CalendarPublicRoute
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/meetings': typeof ElderMeetingsRouteWithChildren
+  '/elder/motions': typeof ElderMotionsRoute
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/inquiry/$token': typeof InquiryTokenRoute
@@ -388,6 +397,7 @@ export interface FileRouteTypes {
     | '/calendar/public'
     | '/elder/archive'
     | '/elder/meetings'
+    | '/elder/motions'
     | '/elder/pastoral-care'
     | '/elder/settings'
     | '/inquiry/$token'
@@ -426,6 +436,7 @@ export interface FileRouteTypes {
     | '/calendar/planning'
     | '/calendar/public'
     | '/elder/archive'
+    | '/elder/motions'
     | '/elder/pastoral-care'
     | '/elder/settings'
     | '/inquiry/$token'
@@ -466,6 +477,7 @@ export interface FileRouteTypes {
     | '/calendar_/public'
     | '/elder/archive'
     | '/elder/meetings'
+    | '/elder/motions'
     | '/elder/pastoral-care'
     | '/elder/settings'
     | '/inquiry/$token'
@@ -680,6 +692,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ElderPastoralCareRouteImport
       parentRoute: typeof ElderRoute
     }
+    '/elder/motions': {
+      id: '/elder/motions'
+      path: '/motions'
+      fullPath: '/elder/motions'
+      preLoaderRoute: typeof ElderMotionsRouteImport
+      parentRoute: typeof ElderRoute
+    }
     '/elder/meetings': {
       id: '/elder/meetings'
       path: '/meetings'
@@ -805,6 +824,7 @@ const ElderMeetingsRouteWithChildren = ElderMeetingsRoute._addFileChildren(
 interface ElderRouteChildren {
   ElderArchiveRoute: typeof ElderArchiveRoute
   ElderMeetingsRoute: typeof ElderMeetingsRouteWithChildren
+  ElderMotionsRoute: typeof ElderMotionsRoute
   ElderPastoralCareRoute: typeof ElderPastoralCareRoute
   ElderSettingsRoute: typeof ElderSettingsRoute
   ElderIndexRoute: typeof ElderIndexRoute
@@ -813,6 +833,7 @@ interface ElderRouteChildren {
 const ElderRouteChildren: ElderRouteChildren = {
   ElderArchiveRoute: ElderArchiveRoute,
   ElderMeetingsRoute: ElderMeetingsRouteWithChildren,
+  ElderMotionsRoute: ElderMotionsRoute,
   ElderPastoralCareRoute: ElderPastoralCareRoute,
   ElderSettingsRoute: ElderSettingsRoute,
   ElderIndexRoute: ElderIndexRoute,
