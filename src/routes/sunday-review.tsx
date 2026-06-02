@@ -16,6 +16,7 @@ export const Route = createFileRoute("/sunday-review")({
 type Review = {
   id: string;
   service_date: string;
+  submitted_by: string;
   worship_rating: number | null;
   worship_notes: string | null;
   confession_rating: number | null;
