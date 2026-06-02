@@ -32,6 +32,7 @@ import { Route as OnboardingWorkflowIdRouteImport } from './routes/onboarding.$w
 import { Route as InquiryTokenRouteImport } from './routes/inquiry.$token'
 import { Route as ElderSettingsRouteImport } from './routes/elder.settings'
 import { Route as ElderPastoralCareRouteImport } from './routes/elder.pastoral-care'
+import { Route as ElderMotionsRouteImport } from './routes/elder.motions'
 import { Route as ElderMeetingsRouteImport } from './routes/elder.meetings'
 import { Route as ElderArchiveRouteImport } from './routes/elder.archive'
 import { Route as CalendarPublicRouteImport } from './routes/calendar_.public'
@@ -165,6 +166,11 @@ const ElderPastoralCareRoute = ElderPastoralCareRouteImport.update({
   path: '/pastoral-care',
   getParentRoute: () => ElderRoute,
 } as any)
+const ElderMotionsRoute = ElderMotionsRouteImport.update({
+  id: '/motions',
+  path: '/motions',
+  getParentRoute: () => ElderRoute,
+} as any)
 const ElderMeetingsRoute = ElderMeetingsRouteImport.update({
   id: '/meetings',
   path: '/meetings',
@@ -191,9 +197,9 @@ const CalendarClassesRoute = CalendarClassesRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ElderMotionsIndexRoute = ElderMotionsIndexRouteImport.update({
-  id: '/motions/',
-  path: '/motions/',
-  getParentRoute: () => ElderRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => ElderMotionsRoute,
 } as any)
 const ElderMeetingsIndexRoute = ElderMeetingsIndexRouteImport.update({
   id: '/',
@@ -201,9 +207,9 @@ const ElderMeetingsIndexRoute = ElderMeetingsIndexRouteImport.update({
   getParentRoute: () => ElderMeetingsRoute,
 } as any)
 const ElderMotionsMotionIdRoute = ElderMotionsMotionIdRouteImport.update({
-  id: '/motions/$motionId',
-  path: '/motions/$motionId',
-  getParentRoute: () => ElderRoute,
+  id: '/$motionId',
+  path: '/$motionId',
+  getParentRoute: () => ElderMotionsRoute,
 } as any)
 const ElderMeetingsMeetingIdRoute = ElderMeetingsMeetingIdRouteImport.update({
   id: '/$meetingId',
@@ -279,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/calendar/public': typeof CalendarPublicRoute
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/meetings': typeof ElderMeetingsRouteWithChildren
+  '/elder/motions': typeof ElderMotionsRouteWithChildren
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/inquiry/$token': typeof InquiryTokenRoute
@@ -362,6 +369,7 @@ export interface FileRoutesById {
   '/calendar_/public': typeof CalendarPublicRoute
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/meetings': typeof ElderMeetingsRouteWithChildren
+  '/elder/motions': typeof ElderMotionsRouteWithChildren
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/inquiry/$token': typeof InquiryTokenRoute
@@ -406,6 +414,7 @@ export interface FileRouteTypes {
     | '/calendar/public'
     | '/elder/archive'
     | '/elder/meetings'
+    | '/elder/motions'
     | '/elder/pastoral-care'
     | '/elder/settings'
     | '/inquiry/$token'
@@ -488,6 +497,7 @@ export interface FileRouteTypes {
     | '/calendar_/public'
     | '/elder/archive'
     | '/elder/meetings'
+    | '/elder/motions'
     | '/elder/pastoral-care'
     | '/elder/settings'
     | '/inquiry/$token'
@@ -704,6 +714,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ElderPastoralCareRouteImport
       parentRoute: typeof ElderRoute
     }
+    '/elder/motions': {
+      id: '/elder/motions'
+      path: '/motions'
+      fullPath: '/elder/motions'
+      preLoaderRoute: typeof ElderMotionsRouteImport
+      parentRoute: typeof ElderRoute
+    }
     '/elder/meetings': {
       id: '/elder/meetings'
       path: '/meetings'
@@ -741,10 +758,10 @@ declare module '@tanstack/react-router' {
     }
     '/elder/motions/': {
       id: '/elder/motions/'
-      path: '/motions'
+      path: '/'
       fullPath: '/elder/motions/'
       preLoaderRoute: typeof ElderMotionsIndexRouteImport
-      parentRoute: typeof ElderRoute
+      parentRoute: typeof ElderMotionsRoute
     }
     '/elder/meetings/': {
       id: '/elder/meetings/'
@@ -755,10 +772,10 @@ declare module '@tanstack/react-router' {
     }
     '/elder/motions/$motionId': {
       id: '/elder/motions/$motionId'
-      path: '/motions/$motionId'
+      path: '/$motionId'
       fullPath: '/elder/motions/$motionId'
       preLoaderRoute: typeof ElderMotionsMotionIdRouteImport
-      parentRoute: typeof ElderRoute
+      parentRoute: typeof ElderMotionsRoute
     }
     '/elder/meetings/$meetingId': {
       id: '/elder/meetings/$meetingId'
@@ -840,24 +857,36 @@ const ElderMeetingsRouteWithChildren = ElderMeetingsRoute._addFileChildren(
   ElderMeetingsRouteChildren,
 )
 
+interface ElderMotionsRouteChildren {
+  ElderMotionsMotionIdRoute: typeof ElderMotionsMotionIdRoute
+  ElderMotionsIndexRoute: typeof ElderMotionsIndexRoute
+}
+
+const ElderMotionsRouteChildren: ElderMotionsRouteChildren = {
+  ElderMotionsMotionIdRoute: ElderMotionsMotionIdRoute,
+  ElderMotionsIndexRoute: ElderMotionsIndexRoute,
+}
+
+const ElderMotionsRouteWithChildren = ElderMotionsRoute._addFileChildren(
+  ElderMotionsRouteChildren,
+)
+
 interface ElderRouteChildren {
   ElderArchiveRoute: typeof ElderArchiveRoute
   ElderMeetingsRoute: typeof ElderMeetingsRouteWithChildren
+  ElderMotionsRoute: typeof ElderMotionsRouteWithChildren
   ElderPastoralCareRoute: typeof ElderPastoralCareRoute
   ElderSettingsRoute: typeof ElderSettingsRoute
   ElderIndexRoute: typeof ElderIndexRoute
-  ElderMotionsMotionIdRoute: typeof ElderMotionsMotionIdRoute
-  ElderMotionsIndexRoute: typeof ElderMotionsIndexRoute
 }
 
 const ElderRouteChildren: ElderRouteChildren = {
   ElderArchiveRoute: ElderArchiveRoute,
   ElderMeetingsRoute: ElderMeetingsRouteWithChildren,
+  ElderMotionsRoute: ElderMotionsRouteWithChildren,
   ElderPastoralCareRoute: ElderPastoralCareRoute,
   ElderSettingsRoute: ElderSettingsRoute,
   ElderIndexRoute: ElderIndexRoute,
-  ElderMotionsMotionIdRoute: ElderMotionsMotionIdRoute,
-  ElderMotionsIndexRoute: ElderMotionsIndexRoute,
 }
 
 const ElderRouteWithChildren = ElderRoute._addFileChildren(ElderRouteChildren)
