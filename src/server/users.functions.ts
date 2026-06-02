@@ -1,20 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { assertCore, supabaseAdmin } from "./users.server";
 
 const ROLES = ["core", "meeting", "extended", "elder", "elder_candidate"] as const;
 type Role = (typeof ROLES)[number];
 
-async function assertCore(supabase: any, userId: string) {
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .eq("role", "core")
-    .maybeSingle();
-  if (error || !data) throw new Error("Forbidden: core role required");
-}
 
 export const listUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
