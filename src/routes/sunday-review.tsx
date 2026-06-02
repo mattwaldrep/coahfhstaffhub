@@ -149,9 +149,30 @@ function SundayReviewPage() {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success("Review submitted");
+      toast.success(isEditing ? "Review updated" : "Review submitted");
       setForm(emptyForm());
     }
+  };
+
+  const isEditing = reviews.some(
+    (r) => r.service_date === form.service_date && r.submitted_by === user?.id,
+  );
+
+  const loadIntoForm = (r: Review) => {
+    setForm({
+      service_date: r.service_date,
+      worship_rating: r.worship_rating,
+      worship_notes: r.worship_notes ?? "",
+      confession_rating: r.confession_rating,
+      confession_notes: r.confession_notes ?? "",
+      connect_rating: r.connect_rating,
+      connect_notes: r.connect_notes ?? "",
+      sermon_rating: r.sermon_rating,
+      sermon_notes: r.sermon_notes ?? "",
+      wins: r.wins ?? "",
+      opportunities: r.opportunities ?? "",
+    });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
