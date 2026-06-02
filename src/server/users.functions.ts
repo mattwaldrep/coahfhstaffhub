@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
-import { assertCore, supabaseAdmin } from "./users.server";
+
+const loadServer = () => import("./users.server");
 
 const ROLES = ["core", "meeting", "extended", "elder", "elder_candidate"] as const;
 type Role = (typeof ROLES)[number];
