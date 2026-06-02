@@ -45,6 +45,7 @@ const PRIMARY = [
 const ELDER_ITEMS = [
   { to: "/elder", label: "Overview", icon: Crown, exact: true },
   { to: "/elder/meetings", label: "Meetings", icon: ClipboardList },
+  { to: "/elder/motions", label: "Motions", icon: Gavel },
   { to: "/elder/pastoral-care", label: "Pastoral Care", icon: HeartHandshake },
   { to: "/elder/archive", label: "Archive", icon: ScrollText },
 ];
