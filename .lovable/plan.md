@@ -1,55 +1,78 @@
-## What we're building
+## Async elder motions ("Send to vote")
 
-1. A new **Ministry Highlight** communication channel on event cards (next to Sunday Announcement).
-2. When either **Ministry Highlight** or **Sunday Announcement** is checked on an event, prompt the user to pick one or more Sunday dates to schedule it for. Dates can be added/removed later by reopening the event.
-3. A new standing section in the weekly staff meeting — **This Sunday's Slot** — that lists every event scheduled for Ministry Highlight or Sunday Announcement on the Sunday that falls in the meeting's week.
+Add a lightweight async voting tool inside the Elder Hub so full elders can put a motion to a vote without waiting for a meeting.
 
-## How it works
+### Scope
 
-### Event card
-- Add `{ key: "ministry_highlight", label: "Ministry Highlight" }` to `COMMS_CHANNELS` in `src/routes/calendar.tsx` and a matching entry in `LISTING_CHECKLIST_LABEL`.
-- When the user checks Ministry Highlight or Sunday Announcement, open a small inline scheduler underneath the checkbox: a date popover restricted to Sundays, plus a list of already-scheduled Sundays with remove buttons. Multiple Sundays allowed per channel per event. Unchecking the channel clears its dates.
-- Saving the event persists those dates to a new table (see below). The scheduled-Sundays UI also appears on read for any already-scheduled event.
+- Eligible voters: **full elders only** (`role = 'elder'`). Candidates can view results read-only.
+- Pass rule: **simple majority of votes cast (Yes vs No) at the deadline**. Abstain counted but excluded from majority math. Auto-closes at deadline; can be closed early by creator.
+- Visibility: **attributed** — everyone sees who voted which way.
+- Notifications: **email + in-app** on open and on close.
 
-### Weekly meeting
-- Add a new `StandingSection` titled **This Sunday's Slot** in `src/routes/meeting.tsx`, rendered under "This Week" (next to UpcomingEventsSection).
-- It computes the Sunday whose week contains `meeting.meeting_date` (the upcoming Sunday on or after the meeting date) and lists any events scheduled for that Sunday, grouped by channel (Ministry Highlight / Sunday Announcement), each linking back to the event in the calendar.
-- Empty state: "Nothing scheduled for this Sunday yet."
+### UX
 
-## Technical details
+New tab in `/elder` nav: **Motions** (`/elder/motions`).
 
-### Database (new migration)
-New table `public.event_sunday_slots`:
-- `id uuid pk`
-- `event_id uuid not null` (references `calendar_events.id` via app logic — matches existing pattern of no FKs)
-- `channel text not null check (channel in ('ministry_highlight','sunday_announcement'))`
-- `sunday_date date not null`
-- `created_at timestamptz not null default now()`
-- `created_by uuid`
-- unique `(event_id, channel, sunday_date)`
-- Index on `(sunday_date, channel)` for the meeting lookup.
-- `GRANT SELECT, INSERT, UPDATE, DELETE ON public.event_sunday_slots TO authenticated; GRANT ALL ... TO service_role;`
-- RLS: authenticated can SELECT all; core role can INSERT/UPDATE/DELETE (mirrors `event_rooms`).
+Two sections:
+- **Open** — motions still accepting votes, with deadline countdown, current tally, and your vote (Yes / No / Abstain buttons + optional comment).
+- **Closed** — outcome (Passed / Failed / Tied), final tally, who voted what, creator notes.
 
-### `src/routes/calendar.tsx`
-- Extend `COMMS_CHANNELS` and `LISTING_CHECKLIST_LABEL` with `ministry_highlight`.
-- In the comms checkbox rendering blocks (around lines ~1370–1420), when the channel key is `ministry_highlight` or `sunday_announcement` AND the box is checked, render a Sunday-picker subcomponent below the row:
-  - shadcn `Popover` + `Calendar` with `mode="single"` and `disabled={(d) => d.getDay() !== 0}` (Sundays only). Selecting a date appends to the list.
-  - List of chips for each scheduled Sunday with `X` to remove.
-- Add state `sundaySlots: { ministry_highlight: string[]; sunday_announcement: string[] }` loaded from the new table when the event opens and saved alongside the event (diff against initial → inserts + deletes).
-- Unchecking the channel clears its slot list.
+"New motion" button (full elders only) opens a dialog: title, description (rich text), deadline (date+time, default 72h).
 
-### `src/routes/meeting.tsx` + `src/components/meeting/MeetingSections.tsx`
-- New component `ThisSundaySection({ meetingId, meetingDate })` in `MeetingSections.tsx`:
-  - Compute target Sunday = next Sunday on/after `meetingDate` (`addDays(meetingDate, (7 - day) % 7)`).
-  - Query `event_sunday_slots` where `sunday_date = targetSunday`, join titles from `calendar_events` (two queries).
-  - Render as a `StandingSection` with two sub-lists (Ministry Highlight, Sunday Announcement), each row showing event title + link to `/calendar?event=<id>`.
-- Wire it into `src/routes/meeting.tsx` under the "This Week" divider, before `UpcomingEventsSection`.
+Detail view per motion: full description, list of eligible voters with their vote + timestamp + comment, "Close early" button for creator/any full elder.
 
-### Readiness scoring
-No change. Sunday slots are scheduling metadata, not readiness checks.
+Elder Hub overview card: "X open motions awaiting your vote" linking into the tab.
 
-## Out of scope
-- Notifications/reminders about upcoming highlight/announcement slots.
-- Editing slots from the meeting view (read-only there; edit on the event).
-- Exposing slots in the meeting recap email (can add later if useful).
+### Data model (new tables)
+
+- `elder_motions` — id, title, description, created_by, created_at, deadline_at, closed_at, closed_by, outcome (`passed` | `failed` | `tied` | `open`), tally cached on close.
+- `elder_motion_votes` — id, motion_id, voter_id, choice (`yes` | `no` | `abstain`), comment, voted_at. Unique on (motion_id, voter_id) — vote is updatable until close.
+
+RLS:
+- SELECT: any elder access (elder or candidate).
+- INSERT motion / close motion: `is_full_elder(auth.uid())`.
+- INSERT/UPDATE vote: `is_full_elder(auth.uid())` AND motion is open AND `voter_id = auth.uid()`.
+- No DELETE for votes (auditability).
+
+### Server functions (`src/lib/elder-motions.functions.ts`)
+
+- `listMotions({ status })` — open vs closed list with tallies.
+- `getMotion({ id })` — motion + all votes with voter names.
+- `createMotion({ title, description, deadline_at })` — inserts, enqueues open-email to all full elders, returns id.
+- `castVote({ motion_id, choice, comment })` — upsert, guard against closed motions.
+- `closeMotion({ id })` — sets outcome from tally, sends recap email.
+
+All gated via `requireSupabaseAuth` + `assertFullElder` (reuse helper from `src/server/elder.server.ts`; add a candidate-allowed variant for read).
+
+### Auto-close
+
+Public cron route `src/routes/api/public/hooks/close-expired-motions.ts` guarded by `CRON_SHARED_SECRET`. Sweeps `elder_motions` where `closed_at is null and deadline_at < now()`, computes outcome, sends recap. Schedule via existing pg_cron pattern (every 15 min).
+
+### Emails
+
+Two templates via existing email queue:
+- **Motion opened** — title, description, deadline, link to motion.
+- **Motion closed** — outcome, final tally, link to detail.
+
+Sent to all users with `role = 'elder'` (look up via `user_roles` join `profiles.email`).
+
+### Files
+
+New:
+- `src/lib/elder-motions.functions.ts`
+- `src/routes/elder.motions.tsx` (list + tab content)
+- `src/routes/elder.motions.$motionId.tsx` (detail)
+- `src/routes/api/public/hooks/close-expired-motions.ts`
+- migration: tables, RLS, grants
+
+Edit:
+- `src/routes/elder.tsx` — add "Motions" tab
+- `src/components/AppSidebar.tsx` — add Motions under Elder Hub
+- `src/routes/elder.index.tsx` — add "open motions" card
+
+### Out of scope (for now)
+
+- Secret/anonymous ballots
+- Quorum enforcement beyond simple majority of cast votes
+- Amendments / threaded debate (use the description + comments on each vote)
+- Integration into elder meeting agenda (we can add a "Convert to motion" action later)
