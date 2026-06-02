@@ -39,6 +39,7 @@ import { Route as CalendarPublicRouteImport } from './routes/calendar_.public'
 import { Route as CalendarPlanningRouteImport } from './routes/calendar_.planning'
 import { Route as CalendarClassesRouteImport } from './routes/calendar_.classes'
 import { Route as ElderMeetingsIndexRouteImport } from './routes/elder.meetings.index'
+import { Route as ElderMotionsMotionIdRouteImport } from './routes/elder.motions.$motionId'
 import { Route as ElderMeetingsMeetingIdRouteImport } from './routes/elder.meetings.$meetingId'
 import { Route as CalendarPlanningReviewRouteImport } from './routes/calendar_.planning.review'
 import { Route as CalendarPlanningSubmissionIdRouteImport } from './routes/calendar_.planning.$submissionId'
@@ -199,6 +200,11 @@ const ElderMeetingsIndexRoute = ElderMeetingsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ElderMeetingsRoute,
 } as any)
+const ElderMotionsMotionIdRoute = ElderMotionsMotionIdRouteImport.update({
+  id: '/$motionId',
+  path: '/$motionId',
+  getParentRoute: () => ElderMotionsRoute,
+} as any)
 const ElderMeetingsMeetingIdRoute = ElderMeetingsMeetingIdRouteImport.update({
   id: '/$meetingId',
   path: '/$meetingId',
@@ -273,7 +279,7 @@ export interface FileRoutesByFullPath {
   '/calendar/public': typeof CalendarPublicRoute
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/meetings': typeof ElderMeetingsRouteWithChildren
-  '/elder/motions': typeof ElderMotionsRoute
+  '/elder/motions': typeof ElderMotionsRouteWithChildren
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/inquiry/$token': typeof InquiryTokenRoute
@@ -285,6 +291,7 @@ export interface FileRoutesByFullPath {
   '/calendar/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
   '/calendar/planning/review': typeof CalendarPlanningReviewRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
+  '/elder/motions/$motionId': typeof ElderMotionsMotionIdRoute
   '/elder/meetings/': typeof ElderMeetingsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
@@ -312,7 +319,7 @@ export interface FileRoutesByTo {
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
   '/elder/archive': typeof ElderArchiveRoute
-  '/elder/motions': typeof ElderMotionsRoute
+  '/elder/motions': typeof ElderMotionsRouteWithChildren
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/inquiry/$token': typeof InquiryTokenRoute
@@ -324,6 +331,7 @@ export interface FileRoutesByTo {
   '/calendar/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
   '/calendar/planning/review': typeof CalendarPlanningReviewRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
+  '/elder/motions/$motionId': typeof ElderMotionsMotionIdRoute
   '/elder/meetings': typeof ElderMeetingsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
@@ -354,7 +362,7 @@ export interface FileRoutesById {
   '/calendar_/public': typeof CalendarPublicRoute
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/meetings': typeof ElderMeetingsRouteWithChildren
-  '/elder/motions': typeof ElderMotionsRoute
+  '/elder/motions': typeof ElderMotionsRouteWithChildren
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/inquiry/$token': typeof InquiryTokenRoute
@@ -366,6 +374,7 @@ export interface FileRoutesById {
   '/calendar_/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
   '/calendar_/planning/review': typeof CalendarPlanningReviewRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
+  '/elder/motions/$motionId': typeof ElderMotionsMotionIdRoute
   '/elder/meetings/': typeof ElderMeetingsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
@@ -409,6 +418,7 @@ export interface FileRouteTypes {
     | '/calendar/planning/$submissionId'
     | '/calendar/planning/review'
     | '/elder/meetings/$meetingId'
+    | '/elder/motions/$motionId'
     | '/elder/meetings/'
     | '/api/public/hooks/action-items-digest'
     | '/api/public/hooks/send-weekly-digest'
@@ -448,6 +458,7 @@ export interface FileRouteTypes {
     | '/calendar/planning/$submissionId'
     | '/calendar/planning/review'
     | '/elder/meetings/$meetingId'
+    | '/elder/motions/$motionId'
     | '/elder/meetings'
     | '/api/public/hooks/action-items-digest'
     | '/api/public/hooks/send-weekly-digest'
@@ -489,6 +500,7 @@ export interface FileRouteTypes {
     | '/calendar_/planning/$submissionId'
     | '/calendar_/planning/review'
     | '/elder/meetings/$meetingId'
+    | '/elder/motions/$motionId'
     | '/elder/meetings/'
     | '/api/public/hooks/action-items-digest'
     | '/api/public/hooks/send-weekly-digest'
@@ -741,6 +753,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ElderMeetingsIndexRouteImport
       parentRoute: typeof ElderMeetingsRoute
     }
+    '/elder/motions/$motionId': {
+      id: '/elder/motions/$motionId'
+      path: '/$motionId'
+      fullPath: '/elder/motions/$motionId'
+      preLoaderRoute: typeof ElderMotionsMotionIdRouteImport
+      parentRoute: typeof ElderMotionsRoute
+    }
     '/elder/meetings/$meetingId': {
       id: '/elder/meetings/$meetingId'
       path: '/$meetingId'
@@ -821,10 +840,22 @@ const ElderMeetingsRouteWithChildren = ElderMeetingsRoute._addFileChildren(
   ElderMeetingsRouteChildren,
 )
 
+interface ElderMotionsRouteChildren {
+  ElderMotionsMotionIdRoute: typeof ElderMotionsMotionIdRoute
+}
+
+const ElderMotionsRouteChildren: ElderMotionsRouteChildren = {
+  ElderMotionsMotionIdRoute: ElderMotionsMotionIdRoute,
+}
+
+const ElderMotionsRouteWithChildren = ElderMotionsRoute._addFileChildren(
+  ElderMotionsRouteChildren,
+)
+
 interface ElderRouteChildren {
   ElderArchiveRoute: typeof ElderArchiveRoute
   ElderMeetingsRoute: typeof ElderMeetingsRouteWithChildren
-  ElderMotionsRoute: typeof ElderMotionsRoute
+  ElderMotionsRoute: typeof ElderMotionsRouteWithChildren
   ElderPastoralCareRoute: typeof ElderPastoralCareRoute
   ElderSettingsRoute: typeof ElderSettingsRoute
   ElderIndexRoute: typeof ElderIndexRoute
@@ -833,7 +864,7 @@ interface ElderRouteChildren {
 const ElderRouteChildren: ElderRouteChildren = {
   ElderArchiveRoute: ElderArchiveRoute,
   ElderMeetingsRoute: ElderMeetingsRouteWithChildren,
-  ElderMotionsRoute: ElderMotionsRoute,
+  ElderMotionsRoute: ElderMotionsRouteWithChildren,
   ElderPastoralCareRoute: ElderPastoralCareRoute,
   ElderSettingsRoute: ElderSettingsRoute,
   ElderIndexRoute: ElderIndexRoute,

@@ -19,6 +19,7 @@ function ElderLayout() {
 const TABS = [
   { to: "/elder", label: "Overview", exact: true },
   { to: "/elder/meetings", label: "Meetings" },
+  { to: "/elder/motions", label: "Motions" },
   { to: "/elder/pastoral-care", label: "Pastoral Care" },
   { to: "/elder/archive", label: "Archive" },
   { to: "/elder/settings", label: "Settings" },
