@@ -1,30 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
-async function getElderTier(supabase: any, userId: string): Promise<"elder" | "candidate" | null> {
-  const { data } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .in("role", ["elder", "elder_candidate"]);
-  const roles = (data ?? []).map((r: any) => r.role);
-  if (roles.includes("elder")) return "elder";
-  if (roles.includes("elder_candidate")) return "candidate";
-  return null;
-}
-
-async function assertElderAccess(supabase: any, userId: string) {
-  const tier = await getElderTier(supabase, userId);
-  if (!tier) throw new Error("Forbidden: elder access required");
-  return tier;
-}
-
-async function assertFullElder(supabase: any, userId: string) {
-  const tier = await getElderTier(supabase, userId);
-  if (tier !== "elder") throw new Error("Forbidden: full elder access required");
-}
+import {
+  supabaseAdmin,
+  getElderTier,
+  assertElderAccess,
+  assertFullElder,
+} from "./elder.server";
 
 // ---------- Meetings ----------
 
