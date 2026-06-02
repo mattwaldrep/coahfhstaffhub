@@ -16,6 +16,7 @@ export const Route = createFileRoute("/sunday-review")({
 type Review = {
   id: string;
   service_date: string;
+  submitted_by: string;
   worship_rating: number | null;
   worship_notes: string | null;
   confession_rating: number | null;
@@ -148,9 +149,30 @@ function SundayReviewPage() {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success("Review submitted");
+      toast.success(isEditing ? "Review updated" : "Review submitted");
       setForm(emptyForm());
     }
+  };
+
+  const isEditing = reviews.some(
+    (r) => r.service_date === form.service_date && r.submitted_by === user?.id,
+  );
+
+  const loadIntoForm = (r: Review) => {
+    setForm({
+      service_date: r.service_date,
+      worship_rating: r.worship_rating,
+      worship_notes: r.worship_notes ?? "",
+      confession_rating: r.confession_rating,
+      confession_notes: r.confession_notes ?? "",
+      connect_rating: r.connect_rating,
+      connect_notes: r.connect_notes ?? "",
+      sermon_rating: r.sermon_rating,
+      sermon_notes: r.sermon_notes ?? "",
+      wins: r.wins ?? "",
+      opportunities: r.opportunities ?? "",
+    });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -224,10 +246,20 @@ function SundayReviewPage() {
               />
             </Field>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end items-center gap-2">
+              {isEditing && (
+                <>
+                  <span className="text-xs text-muted-foreground mr-auto">
+                    Editing existing submission for this date
+                  </span>
+                  <Button type="button" variant="ghost" onClick={() => setForm(emptyForm())}>
+                    New review
+                  </Button>
+                </>
+              )}
               <Button type="submit" disabled={saving}>
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Submit review
+                {isEditing ? "Update review" : "Submit review"}
               </Button>
             </div>
           </form>
@@ -247,9 +279,10 @@ function SundayReviewPage() {
                   const avg = ratings.length
                     ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
                     : "—";
+                  const mine = r.submitted_by === user?.id;
                   return (
                     <li key={r.id} className="border border-border rounded-lg p-3">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2">
                         <div className="font-medium text-sm">
                           {new Date(r.service_date + "T00:00").toLocaleDateString(undefined, {
                             month: "short",
@@ -257,7 +290,20 @@ function SundayReviewPage() {
                             year: "numeric",
                           })}
                         </div>
-                        <div className="text-xs text-muted-foreground">avg {avg}/5</div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-xs text-muted-foreground">avg {avg}/5</div>
+                          {mine && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => loadIntoForm(r)}
+                            >
+                              Edit
+                            </Button>
+                          )}
+                        </div>
                       </div>
                       {r.wins && (
                         <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
