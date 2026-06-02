@@ -279,9 +279,10 @@ function SundayReviewPage() {
                   const avg = ratings.length
                     ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
                     : "—";
+                  const mine = r.submitted_by === user?.id;
                   return (
                     <li key={r.id} className="border border-border rounded-lg p-3">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2">
                         <div className="font-medium text-sm">
                           {new Date(r.service_date + "T00:00").toLocaleDateString(undefined, {
                             month: "short",
@@ -289,7 +290,20 @@ function SundayReviewPage() {
                             year: "numeric",
                           })}
                         </div>
-                        <div className="text-xs text-muted-foreground">avg {avg}/5</div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-xs text-muted-foreground">avg {avg}/5</div>
+                          {mine && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => loadIntoForm(r)}
+                            >
+                              Edit
+                            </Button>
+                          )}
+                        </div>
                       </div>
                       {r.wins && (
                         <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
