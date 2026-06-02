@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { CalendarClock, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getActiveCycle } from "@/server/calendar.functions";
+import { getActiveCycle } from "@/lib/calendar.functions";
 
 type Cycle = {
   id: string;

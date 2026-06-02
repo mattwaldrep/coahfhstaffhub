@@ -3,7 +3,7 @@ import { z } from "zod";
 import { format, subDays } from "date-fns";
 import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { sendEmail, emailLayout, escapeHtml } from "./email.server";
+import { sendEmail, emailLayout, escapeHtml } from "@/server/email.server";
 
 async function assertMeetingRole(supabase: any, userId: string) {
   const { data } = await supabase

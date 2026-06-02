@@ -8,7 +8,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   getActiveCycle, listSubmissionsForCycle, getSubmission,
   reviewProposedEvent, finalizeSubmissionReview, bulkReviewSubmission,
-} from "@/server/calendar.functions";
+} from "@/lib/calendar.functions";
 import { toast } from "sonner";
 import { ArrowLeft, Check, X } from "lucide-react";
 

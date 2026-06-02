@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Plus, Check, Trash2, Loader2, Send, MailCheck, GripVertical, Pencil, X } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { finalizeMeeting, sendMeetingRecap } from "@/server/meeting.functions";
+import { finalizeMeeting, sendMeetingRecap } from "@/lib/meeting.functions";
 import { cn } from "@/lib/utils";
 import { LinkedText } from "@/lib/render-linked-text";
 import { RichTextEditor, RichTextView } from "@/components/ui/rich-text-editor";

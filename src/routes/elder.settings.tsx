@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
-import { getPcoConfig, savePcoConfig, pingPco, listPcoFieldDefinitions } from "@/server/pastoral-care.functions";
+import { getPcoConfig, savePcoConfig, pingPco, listPcoFieldDefinitions } from "@/lib/pastoral-care.functions";
 
 export const Route = createFileRoute("/elder/settings")({
   component: ElderSettings,

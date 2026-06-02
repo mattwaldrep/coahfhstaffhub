@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { listArchive, getArchiveEntry, importArchiveBatch } from "@/server/pastoral-care.functions";
+import { listArchive, getArchiveEntry, importArchiveBatch } from "@/lib/pastoral-care.functions";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
