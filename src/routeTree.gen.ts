@@ -32,12 +32,12 @@ import { Route as OnboardingWorkflowIdRouteImport } from './routes/onboarding.$w
 import { Route as InquiryTokenRouteImport } from './routes/inquiry.$token'
 import { Route as ElderSettingsRouteImport } from './routes/elder.settings'
 import { Route as ElderPastoralCareRouteImport } from './routes/elder.pastoral-care'
-import { Route as ElderMotionsRouteImport } from './routes/elder.motions'
 import { Route as ElderMeetingsRouteImport } from './routes/elder.meetings'
 import { Route as ElderArchiveRouteImport } from './routes/elder.archive'
 import { Route as CalendarPublicRouteImport } from './routes/calendar_.public'
 import { Route as CalendarPlanningRouteImport } from './routes/calendar_.planning'
 import { Route as CalendarClassesRouteImport } from './routes/calendar_.classes'
+import { Route as ElderMotionsIndexRouteImport } from './routes/elder.motions.index'
 import { Route as ElderMeetingsIndexRouteImport } from './routes/elder.meetings.index'
 import { Route as ElderMotionsMotionIdRouteImport } from './routes/elder.motions.$motionId'
 import { Route as ElderMeetingsMeetingIdRouteImport } from './routes/elder.meetings.$meetingId'
@@ -165,11 +165,6 @@ const ElderPastoralCareRoute = ElderPastoralCareRouteImport.update({
   path: '/pastoral-care',
   getParentRoute: () => ElderRoute,
 } as any)
-const ElderMotionsRoute = ElderMotionsRouteImport.update({
-  id: '/motions',
-  path: '/motions',
-  getParentRoute: () => ElderRoute,
-} as any)
 const ElderMeetingsRoute = ElderMeetingsRouteImport.update({
   id: '/meetings',
   path: '/meetings',
@@ -195,15 +190,20 @@ const CalendarClassesRoute = CalendarClassesRouteImport.update({
   path: '/calendar/classes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ElderMotionsIndexRoute = ElderMotionsIndexRouteImport.update({
+  id: '/motions/',
+  path: '/motions/',
+  getParentRoute: () => ElderRoute,
+} as any)
 const ElderMeetingsIndexRoute = ElderMeetingsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ElderMeetingsRoute,
 } as any)
 const ElderMotionsMotionIdRoute = ElderMotionsMotionIdRouteImport.update({
-  id: '/$motionId',
-  path: '/$motionId',
-  getParentRoute: () => ElderMotionsRoute,
+  id: '/motions/$motionId',
+  path: '/motions/$motionId',
+  getParentRoute: () => ElderRoute,
 } as any)
 const ElderMeetingsMeetingIdRoute = ElderMeetingsMeetingIdRouteImport.update({
   id: '/$meetingId',
@@ -279,7 +279,6 @@ export interface FileRoutesByFullPath {
   '/calendar/public': typeof CalendarPublicRoute
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/meetings': typeof ElderMeetingsRouteWithChildren
-  '/elder/motions': typeof ElderMotionsRouteWithChildren
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/inquiry/$token': typeof InquiryTokenRoute
@@ -293,6 +292,7 @@ export interface FileRoutesByFullPath {
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/motions/$motionId': typeof ElderMotionsMotionIdRoute
   '/elder/meetings/': typeof ElderMeetingsIndexRoute
+  '/elder/motions/': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
@@ -319,7 +319,6 @@ export interface FileRoutesByTo {
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
   '/elder/archive': typeof ElderArchiveRoute
-  '/elder/motions': typeof ElderMotionsRouteWithChildren
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/inquiry/$token': typeof InquiryTokenRoute
@@ -333,6 +332,7 @@ export interface FileRoutesByTo {
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/motions/$motionId': typeof ElderMotionsMotionIdRoute
   '/elder/meetings': typeof ElderMeetingsIndexRoute
+  '/elder/motions': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
@@ -362,7 +362,6 @@ export interface FileRoutesById {
   '/calendar_/public': typeof CalendarPublicRoute
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/meetings': typeof ElderMeetingsRouteWithChildren
-  '/elder/motions': typeof ElderMotionsRouteWithChildren
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/inquiry/$token': typeof InquiryTokenRoute
@@ -376,6 +375,7 @@ export interface FileRoutesById {
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/motions/$motionId': typeof ElderMotionsMotionIdRoute
   '/elder/meetings/': typeof ElderMeetingsIndexRoute
+  '/elder/motions/': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
@@ -406,7 +406,6 @@ export interface FileRouteTypes {
     | '/calendar/public'
     | '/elder/archive'
     | '/elder/meetings'
-    | '/elder/motions'
     | '/elder/pastoral-care'
     | '/elder/settings'
     | '/inquiry/$token'
@@ -420,6 +419,7 @@ export interface FileRouteTypes {
     | '/elder/meetings/$meetingId'
     | '/elder/motions/$motionId'
     | '/elder/meetings/'
+    | '/elder/motions/'
     | '/api/public/hooks/action-items-digest'
     | '/api/public/hooks/send-weekly-digest'
     | '/api/public/hooks/sunday-review-nudge'
@@ -446,7 +446,6 @@ export interface FileRouteTypes {
     | '/calendar/planning'
     | '/calendar/public'
     | '/elder/archive'
-    | '/elder/motions'
     | '/elder/pastoral-care'
     | '/elder/settings'
     | '/inquiry/$token'
@@ -460,6 +459,7 @@ export interface FileRouteTypes {
     | '/elder/meetings/$meetingId'
     | '/elder/motions/$motionId'
     | '/elder/meetings'
+    | '/elder/motions'
     | '/api/public/hooks/action-items-digest'
     | '/api/public/hooks/send-weekly-digest'
     | '/api/public/hooks/sunday-review-nudge'
@@ -488,7 +488,6 @@ export interface FileRouteTypes {
     | '/calendar_/public'
     | '/elder/archive'
     | '/elder/meetings'
-    | '/elder/motions'
     | '/elder/pastoral-care'
     | '/elder/settings'
     | '/inquiry/$token'
@@ -502,6 +501,7 @@ export interface FileRouteTypes {
     | '/elder/meetings/$meetingId'
     | '/elder/motions/$motionId'
     | '/elder/meetings/'
+    | '/elder/motions/'
     | '/api/public/hooks/action-items-digest'
     | '/api/public/hooks/send-weekly-digest'
     | '/api/public/hooks/sunday-review-nudge'
@@ -704,13 +704,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ElderPastoralCareRouteImport
       parentRoute: typeof ElderRoute
     }
-    '/elder/motions': {
-      id: '/elder/motions'
-      path: '/motions'
-      fullPath: '/elder/motions'
-      preLoaderRoute: typeof ElderMotionsRouteImport
-      parentRoute: typeof ElderRoute
-    }
     '/elder/meetings': {
       id: '/elder/meetings'
       path: '/meetings'
@@ -746,6 +739,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CalendarClassesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/elder/motions/': {
+      id: '/elder/motions/'
+      path: '/motions'
+      fullPath: '/elder/motions/'
+      preLoaderRoute: typeof ElderMotionsIndexRouteImport
+      parentRoute: typeof ElderRoute
+    }
     '/elder/meetings/': {
       id: '/elder/meetings/'
       path: '/'
@@ -755,10 +755,10 @@ declare module '@tanstack/react-router' {
     }
     '/elder/motions/$motionId': {
       id: '/elder/motions/$motionId'
-      path: '/$motionId'
+      path: '/motions/$motionId'
       fullPath: '/elder/motions/$motionId'
       preLoaderRoute: typeof ElderMotionsMotionIdRouteImport
-      parentRoute: typeof ElderMotionsRoute
+      parentRoute: typeof ElderRoute
     }
     '/elder/meetings/$meetingId': {
       id: '/elder/meetings/$meetingId'
@@ -840,34 +840,24 @@ const ElderMeetingsRouteWithChildren = ElderMeetingsRoute._addFileChildren(
   ElderMeetingsRouteChildren,
 )
 
-interface ElderMotionsRouteChildren {
-  ElderMotionsMotionIdRoute: typeof ElderMotionsMotionIdRoute
-}
-
-const ElderMotionsRouteChildren: ElderMotionsRouteChildren = {
-  ElderMotionsMotionIdRoute: ElderMotionsMotionIdRoute,
-}
-
-const ElderMotionsRouteWithChildren = ElderMotionsRoute._addFileChildren(
-  ElderMotionsRouteChildren,
-)
-
 interface ElderRouteChildren {
   ElderArchiveRoute: typeof ElderArchiveRoute
   ElderMeetingsRoute: typeof ElderMeetingsRouteWithChildren
-  ElderMotionsRoute: typeof ElderMotionsRouteWithChildren
   ElderPastoralCareRoute: typeof ElderPastoralCareRoute
   ElderSettingsRoute: typeof ElderSettingsRoute
   ElderIndexRoute: typeof ElderIndexRoute
+  ElderMotionsMotionIdRoute: typeof ElderMotionsMotionIdRoute
+  ElderMotionsIndexRoute: typeof ElderMotionsIndexRoute
 }
 
 const ElderRouteChildren: ElderRouteChildren = {
   ElderArchiveRoute: ElderArchiveRoute,
   ElderMeetingsRoute: ElderMeetingsRouteWithChildren,
-  ElderMotionsRoute: ElderMotionsRouteWithChildren,
   ElderPastoralCareRoute: ElderPastoralCareRoute,
   ElderSettingsRoute: ElderSettingsRoute,
   ElderIndexRoute: ElderIndexRoute,
+  ElderMotionsMotionIdRoute: ElderMotionsMotionIdRoute,
+  ElderMotionsIndexRoute: ElderMotionsIndexRoute,
 }
 
 const ElderRouteWithChildren = ElderRoute._addFileChildren(ElderRouteChildren)
@@ -919,3 +909,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
