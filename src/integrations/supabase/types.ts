@@ -1085,6 +1085,98 @@ export type Database = {
         }
         Relationships: []
       }
+      elder_motion_votes: {
+        Row: {
+          choice: Database["public"]["Enums"]["elder_motion_choice"]
+          comment: string | null
+          id: string
+          motion_id: string
+          updated_at: string
+          voted_at: string
+          voter_id: string
+        }
+        Insert: {
+          choice: Database["public"]["Enums"]["elder_motion_choice"]
+          comment?: string | null
+          id?: string
+          motion_id: string
+          updated_at?: string
+          voted_at?: string
+          voter_id: string
+        }
+        Update: {
+          choice?: Database["public"]["Enums"]["elder_motion_choice"]
+          comment?: string | null
+          id?: string
+          motion_id?: string
+          updated_at?: string
+          voted_at?: string
+          voter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elder_motion_votes_motion_id_fkey"
+            columns: ["motion_id"]
+            isOneToOne: false
+            referencedRelation: "elder_motions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      elder_motions: {
+        Row: {
+          close_notified_at: string | null
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          created_by: string
+          deadline_at: string
+          description: string | null
+          id: string
+          open_notified_at: string | null
+          outcome: Database["public"]["Enums"]["elder_motion_outcome"]
+          tally_abstain: number
+          tally_no: number
+          tally_yes: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          close_notified_at?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          created_by: string
+          deadline_at: string
+          description?: string | null
+          id?: string
+          open_notified_at?: string | null
+          outcome?: Database["public"]["Enums"]["elder_motion_outcome"]
+          tally_abstain?: number
+          tally_no?: number
+          tally_yes?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          close_notified_at?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          created_by?: string
+          deadline_at?: string
+          description?: string | null
+          id?: string
+          open_notified_at?: string | null
+          outcome?: Database["public"]["Enums"]["elder_motion_outcome"]
+          tally_abstain?: number
+          tally_no?: number
+          tally_yes?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       elder_next_meeting_seed: {
         Row: {
           body: string | null
@@ -2319,6 +2411,8 @@ export type Database = {
     }
     Enums: {
       app_role: "core" | "meeting" | "extended" | "elder" | "elder_candidate"
+      elder_motion_choice: "yes" | "no" | "abstain"
+      elder_motion_outcome: "open" | "passed" | "failed" | "tied"
       plan_submission_status:
         | "draft"
         | "submitted"
@@ -2465,6 +2559,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["core", "meeting", "extended", "elder", "elder_candidate"],
+      elder_motion_choice: ["yes", "no", "abstain"],
+      elder_motion_outcome: ["open", "passed", "failed", "tied"],
       plan_submission_status: [
         "draft",
         "submitted",
