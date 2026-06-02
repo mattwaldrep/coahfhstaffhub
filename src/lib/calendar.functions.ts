@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { supabaseAdmin } from "./admin.server";
 import { notifyCycleOpen, notifySubmissionReady } from "@/server/calendar-notifications.server";
 
 async function isCore(supabase: any, userId: string): Promise<boolean> {

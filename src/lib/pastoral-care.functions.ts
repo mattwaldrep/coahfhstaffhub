@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { supabaseAdmin } from "./admin.server";
 import { fetchCareList, setFieldDatum, pcoPing, invalidateCareListCache, listFieldDefinitions } from "@/server/pco.server";
 
 async function getTier(supabase: any, userId: string): Promise<"elder" | "candidate" | null> {
