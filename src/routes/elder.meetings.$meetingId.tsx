@@ -8,7 +8,7 @@ import {
   saveSectionNotes, createElderAction, updateElderAction, deleteElderAction,
   upsertJointItem, deleteJointItem, updateElderMeeting,
   listMentionableUsers, createActionsFromMentions,
-} from "@/server/elder.functions";
+} from "@/lib/elder.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
