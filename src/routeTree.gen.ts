@@ -48,6 +48,7 @@ import { Route as ApiGoogleOauthCallbackRouteImport } from './routes/api/google.
 import { Route as ApiPublicHooksSyncGoogleTasksRouteImport } from './routes/api/public/hooks/sync-google-tasks'
 import { Route as ApiPublicHooksSundayReviewNudgeRouteImport } from './routes/api/public/hooks.sunday-review-nudge'
 import { Route as ApiPublicHooksSendWeeklyDigestRouteImport } from './routes/api/public/hooks/send-weekly-digest'
+import { Route as ApiPublicHooksAutoFinalizeMeetingRouteImport } from './routes/api/public/hooks.auto-finalize-meeting'
 import { Route as ApiPublicHooksActionItemsDigestRouteImport } from './routes/api/public/hooks.action-items-digest'
 import { Route as ApiPublicMissionsInquiryTokenRouteImport } from './routes/api/public/missions/inquiry.$token'
 
@@ -250,6 +251,12 @@ const ApiPublicHooksSendWeeklyDigestRoute =
     path: '/api/public/hooks/send-weekly-digest',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksAutoFinalizeMeetingRoute =
+  ApiPublicHooksAutoFinalizeMeetingRouteImport.update({
+    id: '/api/public/hooks/auto-finalize-meeting',
+    path: '/api/public/hooks/auto-finalize-meeting',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksActionItemsDigestRoute =
   ApiPublicHooksActionItemsDigestRouteImport.update({
     id: '/api/public/hooks/action-items-digest',
@@ -301,6 +308,7 @@ export interface FileRoutesByFullPath {
   '/elder/meetings/': typeof ElderMeetingsIndexRoute
   '/elder/motions/': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
+  '/api/public/hooks/auto-finalize-meeting': typeof ApiPublicHooksAutoFinalizeMeetingRoute
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
   '/api/public/hooks/sync-google-tasks': typeof ApiPublicHooksSyncGoogleTasksRoute
@@ -341,6 +349,7 @@ export interface FileRoutesByTo {
   '/elder/meetings': typeof ElderMeetingsIndexRoute
   '/elder/motions': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
+  '/api/public/hooks/auto-finalize-meeting': typeof ApiPublicHooksAutoFinalizeMeetingRoute
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
   '/api/public/hooks/sync-google-tasks': typeof ApiPublicHooksSyncGoogleTasksRoute
@@ -385,6 +394,7 @@ export interface FileRoutesById {
   '/elder/meetings/': typeof ElderMeetingsIndexRoute
   '/elder/motions/': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
+  '/api/public/hooks/auto-finalize-meeting': typeof ApiPublicHooksAutoFinalizeMeetingRoute
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
   '/api/public/hooks/sync-google-tasks': typeof ApiPublicHooksSyncGoogleTasksRoute
@@ -430,6 +440,7 @@ export interface FileRouteTypes {
     | '/elder/meetings/'
     | '/elder/motions/'
     | '/api/public/hooks/action-items-digest'
+    | '/api/public/hooks/auto-finalize-meeting'
     | '/api/public/hooks/send-weekly-digest'
     | '/api/public/hooks/sunday-review-nudge'
     | '/api/public/hooks/sync-google-tasks'
@@ -470,6 +481,7 @@ export interface FileRouteTypes {
     | '/elder/meetings'
     | '/elder/motions'
     | '/api/public/hooks/action-items-digest'
+    | '/api/public/hooks/auto-finalize-meeting'
     | '/api/public/hooks/send-weekly-digest'
     | '/api/public/hooks/sunday-review-nudge'
     | '/api/public/hooks/sync-google-tasks'
@@ -513,6 +525,7 @@ export interface FileRouteTypes {
     | '/elder/meetings/'
     | '/elder/motions/'
     | '/api/public/hooks/action-items-digest'
+    | '/api/public/hooks/auto-finalize-meeting'
     | '/api/public/hooks/send-weekly-digest'
     | '/api/public/hooks/sunday-review-nudge'
     | '/api/public/hooks/sync-google-tasks'
@@ -545,6 +558,7 @@ export interface RootRouteChildren {
   OnboardingIndexRoute: typeof OnboardingIndexRoute
   ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
   ApiPublicHooksActionItemsDigestRoute: typeof ApiPublicHooksActionItemsDigestRoute
+  ApiPublicHooksAutoFinalizeMeetingRoute: typeof ApiPublicHooksAutoFinalizeMeetingRoute
   ApiPublicHooksSendWeeklyDigestRoute: typeof ApiPublicHooksSendWeeklyDigestRoute
   ApiPublicHooksSundayReviewNudgeRoute: typeof ApiPublicHooksSundayReviewNudgeRoute
   ApiPublicHooksSyncGoogleTasksRoute: typeof ApiPublicHooksSyncGoogleTasksRoute
@@ -826,6 +840,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSendWeeklyDigestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/auto-finalize-meeting': {
+      id: '/api/public/hooks/auto-finalize-meeting'
+      path: '/api/public/hooks/auto-finalize-meeting'
+      fullPath: '/api/public/hooks/auto-finalize-meeting'
+      preLoaderRoute: typeof ApiPublicHooksAutoFinalizeMeetingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/action-items-digest': {
       id: '/api/public/hooks/action-items-digest'
       path: '/api/public/hooks/action-items-digest'
@@ -930,6 +951,8 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingIndexRoute: OnboardingIndexRoute,
   ApiGoogleOauthCallbackRoute: ApiGoogleOauthCallbackRoute,
   ApiPublicHooksActionItemsDigestRoute: ApiPublicHooksActionItemsDigestRoute,
+  ApiPublicHooksAutoFinalizeMeetingRoute:
+    ApiPublicHooksAutoFinalizeMeetingRoute,
   ApiPublicHooksSendWeeklyDigestRoute: ApiPublicHooksSendWeeklyDigestRoute,
   ApiPublicHooksSundayReviewNudgeRoute: ApiPublicHooksSundayReviewNudgeRoute,
   ApiPublicHooksSyncGoogleTasksRoute: ApiPublicHooksSyncGoogleTasksRoute,
