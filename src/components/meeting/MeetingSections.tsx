@@ -234,7 +234,14 @@ export function SundayReviewSection({ meetingId }: { meetingId: string }) {
     })();
   }, []);
 
-  const latestDate = reviews[0]?.service_date;
+  // Anchor to the most recent Sunday (today if Sunday), not the max submitted
+  // date — otherwise a stray off-by-one submission hides everyone else's.
+  const lastSunday = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - d.getDay());
+    return format(d, "yyyy-MM-dd");
+  })();
+  const latestDate = lastSunday;
   const latest = reviews.filter((r) => r.service_date === latestDate);
 
   return (

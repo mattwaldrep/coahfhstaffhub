@@ -309,15 +309,41 @@ function SundayReviewPage() {
                         <div className="flex items-center gap-2">
                           <div className="text-xs text-muted-foreground">avg {avg}/5</div>
                           {mine && (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 px-2 text-xs"
-                              onClick={() => loadIntoForm(r)}
-                            >
-                              Edit
-                            </Button>
+                            <>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 px-2 text-xs"
+                                onClick={() => loadIntoForm(r)}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 px-2 text-xs text-destructive hover:text-destructive"
+                                onClick={async () => {
+                                  if (!confirm("Delete this review? This can't be undone.")) return;
+                                  const { error } = await supabase
+                                    .from("sunday_reviews")
+                                    .delete()
+                                    .eq("id", r.id);
+                                  if (error) {
+                                    toast.error(error.message);
+                                  } else {
+                                    toast.success("Review deleted");
+                                    if (editingReviewId === r.id) {
+                                      setEditingReviewId(null);
+                                      setForm(emptyForm());
+                                    }
+                                  }
+                                }}
+                              >
+                                Delete
+                              </Button>
+                            </>
                           )}
                         </div>
                       </div>
