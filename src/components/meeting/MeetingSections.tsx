@@ -1237,33 +1237,41 @@ export function ClassesNeedingAttentionSection() {
   const [alerts, setAlerts] = useState<Array<{ id: string; title: string; date: Date; gaps: string[]; leader_name: string | null; childcare_needed: boolean; childcare_arranged: boolean }>>([]);
   const [tick, setTick] = useState(0);
   useEffect(() => {
-    const horizonEnd = new Date(Date.now() + 42 * 86400000);
+    const horizonEnd = new Date(Date.now() + 28 * 86400000);
     supabase
       .from("calendar_events")
       .select("id,title,start_at,end_at,sub_calendar,leader_name,category,all_day,rrule,excluded_dates,childcare_needed,childcare_arranged")
-      .eq("category", "Class")
       .or(`start_at.gte.${new Date().toISOString()},rrule.not.is.null`)
       .then(({ data }) => {
         const rows = (data ?? []) as Array<EventRowLike & { childcare_needed: boolean; childcare_arranged: boolean }>;
         const occurrences = expandEvents(rows, new Date(), horizonEnd);
         const list = occurrences
-          .map((o) => ({
-            id: o.id,
-            title: o.title,
-            date: o.occurrence_date,
-            gaps: classGaps(o),
-            leader_name: o.leader_name ?? null,
-            childcare_needed: (o as { childcare_needed?: boolean }).childcare_needed ?? false,
-            childcare_arranged: (o as { childcare_arranged?: boolean }).childcare_arranged ?? false,
-          }))
-          .filter((a) => a.gaps.length > 0);
+          .map((o) => {
+            const gaps: string[] = [];
+            if (!o.leader_name) gaps.push("teacher");
+            const needsCc = (o as { childcare_needed?: boolean }).childcare_needed ?? false;
+            const arranged = (o as { childcare_arranged?: boolean }).childcare_arranged ?? false;
+            if (needsCc && !arranged) gaps.push("childcare arrangement");
+            return {
+              id: o.id,
+              title: o.title,
+              date: o.occurrence_date,
+              gaps,
+              leader_name: o.leader_name ?? null,
+              childcare_needed: needsCc,
+              childcare_arranged: arranged,
+            };
+          })
+          .filter((a) => a.gaps.length > 0)
+          .sort((a, b) => a.date.getTime() - b.date.getTime());
         setAlerts(list);
       });
   }, [tick]);
   return (
     <StandingSection
-      title="Classes Needing Attention"
-      subtitle="Upcoming classes (next 6 weeks) missing a teacher or unarranged childcare."
+      title="Events Needing Attention"
+      subtitle="Upcoming events (next 4 weeks) missing a leader or with unarranged childcare."
+
       badge={
         alerts.length > 0 ? (
           <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-warning/20 text-warning font-semibold">
