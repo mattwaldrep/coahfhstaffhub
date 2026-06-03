@@ -1398,25 +1398,28 @@ export type Database = {
           channel: string
           created_at: string
           created_by: string | null
-          event_id: string
+          event_id: string | null
           id: string
           sunday_date: string
+          text_label: string | null
         }
         Insert: {
           channel: string
           created_at?: string
           created_by?: string | null
-          event_id: string
+          event_id?: string | null
           id?: string
           sunday_date: string
+          text_label?: string | null
         }
         Update: {
           channel?: string
           created_at?: string
           created_by?: string | null
-          event_id?: string
+          event_id?: string | null
           id?: string
           sunday_date?: string
+          text_label?: string | null
         }
         Relationships: []
       }
