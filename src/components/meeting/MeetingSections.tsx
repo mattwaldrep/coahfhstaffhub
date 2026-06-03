@@ -1396,9 +1396,38 @@ export function SectionDivider({ label }: { label: string }) {
   );
 }
 
+const ATTENTION_SUB_CALS = [
+  { value: "forest_hills_main", label: "Forest Hills Main" },
+  { value: "coah_lm", label: "COAH:LM" },
+  { value: "youth", label: "Youth" },
+  { value: "general", label: "General" },
+];
+const ATTENTION_CATEGORIES = [
+  "Holiday", "Leadership", "Women", "Men", "Class", "Social",
+  "Kids/Youth", "Liturgical", "Meeting", "Church Plant",
+  "Community Group", "Love DOT", "Prayer", "Core Team", "Other",
+];
+
+type AttentionAlert = {
+  id: string;
+  title: string;
+  date: Date;
+  gaps: string[];
+  leader_name: string | null;
+  childcare_needed: boolean;
+  childcare_arranged: boolean;
+  sub_calendar: string;
+  category: string | null;
+};
+
 export function ClassesNeedingAttentionSection() {
-  const [alerts, setAlerts] = useState<Array<{ id: string; title: string; date: Date; gaps: string[]; leader_name: string | null; childcare_needed: boolean; childcare_arranged: boolean }>>([]);
+  const [alerts, setAlerts] = useState<AttentionAlert[]>([]);
   const [tick, setTick] = useState(0);
+  const [subFilters, setSubFilters] = useState<Record<string, boolean>>(
+    Object.fromEntries(ATTENTION_SUB_CALS.map((s) => [s.value, true])),
+  );
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+
   useEffect(() => {
     const horizonEnd = new Date(Date.now() + 28 * 86400000);
     supabase
@@ -1406,12 +1435,12 @@ export function ClassesNeedingAttentionSection() {
       .select("id,title,start_at,end_at,sub_calendar,leader_name,category,all_day,rrule,excluded_dates,childcare_needed,childcare_arranged")
       .or(`start_at.gte.${new Date().toISOString()},rrule.not.is.null`)
       .then(({ data }) => {
-        const rows = (data ?? []) as Array<EventRowLike & { childcare_needed: boolean; childcare_arranged: boolean }>;
+        const rows = (data ?? []) as Array<EventRowLike & { childcare_needed: boolean; childcare_arranged: boolean; category: string | null }>;
         const occurrences = expandEvents(rows, new Date(), horizonEnd);
-        const list = occurrences
+        const list: AttentionAlert[] = occurrences
           .map((o) => {
             const gaps: string[] = [];
-            if (!o.leader_name) gaps.push("teacher");
+            if (!o.leader_name) gaps.push("leader");
             const needsCc = (o as { childcare_needed?: boolean }).childcare_needed ?? false;
             const arranged = (o as { childcare_arranged?: boolean }).childcare_arranged ?? false;
             if (needsCc && !arranged) gaps.push("childcare arrangement");
@@ -1423,6 +1452,8 @@ export function ClassesNeedingAttentionSection() {
               leader_name: o.leader_name ?? null,
               childcare_needed: needsCc,
               childcare_arranged: arranged,
+              sub_calendar: o.sub_calendar,
+              category: (o as { category?: string | null }).category ?? null,
             };
           })
           .filter((a) => a.gaps.length > 0)
@@ -1430,24 +1461,57 @@ export function ClassesNeedingAttentionSection() {
         setAlerts(list);
       });
   }, [tick]);
+
+  const visible = useMemo(
+    () =>
+      alerts.filter((a) => {
+        if (!subFilters[a.sub_calendar]) return false;
+        if (categoryFilter !== "all" && a.category !== categoryFilter) return false;
+        return true;
+      }),
+    [alerts, subFilters, categoryFilter],
+  );
+
   return (
     <StandingSection
       title="Events Needing Attention"
       subtitle="Upcoming events (next 4 weeks) missing a leader or with unarranged childcare."
-
       badge={
-        alerts.length > 0 ? (
+        visible.length > 0 ? (
           <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-warning/20 text-warning font-semibold">
-            {alerts.length}
+            {visible.length}
           </span>
         ) : undefined
       }
     >
-      {alerts.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-2">All upcoming classes are squared away. 🎉</p>
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="h-8 w-[10rem] text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All categories</SelectItem>
+            {ATTENTION_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {ATTENTION_SUB_CALS.map((s) => (
+          <button
+            key={s.value}
+            type="button"
+            onClick={() => setSubFilters({ ...subFilters, [s.value]: !subFilters[s.value] })}
+            className={`text-xs px-3 py-1.5 rounded-full border transition ${
+              subFilters[s.value]
+                ? "bg-surface border-border"
+                : "bg-transparent border-border/50 text-muted-foreground"
+            }`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+      {visible.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-2">All upcoming events are squared away. 🎉</p>
       ) : (
         <ul className="space-y-2">
-          {alerts.map((a) => (
+          {visible.map((a) => (
             <li key={`${a.id}-${a.date.toISOString()}`} className="flex items-start justify-between gap-3 text-sm">
               <div className="min-w-0">
                 <div className="font-medium truncate">{a.title}</div>
