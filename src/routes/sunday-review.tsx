@@ -93,6 +93,7 @@ function SundayReviewPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -142,23 +143,31 @@ function SundayReviewPage() {
       return;
     }
     setSaving(true);
-    const { error } = await supabase
-      .from("sunday_reviews")
-      .upsert({ ...parsed.data, submitted_by: user.id }, { onConflict: "service_date,submitted_by" });
+    const query = supabase.from("sunday_reviews");
+    const { error } = editingReviewId
+      ? await query
+          .update({ ...parsed.data })
+          .eq("id", editingReviewId)
+          .eq("submitted_by", user.id)
+      : await query.upsert({ ...parsed.data, submitted_by: user.id }, { onConflict: "service_date,submitted_by" });
     setSaving(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(
+        error.code === "23505"
+          ? "You already have a review for that date. Open that one from Recent submissions to update it."
+          : error.message,
+      );
     } else {
       toast.success(isEditing ? "Review updated" : "Review submitted");
       setForm(emptyForm());
+      setEditingReviewId(null);
     }
   };
 
-  const isEditing = reviews.some(
-    (r) => r.service_date === form.service_date && r.submitted_by === user?.id,
-  );
+  const isEditing = editingReviewId !== null;
 
   const loadIntoForm = (r: Review) => {
+    setEditingReviewId(r.id);
     setForm({
       service_date: r.service_date,
       worship_rating: r.worship_rating,
@@ -252,7 +261,14 @@ function SundayReviewPage() {
                   <span className="text-xs text-muted-foreground mr-auto">
                     Editing existing submission for this date
                   </span>
-                  <Button type="button" variant="ghost" onClick={() => setForm(emptyForm())}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setForm(emptyForm());
+                      setEditingReviewId(null);
+                    }}
+                  >
                     New review
                   </Button>
                 </>
