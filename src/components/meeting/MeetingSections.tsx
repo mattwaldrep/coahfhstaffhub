@@ -566,6 +566,14 @@ const SUNDAY_SLOT_LABELS: Record<string, string> = {
   sunday_announcement: "Sunday Announcement",
 };
 
+type SundaySlotRow = {
+  id: string;
+  channel: string;
+  event_id: string | null;
+  text_label: string | null;
+  title: string;
+};
+
 export function ThisSundaySection({ meetingDate }: { meetingDate: string }) {
   const targetSunday = useMemo(() => {
     const d = new Date(meetingDate + "T12:00:00");
@@ -575,18 +583,28 @@ export function ThisSundaySection({ meetingDate }: { meetingDate: string }) {
   const sundayIso = format(targetSunday, "yyyy-MM-dd");
   const sundayLabel = format(targetSunday, "EEEE, MMM d");
 
-  const [rows, setRows] = useState<Array<{ channel: string; event_id: string; title: string }>>([]);
+  const [rows, setRows] = useState<SundaySlotRow[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [tick, setTick] = useState(0);
+
+  // Add form state
+  const [addChannel, setAddChannel] = useState<"ministry_highlight" | "sunday_announcement">("ministry_highlight");
+  const [addMode, setAddMode] = useState<"text" | "event">("text");
+  const [textValue, setTextValue] = useState("");
+  const [eventSearch, setEventSearch] = useState("");
+  const [eventResults, setEventResults] = useState<Array<{ id: string; title: string }>>([]);
+  const [pickedEvent, setPickedEvent] = useState<{ id: string; title: string } | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       const { data: slots } = await supabase
         .from("event_sunday_slots" as any)
-        .select("channel, event_id")
+        .select("id, channel, event_id, text_label")
         .eq("sunday_date", sundayIso);
-      const slotRows = ((slots ?? []) as unknown as Array<{ channel: string; event_id: string }>);
-      const ids = Array.from(new Set(slotRows.map((s) => s.event_id)));
+      const slotRows = ((slots ?? []) as unknown as Array<{ id: string; channel: string; event_id: string | null; text_label: string | null }>);
+      const ids = Array.from(new Set(slotRows.map((s) => s.event_id).filter(Boolean) as string[]));
       let titles: Record<string, string> = {};
       if (ids.length > 0) {
         const { data: evs } = await supabase
@@ -600,9 +618,11 @@ export function ThisSundaySection({ meetingDate }: { meetingDate: string }) {
       if (!mounted) return;
       setRows(
         slotRows.map((s) => ({
+          id: s.id,
           channel: s.channel,
           event_id: s.event_id,
-          title: titles[s.event_id] ?? "(untitled)",
+          text_label: s.text_label,
+          title: s.event_id ? (titles[s.event_id] ?? "(untitled)") : (s.text_label ?? ""),
         })),
       );
       setLoaded(true);
@@ -610,16 +630,65 @@ export function ThisSundaySection({ meetingDate }: { meetingDate: string }) {
     return () => {
       mounted = false;
     };
-  }, [sundayIso]);
+  }, [sundayIso, tick]);
+
+  // Event search
+  useEffect(() => {
+    if (addMode !== "event") return;
+    const q = eventSearch.trim();
+    let mounted = true;
+    (async () => {
+      let query = supabase
+        .from("calendar_events")
+        .select("id, title, start_at")
+        .order("start_at", { ascending: true })
+        .limit(10);
+      if (q) query = query.ilike("title", `%${q}%`);
+      const { data } = await query;
+      if (!mounted) return;
+      setEventResults(((data ?? []) as Array<{ id: string; title: string }>));
+    })();
+    return () => { mounted = false; };
+  }, [eventSearch, addMode]);
 
   const grouped = useMemo(() => {
-    const m: Record<string, typeof rows> = { ministry_highlight: [], sunday_announcement: [] };
+    const m: Record<string, SundaySlotRow[]> = { ministry_highlight: [], sunday_announcement: [] };
     for (const r of rows) {
       if (!m[r.channel]) m[r.channel] = [];
       m[r.channel].push(r);
     }
     return m;
   }, [rows]);
+
+  const addSlot = async () => {
+    const payload: { sunday_date: string; channel: string; event_id?: string | null; text_label?: string | null } = {
+      sunday_date: sundayIso,
+      channel: addChannel,
+    };
+    if (addMode === "text") {
+      const v = textValue.trim();
+      if (!v) { toast.error("Enter a label"); return; }
+      payload.text_label = v;
+    } else {
+      if (!pickedEvent) { toast.error("Pick an event"); return; }
+      payload.event_id = pickedEvent.id;
+    }
+    setSaving(true);
+    const { error } = await supabase.from("event_sunday_slots" as any).insert(payload);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Added");
+    setTextValue("");
+    setPickedEvent(null);
+    setEventSearch("");
+    setTick((t) => t + 1);
+  };
+
+  const removeSlot = async (id: string) => {
+    const { error } = await supabase.from("event_sunday_slots" as any).delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    setTick((t) => t + 1);
+  };
 
   return (
     <StandingSection
@@ -631,41 +700,128 @@ export function ThisSundaySection({ meetingDate }: { meetingDate: string }) {
         </span>
       }
     >
-      {!loaded ? (
-        <div className="text-sm text-muted-foreground">Loading…</div>
-      ) : rows.length === 0 ? (
-        <div className="text-sm text-muted-foreground">Nothing scheduled for this Sunday yet.</div>
-      ) : (
-        <div className="space-y-4">
-          {(["ministry_highlight", "sunday_announcement"] as const).map((ch) => {
-            const items = grouped[ch] ?? [];
-            if (items.length === 0) return null;
-            return (
-              <div key={ch}>
-                <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
-                  {SUNDAY_SLOT_LABELS[ch]}
-                </h4>
-                <ul className="space-y-1">
-                  {items.map((it) => (
-                    <li key={`${it.event_id}-${ch}`} className="text-sm">
-                      <Link
-                        to="/calendar"
-                        search={{ event: it.event_id }}
-                        className="hover:underline"
-                      >
-                        {it.title}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
+      <div className="space-y-4">
+        {!loaded ? (
+          <div className="text-sm text-muted-foreground">Loading…</div>
+        ) : rows.length === 0 ? (
+          <div className="text-sm text-muted-foreground">Nothing scheduled for this Sunday yet.</div>
+        ) : (
+          <div className="space-y-4">
+            {(["ministry_highlight", "sunday_announcement"] as const).map((ch) => {
+              const items = grouped[ch] ?? [];
+              if (items.length === 0) return null;
+              return (
+                <div key={ch}>
+                  <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
+                    {SUNDAY_SLOT_LABELS[ch]}
+                  </h4>
+                  <ul className="space-y-1">
+                    {items.map((it) => (
+                      <li key={it.id} className="text-sm flex items-center justify-between gap-2 group">
+                        {it.event_id ? (
+                          <Link to="/calendar" search={{ event: it.event_id }} className="hover:underline truncate">
+                            {it.title}
+                          </Link>
+                        ) : (
+                          <span className="truncate">{it.title}</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeSlot(it.id)}
+                          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                          aria-label="Remove"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Add inline form */}
+        <div className="border-t border-border pt-3 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={addChannel} onValueChange={(v) => setAddChannel(v as any)}>
+              <SelectTrigger className="h-8 w-[180px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ministry_highlight">Ministry Highlight</SelectItem>
+                <SelectItem value="sunday_announcement">Sunday Announcement</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="flex rounded-md border border-border overflow-hidden text-xs">
+              <button
+                type="button"
+                onClick={() => setAddMode("text")}
+                className={cn("px-2.5 py-1", addMode === "text" ? "bg-muted font-medium" : "text-muted-foreground")}
+              >Text</button>
+              <button
+                type="button"
+                onClick={() => setAddMode("event")}
+                className={cn("px-2.5 py-1 border-l border-border", addMode === "event" ? "bg-muted font-medium" : "text-muted-foreground")}
+              >Event</button>
+            </div>
+          </div>
+
+          {addMode === "text" ? (
+            <div className="flex gap-2">
+              <Input
+                value={textValue}
+                onChange={(e) => setTextValue(e.target.value)}
+                placeholder="e.g., Missions update by John"
+                className="h-8 text-sm"
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSlot(); } }}
+              />
+              <Button size="sm" onClick={addSlot} disabled={saving || !textValue.trim()}>Add</Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {pickedEvent ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 text-sm border border-border rounded-md px-2.5 py-1.5 bg-muted/40 truncate">
+                    {pickedEvent.title}
+                  </div>
+                  <Button size="sm" variant="ghost" onClick={() => setPickedEvent(null)}>Change</Button>
+                  <Button size="sm" onClick={addSlot} disabled={saving}>Add</Button>
+                </div>
+              ) : (
+                <>
+                  <Input
+                    value={eventSearch}
+                    onChange={(e) => setEventSearch(e.target.value)}
+                    placeholder="Search calendar events…"
+                    className="h-8 text-sm"
+                  />
+                  {eventResults.length > 0 && (
+                    <ul className="border border-border rounded-md divide-y divide-border max-h-48 overflow-auto">
+                      {eventResults.map((ev) => (
+                        <li key={ev.id}>
+                          <button
+                            type="button"
+                            className="w-full text-left text-sm px-2.5 py-1.5 hover:bg-muted truncate"
+                            onClick={() => setPickedEvent(ev)}
+                          >
+                            {ev.title}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </StandingSection>
   );
 }
+
 
 
 /* ---------- 6. & 7. PCO link sections ---------- */
