@@ -322,8 +322,8 @@ function SundayReviewPage() {
                               <Button
                                 type="button"
                                 size="sm"
-                                variant="ghost"
-                                className="h-7 px-2 text-xs text-destructive hover:text-destructive"
+                                variant="destructive"
+                                className="h-7 px-2 text-xs"
                                 onClick={async () => {
                                   if (!confirm("Delete this review? This can't be undone.")) return;
                                   const { error } = await supabase
