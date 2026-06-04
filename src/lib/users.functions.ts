@@ -134,6 +134,65 @@ export const inviteUser = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const bulkInviteUsers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        invites: z
+          .array(
+            z.object({
+              email: z.string().email(),
+              role: z.enum(ROLES),
+              fullName: z.string().optional(),
+            }),
+          )
+          .min(1)
+          .max(100),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCore(context.supabase, context.userId);
+    const results: { email: string; status: "invited" | "updated" | "error"; message?: string }[] = [];
+
+    for (const inv of data.invites) {
+      try {
+        const { data: existingProfile } = await supabaseAdmin
+          .from("profiles")
+          .select("id")
+          .ilike("email", inv.email)
+          .maybeSingle();
+
+        if (existingProfile?.id) {
+          await supabaseAdmin.from("user_roles").delete().eq("user_id", existingProfile.id);
+          const { error: roleErr } = await supabaseAdmin
+            .from("user_roles")
+            .insert({ user_id: existingProfile.id, role: inv.role });
+          if (roleErr) throw new Error(roleErr.message);
+          results.push({ email: inv.email, status: "updated" });
+          continue;
+        }
+
+        const { data: invited, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+          inv.email,
+          { data: { full_name: inv.fullName ?? inv.email } },
+        );
+        if (error) throw new Error(error.message);
+        const newId = invited.user?.id;
+        if (newId) {
+          await supabaseAdmin.from("user_roles").delete().eq("user_id", newId);
+          await supabaseAdmin.from("user_roles").insert({ user_id: newId, role: inv.role });
+        }
+        results.push({ email: inv.email, status: "invited" });
+      } catch (e: any) {
+        results.push({ email: inv.email, status: "error", message: e?.message ?? "Failed" });
+      }
+    }
+
+    return { results };
+  });
+
 export const removeUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ userId: z.string().uuid() }).parse(d))
@@ -144,3 +203,4 @@ export const removeUser = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
