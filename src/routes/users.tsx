@@ -226,6 +226,9 @@ function Body() {
             <Plus className="w-4 h-4 mr-1.5" /> Invite user
           </Button>
         </div>
+      </div>
+
+
 
 
       <div className="bg-surface border border-border rounded-2xl overflow-hidden">
