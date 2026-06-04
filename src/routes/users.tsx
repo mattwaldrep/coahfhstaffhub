@@ -129,6 +129,71 @@ function Body() {
     }
   }
 
+  function parseBulkEmails(text: string): { email: string; fullName?: string }[] {
+    const out: { email: string; fullName?: string }[] = [];
+    const seen = new Set<string>();
+    text
+      .split(/[\n,;]+/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .forEach((line) => {
+        // Accept formats: "email", "Name <email>", "Name, email", "email Name"
+        let email = "";
+        let fullName: string | undefined;
+        const angle = line.match(/^(.*)<\s*([^>\s]+)\s*>\s*$/);
+        if (angle) {
+          fullName = angle[1].trim().replace(/^["']|["']$/g, "") || undefined;
+          email = angle[2].trim();
+        } else {
+          const m = line.match(/[^\s<>,;]+@[^\s<>,;]+\.[^\s<>,;]+/);
+          if (m) {
+            email = m[0];
+            const rest = line.replace(email, "").replace(/[,;]/g, " ").trim();
+            if (rest) fullName = rest;
+          }
+        }
+        const lower = email.toLowerCase();
+        if (email && !seen.has(lower)) {
+          seen.add(lower);
+          out.push({ email, fullName });
+        }
+      });
+    return out;
+  }
+
+  async function submitBulk(e: React.FormEvent) {
+    e.preventDefault();
+    const parsed = parseBulkEmails(bulkText);
+    if (parsed.length === 0) {
+      toast.error("No valid emails found");
+      return;
+    }
+    setBulkSubmitting(true);
+    try {
+      const { results } = await bulkInviteUsers({
+        data: { invites: parsed.map((p) => ({ ...p, role: bulkRole })) },
+      });
+      const invited = results.filter((r) => r.status === "invited").length;
+      const updated = results.filter((r) => r.status === "updated").length;
+      const errored = results.filter((r) => r.status === "error");
+      if (invited || updated) {
+        toast.success(`${invited} invited, ${updated} updated${errored.length ? `, ${errored.length} failed` : ""}`);
+      }
+      errored.forEach((r) => toast.error(`${r.email}: ${r.message ?? "Failed"}`));
+      if (errored.length === 0) {
+        setBulkOpen(false);
+        setBulkText("");
+        setBulkRole("extended");
+      }
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Bulk invite failed");
+    } finally {
+      setBulkSubmitting(false);
+    }
+  }
+
+
   if (authLoading) return null;
 
   if (!isCore) {
