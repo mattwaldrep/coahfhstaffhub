@@ -218,10 +218,15 @@ function Body() {
             Invite teammates and assign access tiers.
           </p>
         </div>
-        <Button size="sm" onClick={() => setOpen(true)}>
-          <Plus className="w-4 h-4 mr-1.5" /> Invite user
-        </Button>
-      </div>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setBulkOpen(true)}>
+            <UsersIcon className="w-4 h-4 mr-1.5" /> Bulk invite
+          </Button>
+          <Button size="sm" onClick={() => setOpen(true)}>
+            <Plus className="w-4 h-4 mr-1.5" /> Invite user
+          </Button>
+        </div>
+
 
       <div className="bg-surface border border-border rounded-2xl overflow-hidden">
         <div className="grid grid-cols-12 px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
