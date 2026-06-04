@@ -12,10 +12,11 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, ShieldAlert } from "lucide-react";
+import { Plus, Trash2, ShieldAlert, Users as UsersIcon } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
-  listUsers, setUserRole, inviteUser, removeUser, setUserElderTier,
+  listUsers, setUserRole, inviteUser, removeUser, setUserElderTier, bulkInviteUsers,
 } from "@/lib/users.functions";
 
 export const Route = createFileRoute("/users")({
