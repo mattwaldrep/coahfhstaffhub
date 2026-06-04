@@ -342,6 +342,49 @@ function Body() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Bulk invite users</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={submitBulk} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Emails</Label>
+              <Textarea
+                rows={8}
+                required
+                value={bulkText}
+                onChange={(e) => setBulkText(e.target.value)}
+                placeholder={`One per line, or comma-separated. Optional name:\njane@example.com\nJohn Doe <john@example.com>\nmary@example.com, Mary Smith`}
+              />
+              <p className="text-xs text-muted-foreground">
+                {parseBulkEmails(bulkText).length} valid email{parseBulkEmails(bulkText).length === 1 ? "" : "s"} detected.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Role (applied to all)</Label>
+              <Select value={bulkRole} onValueChange={(v) => setBulkRole(v as Role)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ROLE_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      <span className="font-medium">{o.label}</span>
+                      <span className="text-xs text-muted-foreground ml-2">{o.desc}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={bulkSubmitting}>
+                {bulkSubmitting ? "Sending…" : "Send invites"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
+
   );
 }
