@@ -12,10 +12,11 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, ShieldAlert } from "lucide-react";
+import { Plus, Trash2, ShieldAlert, Users as UsersIcon } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
-  listUsers, setUserRole, inviteUser, removeUser, setUserElderTier,
+  listUsers, setUserRole, inviteUser, removeUser, setUserElderTier, bulkInviteUsers,
 } from "@/lib/users.functions";
 
 export const Route = createFileRoute("/users")({
@@ -56,6 +57,10 @@ function Body() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkText, setBulkText] = useState("");
+  const [bulkRole, setBulkRole] = useState<Role>("extended");
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<Role>("extended");
@@ -124,6 +129,71 @@ function Body() {
     }
   }
 
+  function parseBulkEmails(text: string): { email: string; fullName?: string }[] {
+    const out: { email: string; fullName?: string }[] = [];
+    const seen = new Set<string>();
+    text
+      .split(/[\n,;]+/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .forEach((line) => {
+        // Accept formats: "email", "Name <email>", "Name, email", "email Name"
+        let email = "";
+        let fullName: string | undefined;
+        const angle = line.match(/^(.*)<\s*([^>\s]+)\s*>\s*$/);
+        if (angle) {
+          fullName = angle[1].trim().replace(/^["']|["']$/g, "") || undefined;
+          email = angle[2].trim();
+        } else {
+          const m = line.match(/[^\s<>,;]+@[^\s<>,;]+\.[^\s<>,;]+/);
+          if (m) {
+            email = m[0];
+            const rest = line.replace(email, "").replace(/[,;]/g, " ").trim();
+            if (rest) fullName = rest;
+          }
+        }
+        const lower = email.toLowerCase();
+        if (email && !seen.has(lower)) {
+          seen.add(lower);
+          out.push({ email, fullName });
+        }
+      });
+    return out;
+  }
+
+  async function submitBulk(e: React.FormEvent) {
+    e.preventDefault();
+    const parsed = parseBulkEmails(bulkText);
+    if (parsed.length === 0) {
+      toast.error("No valid emails found");
+      return;
+    }
+    setBulkSubmitting(true);
+    try {
+      const { results } = await bulkInviteUsers({
+        data: { invites: parsed.map((p) => ({ ...p, role: bulkRole })) },
+      });
+      const invited = results.filter((r) => r.status === "invited").length;
+      const updated = results.filter((r) => r.status === "updated").length;
+      const errored = results.filter((r) => r.status === "error");
+      if (invited || updated) {
+        toast.success(`${invited} invited, ${updated} updated${errored.length ? `, ${errored.length} failed` : ""}`);
+      }
+      errored.forEach((r) => toast.error(`${r.email}: ${r.message ?? "Failed"}`));
+      if (errored.length === 0) {
+        setBulkOpen(false);
+        setBulkText("");
+        setBulkRole("extended");
+      }
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Bulk invite failed");
+    } finally {
+      setBulkSubmitting(false);
+    }
+  }
+
+
   if (authLoading) return null;
 
   if (!isCore) {
@@ -148,10 +218,18 @@ function Body() {
             Invite teammates and assign access tiers.
           </p>
         </div>
-        <Button size="sm" onClick={() => setOpen(true)}>
-          <Plus className="w-4 h-4 mr-1.5" /> Invite user
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setBulkOpen(true)}>
+            <UsersIcon className="w-4 h-4 mr-1.5" /> Bulk invite
+          </Button>
+          <Button size="sm" onClick={() => setOpen(true)}>
+            <Plus className="w-4 h-4 mr-1.5" /> Invite user
+          </Button>
+        </div>
       </div>
+
+
+
 
       <div className="bg-surface border border-border rounded-2xl overflow-hidden">
         <div className="grid grid-cols-12 px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
@@ -264,6 +342,49 @@ function Body() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Bulk invite users</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={submitBulk} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Emails</Label>
+              <Textarea
+                rows={8}
+                required
+                value={bulkText}
+                onChange={(e) => setBulkText(e.target.value)}
+                placeholder={`One per line, or comma-separated. Optional name:\njane@example.com\nJohn Doe <john@example.com>\nmary@example.com, Mary Smith`}
+              />
+              <p className="text-xs text-muted-foreground">
+                {parseBulkEmails(bulkText).length} valid email{parseBulkEmails(bulkText).length === 1 ? "" : "s"} detected.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Role (applied to all)</Label>
+              <Select value={bulkRole} onValueChange={(v) => setBulkRole(v as Role)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ROLE_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      <span className="font-medium">{o.label}</span>
+                      <span className="text-xs text-muted-foreground ml-2">{o.desc}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={bulkSubmitting}>
+                {bulkSubmitting ? "Sending…" : "Send invites"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
+
   );
 }
