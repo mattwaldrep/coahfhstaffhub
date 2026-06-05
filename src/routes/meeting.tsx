@@ -92,13 +92,27 @@ function MeetingPage() {
     let mounted = true;
     (async () => {
       const date = todayISO();
-      const { data: existing } = await supabase
+      // Find the current week's meeting (Mon–Sun) so opening the app on a
+      // different day reuses the same meeting rather than creating a second
+      // entry for the week. Prefer one that hasn't been recapped yet.
+      const today = new Date();
+      const day = today.getDay(); // 0=Sun..6=Sat
+      const mondayOffset = day === 0 ? -6 : 1 - day;
+      const monday = new Date(today);
+      monday.setDate(today.getDate() + mondayOffset);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      const iso = (d: Date) => d.toISOString().slice(0, 10);
+
+      const { data: weekRows } = await supabase
         .from("meetings")
         .select("*")
-        .eq("meeting_date", date)
-        .maybeSingle();
+        .gte("meeting_date", iso(monday))
+        .lte("meeting_date", iso(sunday))
+        .order("meeting_date", { ascending: false });
 
-      let m = existing as Meeting | null;
+      const open = (weekRows ?? []).find((r: any) => !r.recap_sent_at) ?? (weekRows ?? [])[0] ?? null;
+      let m = open as Meeting | null;
       if (!m) {
         const { data: created, error } = await supabase
           .from("meetings")
