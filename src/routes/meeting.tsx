@@ -382,165 +382,400 @@ function MeetingPage() {
         {!meeting ? (
           <div className="text-sm text-muted-foreground">Loading meeting…</div>
         ) : (
-          <div className="space-y-3">
-            <DevotionalSection meetingId={meeting.id} />
-
-            <SectionDivider label="Recurring Agenda Items" />
-
-            <SundayReviewSection meetingId={meeting.id} />
-            <LastWeekEventsSection meetingId={meeting.id} />
-            <LinkSection
-              meetingId={meeting.id}
-              sectionKey="first_step_cards"
-              title="First Step Cards"
-              subtitle="Review new submissions in PCO."
-              href="https://people.planningcenteronline.com/forms/161115"
-              linkLabel="Open First Step form in PCO"
-            />
-            <LinkSection
-              meetingId={meeting.id}
-              sectionKey="next_step_cards"
-              title="Next Step Cards"
-              subtitle="Review next-step submissions in PCO."
-              href="https://people.planningcenteronline.com/forms/433638"
-              linkLabel="Open Next Step form in PCO"
-            />
-            <ReviewTrendsSection meetingId={meeting.id} meetingDate={meeting.meeting_date} />
-            <ReviewTasksSection />
-
-            <SectionDivider label="This Week" />
-
-            {/* Items To Discuss (formerly Agenda) */}
-            <StandingSection
-              title="Items To Discuss"
-              subtitle="Topics specific to this week's meeting."
-              badge={
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-normal">
-                  {agenda.length} {agenda.length === 1 ? "item" : "items"}
-                </span>
-              }
-            >
-              <SortableAgendaList items={agenda} onReorder={reorderAgenda}>
-                {(item) => (
-                  <AgendaRow
-                    item={item}
-                    onToggle={() => toggleAgenda(item)}
-                    onDelete={() => removeAgenda(item.id)}
-                    onSave={(title) => editAgenda(item.id, title)}
-                  />
-                )}
-              </SortableAgendaList>
-              {agenda.length === 0 && (
-                <div className="text-sm text-muted-foreground py-2">
-                  No discussion items yet — add one below.
-                </div>
-              )}
-              <div className="mt-4 space-y-2">
-                <RichTextEditor
-                  value={newAgenda}
-                  onChange={setNewAgenda}
-                  placeholder="Add discussion item…  (use the link button to add hyperlinks)"
-                  minHeight={40}
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={addAgenda}
-                  disabled={!newAgenda.replace(/<[^>]+>/g, "").trim()}
-                >
-                  <Plus className="w-4 h-4 mr-1" /> Add
-                </Button>
-              </div>
-            </StandingSection>
-
-            <ThisSundaySection meetingDate={meeting.meeting_date} />
-            <UpcomingEventsSection meetingId={meeting.id} />
-
-            <ClassesNeedingAttentionSection />
-
-            <SectionDivider label="Capture" />
-
-            {/* Action Items (this meeting) */}
-            <StandingSection
-              title="New Action Items"
-              subtitle="Tasks created in today's meeting. Open items appear in Review Tasks above."
-              defaultOpen={false}
-            >
-              <ul className="space-y-2">
-                {actions.map((item) => (
-                  <li key={item.id} className="group flex items-start gap-3">
-                    <button
-                      onClick={() => toggleAction(item)}
-                      className={cn(
-                        "mt-0.5 w-5 h-5 rounded border flex items-center justify-center shrink-0",
-                        item.completed
-                          ? "bg-primary border-primary text-primary-foreground"
-                          : "border-border",
-                      )}
-                    >
-                      {item.completed && <Check className="w-3 h-3" />}
-                    </button>
-                    <span className={cn("flex-1 text-sm", item.completed && "line-through text-muted-foreground")}>
-                      {item.title}
-                    </span>
-                    <button
-                      onClick={() => removeAction(item.id)}
-                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </li>
-                ))}
-                {actions.length === 0 && (
-                  <li className="text-sm text-muted-foreground py-2">No action items yet.</li>
-                )}
-              </ul>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  addAction();
-                }}
-                className="mt-4 flex gap-2"
-              >
-                <input
-                  value={newAction}
-                  onChange={(e) => setNewAction(e.target.value)}
-                  placeholder="New action item…"
-                  className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                />
-                <Button type="submit" size="icon" disabled={!newAction.trim()}>
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </form>
-            </StandingSection>
-
-            <MeetingDecisionsSection meetingId={meeting.id} />
-
-            {/* Notes */}
-            <StandingSection title="Meeting Notes" subtitle="General notes for the whole meeting." defaultOpen={false}>
-              <textarea
-                id="meeting-notes"
-                value={notesDraft}
-                onChange={(e) => onNotesChange(e.target.value)}
-                placeholder="Type meeting notes here. They auto-save and sync to everyone in the room."
-                className="w-full min-h-[200px] bg-background border border-border rounded-lg p-4 text-sm outline-none focus:ring-2 focus:ring-primary/30 resize-y"
-              />
-            </StandingSection>
-
-            {/* Transcript */}
-            <StandingSection title="Live Transcript" subtitle="Captured when transcription is on." defaultOpen={false}>
-              <div className="text-sm text-muted-foreground whitespace-pre-wrap min-h-[120px] max-h-[400px] overflow-y-auto">
-                {meeting?.transcript ?? (
-                  <span className="italic">Press “Start transcription” to capture the conversation.</span>
-                )}
-              </div>
-            </StandingSection>
-          </div>
+          <SortableMeetingBody
+            meeting={meeting}
+            agenda={agenda}
+            actions={actions}
+            newAgenda={newAgenda}
+            setNewAgenda={setNewAgenda}
+            addAgenda={addAgenda}
+            toggleAgenda={toggleAgenda}
+            removeAgenda={removeAgenda}
+            editAgenda={editAgenda}
+            reorderAgenda={reorderAgenda}
+            newAction={newAction}
+            setNewAction={setNewAction}
+            addAction={addAction}
+            toggleAction={toggleAction}
+            removeAction={removeAction}
+            notesDraft={notesDraft}
+            onNotesChange={onNotesChange}
+          />
         )}
       </div>
     </AppShell>
   );
 }
+
+/* ---------------- Sortable meeting body ---------------- */
+
+const DEFAULT_SECTION_ORDER: string[] = [
+  "devotional",
+  "divider:recurring",
+  "sunday-review",
+  "last-week-events",
+  "first-step-cards",
+  "next-step-cards",
+  "review-trends",
+  "review-tasks",
+  "divider:this-week",
+  "items-to-discuss",
+  "this-sunday",
+  "upcoming-events",
+  "classes-attention",
+  "divider:capture",
+  "new-action-items",
+  "decisions",
+  "notes",
+  "transcript",
+];
+
+function orderStorageKey(meetingId: string) {
+  return `meeting-section-order:${meetingId}`;
+}
+
+function loadSectionOrder(meetingId: string): string[] {
+  if (typeof window === "undefined") return DEFAULT_SECTION_ORDER;
+  try {
+    const raw = window.localStorage.getItem(orderStorageKey(meetingId));
+    if (!raw) return DEFAULT_SECTION_ORDER;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return DEFAULT_SECTION_ORDER;
+    return parsed.filter((s) => typeof s === "string");
+  } catch {
+    return DEFAULT_SECTION_ORDER;
+  }
+}
+
+function mergeOrder(saved: string[], available: string[]): string[] {
+  const inSaved = saved.filter((id) => available.includes(id));
+  const missing = available.filter((id) => !inSaved.includes(id));
+  // Insert any missing (newly-added) sections at their default position.
+  const result = [...inSaved];
+  for (const id of missing) {
+    const defaultIdx = DEFAULT_SECTION_ORDER.indexOf(id);
+    if (defaultIdx === -1) {
+      result.push(id);
+      continue;
+    }
+    // Insert after the nearest preceding section that we already have.
+    let insertAt = result.length;
+    for (let i = defaultIdx - 1; i >= 0; i--) {
+      const prev = DEFAULT_SECTION_ORDER[i];
+      const idx = result.indexOf(prev);
+      if (idx !== -1) {
+        insertAt = idx + 1;
+        break;
+      }
+    }
+    result.splice(insertAt, 0, id);
+  }
+  return result;
+}
+
+type SortableBodyProps = {
+  meeting: Meeting;
+  agenda: AgendaItem[];
+  actions: ActionItem[];
+  newAgenda: string;
+  setNewAgenda: (v: string) => void;
+  addAgenda: () => void;
+  toggleAgenda: (item: AgendaItem) => void;
+  removeAgenda: (id: string) => void;
+  editAgenda: (id: string, title: string) => void;
+  reorderAgenda: (items: AgendaItem[]) => void;
+  newAction: string;
+  setNewAction: (v: string) => void;
+  addAction: () => void;
+  toggleAction: (item: ActionItem) => void;
+  removeAction: (id: string) => void;
+  notesDraft: string;
+  onNotesChange: (v: string) => void;
+};
+
+function SortableMeetingBody(props: SortableBodyProps) {
+  const { meeting } = props;
+  const [order, setOrder] = useState<string[]>(() => loadSectionOrder(meeting.id));
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  // Reload order when the meeting id changes (new week).
+  useEffect(() => {
+    setOrder(loadSectionOrder(meeting.id));
+  }, [meeting.id]);
+
+  const blocks = useMemo(() => buildSectionBlocks(props), [props]);
+  const availableIds = blocks.map((b) => b.id);
+  const renderOrder = useMemo(() => mergeOrder(order, availableIds), [order, availableIds.join("|")]);
+
+  const onDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIdx = renderOrder.indexOf(String(active.id));
+    const newIdx = renderOrder.indexOf(String(over.id));
+    if (oldIdx === -1 || newIdx === -1) return;
+    const next = arrayMove(renderOrder, oldIdx, newIdx);
+    setOrder(next);
+    try {
+      window.localStorage.setItem(orderStorageKey(meeting.id), JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const resetOrder = () => {
+    setOrder(DEFAULT_SECTION_ORDER);
+    try {
+      window.localStorage.removeItem(orderStorageKey(meeting.id));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const blockMap = new Map(blocks.map((b) => [b.id, b]));
+  const customized = JSON.stringify(renderOrder) !== JSON.stringify(DEFAULT_SECTION_ORDER.filter((id) => availableIds.includes(id)));
+
+  return (
+    <div className="space-y-3">
+      {customized && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={resetOrder}
+            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+          >
+            Reset section order
+          </button>
+        </div>
+      )}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        <SortableContext items={renderOrder} strategy={verticalListSortingStrategy}>
+          <div className="space-y-3">
+            {renderOrder.map((id) => {
+              const block = blockMap.get(id);
+              if (!block) return null;
+              return (
+                <SortableSection key={id} id={id} isDivider={block.isDivider}>
+                  {block.node}
+                </SortableSection>
+              );
+            })}
+          </div>
+        </SortableContext>
+      </DndContext>
+    </div>
+  );
+}
+
+function SortableSection({
+  id,
+  isDivider,
+  children,
+}: {
+  id: string;
+  isDivider?: boolean;
+  children: ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="relative group/section">
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        aria-label="Drag to reorder section"
+        className={cn(
+          "absolute z-10 text-muted-foreground/40 hover:text-foreground cursor-grab active:cursor-grabbing",
+          "opacity-0 group-hover/section:opacity-100 focus:opacity-100 transition-opacity",
+          isDivider ? "-left-1 top-1/2 -translate-y-1/2" : "-left-5 top-4",
+        )}
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
+      {children}
+    </div>
+  );
+}
+
+type SectionBlock = { id: string; node: ReactNode; isDivider?: boolean };
+
+function buildSectionBlocks(p: SortableBodyProps): SectionBlock[] {
+  const { meeting, agenda, actions, notesDraft } = p;
+  return [
+    { id: "devotional", node: <DevotionalSection meetingId={meeting.id} /> },
+    { id: "divider:recurring", isDivider: true, node: <SectionDivider label="Recurring Agenda Items" /> },
+    { id: "sunday-review", node: <SundayReviewSection meetingId={meeting.id} /> },
+    { id: "last-week-events", node: <LastWeekEventsSection meetingId={meeting.id} /> },
+    {
+      id: "first-step-cards",
+      node: (
+        <LinkSection
+          meetingId={meeting.id}
+          sectionKey="first_step_cards"
+          title="First Step Cards"
+          subtitle="Review new submissions in PCO."
+          href="https://people.planningcenteronline.com/forms/161115"
+          linkLabel="Open First Step form in PCO"
+        />
+      ),
+    },
+    {
+      id: "next-step-cards",
+      node: (
+        <LinkSection
+          meetingId={meeting.id}
+          sectionKey="next_step_cards"
+          title="Next Step Cards"
+          subtitle="Review next-step submissions in PCO."
+          href="https://people.planningcenteronline.com/forms/433638"
+          linkLabel="Open Next Step form in PCO"
+        />
+      ),
+    },
+    { id: "review-trends", node: <ReviewTrendsSection meetingId={meeting.id} meetingDate={meeting.meeting_date} /> },
+    { id: "review-tasks", node: <ReviewTasksSection /> },
+    { id: "divider:this-week", isDivider: true, node: <SectionDivider label="This Week" /> },
+    {
+      id: "items-to-discuss",
+      node: (
+        <StandingSection
+          title="Items To Discuss"
+          subtitle="Topics specific to this week's meeting."
+          badge={
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-normal">
+              {agenda.length} {agenda.length === 1 ? "item" : "items"}
+            </span>
+          }
+        >
+          <SortableAgendaList items={agenda} onReorder={p.reorderAgenda}>
+            {(item) => (
+              <AgendaRow
+                item={item}
+                onToggle={() => p.toggleAgenda(item)}
+                onDelete={() => p.removeAgenda(item.id)}
+                onSave={(title) => p.editAgenda(item.id, title)}
+              />
+            )}
+          </SortableAgendaList>
+          {agenda.length === 0 && (
+            <div className="text-sm text-muted-foreground py-2">
+              No discussion items yet — add one below.
+            </div>
+          )}
+          <div className="mt-4 space-y-2">
+            <RichTextEditor
+              value={p.newAgenda}
+              onChange={p.setNewAgenda}
+              placeholder="Add discussion item…  (use the link button to add hyperlinks)"
+              minHeight={40}
+            />
+            <Button
+              type="button"
+              size="sm"
+              onClick={p.addAgenda}
+              disabled={!p.newAgenda.replace(/<[^>]+>/g, "").trim()}
+            >
+              <Plus className="w-4 h-4 mr-1" /> Add
+            </Button>
+          </div>
+        </StandingSection>
+      ),
+    },
+    { id: "this-sunday", node: <ThisSundaySection meetingDate={meeting.meeting_date} /> },
+    { id: "upcoming-events", node: <UpcomingEventsSection meetingId={meeting.id} /> },
+    { id: "classes-attention", node: <ClassesNeedingAttentionSection /> },
+    { id: "divider:capture", isDivider: true, node: <SectionDivider label="Capture" /> },
+    {
+      id: "new-action-items",
+      node: (
+        <StandingSection
+          title="New Action Items"
+          subtitle="Tasks created in today's meeting. Open items appear in Review Tasks above."
+          defaultOpen={false}
+        >
+          <ul className="space-y-2">
+            {actions.map((item) => (
+              <li key={item.id} className="group flex items-start gap-3">
+                <button
+                  onClick={() => p.toggleAction(item)}
+                  className={cn(
+                    "mt-0.5 w-5 h-5 rounded border flex items-center justify-center shrink-0",
+                    item.completed
+                      ? "bg-primary border-primary text-primary-foreground"
+                      : "border-border",
+                  )}
+                >
+                  {item.completed && <Check className="w-3 h-3" />}
+                </button>
+                <span className={cn("flex-1 text-sm", item.completed && "line-through text-muted-foreground")}>
+                  {item.title}
+                </span>
+                <button
+                  onClick={() => p.removeAction(item.id)}
+                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </li>
+            ))}
+            {actions.length === 0 && (
+              <li className="text-sm text-muted-foreground py-2">No action items yet.</li>
+            )}
+          </ul>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              p.addAction();
+            }}
+            className="mt-4 flex gap-2"
+          >
+            <input
+              value={p.newAction}
+              onChange={(e) => p.setNewAction(e.target.value)}
+              placeholder="New action item…"
+              className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            <Button type="submit" size="icon" disabled={!p.newAction.trim()}>
+              <Plus className="w-4 h-4" />
+            </Button>
+          </form>
+        </StandingSection>
+      ),
+    },
+    { id: "decisions", node: <MeetingDecisionsSection meetingId={meeting.id} /> },
+    {
+      id: "notes",
+      node: (
+        <StandingSection title="Meeting Notes" subtitle="General notes for the whole meeting." defaultOpen={false}>
+          <textarea
+            id="meeting-notes"
+            value={notesDraft}
+            onChange={(e) => p.onNotesChange(e.target.value)}
+            placeholder="Type meeting notes here. They auto-save and sync to everyone in the room."
+            className="w-full min-h-[200px] bg-background border border-border rounded-lg p-4 text-sm outline-none focus:ring-2 focus:ring-primary/30 resize-y"
+          />
+        </StandingSection>
+      ),
+    },
+    {
+      id: "transcript",
+      node: (
+        <StandingSection title="Live Transcript" subtitle="Captured when transcription is on." defaultOpen={false}>
+          <div className="text-sm text-muted-foreground whitespace-pre-wrap min-h-[120px] max-h-[400px] overflow-y-auto">
+            {meeting?.transcript ?? (
+              <span className="italic">Press "Start transcription" to capture the conversation.</span>
+            )}
+          </div>
+        </StandingSection>
+      ),
+    },
+  ];
+}
+
 
 function FinalizeButton({
   meeting,
