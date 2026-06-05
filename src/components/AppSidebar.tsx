@@ -77,6 +77,7 @@ export function AppSidebar() {
         { to: "/calendar/planning", label: "Annual Planning", icon: CalendarClock },
         ...(isCore ? [{ to: "/calendar/classes", label: "Classes", icon: GraduationCap }] : []),
         ...(isCore ? [{ to: "/rooms", label: "Rooms", icon: DoorOpen }] : []),
+        ...(isCore ? [{ to: "/checklists", label: "Checklists", icon: ListChecks }] : []),
       ],
     },
     { to: "/decisions", label: "Decisions", icon: Gavel },
@@ -97,10 +98,10 @@ export function AppSidebar() {
           } as NavItem,
         ]
       : []),
-    ...(isCore ? [{ to: "/checklists", label: "Checklists", icon: ListChecks }] : []),
     ...(isCore ? [{ to: "/finance", label: "Finance", icon: Wallet }] : []),
     { to: "/settings", label: "Settings", icon: SettingsIcon },
   ];
+
 
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
