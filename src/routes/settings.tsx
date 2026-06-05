@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, CheckCircle2, ExternalLink, Plug, Unplug, Mail, Bell, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { getGoogleAuthUrl, getGoogleConnection, disconnectGoogle, setGoogleAutoPush } from "@/lib/google-tasks.functions";
+import { getPcoServicesConfig, savePcoServicesConfig, testPcoServices } from "@/lib/pco-services.functions";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -121,10 +122,83 @@ function SettingsPage() {
         </form>
 
         <GoogleTasksCard />
+        {roles.includes("core") && <PcoServicesCard />}
         {roles.includes("core") && <WeeklyDigestCard />}
         {roles.includes("core") && <NudgesCard />}
       </div>
     </AppShell>
+  );
+}
+
+function PcoServicesCard() {
+  const loadCfg = useServerFn(getPcoServicesConfig);
+  const saveCfg = useServerFn(savePcoServicesConfig);
+  const testCfg = useServerFn(testPcoServices);
+  const [value, setValue] = useState("");
+  const [loaded, setLoaded] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [testing, setTesting] = useState(false);
+
+  useEffect(() => {
+    loadCfg().then((r: any) => {
+      setValue(r?.sunday_service_type_id ?? "");
+      setLoaded(true);
+    }).catch(() => setLoaded(true));
+  }, [loadCfg]);
+
+  async function save() {
+    setBusy(true);
+    try {
+      await saveCfg({ data: { sunday_service_type_id: value.trim() || null } });
+      toast.success("Saved");
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function test() {
+    setTesting(true);
+    try {
+      const r = await testCfg() as any;
+      if (r.ok) toast.success(`Connected to "${r.name}"`);
+      else toast.error(r.error ?? "Connection failed");
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed");
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  return (
+    <div className="bg-surface border border-border rounded-2xl p-6 space-y-3">
+      <div>
+        <h2 className="font-display font-semibold">Planning Center — Sunday service plan</h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          The PCO Service Type ID for your Sunday service. The "Push to PCO" button on the meeting page
+          writes the Ministry Highlight and Announcements into the matching plan items' description fields.
+          Find the ID in PCO Services URL: <code>.../service_types/<strong>1234567</strong>/plans</code>.
+        </p>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="pcoSvcType">Sunday Service Type ID</Label>
+        <Input
+          id="pcoSvcType"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="e.g. 1234567"
+          disabled={!loaded}
+        />
+      </div>
+      <div className="flex gap-2 justify-end">
+        <Button variant="outline" size="sm" onClick={test} disabled={testing || !value.trim()}>
+          {testing && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />} Test connection
+        </Button>
+        <Button size="sm" onClick={save} disabled={busy || !loaded}>
+          {busy && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />} Save
+        </Button>
+      </div>
+    </div>
   );
 }
 
