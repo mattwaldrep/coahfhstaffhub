@@ -568,7 +568,7 @@ export function UpcomingEventsSection({ meetingId }: { meetingId: string }) {
 
 /* ---------- This Sunday's slot (Ministry Highlight + 2 Announcements) ---------- */
 
-import { pushSundaySlotsToPco } from "@/lib/pco-services.functions";
+
 
 const SUNDAY_SLOTS = [
   { key: "ministry_highlight", label: "Ministry Highlight" },
