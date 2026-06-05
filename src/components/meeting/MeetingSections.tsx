@@ -674,9 +674,10 @@ export function ThisSundaySection({ meetingDate }: { meetingDate: string }) {
         toast.error(res.error ?? "Push failed");
         return;
       }
-      const updated = res.results?.filter((r) => r.status === "updated") ?? [];
-      const missing = res.results?.filter((r) => r.status === "missing_item") ?? [];
-      const empty = res.results?.filter((r) => r.status === "empty") ?? [];
+      const results: PushSlotResult[] = res.results ?? [];
+      const updated = results.filter((r) => r.status === "updated");
+      const missing = results.filter((r) => r.status === "missing_item");
+      const empty = results.filter((r) => r.status === "empty");
       const parts = [`Updated ${updated.length} of ${SUNDAY_SLOTS.length} items`];
       if (missing.length) parts.push(`couldn't find: ${missing.map((m) => m.title).join(", ")}`);
       if (empty.length) parts.push(`skipped empty: ${empty.map((m) => m.title).join(", ")}`);
