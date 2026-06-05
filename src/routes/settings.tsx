@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, CheckCircle2, ExternalLink, Plug, Unplug, Mail, Bell, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { getGoogleAuthUrl, getGoogleConnection, disconnectGoogle, setGoogleAutoPush } from "@/lib/google-tasks.functions";
+import { getPcoServicesConfig, savePcoServicesConfig, testPcoServices } from "@/lib/pco-services.functions";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
