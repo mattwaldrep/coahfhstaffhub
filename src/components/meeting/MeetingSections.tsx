@@ -39,6 +39,7 @@ import { InlineClassFixer } from "@/components/inline/InlineClassFixer";
 import { fetchWeeksInRange, summarizeWeeks, type WeeklyMetric, type MetricsHeadline } from "@/integrations/metrics/client";
 import { useMetricsSession } from "@/integrations/metrics/use-session";
 import { cn } from "@/lib/utils";
+import { pushSundaySlotsToPco, type PushSlotResult } from "@/lib/pco-services.functions";
 
 /* ---------- shared collapsible card ---------- */
 
