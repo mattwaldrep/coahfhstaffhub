@@ -13,6 +13,7 @@ interface ClassEventLike {
   id: string;
   title: string;
   leader_name: string | null;
+  leader_not_needed: boolean;
   childcare_needed: boolean;
   childcare_arranged: boolean;
 }
@@ -37,6 +38,7 @@ interface InlineClassFixerProps {
 export function InlineClassFixer({ event, gaps, onSaved, className }: InlineClassFixerProps) {
   const [open, setOpen] = useState(false);
   const [teacher, setTeacher] = useState(event.leader_name ?? "");
+  const [leaderNotNeeded, setLeaderNotNeeded] = useState(event.leader_not_needed);
   const [needsChildcare, setNeedsChildcare] = useState(event.childcare_needed);
   const [arranged, setArranged] = useState(event.childcare_arranged);
   const [saving, setSaving] = useState(false);
@@ -50,6 +52,7 @@ export function InlineClassFixer({ event, gaps, onSaved, className }: InlineClas
       .from("calendar_events")
       .update({
         leader_name: teacher.trim() || null,
+        leader_not_needed: leaderNotNeeded,
         childcare_needed: needsChildcare,
         childcare_arranged: needsChildcare ? arranged : false,
       })
@@ -86,19 +89,30 @@ export function InlineClassFixer({ event, gaps, onSaved, className }: InlineClas
           <div className="text-xs text-muted-foreground">Quick assign — no need to open the calendar.</div>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="inline-teacher" className="text-xs">
-            Teacher
+        <div className="flex items-center justify-between">
+          <Label htmlFor="inline-leader-needed" className="text-xs">
+            Leader needed
             {teacherMissing && <span className="text-warning ml-1">·  needed</span>}
           </Label>
-          <Input
-            id="inline-teacher"
-            value={teacher}
-            onChange={(e) => setTeacher(e.target.value)}
-            placeholder="Who's teaching?"
-            autoFocus={teacherMissing}
+          <Switch
+            id="inline-leader-needed"
+            checked={!leaderNotNeeded}
+            onCheckedChange={(v) => setLeaderNotNeeded(!v)}
           />
         </div>
+
+        {!leaderNotNeeded && (
+          <div className="space-y-1.5">
+            <Label htmlFor="inline-teacher" className="text-xs">Teacher</Label>
+            <Input
+              id="inline-teacher"
+              value={teacher}
+              onChange={(e) => setTeacher(e.target.value)}
+              placeholder="Who's teaching?"
+              autoFocus={teacherMissing}
+            />
+          </div>
+        )}
 
         <div className="flex items-center justify-between">
           <Label htmlFor="inline-cc-needed" className="text-xs">Needs childcare</Label>

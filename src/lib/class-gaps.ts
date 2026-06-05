@@ -1,6 +1,7 @@
 export type ClassGapInput = {
   category?: string | null;
   leader_name?: string | null;
+  leader_not_needed?: boolean | null;
   childcare_needed?: boolean | null;
   childcare_arranged?: boolean | null;
 };
@@ -12,7 +13,7 @@ export type ClassGapInput = {
 export function classGaps(e: ClassGapInput): string[] {
   if (e.category !== "Class") return [];
   const gaps: string[] = [];
-  if (!e.leader_name) gaps.push("teacher");
+  if (!e.leader_not_needed && !e.leader_name) gaps.push("teacher");
   if (e.childcare_needed && !e.childcare_arranged) gaps.push("childcare arrangement");
   return gaps;
 }
