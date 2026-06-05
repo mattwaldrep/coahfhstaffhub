@@ -2188,6 +2188,24 @@ export type Database = {
         }
         Relationships: []
       }
+      pco_services_config: {
+        Row: {
+          id: boolean
+          sunday_service_type_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: boolean
+          sunday_service_type_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: boolean
+          sunday_service_type_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
