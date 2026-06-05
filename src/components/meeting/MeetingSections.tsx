@@ -46,7 +46,7 @@ import { pushSundaySlotsToPco, type PushSlotResult } from "@/lib/pco-services.fu
 export function StandingSection({
   title,
   subtitle,
-  defaultOpen = true,
+  defaultOpen = false,
   badge,
   children,
 }: {
