@@ -13,6 +13,7 @@ interface ClassEventLike {
   id: string;
   title: string;
   leader_name: string | null;
+  leader_not_needed: boolean;
   childcare_needed: boolean;
   childcare_arranged: boolean;
 }
@@ -37,6 +38,7 @@ interface InlineClassFixerProps {
 export function InlineClassFixer({ event, gaps, onSaved, className }: InlineClassFixerProps) {
   const [open, setOpen] = useState(false);
   const [teacher, setTeacher] = useState(event.leader_name ?? "");
+  const [leaderNotNeeded, setLeaderNotNeeded] = useState(event.leader_not_needed);
   const [needsChildcare, setNeedsChildcare] = useState(event.childcare_needed);
   const [arranged, setArranged] = useState(event.childcare_arranged);
   const [saving, setSaving] = useState(false);
@@ -50,6 +52,7 @@ export function InlineClassFixer({ event, gaps, onSaved, className }: InlineClas
       .from("calendar_events")
       .update({
         leader_name: teacher.trim() || null,
+        leader_not_needed: leaderNotNeeded,
         childcare_needed: needsChildcare,
         childcare_arranged: needsChildcare ? arranged : false,
       })
