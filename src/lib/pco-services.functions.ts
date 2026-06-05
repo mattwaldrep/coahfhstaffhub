@@ -133,9 +133,11 @@ export const pushSundaySlotsToPco = createServerFn({ method: "POST" })
     }
 
     const pco = await import("@/server/pco-services.server");
-    const plan = await pco.findPlanForDate(serviceTypeId, data.sundayIso);
+    // Target the next upcoming plan on/after today (the staff meeting date).
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const plan = await pco.findNextUpcomingPlan(serviceTypeId, todayIso);
     if (!plan) {
-      return { ok: false, error: `No PCO plan found with sort date ${data.sundayIso}.` };
+      return { ok: false, error: `No upcoming PCO plan found on or after ${todayIso}.` };
     }
     const items = await pco.listPlanItems(serviceTypeId, plan.id);
     const byTitle = new Map<string, { id: string }>();

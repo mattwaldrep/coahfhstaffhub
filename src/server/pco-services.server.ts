@@ -36,10 +36,11 @@ export async function getServiceType(serviceTypeId: string): Promise<{ id: strin
   return { id: String(json.data?.id), name: json.data?.attributes?.name ?? "(unnamed)" };
 }
 
-// Find the plan whose sort_date matches the requested Sunday (YYYY-MM-DD).
-export async function findPlanForDate(
+// Find the next upcoming plan with sort_date >= fromIso (YYYY-MM-DD).
+// Used to target the next Sunday plan following the staff meeting date.
+export async function findNextUpcomingPlan(
   serviceTypeId: string,
-  sundayIso: string,
+  fromIso: string,
 ): Promise<{ id: string; title: string | null; sort_date: string } | null> {
   let next: string | null = `/service_types/${serviceTypeId}/plans?filter=future&per_page=25&order=sort_date`;
   while (next) {
@@ -48,12 +49,8 @@ export async function findPlanForDate(
       const sortDate: string | null = p.attributes?.sort_date ?? null;
       if (!sortDate) continue;
       const datePart = sortDate.slice(0, 10);
-      if (datePart === sundayIso) {
+      if (datePart >= fromIso) {
         return { id: String(p.id), title: p.attributes?.title ?? null, sort_date: sortDate };
-      }
-      if (datePart > sundayIso) {
-        // Plans are ordered by sort_date asc; no need to keep paging.
-        return null;
       }
     }
     next = json.links?.next ?? null;
