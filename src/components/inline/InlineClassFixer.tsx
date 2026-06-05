@@ -89,19 +89,30 @@ export function InlineClassFixer({ event, gaps, onSaved, className }: InlineClas
           <div className="text-xs text-muted-foreground">Quick assign — no need to open the calendar.</div>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="inline-teacher" className="text-xs">
-            Teacher
+        <div className="flex items-center justify-between">
+          <Label htmlFor="inline-leader-needed" className="text-xs">
+            Leader needed
             {teacherMissing && <span className="text-warning ml-1">·  needed</span>}
           </Label>
-          <Input
-            id="inline-teacher"
-            value={teacher}
-            onChange={(e) => setTeacher(e.target.value)}
-            placeholder="Who's teaching?"
-            autoFocus={teacherMissing}
+          <Switch
+            id="inline-leader-needed"
+            checked={!leaderNotNeeded}
+            onCheckedChange={(v) => setLeaderNotNeeded(!v)}
           />
         </div>
+
+        {!leaderNotNeeded && (
+          <div className="space-y-1.5">
+            <Label htmlFor="inline-teacher" className="text-xs">Teacher</Label>
+            <Input
+              id="inline-teacher"
+              value={teacher}
+              onChange={(e) => setTeacher(e.target.value)}
+              placeholder="Who's teaching?"
+              autoFocus={teacherMissing}
+            />
+          </div>
+        )}
 
         <div className="flex items-center justify-between">
           <Label htmlFor="inline-cc-needed" className="text-xs">Needs childcare</Label>

@@ -58,7 +58,7 @@ function Dashboard() {
   const metricsSession = useMetricsSession();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [actions, setActions] = useState<ActionItem[]>([]);
-  const [classAlerts, setClassAlerts] = useState<Array<{ id: string; title: string; date: Date; gaps: string[]; leader_name: string | null; childcare_needed: boolean; childcare_arranged: boolean }>>([]);
+  const [classAlerts, setClassAlerts] = useState<Array<{ id: string; title: string; date: Date; gaps: string[]; leader_name: string | null; leader_not_needed: boolean; childcare_needed: boolean; childcare_arranged: boolean }>>([]);
   const [alertsTick, setAlertsTick] = useState(0);
   const [headline, setHeadline] = useState<MetricsHeadline | null>(null);
   const [prevHeadline, setPrevHeadline] = useState<MetricsHeadline | null>(null);
@@ -87,11 +87,11 @@ function Dashboard() {
     const horizonEnd = new Date(Date.now() + 60 * 86400000);
     supabase
       .from("calendar_events")
-      .select("id,title,start_at,end_at,sub_calendar,leader_name,category,all_day,rrule,excluded_dates,childcare_needed,childcare_arranged")
+      .select("id,title,start_at,end_at,sub_calendar,leader_name,category,all_day,rrule,excluded_dates,leader_not_needed,childcare_needed,childcare_arranged")
       .eq("category", "Class")
       .or(`start_at.gte.${new Date().toISOString()},rrule.not.is.null`)
       .then(({ data }) => {
-        const rows = (data ?? []) as Array<EventRowLike & { childcare_needed: boolean; childcare_arranged: boolean }>;
+        const rows = (data ?? []) as Array<EventRowLike & { leader_not_needed: boolean; childcare_needed: boolean; childcare_arranged: boolean }>;
         const occurrences = expandEvents(rows, new Date(), horizonEnd);
         const alerts = occurrences
           .map((o) => ({
@@ -100,6 +100,7 @@ function Dashboard() {
             date: o.occurrence_date,
             gaps: classGaps(o),
             leader_name: o.leader_name ?? null,
+            leader_not_needed: (o as { leader_not_needed?: boolean }).leader_not_needed ?? false,
             childcare_needed: (o as { childcare_needed?: boolean }).childcare_needed ?? false,
             childcare_arranged: (o as { childcare_arranged?: boolean }).childcare_arranged ?? false,
           }))
@@ -287,6 +288,7 @@ function Dashboard() {
                           id: a.id,
                           title: a.title,
                           leader_name: a.leader_name,
+                          leader_not_needed: a.leader_not_needed,
                           childcare_needed: a.childcare_needed,
                           childcare_arranged: a.childcare_arranged,
                         }}

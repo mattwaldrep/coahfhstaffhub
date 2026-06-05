@@ -1414,6 +1414,7 @@ type AttentionAlert = {
   date: Date;
   gaps: string[];
   leader_name: string | null;
+  leader_not_needed: boolean;
   childcare_needed: boolean;
   childcare_arranged: boolean;
   sub_calendar: string;
@@ -1432,15 +1433,16 @@ export function ClassesNeedingAttentionSection() {
     const horizonEnd = new Date(Date.now() + 28 * 86400000);
     supabase
       .from("calendar_events")
-      .select("id,title,start_at,end_at,sub_calendar,leader_name,category,all_day,rrule,excluded_dates,childcare_needed,childcare_arranged")
+      .select("id,title,start_at,end_at,sub_calendar,leader_name,category,all_day,rrule,excluded_dates,leader_not_needed,childcare_needed,childcare_arranged")
       .or(`start_at.gte.${new Date().toISOString()},rrule.not.is.null`)
       .then(({ data }) => {
-        const rows = (data ?? []) as Array<EventRowLike & { childcare_needed: boolean; childcare_arranged: boolean; category: string | null }>;
+        const rows = (data ?? []) as Array<EventRowLike & { leader_not_needed: boolean; childcare_needed: boolean; childcare_arranged: boolean; category: string | null }>;
         const occurrences = expandEvents(rows, new Date(), horizonEnd);
         const list: AttentionAlert[] = occurrences
           .map((o) => {
             const gaps: string[] = [];
-            if (!o.leader_name) gaps.push("leader");
+            const leaderNotNeeded = (o as { leader_not_needed?: boolean }).leader_not_needed ?? false;
+            if (!leaderNotNeeded && !o.leader_name) gaps.push("leader");
             const needsCc = (o as { childcare_needed?: boolean }).childcare_needed ?? false;
             const arranged = (o as { childcare_arranged?: boolean }).childcare_arranged ?? false;
             if (needsCc && !arranged) gaps.push("childcare arrangement");
@@ -1450,6 +1452,7 @@ export function ClassesNeedingAttentionSection() {
               date: o.occurrence_date,
               gaps,
               leader_name: o.leader_name ?? null,
+              leader_not_needed: leaderNotNeeded,
               childcare_needed: needsCc,
               childcare_arranged: arranged,
               sub_calendar: o.sub_calendar,
@@ -1520,6 +1523,7 @@ export function ClassesNeedingAttentionSection() {
                     id: a.id,
                     title: a.title,
                     leader_name: a.leader_name,
+                    leader_not_needed: a.leader_not_needed,
                     childcare_needed: a.childcare_needed,
                     childcare_arranged: a.childcare_arranged,
                   }}
