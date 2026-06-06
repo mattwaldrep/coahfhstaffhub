@@ -324,37 +324,40 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
 
       {/* Health quick-filter chips */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Health</span>
-        {HEALTH_OPTIONS.map((h) => {
-          const active = healthFilter.has(h);
-          const count = people.filter((p) => ((fields ? p.fields[fields.spiritual_health]?.value : null) ?? "Unknown") === h).length;
-          return (
-            <button
-              key={h}
-              type="button"
-              onClick={() => toggleHealth(h)}
-              className={`text-[11px] px-2 py-0.5 rounded-full border transition ${
-                active
-                  ? "bg-[oklch(0.55_0.15_280)]/15 border-[oklch(0.55_0.15_280)]/40 text-[oklch(0.55_0.15_280)]"
-                  : "bg-background border-border text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {h} <span className="opacity-60">{count}</span>
-            </button>
-          );
-        })}
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground shrink-0">Health</span>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {HEALTH_OPTIONS.map((h) => {
+            const active = healthFilter.has(h);
+            const count = people.filter((p) => ((fields ? p.fields[fields.spiritual_health]?.value : null) ?? "Unknown") === h).length;
+            return (
+              <button
+                key={h}
+                type="button"
+                onClick={() => toggleHealth(h)}
+                className={`text-[11px] px-2 py-1 rounded-full border transition ${
+                  active
+                    ? "bg-[oklch(0.55_0.15_280)]/15 border-[oklch(0.55_0.15_280)]/40 text-[oklch(0.55_0.15_280)]"
+                    : "bg-background border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {h} <span className="opacity-60">{count}</span>
+              </button>
+            );
+          })}
+        </div>
         {activeFilterCount > 0 && (
           <button
             onClick={clearAll}
-            className="text-[11px] inline-flex items-center gap-1 text-muted-foreground hover:text-foreground ml-2"
+            className="text-[11px] inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
           >
             <X className="w-3 h-3" /> Clear filters
           </button>
         )}
-        <span className="text-[11px] text-muted-foreground ml-auto">
+        <span className="text-[11px] text-muted-foreground ml-auto shrink-0">
           {sorted.length} of {people.length}
         </span>
       </div>
+
 
       <div className="bg-surface border border-border rounded-2xl divide-y divide-border">
         {sorted.length === 0 && (
