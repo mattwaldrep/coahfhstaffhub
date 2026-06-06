@@ -567,7 +567,7 @@ function PersonPanel({
         ) : (
           <span className="text-xs">{health?.value ?? "Unknown"}</span>
         )}
-        <div className="flex items-center gap-3 ml-auto">
+        <div className="flex items-center gap-3 md:ml-auto flex-wrap w-full md:w-auto">
           {(() => {
             const firstName = person.name.split(/\s+/)[0] ?? "";
             const draft = `Hi ${firstName}, `;
@@ -592,25 +592,26 @@ function PersonPanel({
                     },
                   }).catch(() => { /* noop */ });
                 }}
-                className={`text-xs inline-flex items-center gap-1 ${
+                className={`text-xs inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border ${
                   person.phone
-                    ? "text-[oklch(0.55_0.15_280)] hover:underline"
-                    : "text-muted-foreground opacity-60 cursor-not-allowed"
+                    ? "border-[oklch(0.55_0.15_280)]/30 text-[oklch(0.55_0.15_280)] hover:bg-[oklch(0.55_0.15_280)]/10"
+                    : "border-border text-muted-foreground opacity-60 cursor-not-allowed"
                 }`}
                 title={person.phone ? `Text ${person.phone}` : "No phone on file"}
               >
-                <MessageSquare className="w-3 h-3" /> Text
+                <MessageSquare className="w-3.5 h-3.5" /> Text
               </a>
             );
           })()}
           <a
             href={`https://people.planningcenteronline.com/people/${person.id}`}
             target="_blank" rel="noreferrer"
-            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border"
           >
-            <LinkIcon className="w-3 h-3" /> Open in PCO
+            <LinkIcon className="w-3.5 h-3.5" /> Open in PCO
           </a>
         </div>
+
       </div>
 
       <div className="space-y-2">
