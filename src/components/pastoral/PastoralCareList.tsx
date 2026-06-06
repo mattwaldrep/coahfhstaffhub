@@ -61,6 +61,9 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
   const [sort, setSort] = useState<SortKey>("health_urgent");
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [latestNote, setLatestNote] = useState<Record<string, string>>({}); // pco_person_id -> ISO date
+  const [myElderName, setMyElderName] = useState<string | null>(null);
+  const [myPeopleActive, setMyPeopleActive] = useState(false);
+  const [logOpen, setLogOpen] = useState(false);
 
   const load = useCallback(async (refresh = false) => {
     refresh ? setRefreshing(true) : setLoading(true);
