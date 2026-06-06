@@ -634,9 +634,10 @@ function PersonPanel({
                   try { await deletePcoNote({ data: { id: n.id } }); load(); }
                   catch (e: any) { toast.error(e.message ?? "Failed"); }
                 }}
-                className="opacity-0 group-hover:opacity-100 hover:text-destructive"
+                className="opacity-60 md:opacity-0 md:group-hover:opacity-100 hover:text-destructive p-1 -m-1"
+                aria-label="Delete note"
               >
-                <Trash2 className="w-3 h-3" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
             <div className="whitespace-pre-wrap mt-1">{n.body}</div>
@@ -644,20 +645,21 @@ function PersonPanel({
         ))}
       </div>
 
-      <div className="flex gap-2 items-start">
-        <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={2} placeholder="Add update…" className="text-sm" />
-        <div className="flex flex-col gap-1">
+      <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-start">
+        <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={2} placeholder="Add update…" className="text-sm flex-1" />
+        <div className="flex sm:flex-col gap-2 sm:gap-1 items-center sm:items-stretch justify-between sm:justify-start">
           {isFullElder && (
             <label className="flex items-center gap-1 text-[11px] text-muted-foreground">
               <input type="checkbox" checked={exec} onChange={(e) => setExec(e.target.checked)} />
               Exec
             </label>
           )}
-          <Button size="sm" variant="outline" onClick={post} disabled={saving}>
-            <MessageSquarePlus className="w-3 h-3 mr-1" /> Post
+          <Button size="sm" variant="outline" onClick={post} disabled={saving} className="h-9 sm:h-8">
+            <MessageSquarePlus className="w-3.5 h-3.5 mr-1" /> Post
           </Button>
         </div>
       </div>
+
     </div>
   );
 }
