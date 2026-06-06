@@ -74,7 +74,35 @@ export async function fetchCareList(opts: {
   }
 
   const people: PcoPerson[] = [];
-  let next: string | null = `/lists/${opts.list_id}/people?include=field_data&per_page=100`;
+  let next: string | null = `/lists/${opts.list_id}/people?include=field_data,phone_numbers&per_page=100`;
+  while (next) {
+    const json: any = await pcoFetch(next);
+    const included: any[] = json.included ?? [];
+    const fieldData = included.filter((i) => i.type === "FieldDatum");
+    const phoneData = included.filter((i) => i.type === "PhoneNumber");
+
+    for (const p of json.data ?? []) {
+      const datumIds: string[] = (p.relationships?.field_data?.data ?? []).map((d: any) => d.id);
+      const fields: PcoPerson["fields"] = {};
+      for (const did of datumIds) {
+        const fd = fieldData.find((f) => f.id === did);
+        if (!fd) continue;
+        const fieldDefId = fd.relationships?.field_definition?.data?.id;
+        if (!fieldDefId || !opts.field_ids.includes(String(fieldDefId))) continue;
+        fields[String(fieldDefId)] = {
+          datum_id: fd.id,
+          value: fd.attributes?.value ?? null,
+        };
+      }
+      const phoneIds: string[] = (p.relationships?.phone_numbers?.data ?? []).map((d: any) => d.id);
+      const phones = phoneData.filter((pn) => phoneIds.includes(pn.id));
+      people.push({
+        id: String(p.id),
+        name: p.attributes?.name ?? `${p.attributes?.first_name ?? ""} ${p.attributes?.last_name ?? ""}`.trim(),
+        phone: pickPhone(phones),
+        fields,
+      });
+    }
   while (next) {
     const json: any = await pcoFetch(next);
     const included: any[] = json.included ?? [];
