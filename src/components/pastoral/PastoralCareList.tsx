@@ -570,7 +570,7 @@ function PersonPanel({
         <div className="flex items-center gap-3 md:ml-auto flex-wrap w-full md:w-auto">
           {(() => {
             const firstName = person.name.split(/\s+/)[0] ?? "";
-            const draft = `Hi ${firstName}, `;
+            const draft = `Hey ${firstName}, `;
             const href = person.phone
               ? `sms:${person.phone}?&body=${encodeURIComponent(draft)}`
               : undefined;
