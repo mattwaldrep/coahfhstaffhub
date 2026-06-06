@@ -6,12 +6,16 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Lock, MessageSquarePlus, MessageSquare, RefreshCw, Search, Trash2, Link as LinkIcon, X, ArrowUpDown } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { Lock, MessageSquarePlus, MessageSquare, RefreshCw, Search, Trash2, Link as LinkIcon, X, ArrowUpDown, History, UserCheck } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import {
   listCareList, listPcoNotes, addPcoNote, deletePcoNote, updateSpiritualHealth,
+  logTouchpoint, listTouchpoints, deleteTouchpoint, getMyElderName,
 } from "@/lib/pastoral-care.functions";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -60,6 +64,9 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
   const [sort, setSort] = useState<SortKey>("health_urgent");
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [latestNote, setLatestNote] = useState<Record<string, string>>({}); // pco_person_id -> ISO date
+  const [myElderName, setMyElderName] = useState<string | null>(null);
+  const [myPeopleActive, setMyPeopleActive] = useState(false);
+  const [logOpen, setLogOpen] = useState(false);
 
   const load = useCallback(async (refresh = false) => {
     refresh ? setRefreshing(true) : setLoading(true);
@@ -77,6 +84,17 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
   }, []);
 
   useEffect(() => { load(false); }, [load]);
+
+  // Load current user's elder name (used by "My people" filter)
+  useEffect(() => {
+    (async () => {
+      try {
+        const res: any = await getMyElderName();
+        setMyElderName(res?.full_name ?? null);
+      } catch { /* noop */ }
+    })();
+  }, []);
+
 
   // Refresh note counts and last-note date whenever the people list changes
   const refreshNoteMeta = useCallback(async (ids: string[]) => {
@@ -123,6 +141,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
+    const me = (myElderName ?? "").trim().toLowerCase();
     return people.filter((p) => {
       if (q && !p.name.toLowerCase().includes(q)) return false;
 
@@ -130,6 +149,10 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
       if (healthFilter.size > 0 && !healthFilter.has(health)) return false;
 
       const elderVal = (fields ? p.fields[fields.assigned_elder]?.value : null)?.trim() || "";
+      if (myPeopleActive) {
+        if (!me) return false;
+        if (elderVal.toLowerCase() !== me) return false;
+      }
       if (elderFilter === "unassigned" && elderVal) return false;
       if (elderFilter !== "all" && elderFilter !== "unassigned" && elderVal !== elderFilter) return false;
 
@@ -139,7 +162,8 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
 
       return true;
     });
-  }, [people, fields, search, healthFilter, elderFilter, notesFilter, counts]);
+  }, [people, fields, search, healthFilter, elderFilter, notesFilter, counts, myPeopleActive, myElderName]);
+
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -182,11 +206,12 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
   };
 
   const activeFilterCount =
-    (search ? 1 : 0) + healthFilter.size + (elderFilter !== "all" ? 1 : 0) + (notesFilter !== "any" ? 1 : 0);
+    (search ? 1 : 0) + healthFilter.size + (elderFilter !== "all" ? 1 : 0) + (notesFilter !== "any" ? 1 : 0) + (myPeopleActive ? 1 : 0);
 
   const clearAll = () => {
-    setSearch(""); setHealthFilter(new Set()); setElderFilter("all"); setNotesFilter("any");
+    setSearch(""); setHealthFilter(new Set()); setElderFilter("all"); setNotesFilter("any"); setMyPeopleActive(false);
   };
+
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
@@ -226,6 +251,23 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
             />
           </div>
 
+          <Button
+            size="sm"
+            variant={myPeopleActive ? "default" : "outline"}
+            onClick={() => {
+              if (!myElderName) {
+                toast.error("Your profile name doesn't match an elder. Update your full name in settings.");
+                return;
+              }
+              setMyPeopleActive((v) => !v);
+            }}
+            title={myElderName ? `Show people assigned to ${myElderName}` : "Set your full name in settings"}
+            className="h-8 text-xs"
+          >
+            <UserCheck className="w-3.5 h-3.5 mr-1" />
+            My people
+          </Button>
+
           <Select value={elderFilter} onValueChange={setElderFilter}>
             <SelectTrigger className="h-8 w-40 text-xs">
               <SelectValue placeholder="Assigned elder" />
@@ -263,6 +305,10 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
               <SelectItem value="notes_most">Most notes</SelectItem>
             </SelectContent>
           </Select>
+
+          <Button size="sm" variant="outline" onClick={() => setLogOpen(true)} title="View touchpoint log" className="h-8 text-xs">
+            <History className="w-3.5 h-3.5 mr-1" /> Log
+          </Button>
 
           <Button size="sm" variant="outline" onClick={() => load(true)} disabled={refreshing} title="Refresh from Planning Center">
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
@@ -345,9 +391,90 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
           );
         })}
       </div>
+
+      <TouchpointLogDialog open={logOpen} onOpenChange={setLogOpen} people={people} />
     </div>
   );
 }
+
+function TouchpointLogDialog({
+  open, onOpenChange, people,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  people: Person[];
+}) {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const personName = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const p of people) m[p.id] = p.name;
+    return m;
+  }, [people]);
+
+  useEffect(() => {
+    if (!open) return;
+    setLoading(true);
+    listTouchpoints({ data: { limit: 200 } })
+      .then((r: any) => setRows(r ?? []))
+      .catch(() => setRows([]))
+      .finally(() => setLoading(false));
+  }, [open]);
+
+  const kindLabel: Record<string, string> = {
+    text: "Text", call: "Call", email: "Email", in_person: "In person", other: "Other",
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Touchpoint log</DialogTitle>
+        </DialogHeader>
+        {loading ? (
+          <div className="text-sm text-muted-foreground">Loading…</div>
+        ) : rows.length === 0 ? (
+          <div className="text-sm text-muted-foreground">No touchpoints logged yet.</div>
+        ) : (
+          <div className="space-y-1.5">
+            {rows.map((r) => (
+              <div key={r.id} className="text-xs border border-border rounded p-2 flex items-start justify-between gap-2 group">
+                <div className="min-w-0">
+                  <div className="font-medium">
+                    {personName[r.pco_person_id] ?? r.person_name ?? "Unknown person"}
+                    <span className="ml-2 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-background border border-border text-muted-foreground">
+                      {kindLabel[r.kind] ?? r.kind}
+                    </span>
+                  </div>
+                  <div className="text-muted-foreground">
+                    {format(new Date(r.created_at), "MMM d, yyyy h:mm a")} · {r.user_name}
+                  </div>
+                  {r.note && <div className="whitespace-pre-wrap mt-1">{r.note}</div>}
+                </div>
+                <button
+                  onClick={async () => {
+                    if (!confirm("Delete touchpoint?")) return;
+                    try {
+                      await deleteTouchpoint({ data: { id: r.id } });
+                      setRows((prev) => prev.filter((x) => x.id !== r.id));
+                    } catch (e: any) {
+                      toast.error(e.message ?? "Failed");
+                    }
+                  }}
+                  className="opacity-0 group-hover:opacity-100 hover:text-destructive"
+                  title="Delete"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function PersonPanel({
   person, fields, isFullElder, meetingId, onHealthChanged,
@@ -445,7 +572,16 @@ function PersonPanel({
                   if (!person.phone) {
                     e.preventDefault();
                     toast.error("No phone number on file in Planning Center");
+                    return;
                   }
+                  // Fire-and-forget log of the touchpoint
+                  logTouchpoint({
+                    data: {
+                      pco_person_id: person.id,
+                      person_name: person.name,
+                      kind: "text",
+                    },
+                  }).catch(() => { /* noop */ });
                 }}
                 className={`text-xs inline-flex items-center gap-1 ${
                   person.phone

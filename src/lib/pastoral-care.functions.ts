@@ -206,6 +206,100 @@ export const deletePcoNote = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---- Touchpoints ---------------------------------------------------------
+
+export const logTouchpoint = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        pco_person_id: z.string().min(1).max(50),
+        person_name: z.string().max(200).nullable().optional(),
+        kind: z.enum(["text", "call", "email", "in_person", "other"]),
+        note: z.string().max(2000).nullable().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAccess(context.supabase, context.userId);
+    const { data: row, error } = await supabaseAdmin
+      .from("pco_touchpoints")
+      .insert({
+        pco_person_id: data.pco_person_id,
+        person_name: data.person_name ?? null,
+        kind: data.kind,
+        note: data.note ?? null,
+        user_id: context.userId,
+      })
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+export const listTouchpoints = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        pco_person_id: z.string().min(1).max(50).optional(),
+        limit: z.number().int().min(1).max(500).optional(),
+      })
+      .parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAccess(context.supabase, context.userId);
+    let q = context.supabase
+      .from("pco_touchpoints")
+      .select("id, pco_person_id, person_name, user_id, kind, note, created_at")
+      .order("created_at", { ascending: false })
+      .limit(data.limit ?? 100);
+    if (data.pco_person_id) q = q.eq("pco_person_id", data.pco_person_id);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    const userIds = Array.from(new Set((rows ?? []).map((r: any) => r.user_id)));
+    let names: Record<string, string> = {};
+    if (userIds.length) {
+      const { data: profs } = await supabaseAdmin
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", userIds);
+      for (const p of (profs ?? []) as any[]) {
+        names[p.id] = p.full_name || p.email || "Unknown";
+      }
+    }
+    return (rows ?? []).map((r: any) => ({ ...r, user_name: names[r.user_id] ?? "Unknown" }));
+  });
+
+export const deleteTouchpoint = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAccess(context.supabase, context.userId);
+    const { error } = await supabaseAdmin
+      .from("pco_touchpoints")
+      .delete()
+      .eq("id", data.id)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---- My elder name -------------------------------------------------------
+
+export const getMyElderName = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAccess(context.supabase, context.userId);
+    const { data } = await context.supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", context.userId)
+      .maybeSingle();
+    return { full_name: (data?.full_name ?? "").trim() || null };
+  });
+
+
 // ---- Archive (unchanged) -------------------------------------------------
 
 export const listArchive = createServerFn({ method: "GET" })
