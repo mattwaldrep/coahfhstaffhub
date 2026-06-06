@@ -34,6 +34,7 @@ type SortKey =
 type Person = {
   id: string;
   name: string;
+  phone?: string | null;
   fields: Record<string, { datum_id: string; value: string | null }>;
 };
 
