@@ -248,6 +248,23 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
             />
           </div>
 
+          <Button
+            size="sm"
+            variant={myPeopleActive ? "default" : "outline"}
+            onClick={() => {
+              if (!myElderName) {
+                toast.error("Your profile name doesn't match an elder. Update your full name in settings.");
+                return;
+              }
+              setMyPeopleActive((v) => !v);
+            }}
+            title={myElderName ? `Show people assigned to ${myElderName}` : "Set your full name in settings"}
+            className="h-8 text-xs"
+          >
+            <UserCheck className="w-3.5 h-3.5 mr-1" />
+            My people
+          </Button>
+
           <Select value={elderFilter} onValueChange={setElderFilter}>
             <SelectTrigger className="h-8 w-40 text-xs">
               <SelectValue placeholder="Assigned elder" />
