@@ -391,9 +391,90 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
           );
         })}
       </div>
+
+      <TouchpointLogDialog open={logOpen} onOpenChange={setLogOpen} people={people} />
     </div>
   );
 }
+
+function TouchpointLogDialog({
+  open, onOpenChange, people,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  people: Person[];
+}) {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const personName = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const p of people) m[p.id] = p.name;
+    return m;
+  }, [people]);
+
+  useEffect(() => {
+    if (!open) return;
+    setLoading(true);
+    listTouchpoints({ data: { limit: 200 } })
+      .then((r: any) => setRows(r ?? []))
+      .catch(() => setRows([]))
+      .finally(() => setLoading(false));
+  }, [open]);
+
+  const kindLabel: Record<string, string> = {
+    text: "Text", call: "Call", email: "Email", in_person: "In person", other: "Other",
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Touchpoint log</DialogTitle>
+        </DialogHeader>
+        {loading ? (
+          <div className="text-sm text-muted-foreground">Loading…</div>
+        ) : rows.length === 0 ? (
+          <div className="text-sm text-muted-foreground">No touchpoints logged yet.</div>
+        ) : (
+          <div className="space-y-1.5">
+            {rows.map((r) => (
+              <div key={r.id} className="text-xs border border-border rounded p-2 flex items-start justify-between gap-2 group">
+                <div className="min-w-0">
+                  <div className="font-medium">
+                    {personName[r.pco_person_id] ?? r.person_name ?? "Unknown person"}
+                    <span className="ml-2 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-background border border-border text-muted-foreground">
+                      {kindLabel[r.kind] ?? r.kind}
+                    </span>
+                  </div>
+                  <div className="text-muted-foreground">
+                    {format(new Date(r.created_at), "MMM d, yyyy h:mm a")} · {r.user_name}
+                  </div>
+                  {r.note && <div className="whitespace-pre-wrap mt-1">{r.note}</div>}
+                </div>
+                <button
+                  onClick={async () => {
+                    if (!confirm("Delete touchpoint?")) return;
+                    try {
+                      await deleteTouchpoint({ data: { id: r.id } });
+                      setRows((prev) => prev.filter((x) => x.id !== r.id));
+                    } catch (e: any) {
+                      toast.error(e.message ?? "Failed");
+                    }
+                  }}
+                  className="opacity-0 group-hover:opacity-100 hover:text-destructive"
+                  title="Delete"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function PersonPanel({
   person, fields, isFullElder, meetingId, onHealthChanged,
