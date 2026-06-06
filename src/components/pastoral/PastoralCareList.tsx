@@ -203,11 +203,12 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
   };
 
   const activeFilterCount =
-    (search ? 1 : 0) + healthFilter.size + (elderFilter !== "all" ? 1 : 0) + (notesFilter !== "any" ? 1 : 0);
+    (search ? 1 : 0) + healthFilter.size + (elderFilter !== "all" ? 1 : 0) + (notesFilter !== "any" ? 1 : 0) + (myPeopleActive ? 1 : 0);
 
   const clearAll = () => {
-    setSearch(""); setHealthFilter(new Set()); setElderFilter("all"); setNotesFilter("any");
+    setSearch(""); setHealthFilter(new Set()); setElderFilter("all"); setNotesFilter("any"); setMyPeopleActive(false);
   };
+
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
