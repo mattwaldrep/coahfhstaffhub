@@ -572,7 +572,16 @@ function PersonPanel({
                   if (!person.phone) {
                     e.preventDefault();
                     toast.error("No phone number on file in Planning Center");
+                    return;
                   }
+                  // Fire-and-forget log of the touchpoint
+                  logTouchpoint({
+                    data: {
+                      pco_person_id: person.id,
+                      person_name: person.name,
+                      kind: "text",
+                    },
+                  }).catch(() => { /* noop */ });
                 }}
                 className={`text-xs inline-flex items-center gap-1 ${
                   person.phone
