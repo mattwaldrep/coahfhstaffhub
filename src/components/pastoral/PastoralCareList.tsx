@@ -231,124 +231,133 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         {variant === "page" && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-lg font-display font-semibold">Pastoral care</h2>
             <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-[oklch(0.55_0.15_280)]/15 text-[oklch(0.55_0.15_280)]">
               Synced from Planning Center
             </span>
           </div>
         )}
-        <div className="flex items-center gap-2 ml-auto flex-wrap">
-          <div className="relative">
+
+        {/* Toolbar — stacks on mobile, inline on desktop */}
+        <div className="flex flex-col md:flex-row md:items-center gap-2 md:ml-auto w-full md:w-auto">
+          <div className="relative w-full md:w-48">
             <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name…"
-              className="h-8 text-sm pl-7 w-48"
+              className="h-9 md:h-8 text-sm pl-7 w-full"
             />
           </div>
 
-          <Button
-            size="sm"
-            variant={myPeopleActive ? "default" : "outline"}
-            onClick={() => {
-              if (!myElderName) {
-                toast.error("Your profile name doesn't match an elder. Update your full name in settings.");
-                return;
-              }
-              setMyPeopleActive((v) => !v);
-            }}
-            title={myElderName ? `Show people assigned to ${myElderName}` : "Set your full name in settings"}
-            className="h-8 text-xs"
-          >
-            <UserCheck className="w-3.5 h-3.5 mr-1" />
-            My people
-          </Button>
+          <div className="grid grid-cols-2 md:flex md:items-center gap-2">
+            <Button
+              size="sm"
+              variant={myPeopleActive ? "default" : "outline"}
+              onClick={() => {
+                if (!myElderName) {
+                  toast.error("Your profile name doesn't match an elder. Update your full name in settings.");
+                  return;
+                }
+                setMyPeopleActive((v) => !v);
+              }}
+              title={myElderName ? `Show people assigned to ${myElderName}` : "Set your full name in settings"}
+              className="h-9 md:h-8 text-xs justify-center"
+            >
+              <UserCheck className="w-3.5 h-3.5 mr-1" />
+              My people
+            </Button>
 
-          <Select value={elderFilter} onValueChange={setElderFilter}>
-            <SelectTrigger className="h-8 w-40 text-xs">
-              <SelectValue placeholder="Assigned elder" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All elders</SelectItem>
-              <SelectItem value="unassigned">Unassigned</SelectItem>
-              {elderOptions.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
-            </SelectContent>
-          </Select>
+            <Select value={elderFilter} onValueChange={setElderFilter}>
+              <SelectTrigger className="h-9 md:h-8 md:w-40 text-xs">
+                <SelectValue placeholder="Assigned elder" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All elders</SelectItem>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+                {elderOptions.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+              </SelectContent>
+            </Select>
 
-          <Select value={notesFilter} onValueChange={(v) => setNotesFilter(v as any)}>
-            <SelectTrigger className="h-8 w-32 text-xs">
-              <SelectValue placeholder="Notes" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="any">Any notes</SelectItem>
-              <SelectItem value="with">Has notes</SelectItem>
-              <SelectItem value="without">No notes</SelectItem>
-            </SelectContent>
-          </Select>
+            <Select value={notesFilter} onValueChange={(v) => setNotesFilter(v as any)}>
+              <SelectTrigger className="h-9 md:h-8 md:w-32 text-xs">
+                <SelectValue placeholder="Notes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Any notes</SelectItem>
+                <SelectItem value="with">Has notes</SelectItem>
+                <SelectItem value="without">No notes</SelectItem>
+              </SelectContent>
+            </Select>
 
-          <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-            <SelectTrigger className="h-8 w-48 text-xs">
-              <ArrowUpDown className="w-3 h-3 mr-1" />
-              <SelectValue placeholder="Sort" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="health_urgent">Health · urgent first</SelectItem>
-              <SelectItem value="health_thriving">Health · thriving first</SelectItem>
-              <SelectItem value="name_asc">Name · A → Z</SelectItem>
-              <SelectItem value="name_desc">Name · Z → A</SelectItem>
-              <SelectItem value="notes_recent">Most recent note</SelectItem>
-              <SelectItem value="notes_stale">Stalest (no/oldest note)</SelectItem>
-              <SelectItem value="notes_most">Most notes</SelectItem>
-            </SelectContent>
-          </Select>
+            <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+              <SelectTrigger className="h-9 md:h-8 md:w-48 text-xs">
+                <ArrowUpDown className="w-3 h-3 mr-1" />
+                <SelectValue placeholder="Sort" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="health_urgent">Health · urgent first</SelectItem>
+                <SelectItem value="health_thriving">Health · thriving first</SelectItem>
+                <SelectItem value="name_asc">Name · A → Z</SelectItem>
+                <SelectItem value="name_desc">Name · Z → A</SelectItem>
+                <SelectItem value="notes_recent">Most recent note</SelectItem>
+                <SelectItem value="notes_stale">Stalest (no/oldest note)</SelectItem>
+                <SelectItem value="notes_most">Most notes</SelectItem>
+              </SelectContent>
+            </Select>
 
-          <Button size="sm" variant="outline" onClick={() => setLogOpen(true)} title="View touchpoint log" className="h-8 text-xs">
-            <History className="w-3.5 h-3.5 mr-1" /> Log
-          </Button>
+            <Button size="sm" variant="outline" onClick={() => setLogOpen(true)} title="View touchpoint log" className="h-9 md:h-8 text-xs justify-center">
+              <History className="w-3.5 h-3.5 mr-1" /> Log
+            </Button>
 
-          <Button size="sm" variant="outline" onClick={() => load(true)} disabled={refreshing} title="Refresh from Planning Center">
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
-          </Button>
+            <Button size="sm" variant="outline" onClick={() => load(true)} disabled={refreshing} title="Refresh from Planning Center" className="h-9 md:h-8 justify-center">
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+              <span className="md:hidden ml-1 text-xs">Refresh</span>
+            </Button>
+          </div>
         </div>
       </div>
 
+
       {/* Health quick-filter chips */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Health</span>
-        {HEALTH_OPTIONS.map((h) => {
-          const active = healthFilter.has(h);
-          const count = people.filter((p) => ((fields ? p.fields[fields.spiritual_health]?.value : null) ?? "Unknown") === h).length;
-          return (
-            <button
-              key={h}
-              type="button"
-              onClick={() => toggleHealth(h)}
-              className={`text-[11px] px-2 py-0.5 rounded-full border transition ${
-                active
-                  ? "bg-[oklch(0.55_0.15_280)]/15 border-[oklch(0.55_0.15_280)]/40 text-[oklch(0.55_0.15_280)]"
-                  : "bg-background border-border text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {h} <span className="opacity-60">{count}</span>
-            </button>
-          );
-        })}
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground shrink-0">Health</span>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {HEALTH_OPTIONS.map((h) => {
+            const active = healthFilter.has(h);
+            const count = people.filter((p) => ((fields ? p.fields[fields.spiritual_health]?.value : null) ?? "Unknown") === h).length;
+            return (
+              <button
+                key={h}
+                type="button"
+                onClick={() => toggleHealth(h)}
+                className={`text-[11px] px-2 py-1 rounded-full border transition ${
+                  active
+                    ? "bg-[oklch(0.55_0.15_280)]/15 border-[oklch(0.55_0.15_280)]/40 text-[oklch(0.55_0.15_280)]"
+                    : "bg-background border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {h} <span className="opacity-60">{count}</span>
+              </button>
+            );
+          })}
+        </div>
         {activeFilterCount > 0 && (
           <button
             onClick={clearAll}
-            className="text-[11px] inline-flex items-center gap-1 text-muted-foreground hover:text-foreground ml-2"
+            className="text-[11px] inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
           >
             <X className="w-3 h-3" /> Clear filters
           </button>
         )}
-        <span className="text-[11px] text-muted-foreground ml-auto">
+        <span className="text-[11px] text-muted-foreground ml-auto shrink-0">
           {sorted.length} of {people.length}
         </span>
       </div>
+
 
       <div className="bg-surface border border-border rounded-2xl divide-y divide-border">
         {sorted.length === 0 && (
@@ -461,7 +470,7 @@ function TouchpointLogDialog({
                       toast.error(e.message ?? "Failed");
                     }
                   }}
-                  className="opacity-0 group-hover:opacity-100 hover:text-destructive"
+                  className="opacity-60 md:opacity-0 md:group-hover:opacity-100 hover:text-destructive p-1 -m-1 shrink-0"
                   title="Delete"
                 >
                   <Trash2 className="w-3 h-3" />
@@ -558,7 +567,7 @@ function PersonPanel({
         ) : (
           <span className="text-xs">{health?.value ?? "Unknown"}</span>
         )}
-        <div className="flex items-center gap-3 ml-auto">
+        <div className="flex items-center gap-3 md:ml-auto flex-wrap w-full md:w-auto">
           {(() => {
             const firstName = person.name.split(/\s+/)[0] ?? "";
             const draft = `Hi ${firstName}, `;
@@ -583,25 +592,26 @@ function PersonPanel({
                     },
                   }).catch(() => { /* noop */ });
                 }}
-                className={`text-xs inline-flex items-center gap-1 ${
+                className={`text-xs inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border ${
                   person.phone
-                    ? "text-[oklch(0.55_0.15_280)] hover:underline"
-                    : "text-muted-foreground opacity-60 cursor-not-allowed"
+                    ? "border-[oklch(0.55_0.15_280)]/30 text-[oklch(0.55_0.15_280)] hover:bg-[oklch(0.55_0.15_280)]/10"
+                    : "border-border text-muted-foreground opacity-60 cursor-not-allowed"
                 }`}
                 title={person.phone ? `Text ${person.phone}` : "No phone on file"}
               >
-                <MessageSquare className="w-3 h-3" /> Text
+                <MessageSquare className="w-3.5 h-3.5" /> Text
               </a>
             );
           })()}
           <a
             href={`https://people.planningcenteronline.com/people/${person.id}`}
             target="_blank" rel="noreferrer"
-            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border"
           >
-            <LinkIcon className="w-3 h-3" /> Open in PCO
+            <LinkIcon className="w-3.5 h-3.5" /> Open in PCO
           </a>
         </div>
+
       </div>
 
       <div className="space-y-2">
@@ -624,9 +634,10 @@ function PersonPanel({
                   try { await deletePcoNote({ data: { id: n.id } }); load(); }
                   catch (e: any) { toast.error(e.message ?? "Failed"); }
                 }}
-                className="opacity-0 group-hover:opacity-100 hover:text-destructive"
+                className="opacity-60 md:opacity-0 md:group-hover:opacity-100 hover:text-destructive p-1 -m-1"
+                aria-label="Delete note"
               >
-                <Trash2 className="w-3 h-3" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
             <div className="whitespace-pre-wrap mt-1">{n.body}</div>
@@ -634,20 +645,21 @@ function PersonPanel({
         ))}
       </div>
 
-      <div className="flex gap-2 items-start">
-        <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={2} placeholder="Add update…" className="text-sm" />
-        <div className="flex flex-col gap-1">
+      <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-start">
+        <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={2} placeholder="Add update…" className="text-sm flex-1" />
+        <div className="flex sm:flex-col gap-2 sm:gap-1 items-center sm:items-stretch justify-between sm:justify-start">
           {isFullElder && (
             <label className="flex items-center gap-1 text-[11px] text-muted-foreground">
               <input type="checkbox" checked={exec} onChange={(e) => setExec(e.target.checked)} />
               Exec
             </label>
           )}
-          <Button size="sm" variant="outline" onClick={post} disabled={saving}>
-            <MessageSquarePlus className="w-3 h-3 mr-1" /> Post
+          <Button size="sm" variant="outline" onClick={post} disabled={saving} className="h-9 sm:h-8">
+            <MessageSquarePlus className="w-3.5 h-3.5 mr-1" /> Post
           </Button>
         </div>
       </div>
+
     </div>
   );
 }
