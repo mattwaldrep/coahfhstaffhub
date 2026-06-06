@@ -470,7 +470,7 @@ function TouchpointLogDialog({
                       toast.error(e.message ?? "Failed");
                     }
                   }}
-                  className="opacity-0 group-hover:opacity-100 hover:text-destructive"
+                  className="opacity-60 md:opacity-0 md:group-hover:opacity-100 hover:text-destructive p-1 -m-1 shrink-0"
                   title="Delete"
                 >
                   <Trash2 className="w-3 h-3" />
