@@ -82,6 +82,17 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
 
   useEffect(() => { load(false); }, [load]);
 
+  // Load current user's elder name (used by "My people" filter)
+  useEffect(() => {
+    (async () => {
+      try {
+        const res: any = await getMyElderName();
+        setMyElderName(res?.full_name ?? null);
+      } catch { /* noop */ }
+    })();
+  }, []);
+
+
   // Refresh note counts and last-note date whenever the people list changes
   const refreshNoteMeta = useCallback(async (ids: string[]) => {
     if (ids.length === 0) return;
