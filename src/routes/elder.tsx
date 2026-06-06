@@ -57,17 +57,20 @@ function ElderShell() {
           {isFullElder ? "Full Elder · Executive Session enabled" : "Elder Candidate · Standard access"}
         </div>
       </div>
-      <nav className="flex flex-wrap gap-1 border-b border-border -mt-3">
+      <nav
+        className="-mt-3 -mx-4 sm:mx-0 px-4 sm:px-0 flex gap-1 overflow-x-auto sm:flex-wrap sm:border-b sm:border-border scrollbar-none snap-x snap-mandatory"
+        aria-label="Eldership sections"
+      >
         {TABS.map((t) => {
           const active = t.exact ? pathname === t.to : pathname === t.to || pathname.startsWith(t.to + "/");
           return (
             <Link
               key={t.to}
               to={t.to}
-              className={`px-3 py-2 text-sm border-b-2 -mb-px transition-colors ${
+              className={`shrink-0 snap-start px-3 py-2 text-sm whitespace-nowrap rounded-full sm:rounded-none sm:border-b-2 sm:-mb-px transition-colors ${
                 active
-                  ? "border-[oklch(0.55_0.15_280)] text-foreground font-medium"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  ? "bg-[oklch(0.55_0.15_280)]/10 text-foreground font-medium sm:bg-transparent sm:border-[oklch(0.55_0.15_280)]"
+                  : "text-muted-foreground hover:text-foreground sm:border-transparent"
               }`}
             >
               {t.label}
