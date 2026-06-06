@@ -231,90 +231,96 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         {variant === "page" && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-lg font-display font-semibold">Pastoral care</h2>
             <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-[oklch(0.55_0.15_280)]/15 text-[oklch(0.55_0.15_280)]">
               Synced from Planning Center
             </span>
           </div>
         )}
-        <div className="flex items-center gap-2 ml-auto flex-wrap">
-          <div className="relative">
+
+        {/* Toolbar — stacks on mobile, inline on desktop */}
+        <div className="flex flex-col md:flex-row md:items-center gap-2 md:ml-auto w-full md:w-auto">
+          <div className="relative w-full md:w-48">
             <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name…"
-              className="h-8 text-sm pl-7 w-48"
+              className="h-9 md:h-8 text-sm pl-7 w-full"
             />
           </div>
 
-          <Button
-            size="sm"
-            variant={myPeopleActive ? "default" : "outline"}
-            onClick={() => {
-              if (!myElderName) {
-                toast.error("Your profile name doesn't match an elder. Update your full name in settings.");
-                return;
-              }
-              setMyPeopleActive((v) => !v);
-            }}
-            title={myElderName ? `Show people assigned to ${myElderName}` : "Set your full name in settings"}
-            className="h-8 text-xs"
-          >
-            <UserCheck className="w-3.5 h-3.5 mr-1" />
-            My people
-          </Button>
+          <div className="grid grid-cols-2 md:flex md:items-center gap-2">
+            <Button
+              size="sm"
+              variant={myPeopleActive ? "default" : "outline"}
+              onClick={() => {
+                if (!myElderName) {
+                  toast.error("Your profile name doesn't match an elder. Update your full name in settings.");
+                  return;
+                }
+                setMyPeopleActive((v) => !v);
+              }}
+              title={myElderName ? `Show people assigned to ${myElderName}` : "Set your full name in settings"}
+              className="h-9 md:h-8 text-xs justify-center"
+            >
+              <UserCheck className="w-3.5 h-3.5 mr-1" />
+              My people
+            </Button>
 
-          <Select value={elderFilter} onValueChange={setElderFilter}>
-            <SelectTrigger className="h-8 w-40 text-xs">
-              <SelectValue placeholder="Assigned elder" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All elders</SelectItem>
-              <SelectItem value="unassigned">Unassigned</SelectItem>
-              {elderOptions.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
-            </SelectContent>
-          </Select>
+            <Select value={elderFilter} onValueChange={setElderFilter}>
+              <SelectTrigger className="h-9 md:h-8 md:w-40 text-xs">
+                <SelectValue placeholder="Assigned elder" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All elders</SelectItem>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+                {elderOptions.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+              </SelectContent>
+            </Select>
 
-          <Select value={notesFilter} onValueChange={(v) => setNotesFilter(v as any)}>
-            <SelectTrigger className="h-8 w-32 text-xs">
-              <SelectValue placeholder="Notes" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="any">Any notes</SelectItem>
-              <SelectItem value="with">Has notes</SelectItem>
-              <SelectItem value="without">No notes</SelectItem>
-            </SelectContent>
-          </Select>
+            <Select value={notesFilter} onValueChange={(v) => setNotesFilter(v as any)}>
+              <SelectTrigger className="h-9 md:h-8 md:w-32 text-xs">
+                <SelectValue placeholder="Notes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Any notes</SelectItem>
+                <SelectItem value="with">Has notes</SelectItem>
+                <SelectItem value="without">No notes</SelectItem>
+              </SelectContent>
+            </Select>
 
-          <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-            <SelectTrigger className="h-8 w-48 text-xs">
-              <ArrowUpDown className="w-3 h-3 mr-1" />
-              <SelectValue placeholder="Sort" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="health_urgent">Health · urgent first</SelectItem>
-              <SelectItem value="health_thriving">Health · thriving first</SelectItem>
-              <SelectItem value="name_asc">Name · A → Z</SelectItem>
-              <SelectItem value="name_desc">Name · Z → A</SelectItem>
-              <SelectItem value="notes_recent">Most recent note</SelectItem>
-              <SelectItem value="notes_stale">Stalest (no/oldest note)</SelectItem>
-              <SelectItem value="notes_most">Most notes</SelectItem>
-            </SelectContent>
-          </Select>
+            <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+              <SelectTrigger className="h-9 md:h-8 md:w-48 text-xs">
+                <ArrowUpDown className="w-3 h-3 mr-1" />
+                <SelectValue placeholder="Sort" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="health_urgent">Health · urgent first</SelectItem>
+                <SelectItem value="health_thriving">Health · thriving first</SelectItem>
+                <SelectItem value="name_asc">Name · A → Z</SelectItem>
+                <SelectItem value="name_desc">Name · Z → A</SelectItem>
+                <SelectItem value="notes_recent">Most recent note</SelectItem>
+                <SelectItem value="notes_stale">Stalest (no/oldest note)</SelectItem>
+                <SelectItem value="notes_most">Most notes</SelectItem>
+              </SelectContent>
+            </Select>
 
-          <Button size="sm" variant="outline" onClick={() => setLogOpen(true)} title="View touchpoint log" className="h-8 text-xs">
-            <History className="w-3.5 h-3.5 mr-1" /> Log
-          </Button>
+            <Button size="sm" variant="outline" onClick={() => setLogOpen(true)} title="View touchpoint log" className="h-9 md:h-8 text-xs justify-center">
+              <History className="w-3.5 h-3.5 mr-1" /> Log
+            </Button>
 
-          <Button size="sm" variant="outline" onClick={() => load(true)} disabled={refreshing} title="Refresh from Planning Center">
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
-          </Button>
+            <Button size="sm" variant="outline" onClick={() => load(true)} disabled={refreshing} title="Refresh from Planning Center" className="h-9 md:h-8 justify-center">
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+              <span className="md:hidden ml-1 text-xs">Refresh</span>
+            </Button>
+          </div>
         </div>
       </div>
+
 
       {/* Health quick-filter chips */}
       <div className="flex items-center gap-2 flex-wrap">
