@@ -138,6 +138,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
+    const me = (myElderName ?? "").trim().toLowerCase();
     return people.filter((p) => {
       if (q && !p.name.toLowerCase().includes(q)) return false;
 
@@ -145,6 +146,10 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
       if (healthFilter.size > 0 && !healthFilter.has(health)) return false;
 
       const elderVal = (fields ? p.fields[fields.assigned_elder]?.value : null)?.trim() || "";
+      if (myPeopleActive) {
+        if (!me) return false;
+        if (elderVal.toLowerCase() !== me) return false;
+      }
       if (elderFilter === "unassigned" && elderVal) return false;
       if (elderFilter !== "all" && elderFilter !== "unassigned" && elderVal !== elderFilter) return false;
 
@@ -154,7 +159,8 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
 
       return true;
     });
-  }, [people, fields, search, healthFilter, elderFilter, notesFilter, counts]);
+  }, [people, fields, search, healthFilter, elderFilter, notesFilter, counts, myPeopleActive, myElderName]);
+
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
