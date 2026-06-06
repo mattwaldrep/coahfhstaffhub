@@ -103,30 +103,8 @@ export async function fetchCareList(opts: {
         fields,
       });
     }
-  while (next) {
-    const json: any = await pcoFetch(next);
-    const included: any[] = json.included ?? [];
-    const fieldData = included.filter((i) => i.type === "FieldDatum");
 
-    for (const p of json.data ?? []) {
-      const datumIds: string[] = (p.relationships?.field_data?.data ?? []).map((d: any) => d.id);
-      const fields: PcoPerson["fields"] = {};
-      for (const did of datumIds) {
-        const fd = fieldData.find((f) => f.id === did);
-        if (!fd) continue;
-        const fieldDefId = fd.relationships?.field_definition?.data?.id;
-        if (!fieldDefId || !opts.field_ids.includes(String(fieldDefId))) continue;
-        fields[String(fieldDefId)] = {
-          datum_id: fd.id,
-          value: fd.attributes?.value ?? null,
-        };
-      }
-      people.push({
-        id: String(p.id),
-        name: p.attributes?.name ?? `${p.attributes?.first_name ?? ""} ${p.attributes?.last_name ?? ""}`.trim(),
-        fields,
-      });
-    }
+
 
     const nextLink: string | undefined = json.links?.next;
     next = nextLink ?? null;
