@@ -431,13 +431,41 @@ function PersonPanel({
         ) : (
           <span className="text-xs">{health?.value ?? "Unknown"}</span>
         )}
-        <a
-          href={`https://people.planningcenteronline.com/people/${person.id}`}
-          target="_blank" rel="noreferrer"
-          className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 ml-auto"
-        >
-          <LinkIcon className="w-3 h-3" /> Open in PCO
-        </a>
+        <div className="flex items-center gap-3 ml-auto">
+          {(() => {
+            const firstName = person.name.split(/\s+/)[0] ?? "";
+            const draft = `Hi ${firstName}, `;
+            const href = person.phone
+              ? `sms:${person.phone}?&body=${encodeURIComponent(draft)}`
+              : undefined;
+            return (
+              <a
+                href={href}
+                onClick={(e) => {
+                  if (!person.phone) {
+                    e.preventDefault();
+                    toast.error("No phone number on file in Planning Center");
+                  }
+                }}
+                className={`text-xs inline-flex items-center gap-1 ${
+                  person.phone
+                    ? "text-[oklch(0.55_0.15_280)] hover:underline"
+                    : "text-muted-foreground opacity-60 cursor-not-allowed"
+                }`}
+                title={person.phone ? `Text ${person.phone}` : "No phone on file"}
+              >
+                <MessageSquare className="w-3 h-3" /> Text
+              </a>
+            );
+          })()}
+          <a
+            href={`https://people.planningcenteronline.com/people/${person.id}`}
+            target="_blank" rel="noreferrer"
+            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+          >
+            <LinkIcon className="w-3 h-3" /> Open in PCO
+          </a>
+        </div>
       </div>
 
       <div className="space-y-2">
