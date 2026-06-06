@@ -2206,6 +2206,36 @@ export type Database = {
         }
         Relationships: []
       }
+      pco_touchpoints: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          note: string | null
+          pco_person_id: string
+          person_name: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          note?: string | null
+          pco_person_id: string
+          person_name?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          pco_person_id?: string
+          person_name?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
