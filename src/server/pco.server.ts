@@ -34,8 +34,30 @@ async function pcoFetch(path: string, init?: RequestInit) {
 export type PcoPerson = {
   id: string;
   name: string;
+  phone: string | null;
   fields: Record<string, { datum_id: string; value: string | null }>; // keyed by field_definition_id
 };
+
+function pickPhone(numbers: any[]): string | null {
+  if (!numbers || numbers.length === 0) return null;
+  const score = (n: any) => {
+    let s = 0;
+    if (n.attributes?.primary) s += 10;
+    const loc = String(n.attributes?.location ?? "").toLowerCase();
+    if (loc === "mobile") s += 5;
+    else if (loc === "home") s += 2;
+    return s;
+  };
+  const best = [...numbers].sort((a, b) => score(b) - score(a))[0];
+  const raw = best.attributes?.e164 ?? best.attributes?.number ?? null;
+  if (!raw) return null;
+  const digits = String(raw).replace(/[^\d+]/g, "");
+  if (digits.startsWith("+")) return digits;
+  const d = digits.replace(/\D/g, "");
+  if (d.length === 10) return `+1${d}`;
+  if (d.length === 11 && d.startsWith("1")) return `+${d}`;
+  return d ? `+${d}` : null;
+}
 
 // Tiny module-level cache.
 let cache: { key: string; at: number; data: PcoPerson[] } | null = null;
@@ -52,11 +74,12 @@ export async function fetchCareList(opts: {
   }
 
   const people: PcoPerson[] = [];
-  let next: string | null = `/lists/${opts.list_id}/people?include=field_data&per_page=100`;
+  let next: string | null = `/lists/${opts.list_id}/people?include=field_data,phone_numbers&per_page=100`;
   while (next) {
     const json: any = await pcoFetch(next);
     const included: any[] = json.included ?? [];
     const fieldData = included.filter((i) => i.type === "FieldDatum");
+    const phoneData = included.filter((i) => i.type === "PhoneNumber");
 
     for (const p of json.data ?? []) {
       const datumIds: string[] = (p.relationships?.field_data?.data ?? []).map((d: any) => d.id);
@@ -71,12 +94,17 @@ export async function fetchCareList(opts: {
           value: fd.attributes?.value ?? null,
         };
       }
+      const phoneIds: string[] = (p.relationships?.phone_numbers?.data ?? []).map((d: any) => d.id);
+      const phones = phoneData.filter((pn) => phoneIds.includes(pn.id));
       people.push({
         id: String(p.id),
         name: p.attributes?.name ?? `${p.attributes?.first_name ?? ""} ${p.attributes?.last_name ?? ""}`.trim(),
+        phone: pickPhone(phones),
         fields,
       });
     }
+
+
 
     const nextLink: string | undefined = json.links?.next;
     next = nextLink ?? null;
