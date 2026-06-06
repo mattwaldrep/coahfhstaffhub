@@ -6,12 +6,13 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Lock, MessageSquarePlus, MessageSquare, RefreshCw, Search, Trash2, Link as LinkIcon, X, ArrowUpDown } from "lucide-react";
+import { Lock, MessageSquarePlus, MessageSquare, RefreshCw, Search, Trash2, Link as LinkIcon, X, ArrowUpDown, History, UserCheck } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import {
   listCareList, listPcoNotes, addPcoNote, deletePcoNote, updateSpiritualHealth,
+  logTouchpoint, listTouchpoints, deleteTouchpoint, getMyElderName,
 } from "@/lib/pastoral-care.functions";
 import { supabase } from "@/integrations/supabase/client";
 
