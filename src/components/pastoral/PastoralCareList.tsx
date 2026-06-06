@@ -303,6 +303,10 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
             </SelectContent>
           </Select>
 
+          <Button size="sm" variant="outline" onClick={() => setLogOpen(true)} title="View touchpoint log" className="h-8 text-xs">
+            <History className="w-3.5 h-3.5 mr-1" /> Log
+          </Button>
+
           <Button size="sm" variant="outline" onClick={() => load(true)} disabled={refreshing} title="Refresh from Planning Center">
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
           </Button>
