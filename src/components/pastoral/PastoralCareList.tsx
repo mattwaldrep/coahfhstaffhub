@@ -189,6 +189,17 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
       (fields ? p.fields[fields.spiritual_health]?.value : null) ?? "Unknown";
     arr.sort((a, b) => {
       switch (sort) {
+        case "attention_first": {
+          const la = LEVEL_RANK[gaps[a.id]?.level ?? "green"];
+          const lb = LEVEL_RANK[gaps[b.id]?.level ?? "green"];
+          if (la !== lb) return lb - la;
+          const da = gaps[a.id]?.days_since ?? -1;
+          const db = gaps[b.id]?.days_since ?? -1;
+          // null (never) treated as most-stale: bigger first
+          const na = da === null ? Number.MAX_SAFE_INTEGER : da;
+          const nb = db === null ? Number.MAX_SAFE_INTEGER : db;
+          return nb - na || a.name.localeCompare(b.name);
+        }
         case "name_asc": return a.name.localeCompare(b.name);
         case "name_desc": return b.name.localeCompare(a.name);
         case "health_urgent":
@@ -205,15 +216,17 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
           return lb - la || a.name.localeCompare(b.name);
         }
         case "notes_stale": {
-          // No notes first, then oldest last note
           const la = latestNote[a.id] ? new Date(latestNote[a.id]).getTime() : 0;
           const lb = latestNote[b.id] ? new Date(latestNote[b.id]).getTime() : 0;
           return la - lb || a.name.localeCompare(b.name);
         }
+        default:
+          return 0;
       }
     });
     return arr;
-  }, [filtered, sort, counts, latestNote, fields]);
+  }, [filtered, sort, counts, latestNote, fields, gaps]);
+
 
   const toggleHealth = (h: string) => {
     setHealthFilter((prev) => {
