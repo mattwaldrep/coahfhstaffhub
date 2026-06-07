@@ -124,6 +124,18 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
     refreshNoteMeta(people.map((p) => p.id));
   }, [people, refreshNoteMeta]);
 
+  // Load forgotten-person levels
+  useEffect(() => {
+    (getPastoralGaps as any)()
+      .then((r: any) => {
+        const map: Record<string, PastoralGap> = {};
+        for (const g of (r?.gaps ?? []) as PastoralGap[]) map[g.pco_person_id] = g;
+        setGaps(map);
+      })
+      .catch(() => setGaps({}));
+  }, [people]);
+
+
   // Realtime
   useEffect(() => {
     const ch = supabase
