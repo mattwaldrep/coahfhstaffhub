@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { WorshipTrendStrip } from "@/components/sunday-review/WorshipTrendStrip";
+import { VoiceNoteRecorder } from "@/components/sunday-review/VoiceNoteRecorder";
 
 export const Route = createFileRoute("/sunday-review")({
   component: SundayReviewPage,
