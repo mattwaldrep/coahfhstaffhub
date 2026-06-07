@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "core" | "meeting" | "extended" | "elder" | "elder_candidate";
+export type AppRole = "core" | "meeting" | "extended" | "elder" | "elder_candidate" | "cg_coach";
 
 interface AuthContextValue {
   session: Session | null;
@@ -15,6 +15,7 @@ interface AuthContextValue {
   hasStaffAccess: boolean;
   hasElderAccess: boolean;
   isFullElder: boolean;
+  isCgCoach: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -51,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasStaffAccess = roles.some((r) => STAFF_ROLES.includes(r));
   const hasElderAccess = roles.includes("elder") || roles.includes("elder_candidate");
   const isFullElder = roles.includes("elder");
+  const isCgCoach = roles.includes("cg_coach");
 
   const value: AuthContextValue = {
     session,
@@ -65,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     hasStaffAccess,
     hasElderAccess,
     isFullElder,
+    isCgCoach,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

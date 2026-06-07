@@ -564,6 +564,84 @@ export type Database = {
           },
         ]
       }
+      cg_coach_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          coach_user_id: string | null
+          group_id: string
+          group_name: string | null
+          id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          coach_user_id?: string | null
+          group_id: string
+          group_name?: string | null
+          id?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          coach_user_id?: string | null
+          group_id?: string
+          group_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      cg_pco_config: {
+        Row: {
+          group_type_id: string | null
+          id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          group_type_id?: string | null
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          group_type_id?: string | null
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      cg_touchpoints: {
+        Row: {
+          created_at: string
+          group_id: string
+          group_name: string | null
+          id: string
+          kind: string
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          group_name?: string | null
+          id?: string
+          kind: string
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          group_name?: string | null
+          id?: string
+          kind?: string
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       checklist_template_items: {
         Row: {
           created_at: string
@@ -2458,10 +2536,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_cg_coach: { Args: { _user_id: string }; Returns: boolean }
       is_full_elder: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "core" | "meeting" | "extended" | "elder" | "elder_candidate"
+      app_role:
+        | "core"
+        | "meeting"
+        | "extended"
+        | "elder"
+        | "elder_candidate"
+        | "cg_coach"
       elder_motion_choice: "yes" | "no" | "abstain"
       elder_motion_outcome: "open" | "passed" | "failed" | "tied"
       plan_submission_status:
@@ -2609,7 +2694,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["core", "meeting", "extended", "elder", "elder_candidate"],
+      app_role: [
+        "core",
+        "meeting",
+        "extended",
+        "elder",
+        "elder_candidate",
+        "cg_coach",
+      ],
       elder_motion_choice: ["yes", "no", "abstain"],
       elder_motion_outcome: ["open", "passed", "failed", "tied"],
       plan_submission_status: [

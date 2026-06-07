@@ -54,8 +54,13 @@ const ELDER_ITEMS: NavItem[] = [
   { to: "/elder/archive", label: "Archive", icon: ScrollText },
 ];
 
+const CG_ITEMS: NavItem[] = [
+  { to: "/cg-coaching", label: "Groups", icon: UsersRound, exact: true },
+  { to: "/cg-coaching/settings", label: "Settings", icon: SettingsIcon },
+];
+
 export function AppSidebar() {
-  const { hasRole, hasElderAccess } = useAuth();
+  const { hasRole, hasElderAccess, isCgCoach } = useAuth();
   const isCore = hasRole("core");
 
   const PRIMARY: NavItem[] = [
@@ -169,6 +174,12 @@ export function AppSidebar() {
           <SidebarGroup>
             {!collapsed && <SidebarGroupLabel>Elder Hub</SidebarGroupLabel>}
             <SidebarGroupContent>{renderTree(ELDER_ITEMS)}</SidebarGroupContent>
+          </SidebarGroup>
+        )}
+        {isCgCoach && (
+          <SidebarGroup>
+            {!collapsed && <SidebarGroupLabel>CG Coaching</SidebarGroupLabel>}
+            <SidebarGroupContent>{renderTree(CG_ITEMS)}</SidebarGroupContent>
           </SidebarGroup>
         )}
         <SidebarGroup>
