@@ -55,7 +55,7 @@ function pickMime(): string {
   return "audio/webm";
 }
 
-export function VoiceNoteRecorder({ currentForm, onMerge }: Props) {
+export function VoiceNoteRecorder({ currentForm, currentRatings, onMerge }: Props) {
   const [recording, setRecording] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [elapsed, setElapsed] = useState(0);
