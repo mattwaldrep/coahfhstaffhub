@@ -2461,7 +2461,13 @@ export type Database = {
       is_full_elder: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "core" | "meeting" | "extended" | "elder" | "elder_candidate"
+      app_role:
+        | "core"
+        | "meeting"
+        | "extended"
+        | "elder"
+        | "elder_candidate"
+        | "cg_coach"
       elder_motion_choice: "yes" | "no" | "abstain"
       elder_motion_outcome: "open" | "passed" | "failed" | "tied"
       plan_submission_status:
@@ -2609,7 +2615,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["core", "meeting", "extended", "elder", "elder_candidate"],
+      app_role: [
+        "core",
+        "meeting",
+        "extended",
+        "elder",
+        "elder_candidate",
+        "cg_coach",
+      ],
       elder_motion_choice: ["yes", "no", "abstain"],
       elder_motion_outcome: ["open", "passed", "failed", "tied"],
       plan_submission_status: [
