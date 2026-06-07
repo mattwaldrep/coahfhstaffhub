@@ -405,12 +405,15 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
                 className="flex items-center justify-between px-4 py-3 hover:bg-background/40 cursor-pointer"
                 onClick={() => setExpanded(expanded === p.id ? null : p.id)}
               >
-                <div className="min-w-0">
-                  <div className="text-sm font-medium truncate">{p.name}</div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {elder ? `Assigned: ${elder}` : "Unassigned"}
-                    {counts[p.id] ? ` · ${counts[p.id]} note${counts[p.id] === 1 ? "" : "s"}` : ""}
-                    {last ? ` · last ${format(new Date(last), "MMM d")}` : ""}
+                <div className="min-w-0 flex items-center gap-2">
+                  <AttentionDot level={gaps[p.id]?.level} days={gaps[p.id]?.days_since ?? null} />
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">{p.name}</div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {elder ? `Assigned: ${elder}` : "Unassigned"}
+                      {counts[p.id] ? ` · ${counts[p.id]} note${counts[p.id] === 1 ? "" : "s"}` : ""}
+                      {last ? ` · last ${format(new Date(last), "MMM d")}` : ""}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
