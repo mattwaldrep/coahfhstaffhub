@@ -1,92 +1,74 @@
-## Goal
-Add four lightweight, 100%-free intelligence features that surface as cards on the home dashboard (and richer detail in their respective hubs), powered entirely by data already in the database. No new tables, no paid APIs.
+# Community Group Coaching Hub
 
----
+A new hub for CG Coaches to see the community groups they're assigned to, view each group's leaders (pulled from PCO Groups), text both leaders at once, and log reach-outs — mirroring the elder Pastoral Care patterns.
 
-## 1. Forgotten Person Alarm (Pastoral Care)
+## What's new for the user
 
-**What it does:** For every person on the care list, computes days since the last touchpoint (`pco_touchpoints`) or pastoral note (`pco_pastoral_notes`) and flags amber at 45+ days, red at 60+ days.
+- **New role: CG Coach.** Tag users as coaches from the existing user-roles UI.
+- **New sidebar section: "CG Coaching"** with one page (`/cg-coaching`) gated to coaches.
+- **Settings tab (coach admin only):** pick the PCO Group Type that represents community groups; assign each group to a coach.
+- **Group list page (like Pastoral Care):**
+  - Search + sort + "My groups" filter.
+  - For each group: name, assigned coach, leaders (name + phone).
+  - **Text button** opens the SMS app pre-addressed to **all leaders of that group** (multi-recipient `sms:` link).
+  - **Reach-out log** (same UX as pastoral care): record text/call/email/in-person/other against the group, view history, delete your own entries.
 
-**Where it shows:**
-- On `/elder/pastoral-care`: small colored dot next to each person + sort/filter "Needs attention first."
-- On home dashboard (elders only): a compact "Pastoral attention needed" card listing the top 5 reddest people with a link into Pastoral Care.
+## Data model
 
-**How it's computed:** New server fn `getPastoralGaps` in `src/lib/pastoral-care.functions.ts` — joins the cached care list with `MAX(created_at)` from touchpoints + notes per `pco_person_id`, returns `{ pco_person_id, name, days_since, level: 'green'|'amber'|'red' }`.
+- Add `cg_coach` to the `app_role` enum.
+- New table `cg_pco_config` (singleton row): `group_type_id`. Editable by users with `cg_coach` role.
+- New table `cg_coach_assignments`: `group_id` (PCO id, unique), `coach_user_id` (auth user). Coaches can read all; only coach admins (or all coaches — see open question) can assign.
+- New table `cg_touchpoints`: `group_id`, `group_name`, `user_id`, `kind` (same enum as `pco_touchpoints`), `note`, `created_at`. RLS: coaches read all; insert as self; delete own.
 
-**Access:** elder + elder_candidate only (same gating as the rest of pastoral care).
+All three tables get standard `GRANT` to `authenticated` + `service_role`, RLS enabled, plus a `has_any_cg_access` / role check helper.
 
----
+## PCO integration
 
-## 2. Congregation Health Pulse
+Extend `src/server/pco.server.ts` with Groups endpoints (separate base `groups/v2`):
 
-**What it does:** A single 0–100 gauge on the home dashboard summarizing pastoral + engagement health. Tap to expand into a breakdown.
+- `listGroupsByType(group_type_id)` — paginated, returns id + name.
+- `listGroupLeaders(group_id)` — `GET /groups/{id}/memberships?where[role]=leader&include=person` (then phone numbers via people endpoint or included). Returns `{ person_id, name, phone }[]`.
+- Cache results in-process for ~60s like the care-list cache.
 
-**Inputs (all free, already in DB):**
-- Pastoral coverage: % of care-list people with a touchpoint/note in last 45 days (40%)
-- Attendance trend: latest week vs trailing 4-week avg from `weekly_metrics` (20%)
-- Community group participation trend, same shape (15%)
-- Giving trend, same shape (15%)
-- First-step + next-step cards in last 4 weeks vs prior 4 (10%)
+Auth uses existing `PCO_APP_ID` / `PCO_SECRET`. The Groups API requires the Groups product to be enabled on the PCO account — surface a clear error if it returns 403.
 
-Each component normalized to 0–100, then weighted average. Stored nowhere — recomputed on load (cheap).
+## Server functions (`src/lib/cg-coaching.functions.ts`)
 
-**Where it shows:**
-- New `<CongregationPulse />` card in right column of dashboard (replaces or sits next to the existing Church Metrics card). Visual: large number + colored ring + one-line "what's pulling it down" hint.
-- Click → expandable detail showing each of the 5 inputs with its score and direction arrow.
+All gated by a `requireCgAccess` helper (role = `cg_coach` OR `elder` for visibility, TBD — see open question).
 
-**Server fn:** `getCongregationPulse` in new `src/lib/pulse.functions.ts`. Elder-gated for the pastoral component; staff (core/meeting/extended) see the card with pastoral-coverage hidden / weighted out.
+- `getCgConfig` / `saveCgConfig` (group_type_id).
+- `listPcoGroupTypes` — for the settings dropdown.
+- `listCoachGroups({ refresh })` — returns groups merged with assignments + leaders + phones.
+- `assignCoach({ group_id, coach_user_id | null })`.
+- `listCoaches` — users with `cg_coach` role for the assignment dropdown.
+- `logGroupTouchpoint` / `listGroupTouchpoints` / `deleteGroupTouchpoint` — direct analogs of the pastoral ones.
 
----
+## UI
 
-## 3. Next Best Action
+```
+src/routes/cg-coaching.tsx              # main list (gated)
+src/routes/cg-coaching.settings.tsx     # group-type + coach assignments
+src/components/cg-coaching/
+  CoachGroupList.tsx                    # adapted from PastoralCareList
+  GroupRow.tsx                          # name, coach, leaders, text + log buttons
+  GroupReachOutLog.tsx                  # adapted from pastoral touchpoint log
+  TextLeadersButton.tsx                 # builds sms:+1...,+1...?&body=...
+```
 
-**What it does:** A single "Do this next" widget on the home dashboard that picks one highest-priority item for the signed-in user from across the app.
+SMS link format: `sms:/open?addresses=+15551112222,+15553334444` on iOS, and falls back to `sms:+15551112222,+15553334444` — same approach already used by the pastoral "Text" button (we'll reuse that helper if it exists, else co-locate it).
 
-**Sources scanned (in priority order):**
-1. Overdue action items assigned to me (`action_items.assignee_id = me AND due_date < today`)
-2. My action items due today
-3. Reddest forgotten person (elders only)
-4. Class within 7 days missing teacher/childcare
-5. Sunday Review not submitted for last Sunday (if I'm in core/meeting)
-6. Stale elder motion 30+ days (elders only)
+Sidebar: add a "CG Coaching" entry in `AppSidebar.tsx`, shown only when the current user has `cg_coach` role (extend `useAuth` with `isCgCoach`).
 
-First hit wins; widget shows title, one-sentence reason, and a deep link to the right page.
+## Out of scope (confirm if you want these)
 
-**Where it shows:** Top of the dashboard, above the KPI row, as a slim accent card. Dismissible per-session (just local state; reappears next visit).
+- Notes / "spiritual health" field per group — not requested; only reach-out log.
+- Editing PCO group data — read-only from PCO.
+- Coaching-specific dashboard widgets (forgotten-group alarm, pulse contribution).
 
-**Server fn:** `getNextBestAction` in new `src/lib/next-action.functions.ts`. Returns `{ kind, title, reason, href } | null`. Pure read; respects existing RLS via `requireSupabaseAuth`.
+## Open questions
 
----
+1. **Who can assign coaches to groups?** Options: (a) any `cg_coach`, (b) only elders, (c) a new `cg_coach_admin` role. Default in plan: any `cg_coach` (simplest, matches small-team reality).
+2. **Should elders also see the CG Coaching hub read-only?** Default: no — coaches only. Elders can be granted the role explicitly.
+3. **Group type picker:** assume a single PCO Group Type for "Community Groups". Confirm — if you have multiple types (e.g. CGs + Men's Groups), I'll make it multi-select.
 
-## 4. Worship Quality Trend Lines
-
-**What it does:** On the Sunday Review page, adds a small chart strip at the top showing rolling 6-review averages per section (worship, confession, connect, sermon) over the last ~6 months. Helps spot drift.
-
-**Inputs:** Existing `sunday_reviews` rows. Compute average rating per section per service_date across all submitters, then 6-review rolling mean. Recharts (already installed).
-
-**Where it shows:**
-- New `<WorshipTrendStrip />` at top of `/sunday-review`, 4 sparkline-style lines with current value + delta vs 6 weeks ago.
-- Color a section amber if its rolling avg dropped >0.5 points vs 6 weeks ago.
-
-**Server fn:** `getWorshipTrends` in new `src/lib/sunday-review-trends.functions.ts`. Returns per-section arrays of `{ date, rolling_avg }`. Staff-gated to match existing sunday_reviews policy (core/meeting/extended).
-
----
-
-## Technical notes
-- All four features are pure read-side; zero schema changes, zero migrations.
-- Each new server fn uses `requireSupabaseAuth` so role gating happens server-side.
-- Add new files only; small targeted edits to `src/routes/index.tsx` (add 3 cards) and `src/routes/sunday-review.tsx` (add trend strip) and `src/components/pastoral/PastoralCareList.tsx` (sort + colored dot).
-- New files:
-  - `src/lib/pulse.functions.ts`
-  - `src/lib/next-action.functions.ts`
-  - `src/lib/sunday-review-trends.functions.ts`
-  - extend `src/lib/pastoral-care.functions.ts` with `getPastoralGaps`
-  - `src/components/dashboard/CongregationPulse.tsx`
-  - `src/components/dashboard/NextBestAction.tsx`
-  - `src/components/dashboard/PastoralAttentionCard.tsx`
-  - `src/components/sunday-review/WorshipTrendStrip.tsx`
-
-## Out of scope
-- No emails, no scheduled jobs, no new tables.
-- No changes to pastoral data model, roles, or RLS.
-- No historical backfill — trends start from existing data.
+Reply with answers (or "go with defaults") and I'll build it.
