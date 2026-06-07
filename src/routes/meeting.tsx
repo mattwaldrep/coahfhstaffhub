@@ -414,6 +414,7 @@ const DEFAULT_SECTION_ORDER: string[] = [
   "devotional",
   "divider:recurring",
   "sunday-review",
+  "sunday-ops",
   "last-week-events",
   "first-step-cards",
   "next-step-cards",
