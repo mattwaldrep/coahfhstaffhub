@@ -35,6 +35,7 @@ import {
   ClassesNeedingAttentionSection,
   ThisSundaySection,
 } from "@/components/meeting/MeetingSections";
+import { SundayOpsSection } from "@/components/meeting/SundayOpsSection";
 
 
 export const Route = createFileRoute("/meeting")({
