@@ -1,0 +1,2 @@
+ALTER TABLE public.action_items ADD COLUMN IF NOT EXISTS source_issue_external_id text;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_action_items_source_issue_external_id ON public.action_items(source_issue_external_id) WHERE source_issue_external_id IS NOT NULL;
