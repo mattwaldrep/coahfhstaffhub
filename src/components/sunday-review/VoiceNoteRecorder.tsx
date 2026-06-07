@@ -15,9 +15,18 @@ type FieldKey =
 
 type CurrentForm = Record<FieldKey, string>;
 
+type RatingKey =
+  | "worship_rating"
+  | "confession_rating"
+  | "connect_rating"
+  | "sermon_rating";
+
+type CurrentRatings = Record<RatingKey, number | null>;
+
 interface Props {
   currentForm: CurrentForm;
-  onMerge: (fields: CurrentForm) => void;
+  currentRatings: CurrentRatings;
+  onMerge: (fields: CurrentForm, ratings: CurrentRatings) => void;
 }
 
 function blobToBase64(blob: Blob): Promise<string> {
