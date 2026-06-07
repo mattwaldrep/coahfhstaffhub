@@ -17,6 +17,7 @@ import {
   listCareList, listPcoNotes, addPcoNote, deletePcoNote, updateSpiritualHealth,
   logTouchpoint, listTouchpoints, deleteTouchpoint, getMyElderName,
 } from "@/lib/pastoral-care.functions";
+import { getPastoralGaps, type PastoralGap } from "@/lib/pastoral-gaps.functions";
 import { supabase } from "@/integrations/supabase/client";
 
 const HEALTH_OPTIONS = ["Thriving", "Healthy", "Watch", "Struggling", "Crisis", "Unknown"];
@@ -26,6 +27,7 @@ const HEALTH_SEVERITY: Record<string, number> = {
 };
 
 type SortKey =
+  | "attention_first"
   | "name_asc"
   | "name_desc"
   | "health_urgent"
@@ -33,6 +35,9 @@ type SortKey =
   | "notes_most"
   | "notes_recent"
   | "notes_stale";
+
+const LEVEL_RANK: Record<"red" | "amber" | "green", number> = { red: 2, amber: 1, green: 0 };
+
 
 
 type Person = {
@@ -61,12 +66,13 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
   const [healthFilter, setHealthFilter] = useState<Set<string>>(new Set());
   const [elderFilter, setElderFilter] = useState<string>("all"); // "all" | "unassigned" | elder name
   const [notesFilter, setNotesFilter] = useState<"any" | "with" | "without">("any");
-  const [sort, setSort] = useState<SortKey>("health_urgent");
+  const [sort, setSort] = useState<SortKey>("attention_first");
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [latestNote, setLatestNote] = useState<Record<string, string>>({}); // pco_person_id -> ISO date
   const [myElderName, setMyElderName] = useState<string | null>(null);
   const [myPeopleActive, setMyPeopleActive] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
+  const [gaps, setGaps] = useState<Record<string, PastoralGap>>({});
 
   const load = useCallback(async (refresh = false) => {
     refresh ? setRefreshing(true) : setLoading(true);
@@ -117,6 +123,18 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
   useEffect(() => {
     refreshNoteMeta(people.map((p) => p.id));
   }, [people, refreshNoteMeta]);
+
+  // Load forgotten-person levels
+  useEffect(() => {
+    (getPastoralGaps as any)()
+      .then((r: any) => {
+        const map: Record<string, PastoralGap> = {};
+        for (const g of (r?.gaps ?? []) as PastoralGap[]) map[g.pco_person_id] = g;
+        setGaps(map);
+      })
+      .catch(() => setGaps({}));
+  }, [people]);
+
 
   // Realtime
   useEffect(() => {
@@ -171,6 +189,17 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
       (fields ? p.fields[fields.spiritual_health]?.value : null) ?? "Unknown";
     arr.sort((a, b) => {
       switch (sort) {
+        case "attention_first": {
+          const la = LEVEL_RANK[gaps[a.id]?.level ?? "green"];
+          const lb = LEVEL_RANK[gaps[b.id]?.level ?? "green"];
+          if (la !== lb) return lb - la;
+          const da = gaps[a.id]?.days_since ?? -1;
+          const db = gaps[b.id]?.days_since ?? -1;
+          // null (never) treated as most-stale: bigger first
+          const na = da === null ? Number.MAX_SAFE_INTEGER : da;
+          const nb = db === null ? Number.MAX_SAFE_INTEGER : db;
+          return nb - na || a.name.localeCompare(b.name);
+        }
         case "name_asc": return a.name.localeCompare(b.name);
         case "name_desc": return b.name.localeCompare(a.name);
         case "health_urgent":
@@ -187,15 +216,17 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
           return lb - la || a.name.localeCompare(b.name);
         }
         case "notes_stale": {
-          // No notes first, then oldest last note
           const la = latestNote[a.id] ? new Date(latestNote[a.id]).getTime() : 0;
           const lb = latestNote[b.id] ? new Date(latestNote[b.id]).getTime() : 0;
           return la - lb || a.name.localeCompare(b.name);
         }
+        default:
+          return 0;
       }
     });
     return arr;
-  }, [filtered, sort, counts, latestNote, fields]);
+  }, [filtered, sort, counts, latestNote, fields, gaps]);
+
 
   const toggleHealth = (h: string) => {
     setHealthFilter((prev) => {
@@ -299,6 +330,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
                 <SelectValue placeholder="Sort" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="attention_first">Needs attention first</SelectItem>
                 <SelectItem value="health_urgent">Health · urgent first</SelectItem>
                 <SelectItem value="health_thriving">Health · thriving first</SelectItem>
                 <SelectItem value="name_asc">Name · A → Z</SelectItem>
@@ -373,12 +405,15 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
                 className="flex items-center justify-between px-4 py-3 hover:bg-background/40 cursor-pointer"
                 onClick={() => setExpanded(expanded === p.id ? null : p.id)}
               >
-                <div className="min-w-0">
-                  <div className="text-sm font-medium truncate">{p.name}</div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {elder ? `Assigned: ${elder}` : "Unassigned"}
-                    {counts[p.id] ? ` · ${counts[p.id]} note${counts[p.id] === 1 ? "" : "s"}` : ""}
-                    {last ? ` · last ${format(new Date(last), "MMM d")}` : ""}
+                <div className="min-w-0 flex items-center gap-2">
+                  <AttentionDot level={gaps[p.id]?.level} days={gaps[p.id]?.days_since ?? null} />
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">{p.name}</div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {elder ? `Assigned: ${elder}` : "Unassigned"}
+                      {counts[p.id] ? ` · ${counts[p.id]} note${counts[p.id] === 1 ? "" : "s"}` : ""}
+                      {last ? ` · last ${format(new Date(last), "MMM d")}` : ""}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -663,3 +698,15 @@ function PersonPanel({
     </div>
   );
 }
+
+function AttentionDot({ level, days }: { level?: "green" | "amber" | "red"; days: number | null }) {
+  if (!level) return <span className="w-2 h-2 rounded-full bg-border shrink-0" />;
+  const cls =
+    level === "red" ? "bg-destructive" : level === "amber" ? "bg-warning" : "bg-success";
+  const title =
+    days === null
+      ? "No pastoral contact logged"
+      : `Last contact ${days} day${days === 1 ? "" : "s"} ago`;
+  return <span title={title} className={`w-2 h-2 rounded-full shrink-0 ${cls}`} />;
+}
+
