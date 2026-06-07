@@ -242,81 +242,83 @@ function Body() {
 
 
 
-      <div className="bg-surface border border-border rounded-2xl overflow-hidden">
-        <div className="grid grid-cols-12 px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
-          <div className="col-span-4">User</div>
-          <div className="col-span-2">Role</div>
-          <div className="col-span-2">Elder access</div>
-          <div className="col-span-1">CG Coach</div>
-          <div className="col-span-2">Joined</div>
-          <div className="col-span-1 text-right">·</div>
-        </div>
-        {loading && <div className="p-6 text-sm text-muted-foreground">Loading…</div>}
-        {!loading && rows.length === 0 && (
-          <div className="p-6 text-sm text-muted-foreground">No users yet.</div>
-        )}
-        {rows.map((r) => {
-          const staffRole = (r.roles.find((x) => ["core","meeting","extended"].includes(x)) ?? "extended") as Role;
-          const elderTier: ElderTier = r.roles.includes("elder")
-            ? "elder"
-            : r.roles.includes("elder_candidate")
-            ? "elder_candidate"
-            : "none";
-          const isCg = r.roles.includes("cg_coach");
-          const isSelf = r.id === user?.id;
-          return (
-            <div key={r.id} className="grid grid-cols-12 items-center px-4 py-3 border-b border-border last:border-0 hover:bg-background/40">
-              <div className="col-span-4 flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xs font-medium shrink-0">
-                  {(r.full_name ?? r.email ?? "?").slice(0, 1).toUpperCase()}
-                </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-medium truncate">
-                    {r.full_name ?? "—"} {isSelf && <span className="text-[10px] text-muted-foreground">(you)</span>}
+      <div className="overflow-x-auto">
+        <div className="bg-surface border border-border rounded-2xl overflow-hidden min-w-[720px]">
+          <div className="grid grid-cols-12 px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
+            <div className="col-span-4">User</div>
+            <div className="col-span-2">Role</div>
+            <div className="col-span-2">Elder access</div>
+            <div className="col-span-1">CG Coach</div>
+            <div className="col-span-2">Joined</div>
+            <div className="col-span-1 text-right">·</div>
+          </div>
+          {loading && <div className="p-6 text-sm text-muted-foreground">Loading…</div>}
+          {!loading && rows.length === 0 && (
+            <div className="p-6 text-sm text-muted-foreground">No users yet.</div>
+          )}
+          {rows.map((r) => {
+            const staffRole = (r.roles.find((x) => ["core","meeting","extended"].includes(x)) ?? "extended") as Role;
+            const elderTier: ElderTier = r.roles.includes("elder")
+              ? "elder"
+              : r.roles.includes("elder_candidate")
+              ? "elder_candidate"
+              : "none";
+            const isCg = r.roles.includes("cg_coach");
+            const isSelf = r.id === user?.id;
+            return (
+              <div key={r.id} className="grid grid-cols-12 items-center px-4 py-3 border-b border-border last:border-0 hover:bg-background/40">
+                <div className="col-span-4 flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xs font-medium shrink-0">
+                    {(r.full_name ?? r.email ?? "?").slice(0, 1).toUpperCase()}
                   </div>
-                  <div className="text-[11px] text-muted-foreground truncate">{r.email}</div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">
+                      {r.full_name ?? "—"} {isSelf && <span className="text-[10px] text-muted-foreground">(you)</span>}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground truncate">{r.email}</div>
+                  </div>
+                </div>
+                <div className="col-span-2 pr-2">
+                  <Select value={staffRole} onValueChange={(v) => changeRole(r.id, v as Role)}>
+                    <SelectTrigger className="h-8 w-full"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {ROLE_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2 pr-2">
+                  <Select value={elderTier} onValueChange={(v) => changeElderTier(r.id, v as ElderTier)}>
+                    <SelectTrigger className="h-8 w-full"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {ELDER_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-1">
+                  <Checkbox
+                    checked={isCg}
+                    onCheckedChange={(v) => toggleCgCoach(r.id, !!v)}
+                    aria-label="CG Coach"
+                  />
+                </div>
+                <div className="col-span-2 text-xs text-muted-foreground">
+                  {format(new Date(r.created_at), "MMM d, yyyy")}
+                </div>
+                <div className="col-span-1 flex justify-end">
+                  {!isSelf && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => remove(r)}>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
                 </div>
               </div>
-              <div className="col-span-2">
-                <Select value={staffRole} onValueChange={(v) => changeRole(r.id, v as Role)}>
-                  <SelectTrigger className="h-8 w-28"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {ROLE_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="col-span-2">
-                <Select value={elderTier} onValueChange={(v) => changeElderTier(r.id, v as ElderTier)}>
-                  <SelectTrigger className="h-8 w-36"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {ELDER_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="col-span-1">
-                <Checkbox
-                  checked={isCg}
-                  onCheckedChange={(v) => toggleCgCoach(r.id, !!v)}
-                  aria-label="CG Coach"
-                />
-              </div>
-              <div className="col-span-2 text-xs text-muted-foreground">
-                {format(new Date(r.created_at), "MMM d, yyyy")}
-              </div>
-              <div className="col-span-1 flex justify-end">
-                {!isSelf && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => remove(r)}>
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-3">
