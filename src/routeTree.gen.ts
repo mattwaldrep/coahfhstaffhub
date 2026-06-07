@@ -23,6 +23,7 @@ import { Route as FinanceRouteImport } from './routes/finance'
 import { Route as ElderRouteImport } from './routes/elder'
 import { Route as DecisionsRouteImport } from './routes/decisions'
 import { Route as ChecklistsRouteImport } from './routes/checklists'
+import { Route as CgCoachingRouteImport } from './routes/cg-coaching'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OnboardingIndexRouteImport } from './routes/onboarding.index'
@@ -35,6 +36,7 @@ import { Route as ElderPastoralCareRouteImport } from './routes/elder.pastoral-c
 import { Route as ElderMotionsRouteImport } from './routes/elder.motions'
 import { Route as ElderMeetingsRouteImport } from './routes/elder.meetings'
 import { Route as ElderArchiveRouteImport } from './routes/elder.archive'
+import { Route as CgCoachingSettingsRouteImport } from './routes/cg-coaching.settings'
 import { Route as CalendarPublicRouteImport } from './routes/calendar_.public'
 import { Route as CalendarPlanningRouteImport } from './routes/calendar_.planning'
 import { Route as CalendarClassesRouteImport } from './routes/calendar_.classes'
@@ -122,6 +124,11 @@ const ChecklistsRoute = ChecklistsRouteImport.update({
   path: '/checklists',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CgCoachingRoute = CgCoachingRouteImport.update({
+  id: '/cg-coaching',
+  path: '/cg-coaching',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CalendarRoute = CalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
@@ -181,6 +188,11 @@ const ElderArchiveRoute = ElderArchiveRouteImport.update({
   id: '/archive',
   path: '/archive',
   getParentRoute: () => ElderRoute,
+} as any)
+const CgCoachingSettingsRoute = CgCoachingSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => CgCoachingRoute,
 } as any)
 const CalendarPublicRoute = CalendarPublicRouteImport.update({
   id: '/calendar_/public',
@@ -273,6 +285,7 @@ const ApiPublicMissionsInquiryTokenRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
+  '/cg-coaching': typeof CgCoachingRouteWithChildren
   '/checklists': typeof ChecklistsRoute
   '/decisions': typeof DecisionsRoute
   '/elder': typeof ElderRouteWithChildren
@@ -290,6 +303,7 @@ export interface FileRoutesByFullPath {
   '/calendar/classes': typeof CalendarClassesRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
+  '/cg-coaching/settings': typeof CgCoachingSettingsRoute
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/meetings': typeof ElderMeetingsRouteWithChildren
   '/elder/motions': typeof ElderMotionsRouteWithChildren
@@ -317,6 +331,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
+  '/cg-coaching': typeof CgCoachingRouteWithChildren
   '/checklists': typeof ChecklistsRoute
   '/decisions': typeof DecisionsRoute
   '/finance': typeof FinanceRoute
@@ -333,6 +348,7 @@ export interface FileRoutesByTo {
   '/calendar/classes': typeof CalendarClassesRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
+  '/cg-coaching/settings': typeof CgCoachingSettingsRoute
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
@@ -359,6 +375,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
+  '/cg-coaching': typeof CgCoachingRouteWithChildren
   '/checklists': typeof ChecklistsRoute
   '/decisions': typeof DecisionsRoute
   '/elder': typeof ElderRouteWithChildren
@@ -376,6 +393,7 @@ export interface FileRoutesById {
   '/calendar_/classes': typeof CalendarClassesRoute
   '/calendar_/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar_/public': typeof CalendarPublicRoute
+  '/cg-coaching/settings': typeof CgCoachingSettingsRoute
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/meetings': typeof ElderMeetingsRouteWithChildren
   '/elder/motions': typeof ElderMotionsRouteWithChildren
@@ -405,6 +423,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/calendar'
+    | '/cg-coaching'
     | '/checklists'
     | '/decisions'
     | '/elder'
@@ -422,6 +441,7 @@ export interface FileRouteTypes {
     | '/calendar/classes'
     | '/calendar/planning'
     | '/calendar/public'
+    | '/cg-coaching/settings'
     | '/elder/archive'
     | '/elder/meetings'
     | '/elder/motions'
@@ -449,6 +469,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/calendar'
+    | '/cg-coaching'
     | '/checklists'
     | '/decisions'
     | '/finance'
@@ -465,6 +486,7 @@ export interface FileRouteTypes {
     | '/calendar/classes'
     | '/calendar/planning'
     | '/calendar/public'
+    | '/cg-coaching/settings'
     | '/elder/archive'
     | '/elder/pastoral-care'
     | '/elder/settings'
@@ -490,6 +512,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/calendar'
+    | '/cg-coaching'
     | '/checklists'
     | '/decisions'
     | '/elder'
@@ -507,6 +530,7 @@ export interface FileRouteTypes {
     | '/calendar_/classes'
     | '/calendar_/planning'
     | '/calendar_/public'
+    | '/cg-coaching/settings'
     | '/elder/archive'
     | '/elder/meetings'
     | '/elder/motions'
@@ -535,6 +559,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CalendarRoute: typeof CalendarRoute
+  CgCoachingRoute: typeof CgCoachingRouteWithChildren
   ChecklistsRoute: typeof ChecklistsRoute
   DecisionsRoute: typeof DecisionsRoute
   ElderRoute: typeof ElderRouteWithChildren
@@ -665,6 +690,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChecklistsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cg-coaching': {
+      id: '/cg-coaching'
+      path: '/cg-coaching'
+      fullPath: '/cg-coaching'
+      preLoaderRoute: typeof CgCoachingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/calendar': {
       id: '/calendar'
       path: '/calendar'
@@ -748,6 +780,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/elder/archive'
       preLoaderRoute: typeof ElderArchiveRouteImport
       parentRoute: typeof ElderRoute
+    }
+    '/cg-coaching/settings': {
+      id: '/cg-coaching/settings'
+      path: '/settings'
+      fullPath: '/cg-coaching/settings'
+      preLoaderRoute: typeof CgCoachingSettingsRouteImport
+      parentRoute: typeof CgCoachingRoute
     }
     '/calendar_/public': {
       id: '/calendar_/public'
@@ -864,6 +903,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface CgCoachingRouteChildren {
+  CgCoachingSettingsRoute: typeof CgCoachingSettingsRoute
+}
+
+const CgCoachingRouteChildren: CgCoachingRouteChildren = {
+  CgCoachingSettingsRoute: CgCoachingSettingsRoute,
+}
+
+const CgCoachingRouteWithChildren = CgCoachingRoute._addFileChildren(
+  CgCoachingRouteChildren,
+)
+
 interface ElderMeetingsRouteChildren {
   ElderMeetingsMeetingIdRoute: typeof ElderMeetingsMeetingIdRoute
   ElderMeetingsIndexRoute: typeof ElderMeetingsIndexRoute
@@ -928,6 +979,7 @@ const CalendarPlanningRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CalendarRoute: CalendarRoute,
+  CgCoachingRoute: CgCoachingRouteWithChildren,
   ChecklistsRoute: ChecklistsRoute,
   DecisionsRoute: DecisionsRoute,
   ElderRoute: ElderRouteWithChildren,
