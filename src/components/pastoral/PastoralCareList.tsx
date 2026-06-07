@@ -698,3 +698,15 @@ function PersonPanel({
     </div>
   );
 }
+
+function AttentionDot({ level, days }: { level?: "green" | "amber" | "red"; days: number | null }) {
+  if (!level) return <span className="w-2 h-2 rounded-full bg-border shrink-0" />;
+  const cls =
+    level === "red" ? "bg-destructive" : level === "amber" ? "bg-warning" : "bg-success";
+  const title =
+    days === null
+      ? "No pastoral contact logged"
+      : `Last contact ${days} day${days === 1 ? "" : "s"} ago`;
+  return <span title={title} className={`w-2 h-2 rounded-full shrink-0 ${cls}`} />;
+}
+
