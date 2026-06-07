@@ -66,7 +66,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
   const [healthFilter, setHealthFilter] = useState<Set<string>>(new Set());
   const [elderFilter, setElderFilter] = useState<string>("all"); // "all" | "unassigned" | elder name
   const [notesFilter, setNotesFilter] = useState<"any" | "with" | "without">("any");
-  const [sort, setSort] = useState<SortKey>("health_urgent");
+  const [sort, setSort] = useState<SortKey>("attention_first");
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [latestNote, setLatestNote] = useState<Record<string, string>>({}); // pco_person_id -> ISO date
   const [myElderName, setMyElderName] = useState<string | null>(null);
@@ -330,6 +330,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
                 <SelectValue placeholder="Sort" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="attention_first">Needs attention first</SelectItem>
                 <SelectItem value="health_urgent">Health · urgent first</SelectItem>
                 <SelectItem value="health_thriving">Health · thriving first</SelectItem>
                 <SelectItem value="name_asc">Name · A → Z</SelectItem>
