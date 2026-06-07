@@ -246,7 +246,8 @@ function Body() {
         <div className="grid grid-cols-12 px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
           <div className="col-span-4">User</div>
           <div className="col-span-2">Role</div>
-          <div className="col-span-3">Elder access</div>
+          <div className="col-span-2">Elder access</div>
+          <div className="col-span-1">CG Coach</div>
           <div className="col-span-2">Joined</div>
           <div className="col-span-1 text-right">·</div>
         </div>
@@ -261,6 +262,7 @@ function Body() {
             : r.roles.includes("elder_candidate")
             ? "elder_candidate"
             : "none";
+          const isCg = r.roles.includes("cg_coach");
           const isSelf = r.id === user?.id;
           return (
             <div key={r.id} className="grid grid-cols-12 items-center px-4 py-3 border-b border-border last:border-0 hover:bg-background/40">
@@ -285,7 +287,7 @@ function Body() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="col-span-3">
+              <div className="col-span-2">
                 <Select value={elderTier} onValueChange={(v) => changeElderTier(r.id, v as ElderTier)}>
                   <SelectTrigger className="h-8 w-36"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -294,6 +296,13 @@ function Body() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="col-span-1">
+                <Checkbox
+                  checked={isCg}
+                  onCheckedChange={(v) => toggleCgCoach(r.id, !!v)}
+                  aria-label="CG Coach"
+                />
               </div>
               <div className="col-span-2 text-xs text-muted-foreground">
                 {format(new Date(r.created_at), "MMM d, yyyy")}
