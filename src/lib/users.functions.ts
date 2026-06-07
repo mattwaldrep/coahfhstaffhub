@@ -85,6 +85,27 @@ export const setUserElderTier = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const setUserCgCoach = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ userId: z.string().uuid(), enabled: z.boolean() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCore(context.supabase, context.userId);
+    await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("user_id", data.userId)
+      .eq("role", "cg_coach");
+    if (data.enabled) {
+      const { error } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: data.userId, role: "cg_coach" });
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
 export const inviteUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
