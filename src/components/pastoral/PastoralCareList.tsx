@@ -17,6 +17,7 @@ import {
   listCareList, listPcoNotes, addPcoNote, deletePcoNote, updateSpiritualHealth,
   logTouchpoint, listTouchpoints, deleteTouchpoint, getMyElderName,
 } from "@/lib/pastoral-care.functions";
+import { getPastoralGaps, type PastoralGap } from "@/lib/pastoral-gaps.functions";
 import { supabase } from "@/integrations/supabase/client";
 
 const HEALTH_OPTIONS = ["Thriving", "Healthy", "Watch", "Struggling", "Crisis", "Unknown"];
@@ -26,6 +27,7 @@ const HEALTH_SEVERITY: Record<string, number> = {
 };
 
 type SortKey =
+  | "attention_first"
   | "name_asc"
   | "name_desc"
   | "health_urgent"
@@ -33,6 +35,9 @@ type SortKey =
   | "notes_most"
   | "notes_recent"
   | "notes_stale";
+
+const LEVEL_RANK: Record<"red" | "amber" | "green", number> = { red: 2, amber: 1, green: 0 };
+
 
 
 type Person = {
@@ -67,6 +72,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
   const [myElderName, setMyElderName] = useState<string | null>(null);
   const [myPeopleActive, setMyPeopleActive] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
+  const [gaps, setGaps] = useState<Record<string, PastoralGap>>({});
 
   const load = useCallback(async (refresh = false) => {
     refresh ? setRefreshing(true) : setLoading(true);
