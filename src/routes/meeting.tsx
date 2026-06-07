@@ -35,6 +35,7 @@ import {
   ClassesNeedingAttentionSection,
   ThisSundaySection,
 } from "@/components/meeting/MeetingSections";
+import { SundayOpsSection } from "@/components/meeting/SundayOpsSection";
 
 
 export const Route = createFileRoute("/meeting")({
@@ -413,6 +414,7 @@ const DEFAULT_SECTION_ORDER: string[] = [
   "devotional",
   "divider:recurring",
   "sunday-review",
+  "sunday-ops",
   "last-week-events",
   "first-step-cards",
   "next-step-cards",
@@ -609,6 +611,7 @@ function buildSectionBlocks(p: SortableBodyProps): SectionBlock[] {
     { id: "devotional", node: <DevotionalSection meetingId={meeting.id} /> },
     { id: "divider:recurring", isDivider: true, node: <SectionDivider label="Recurring Agenda Items" /> },
     { id: "sunday-review", node: <SundayReviewSection meetingId={meeting.id} /> },
+    { id: "sunday-ops", node: <SundayOpsSection meetingId={meeting.id} meetingDate={meeting.meeting_date} /> },
     { id: "last-week-events", node: <LastWeekEventsSection meetingId={meeting.id} /> },
     {
       id: "first-step-cards",

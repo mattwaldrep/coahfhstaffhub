@@ -29,6 +29,7 @@ export type Database = {
           notes: string | null
           source_checklist_item_id: string | null
           source_event_id: string | null
+          source_issue_external_id: string | null
           source_onboarding_task_id: string | null
           source_workflow_id: string | null
           title: string
@@ -48,6 +49,7 @@ export type Database = {
           notes?: string | null
           source_checklist_item_id?: string | null
           source_event_id?: string | null
+          source_issue_external_id?: string | null
           source_onboarding_task_id?: string | null
           source_workflow_id?: string | null
           title: string
@@ -67,6 +69,7 @@ export type Database = {
           notes?: string | null
           source_checklist_item_id?: string | null
           source_event_id?: string | null
+          source_issue_external_id?: string | null
           source_onboarding_task_id?: string | null
           source_workflow_id?: string | null
           title?: string
