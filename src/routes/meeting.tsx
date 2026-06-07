@@ -611,6 +611,7 @@ function buildSectionBlocks(p: SortableBodyProps): SectionBlock[] {
     { id: "devotional", node: <DevotionalSection meetingId={meeting.id} /> },
     { id: "divider:recurring", isDivider: true, node: <SectionDivider label="Recurring Agenda Items" /> },
     { id: "sunday-review", node: <SundayReviewSection meetingId={meeting.id} /> },
+    { id: "sunday-ops", node: <SundayOpsSection meetingId={meeting.id} meetingDate={meeting.meeting_date} /> },
     { id: "last-week-events", node: <LastWeekEventsSection meetingId={meeting.id} /> },
     {
       id: "first-step-cards",
