@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { WorshipTrendStrip } from "@/components/sunday-review/WorshipTrendStrip";
+import { VoiceNoteRecorder } from "@/components/sunday-review/VoiceNoteRecorder";
 
 export const Route = createFileRoute("/sunday-review")({
   component: SundayReviewPage,
@@ -203,6 +204,23 @@ function SundayReviewPage() {
             onSubmit={submit}
             className="lg:col-span-3 bg-surface border border-border rounded-2xl p-6 space-y-6"
           >
+            <VoiceNoteRecorder
+              currentForm={{
+                worship_notes: form.worship_notes,
+                confession_notes: form.confession_notes,
+                connect_notes: form.connect_notes,
+                sermon_notes: form.sermon_notes,
+                wins: form.wins,
+                opportunities: form.opportunities,
+              }}
+              onMerge={(fields) =>
+                setForm((f) => ({
+                  ...f,
+                  ...fields,
+                }))
+              }
+            />
+
             <Field label="Date of service">
               <input
                 type="date"
