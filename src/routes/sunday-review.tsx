@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
+import { WorshipTrendStrip } from "@/components/sunday-review/WorshipTrendStrip";
 
 export const Route = createFileRoute("/sunday-review")({
   component: SundayReviewPage,
@@ -194,6 +195,8 @@ function SundayReviewPage() {
             Reflect on Sunday's service. Submissions feed Tuesday's meeting agenda.
           </p>
         </header>
+
+        <WorshipTrendStrip />
 
         <div className="grid lg:grid-cols-5 gap-6">
           <form

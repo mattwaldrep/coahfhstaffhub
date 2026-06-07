@@ -12,6 +12,9 @@ import { expandEvents, type EventRowLike } from "@/lib/calendar-expand";
 import { classGaps } from "@/lib/class-gaps";
 import { InlineClassFixer } from "@/components/inline/InlineClassFixer";
 import { EmptyState } from "@/components/ui/empty-state";
+import { NextBestAction } from "@/components/dashboard/NextBestAction";
+import { CongregationPulse } from "@/components/dashboard/CongregationPulse";
+import { PastoralAttentionCard } from "@/components/dashboard/PastoralAttentionCard";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -54,7 +57,7 @@ function HomePage() {
 }
 
 function Dashboard() {
-  const { user } = useAuth();
+  const { user, hasElderAccess } = useAuth();
   const metricsSession = useMetricsSession();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [actions, setActions] = useState<ActionItem[]>([]);
@@ -150,6 +153,8 @@ function Dashboard() {
           Welcome back{greeting ? `, ${greeting}` : ""}. Here's where the church stands.
         </p>
       </div>
+
+      <NextBestAction />
 
       <div className="grid grid-cols-12 gap-6">
         {/* KPI cards */}
@@ -306,6 +311,8 @@ function Dashboard() {
           </div>
 
 
+          <CongregationPulse />
+          {hasElderAccess && <PastoralAttentionCard />}
           <MetricsStatusCard connected={!!metricsSession} error={metricsErr} weeks={headline?.weeks ?? 0} />
         </div>
       </div>
