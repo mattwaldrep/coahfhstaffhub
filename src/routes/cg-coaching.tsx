@@ -1,15 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { AppShell } from "@/components/AppShell";
-import { CoachGroupList } from "@/components/cg-coaching/CoachGroupList";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/cg-coaching")({
-  component: CgCoachingPage,
+  component: () => <Outlet />,
 });
-
-function CgCoachingPage() {
-  return (
-    <AppShell>
-      <CoachGroupList />
-    </AppShell>
-  );
-}

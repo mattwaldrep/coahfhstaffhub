@@ -28,6 +28,7 @@ import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OnboardingIndexRouteImport } from './routes/onboarding.index'
 import { Route as ElderIndexRouteImport } from './routes/elder.index'
+import { Route as CgCoachingIndexRouteImport } from './routes/cg-coaching.index'
 import { Route as OnboardingTemplatesRouteImport } from './routes/onboarding.templates'
 import { Route as OnboardingWorkflowIdRouteImport } from './routes/onboarding.$workflowId'
 import { Route as InquiryTokenRouteImport } from './routes/inquiry.$token'
@@ -148,6 +149,11 @@ const ElderIndexRoute = ElderIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ElderRoute,
+} as any)
+const CgCoachingIndexRoute = CgCoachingIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CgCoachingRoute,
 } as any)
 const OnboardingTemplatesRoute = OnboardingTemplatesRouteImport.update({
   id: '/onboarding/templates',
@@ -312,6 +318,7 @@ export interface FileRoutesByFullPath {
   '/inquiry/$token': typeof InquiryTokenRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
+  '/cg-coaching/': typeof CgCoachingIndexRoute
   '/elder/': typeof ElderIndexRoute
   '/onboarding/': typeof OnboardingIndexRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
@@ -331,7 +338,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
-  '/cg-coaching': typeof CgCoachingRouteWithChildren
   '/checklists': typeof ChecklistsRoute
   '/decisions': typeof DecisionsRoute
   '/finance': typeof FinanceRoute
@@ -355,6 +361,7 @@ export interface FileRoutesByTo {
   '/inquiry/$token': typeof InquiryTokenRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
+  '/cg-coaching': typeof CgCoachingIndexRoute
   '/elder': typeof ElderIndexRoute
   '/onboarding': typeof OnboardingIndexRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
@@ -402,6 +409,7 @@ export interface FileRoutesById {
   '/inquiry/$token': typeof InquiryTokenRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
+  '/cg-coaching/': typeof CgCoachingIndexRoute
   '/elder/': typeof ElderIndexRoute
   '/onboarding/': typeof OnboardingIndexRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
@@ -450,6 +458,7 @@ export interface FileRouteTypes {
     | '/inquiry/$token'
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
+    | '/cg-coaching/'
     | '/elder/'
     | '/onboarding/'
     | '/api/google/oauth-callback'
@@ -469,7 +478,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/calendar'
-    | '/cg-coaching'
     | '/checklists'
     | '/decisions'
     | '/finance'
@@ -493,6 +501,7 @@ export interface FileRouteTypes {
     | '/inquiry/$token'
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
+    | '/cg-coaching'
     | '/elder'
     | '/onboarding'
     | '/api/google/oauth-callback'
@@ -539,6 +548,7 @@ export interface FileRouteTypes {
     | '/inquiry/$token'
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
+    | '/cg-coaching/'
     | '/elder/'
     | '/onboarding/'
     | '/api/google/oauth-callback'
@@ -725,6 +735,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ElderIndexRouteImport
       parentRoute: typeof ElderRoute
     }
+    '/cg-coaching/': {
+      id: '/cg-coaching/'
+      path: '/'
+      fullPath: '/cg-coaching/'
+      preLoaderRoute: typeof CgCoachingIndexRouteImport
+      parentRoute: typeof CgCoachingRoute
+    }
     '/onboarding/templates': {
       id: '/onboarding/templates'
       path: '/onboarding/templates'
@@ -905,10 +922,12 @@ declare module '@tanstack/react-router' {
 
 interface CgCoachingRouteChildren {
   CgCoachingSettingsRoute: typeof CgCoachingSettingsRoute
+  CgCoachingIndexRoute: typeof CgCoachingIndexRoute
 }
 
 const CgCoachingRouteChildren: CgCoachingRouteChildren = {
   CgCoachingSettingsRoute: CgCoachingSettingsRoute,
+  CgCoachingIndexRoute: CgCoachingIndexRoute,
 }
 
 const CgCoachingRouteWithChildren = CgCoachingRoute._addFileChildren(
