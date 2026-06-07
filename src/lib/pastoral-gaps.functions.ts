@@ -71,7 +71,8 @@ export const getPastoralGaps = createServerFn({ method: "GET" })
       let level: "green" | "amber" | "red" = "green";
       if (days === null || days >= 60) level = "red";
       else if (days >= 45) level = "amber";
-      const elderVal = (p.fields[cfg.assigned_elder_field_id]?.value ?? null)?.toString().trim() || null;
+      const elderFieldId = cfg.assigned_elder_field_id as string;
+      const elderVal = (p.fields[elderFieldId]?.value ?? null)?.toString().trim() || null;
       return {
         pco_person_id: p.id,
         name: p.name,
