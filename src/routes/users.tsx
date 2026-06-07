@@ -16,8 +16,9 @@ import { Plus, Trash2, ShieldAlert, Users as UsersIcon } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
-  listUsers, setUserRole, inviteUser, removeUser, setUserElderTier, bulkInviteUsers,
+  listUsers, setUserRole, inviteUser, removeUser, setUserElderTier, bulkInviteUsers, setUserCgCoach,
 } from "@/lib/users.functions";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/users")({
   component: UsersPage,
@@ -95,6 +96,16 @@ function Body() {
     try {
       await setUserElderTier({ data: { userId, tier } });
       toast.success("Elder tier updated");
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed");
+    }
+  }
+
+  async function toggleCgCoach(userId: string, enabled: boolean) {
+    try {
+      await setUserCgCoach({ data: { userId, enabled } });
+      toast.success(enabled ? "Tagged as CG Coach" : "Removed CG Coach tag");
       load();
     } catch (e: any) {
       toast.error(e.message ?? "Failed");
