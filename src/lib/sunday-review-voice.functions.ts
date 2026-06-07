@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
+const ratingSchema = z.number().int().min(1).max(5).nullable();
+
 const inputSchema = z.object({
   audioBase64: z.string().min(100).max(20_000_000),
   mimeType: z.string().min(3).max(100),
@@ -13,6 +15,12 @@ const inputSchema = z.object({
     wins: z.string().max(4000),
     opportunities: z.string().max(4000),
   }),
+  currentRatings: z.object({
+    worship_rating: ratingSchema,
+    confession_rating: ratingSchema,
+    connect_rating: ratingSchema,
+    sermon_rating: ratingSchema,
+  }),
 });
 
 type AiResult = {
@@ -22,6 +30,10 @@ type AiResult = {
   sermon_notes?: string;
   wins?: string;
   opportunities?: string;
+  worship_rating?: number | null;
+  confession_rating?: number | null;
+  connect_rating?: number | null;
+  sermon_rating?: number | null;
   tasks?: Array<{ title: string; notes?: string }>;
 };
 
@@ -35,6 +47,15 @@ function mimeToFormat(mime: string): string {
   return "webm";
 }
 
+function clampRating(v: unknown): number | null {
+  if (v === null || v === undefined) return null;
+  const n = typeof v === "number" ? v : Number(v);
+  if (!Number.isFinite(n)) return null;
+  const r = Math.round(n);
+  if (r < 1 || r > 5) return null;
+  return r;
+}
+
 export const processSundayReviewVoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => inputSchema.parse(data))
@@ -44,35 +65,56 @@ export const processSundayReviewVoice = createServerFn({ method: "POST" })
 
     const { supabase, userId } = context;
 
-    const systemPrompt = `You are an assistant for a church staff member filling out their Sunday Service Review form. The user will speak freeform notes about the service. Listen carefully and:
+    const systemPrompt = `You are an assistant helping a church staff member fill out their Sunday Service Review form from a voice ramble. Listen carefully and:
 
-1. Categorize their feedback into the correct form sections.
-2. Extract any concrete follow-up tasks (e.g. "the sound board freaked out" -> task to diagnose sound board issue).
+1. Categorize feedback into the correct form sections.
+2. Infer a 1-5 rating for each section the user gave any qualitative signal about.
+3. Extract concrete follow-up tasks.
 
-Form sections:
-- worship_notes: thoughts on the musical worship
-- confession_notes: thoughts on the call to worship / confession
-- connect_notes: thoughts on the connect moment / core values / ministry highlight
-- sermon_notes: thoughts on the sermon
-- wins: things that went well
-- opportunities: opportunities for improvement
+Form sections (each has free-text notes; the first four also have a 1-5 rating):
+- worship (musical worship)
+- confession (call to worship / confession)
+- connect (connect moment / core values / ministry highlight)
+- sermon
+- wins: things that went well overall
+- opportunities: opportunities for improvement overall
 
-Rules:
+CRITICAL writing rules for notes:
+- DO NOT transcribe the user verbatim. The user is rambling stream-of-consciousness; your job is to distill.
+- Write tight, concise bullet-style observations in clean prose. Strip filler ("um", "you know", "I think maybe"), false starts, repetition, and tangents.
+- 1-3 short sentences per section. Punchy and actionable. Third-person staff-note voice (e.g. "Band tight on the second song; transition into the bridge dragged"), not first-person ramble.
 - Only include sections the user actually spoke about. Leave others as empty string.
-- Write in clean prose (not bullet lists), faithful to what they said, gently cleaned up. Don't invent details.
-- For tasks: only include actionable items needing follow-up. Title should be short and imperative ("Diagnose sound board issue"). Notes can add brief context.
-- If they didn't mention anything actionable, return empty tasks array.
+- Don't invent details or sentiment the user didn't express.
 
-Respond with ONLY a JSON object matching this shape:
-{ "worship_notes": "", "confession_notes": "", "connect_notes": "", "sermon_notes": "", "wins": "", "opportunities": "", "tasks": [{"title": "...", "notes": "..."}] }`;
+Rating rules (1=poor, 2=below average, 3=solid, 4=great, 5=outstanding):
+- Only set a rating when the user gave a clear qualitative signal (e.g. "worship was awesome" → 5; "sermon was solid but the intro dragged" → 4; "confession felt flat" → 2). If they didn't comment evaluatively on a section, leave its rating null.
+- If they explicitly said a number ("I'd give the sermon a 4"), use that.
 
-    const existingContext = Object.entries(data.currentForm)
+Task rules:
+- Only actionable follow-ups (e.g. "sound board freaked out" → "Diagnose sound board issue"). Imperative short title. Empty array if nothing actionable.
+
+Respond with ONLY a JSON object:
+{
+  "worship_notes": "", "confession_notes": "", "connect_notes": "", "sermon_notes": "",
+  "wins": "", "opportunities": "",
+  "worship_rating": null, "confession_rating": null, "connect_rating": null, "sermon_rating": null,
+  "tasks": [{"title": "...", "notes": "..."}]
+}`;
+
+    const existingNotes = Object.entries(data.currentForm)
       .filter(([, v]) => v.trim().length > 0)
       .map(([k, v]) => `${k}: ${v}`)
       .join("\n");
+    const existingRatings = Object.entries(data.currentRatings)
+      .filter(([, v]) => v !== null)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join("\n");
 
-    const userText = existingContext
-      ? `Existing notes already in the form (don't duplicate, but you may expand/refine):\n${existingContext}\n\nTranscribe and process the audio.`
+    const contextParts: string[] = [];
+    if (existingNotes) contextParts.push(`Existing notes (don't duplicate; you may refine):\n${existingNotes}`);
+    if (existingRatings) contextParts.push(`Existing ratings already set (don't overwrite unless user clearly re-rates):\n${existingRatings}`);
+    const userText = contextParts.length
+      ? `${contextParts.join("\n\n")}\n\nTranscribe and process the audio.`
       : "Transcribe and process the attached audio note.";
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -118,7 +160,6 @@ Respond with ONLY a JSON object matching this shape:
       if (match) parsed = JSON.parse(match[0]);
     }
 
-    // Insert tasks
     const tasks = Array.isArray(parsed.tasks) ? parsed.tasks.filter((t) => t?.title?.trim()) : [];
     const createdTasks: Array<{ id: string; title: string }> = [];
     if (tasks.length > 0) {
@@ -147,6 +188,12 @@ Respond with ONLY a JSON object matching this shape:
         sermon_notes: parsed.sermon_notes ?? "",
         wins: parsed.wins ?? "",
         opportunities: parsed.opportunities ?? "",
+      },
+      ratings: {
+        worship_rating: clampRating(parsed.worship_rating),
+        confession_rating: clampRating(parsed.confession_rating),
+        connect_rating: clampRating(parsed.connect_rating),
+        sermon_rating: clampRating(parsed.sermon_rating),
       },
       createdTasks,
     };

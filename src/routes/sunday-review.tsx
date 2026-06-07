@@ -213,10 +213,17 @@ function SundayReviewPage() {
                 wins: form.wins,
                 opportunities: form.opportunities,
               }}
-              onMerge={(fields) =>
+              currentRatings={{
+                worship_rating: form.worship_rating,
+                confession_rating: form.confession_rating,
+                connect_rating: form.connect_rating,
+                sermon_rating: form.sermon_rating,
+              }}
+              onMerge={(fields, ratings) =>
                 setForm((f) => ({
                   ...f,
                   ...fields,
+                  ...ratings,
                 }))
               }
             />

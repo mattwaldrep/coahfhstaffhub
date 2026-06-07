@@ -15,9 +15,18 @@ type FieldKey =
 
 type CurrentForm = Record<FieldKey, string>;
 
+type RatingKey =
+  | "worship_rating"
+  | "confession_rating"
+  | "connect_rating"
+  | "sermon_rating";
+
+type CurrentRatings = Record<RatingKey, number | null>;
+
 interface Props {
   currentForm: CurrentForm;
-  onMerge: (fields: CurrentForm) => void;
+  currentRatings: CurrentRatings;
+  onMerge: (fields: CurrentForm, ratings: CurrentRatings) => void;
 }
 
 function blobToBase64(blob: Blob): Promise<string> {
@@ -46,7 +55,7 @@ function pickMime(): string {
   return "audio/webm";
 }
 
-export function VoiceNoteRecorder({ currentForm, onMerge }: Props) {
+export function VoiceNoteRecorder({ currentForm, currentRatings, onMerge }: Props) {
   const [recording, setRecording] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -87,17 +96,21 @@ export function VoiceNoteRecorder({ currentForm, onMerge }: Props) {
         try {
           const audioBase64 = await blobToBase64(blob);
           const result = await processVoice({
-            data: { audioBase64, mimeType, currentForm },
+            data: { audioBase64, mimeType, currentForm, currentRatings },
           });
-          const merged: CurrentForm = { ...currentForm };
+          // Replace notes for sections the AI filled in (it produces clean prose).
+          const mergedFields: CurrentForm = { ...currentForm };
           (Object.keys(result.fields) as FieldKey[]).forEach((key) => {
             const incoming = result.fields[key]?.trim();
-            if (!incoming) return;
-            merged[key] = currentForm[key].trim()
-              ? `${currentForm[key].trim()}\n\n${incoming}`
-              : incoming;
+            if (incoming) mergedFields[key] = incoming;
           });
-          onMerge(merged);
+          // Apply ratings only when AI returned a value; otherwise keep existing.
+          const mergedRatings: CurrentRatings = { ...currentRatings };
+          (Object.keys(result.ratings) as RatingKey[]).forEach((key) => {
+            const v = result.ratings[key];
+            if (typeof v === "number") mergedRatings[key] = v;
+          });
+          onMerge(mergedFields, mergedRatings);
           const taskCount = result.createdTasks.length;
           toast.success(
             taskCount > 0
