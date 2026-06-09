@@ -734,8 +734,12 @@ function CalendarBody() {
     setEditingOccurrence(occ.occurrence_date);
     loadChecklist(ev.id);
     loadTemplatesForEvent(ev.id, occ.occurrence_date);
-    setRoomRequestSubmitted((ev as any).room_request_submitted ?? false);
-    setRoomApprovalReceived((ev as any).room_approval_received ?? false);
+    const initialFlags: Record<string, { req: boolean; app: boolean }> = {};
+    const flagMap = eventRoomFlagsMap.current.get(ev.id);
+    if (flagMap) {
+      for (const [rid, f] of flagMap) initialFlags[rid] = { req: !!f.req, app: !!f.app };
+    }
+    setRoomFlags(initialFlags);
     loadSundaySlots(ev.id);
     setOpen(true);
   }
