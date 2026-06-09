@@ -440,9 +440,9 @@ function CalendarBody() {
   const [newItem, setNewItem] = useState("");
   const [classSeries, setClassSeries] = useState<ClassSeries[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [pendingRoom, setPendingRoom] = useState<{ id: string; name: string; step: "request" | "approval" } | null>(null);
-  const [roomRequestSubmitted, setRoomRequestSubmitted] = useState(false);
-  const [roomApprovalReceived, setRoomApprovalReceived] = useState(false);
+  // Per-room request/approval flags for the event currently being edited.
+  // Keyed by room_id.
+  const [roomFlags, setRoomFlags] = useState<Record<string, { req: boolean; app: boolean }>>({});
   const [sundaySlots, setSundaySlots] = useState<Record<SundaySlotChannel, string[]>>({
     sunday_announcement: [],
     ministry_highlight: [],
