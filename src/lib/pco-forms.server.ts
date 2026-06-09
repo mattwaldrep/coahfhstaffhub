@@ -98,29 +98,23 @@ async function loadFormFieldMap(
   formId: string,
 ): Promise<Map<string, { label: string; sequence: number }>> {
   const map = new Map<string, { label: string; sequence: number }>();
-  const tryPaths = [
-    `/forms/${formId}/form_fields?per_page=100`,
-    `/forms/${formId}?include=form_fields`,
-    `/forms/${formId}/form_submissions?include=form_submission_values.form_field&per_page=1`,
-  ];
-  for (const path of tryPaths) {
+  let next: string | null = `/forms/${formId}/fields?per_page=100`;
+  let pages = 0;
+  while (next && pages < 5) {
+    pages += 1;
     try {
-      const json: any = await pcoFetch(path);
-      const fromIncluded = (json.included ?? []).filter((n: any) => n.type === "FormField");
-      const rows: any[] = Array.isArray(json.data) && json.data[0]?.type === "FormField"
-        ? json.data
-        : fromIncluded;
-      for (const f of rows) {
+      const json: any = await pcoFetch(next);
+      for (const f of json.data ?? []) {
         const a = f.attributes ?? {};
         map.set(String(f.id), {
           label: a.label || a.description || "Field",
           sequence: Number(a.sequence ?? 0),
         });
       }
-      console.log(`[pco-forms] loadFormFieldMap(${formId}) ${path} -> ${rows.length} fields, included types: ${Array.from(new Set((json.included ?? []).map((i: any) => i.type)))}`);
-      if (map.size > 0) break;
+      next = json.links?.next ?? null;
     } catch (e: any) {
-      console.error(`[pco-forms] loadFormFieldMap(${formId}) ${path} failed:`, e?.message);
+      console.error(`[pco-forms] loadFormFieldMap(${formId}) failed:`, e?.message);
+      next = null;
     }
   }
   return map;
