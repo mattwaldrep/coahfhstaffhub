@@ -829,7 +829,12 @@ function CalendarBody() {
     if (savedId) {
       await supabase.from("event_rooms").delete().eq("event_id", savedId);
       if (form.room_ids.length > 0) {
-        await supabase.from("event_rooms").insert(form.room_ids.map((rid) => ({ event_id: savedId, room_id: rid })));
+        await supabase.from("event_rooms").insert(form.room_ids.map((rid) => ({
+          event_id: savedId,
+          room_id: rid,
+          request_submitted: !!roomFlags[rid]?.req,
+          approval_received: !!roomFlags[rid]?.app,
+        })) as any);
       }
       // Reconcile listing-channel checklist items with currently-enabled toggles
       const enabledChannels: string[] = [
