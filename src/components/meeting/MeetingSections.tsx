@@ -326,6 +326,11 @@ function avg(nums: (number | null)[]): number | null {
 
 /* ---------- 5. & 11. Events sections ---------- */
 
+function ReadinessDot({ r }: { r: "green" | "yellow" | "red" }) {
+  const color = r === "green" ? "bg-success" : r === "yellow" ? "bg-warning" : "bg-destructive";
+  return <span className={`inline-block w-1.5 h-1.5 rounded-full ${color}`} aria-label={`Readiness ${r}`} />;
+}
+
 function EventList({
   meetingId,
   rangeStart,
