@@ -1440,21 +1440,27 @@ export type Database = {
       }
       event_rooms: {
         Row: {
+          approval_received: boolean
           created_at: string
           event_id: string
           id: string
+          request_submitted: boolean
           room_id: string
         }
         Insert: {
+          approval_received?: boolean
           created_at?: string
           event_id: string
           id?: string
+          request_submitted?: boolean
           room_id: string
         }
         Update: {
+          approval_received?: boolean
           created_at?: string
           event_id?: string
           id?: string
+          request_submitted?: boolean
           room_id?: string
         }
         Relationships: [
