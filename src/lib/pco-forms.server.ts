@@ -101,25 +101,35 @@ export async function listFormSubmissions(
   formId: string,
   sinceIso: string,
 ): Promise<FormSubmission[]> {
+  // PCO's `where[created_at][gte]` filter is unreliable on form_submissions in
+  // some accounts (returns 0 even when submissions exist). Fetch newest first
+  // and filter client-side, stopping once we cross the cutoff.
+  const sinceMs = Date.parse(sinceIso);
   const out: FormSubmission[] = [];
   const params = new URLSearchParams({
-    "where[created_at][gte]": sinceIso,
     include: "person,form_submission_values.form_field",
     order: "-created_at",
-    per_page: "100",
+    per_page: "50",
   });
   let next: string | null = `/forms/${formId}/form_submissions?${params.toString()}`;
   let pages = 0;
-  while (next && pages < 5) {
+  outer: while (next && pages < 10) {
     pages += 1;
     const json: any = await pcoFetch(next);
     const included = indexIncluded(json.included ?? []);
     for (const sub of json.data ?? []) {
+      const createdAt: string = sub.attributes?.created_at ?? "";
+      const createdMs = createdAt ? Date.parse(createdAt) : NaN;
+      if (!isNaN(createdMs) && !isNaN(sinceMs) && createdMs < sinceMs) {
+        // Results are ordered newest-first; once we drop below the cutoff we are done.
+        next = null;
+        break outer;
+      }
       const personRef = sub.relationships?.person?.data;
       const personNode = personRef ? included.get(`${personRef.type}:${personRef.id}`) : null;
       out.push({
         id: String(sub.id),
-        created_at: sub.attributes?.created_at ?? "",
+        created_at: createdAt,
         person: personNode
           ? { id: String(personNode.id), name: personName(personNode) ?? "Unknown" }
           : null,
