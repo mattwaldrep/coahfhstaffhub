@@ -256,7 +256,10 @@ function Dashboard() {
                         <Circle className={cn("w-4 h-4", overdue ? "text-destructive" : "text-muted-foreground")} />
                       </button>
                       <div className="flex-1">
-                        <div className="text-foreground">{a.title}</div>
+                        <div className="text-foreground flex items-center gap-1.5">
+                          <span>{a.title}</span>
+                          <TaskSourceButton actionItemId={a.id} />
+                        </div>
                         {a.due_date && (
                           <div className={cn("text-xs", overdue ? "text-destructive font-medium" : "text-muted-foreground")}>
                             Due {formatDistanceToNow(new Date(a.due_date), { addSuffix: true })}
