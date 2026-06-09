@@ -440,9 +440,9 @@ function CalendarBody() {
   const [newItem, setNewItem] = useState("");
   const [classSeries, setClassSeries] = useState<ClassSeries[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [pendingRoom, setPendingRoom] = useState<{ id: string; name: string; step: "request" | "approval" } | null>(null);
-  const [roomRequestSubmitted, setRoomRequestSubmitted] = useState(false);
-  const [roomApprovalReceived, setRoomApprovalReceived] = useState(false);
+  // Per-room request/approval flags for the event currently being edited.
+  // Keyed by room_id.
+  const [roomFlags, setRoomFlags] = useState<Record<string, { req: boolean; app: boolean }>>({});
   const [sundaySlots, setSundaySlots] = useState<Record<SundaySlotChannel, string[]>>({
     sunday_announcement: [],
     ministry_highlight: [],
@@ -457,6 +457,7 @@ function CalendarBody() {
   const unassignFn = useServerFn(unassignChecklistItem);
   const setDoneFn = useServerFn(setChecklistItemDone);
   const eventRoomsMap = useRef<Map<string, string[]>>(new Map());
+  const eventRoomFlagsMap = useRef<Map<string, Map<string, { req: boolean; app: boolean }>>>(new Map());
   const eventChecklistMap = useRef<Map<string, { total: number; done: number }>>(new Map());
   const eventAttachmentsMap = useRef<Map<string, string[]>>(new Map());
   const templateStateMap = useRef<Map<string, boolean>>(new Map()); // key: `${event_id}:${item_id}:${YYYY-MM-DD}`
@@ -470,14 +471,17 @@ function CalendarBody() {
 
   function readinessFor(occ: Occurrence) {
     const roomIds = eventRoomsMap.current.get(occ.id) ?? [];
-    const nonOfficeSelected = roomIds.some((id) => {
+    const flagMap = eventRoomFlagsMap.current.get(occ.id) ?? new Map<string, { req: boolean; app: boolean }>();
+    const nonOfficeIds = roomIds.filter((id) => {
       const r = rooms.find((rm) => rm.id === id);
       return r && r.name.toLowerCase() !== "office";
     });
     const roomConfirmed =
-      !nonOfficeSelected ||
-      (((occ as any).room_request_submitted ?? false) &&
-        ((occ as any).room_approval_received ?? false));
+      nonOfficeIds.length === 0 ||
+      nonOfficeIds.every((id) => {
+        const f = flagMap.get(id);
+        return !!f && f.req && f.app;
+      });
     const has_room =
       roomConfirmed && (roomIds.length > 0 || (occ.room_needed ?? "").trim().length > 0);
     const adHoc = eventChecklistMap.current.get(occ.id) ?? { total: 0, done: 0 };
@@ -571,7 +575,7 @@ function CalendarBody() {
         .select("*")
         .or(`and(start_at.gte.${range.start.toISOString()},start_at.lte.${range.end.toISOString()}),rrule.not.is.null`)
         .order("start_at", { ascending: true }),
-      supabase.from("event_rooms").select("event_id, room_id"),
+      supabase.from("event_rooms").select("event_id, room_id, request_submitted, approval_received"),
       supabase.from("class_series").select("id, name, default_leader_name, default_teacher_name, default_childcare_needed, default_room_id").eq("active", true).order("name"),
       supabase.from("rooms").select("id, name").eq("active", true).order("name"),
       supabase.from("checklist_templates" as any).select("*").order("name"),
@@ -581,12 +585,17 @@ function CalendarBody() {
     ]);
     setEvents(data ?? []);
     const map = new Map<string, string[]>();
-    for (const row of er ?? []) {
+    const flagsMap = new Map<string, Map<string, { req: boolean; app: boolean }>>();
+    for (const row of (er ?? []) as Array<{ event_id: string; room_id: string; request_submitted?: boolean; approval_received?: boolean }>) {
       const arr = map.get(row.event_id) ?? [];
       arr.push(row.room_id);
       map.set(row.event_id, arr);
+      const inner = flagsMap.get(row.event_id) ?? new Map<string, { req: boolean; app: boolean }>();
+      inner.set(row.room_id, { req: !!row.request_submitted, app: !!row.approval_received });
+      flagsMap.set(row.event_id, inner);
     }
     eventRoomsMap.current = map;
+    eventRoomFlagsMap.current = flagsMap;
     setClassSeries((cs ?? []) as ClassSeries[]);
     setRooms((rs ?? []) as Room[]);
     setAllTemplates(((tpls ?? []) as unknown) as ChecklistTemplate[]);
@@ -658,8 +667,7 @@ function CalendarBody() {
     setChecklist([]);
     setEventTemplateIds([]);
     setTemplateStates({});
-    setRoomRequestSubmitted(false);
-    setRoomApprovalReceived(false);
+    setRoomFlags({});
     setSundaySlots({ sunday_announcement: [], ministry_highlight: [] });
     initialSundaySlots.current = { sunday_announcement: [], ministry_highlight: [] };
     setOpen(true);
@@ -726,8 +734,12 @@ function CalendarBody() {
     setEditingOccurrence(occ.occurrence_date);
     loadChecklist(ev.id);
     loadTemplatesForEvent(ev.id, occ.occurrence_date);
-    setRoomRequestSubmitted((ev as any).room_request_submitted ?? false);
-    setRoomApprovalReceived((ev as any).room_approval_received ?? false);
+    const initialFlags: Record<string, { req: boolean; app: boolean }> = {};
+    const flagMap = eventRoomFlagsMap.current.get(ev.id);
+    if (flagMap) {
+      for (const [rid, f] of flagMap) initialFlags[rid] = { req: !!f.req, app: !!f.app };
+    }
+    setRoomFlags(initialFlags);
     loadSundaySlots(ev.id);
     setOpen(true);
   }
@@ -792,8 +804,21 @@ function CalendarBody() {
       childcare_arranged: form.childcare_arranged,
       room_not_needed: form.room_not_needed,
       leader_not_needed: form.leader_not_needed,
-      room_request_submitted: roomRequestSubmitted,
-      room_approval_received: roomApprovalReceived,
+      // Aggregate flags kept for legacy readers; per-room truth lives in event_rooms.
+      room_request_submitted: (() => {
+        const ids = form.room_ids.filter((id) => {
+          const r = rooms.find((rm) => rm.id === id);
+          return r && r.name.trim().toLowerCase() !== "office";
+        });
+        return ids.length > 0 && ids.every((id) => roomFlags[id]?.req);
+      })(),
+      room_approval_received: (() => {
+        const ids = form.room_ids.filter((id) => {
+          const r = rooms.find((rm) => rm.id === id);
+          return r && r.name.trim().toLowerCase() !== "office";
+        });
+        return ids.length > 0 && ids.every((id) => roomFlags[id]?.app);
+      })(),
       class_series_id: form.class_series_id || null,
     };
     const result = form.id
@@ -804,7 +829,12 @@ function CalendarBody() {
     if (savedId) {
       await supabase.from("event_rooms").delete().eq("event_id", savedId);
       if (form.room_ids.length > 0) {
-        await supabase.from("event_rooms").insert(form.room_ids.map((rid) => ({ event_id: savedId, room_id: rid })));
+        await supabase.from("event_rooms").insert(form.room_ids.map((rid) => ({
+          event_id: savedId,
+          room_id: rid,
+          request_submitted: !!roomFlags[rid]?.req,
+          approval_received: !!roomFlags[rid]?.app,
+        })) as any);
       }
       // Reconcile listing-channel checklist items with currently-enabled toggles
       const enabledChannels: string[] = [
@@ -922,8 +952,20 @@ function CalendarBody() {
       childcare_arranged: form.childcare_arranged,
       room_not_needed: form.room_not_needed,
       leader_not_needed: form.leader_not_needed,
-      room_request_submitted: roomRequestSubmitted,
-      room_approval_received: roomApprovalReceived,
+      room_request_submitted: (() => {
+        const ids = form.room_ids.filter((id) => {
+          const r = rooms.find((rm) => rm.id === id);
+          return r && r.name.trim().toLowerCase() !== "office";
+        });
+        return ids.length > 0 && ids.every((id) => roomFlags[id]?.req);
+      })(),
+      room_approval_received: (() => {
+        const ids = form.room_ids.filter((id) => {
+          const r = rooms.find((rm) => rm.id === id);
+          return r && r.name.trim().toLowerCase() !== "office";
+        });
+        return ids.length > 0 && ids.every((id) => roomFlags[id]?.app);
+      })(),
     });
     if (insertErr) { toast.error(insertErr.message); return; }
     // 2) Add original occurrence date to excluded_dates on the series
@@ -1253,11 +1295,11 @@ function CalendarBody() {
                 const tplItems = allTemplateItems.filter((i) => eventTemplateIds.includes(i.template_id));
                 const tplTotal = tplItems.length;
                 const tplDone = tplItems.filter((i) => templateStates[`${i.id}:${dateKey}`]).length;
-                 const nonOfficeSelected = form.room_ids.some((id) => {
+                 const nonOfficeIds = form.room_ids.filter((id) => {
                    const r = rooms.find((rm) => rm.id === id);
                    return r && r.name.trim().toLowerCase() !== "office";
                  });
-                 const roomConfirmed = !nonOfficeSelected || (roomRequestSubmitted && roomApprovalReceived);
+                 const roomConfirmed = nonOfficeIds.length === 0 || nonOfficeIds.every((id) => roomFlags[id]?.req && roomFlags[id]?.app);
                  const has_room = roomConfirmed && (form.room_ids.length > 0 || form.room_needed.trim().length > 0);
                  const r = scoreEvent({
                    category: form.category,
@@ -1396,10 +1438,9 @@ function CalendarBody() {
                 <Label>Location</Label>
                 <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
                 {rooms.length > 0 && (() => {
-                  const nonOfficeSelected = form.room_ids.some((id) => {
-                    const r = rooms.find((rm) => rm.id === id);
-                    return r && r.name.trim().toLowerCase() !== "office";
-                  });
+                  const nonOfficeSelectedRooms = form.room_ids
+                    .map((id) => rooms.find((rm) => rm.id === id))
+                    .filter((r): r is Room => !!r && r.name.trim().toLowerCase() !== "office");
                   return (
                     <div className="space-y-2 pt-2">
                       <Label className="text-xs">Rooms</Label>
@@ -1413,8 +1454,16 @@ function CalendarBody() {
                               onClick={() => {
                                 if (on) {
                                   setForm({ ...form, room_ids: form.room_ids.filter((x) => x !== r.id) });
+                                  setRoomFlags((prev) => {
+                                    const next = { ...prev };
+                                    delete next[r.id];
+                                    return next;
+                                  });
                                 } else {
                                   setForm({ ...form, room_ids: [...form.room_ids, r.id] });
+                                  setRoomFlags((prev) =>
+                                    prev[r.id] ? prev : { ...prev, [r.id]: { req: false, app: false } },
+                                  );
                                 }
                               }}
                               className={`text-xs px-2.5 py-1 rounded-full border transition ${
@@ -1424,22 +1473,40 @@ function CalendarBody() {
                           );
                         })}
                       </div>
-                      {nonOfficeSelected && (
-                        <div className="space-y-1.5 pt-2 pl-1">
-                          <label className="flex items-center gap-2 text-xs">
-                            <Checkbox
-                              checked={roomRequestSubmitted}
-                              onCheckedChange={(v) => setRoomRequestSubmitted(v === true)}
-                            />
-                            Room request submitted
-                          </label>
-                          <label className="flex items-center gap-2 text-xs">
-                            <Checkbox
-                              checked={roomApprovalReceived}
-                              onCheckedChange={(v) => setRoomApprovalReceived(v === true)}
-                            />
-                            Approval received
-                          </label>
+                      {nonOfficeSelectedRooms.length > 0 && (
+                        <div className="space-y-2 pt-2">
+                          {nonOfficeSelectedRooms.map((r) => {
+                            const f = roomFlags[r.id] ?? { req: false, app: false };
+                            return (
+                              <div key={r.id} className="rounded-md border border-border/60 p-2 space-y-1.5">
+                                <div className="text-xs font-medium">{r.name}</div>
+                                <label className="flex items-center gap-2 text-xs">
+                                  <Checkbox
+                                    checked={f.req}
+                                    onCheckedChange={(v) =>
+                                      setRoomFlags((prev) => ({
+                                        ...prev,
+                                        [r.id]: { ...(prev[r.id] ?? { req: false, app: false }), req: v === true },
+                                      }))
+                                    }
+                                  />
+                                  Room request submitted
+                                </label>
+                                <label className="flex items-center gap-2 text-xs">
+                                  <Checkbox
+                                    checked={f.app}
+                                    onCheckedChange={(v) =>
+                                      setRoomFlags((prev) => ({
+                                        ...prev,
+                                        [r.id]: { ...(prev[r.id] ?? { req: false, app: false }), app: v === true },
+                                      }))
+                                    }
+                                  />
+                                  Approval received
+                                </label>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                       <label className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
