@@ -64,24 +64,25 @@ function personName(p: any): string | null {
 function buildFields(
   submission: any,
   included: IncludedMap,
+  fieldMap: Map<string, { label: string; sequence: number }>,
 ): FormSubmissionField[] {
   const valueRels = submission.relationships?.form_submission_values?.data ?? [];
-  // Group by form_field id since multi-select questions can produce multiple value rows
   const grouped = new Map<string, { label: string; sequence: number; values: string[] }>();
   for (const ref of valueRels) {
     const valNode = included.get(`${ref.type}:${ref.id}`);
     if (!valNode) continue;
     const fieldRef = valNode.relationships?.form_field?.data;
-    const fieldNode = fieldRef ? included.get(`${fieldRef.type}:${fieldRef.id}`) : null;
-    const label = fieldNode?.attributes?.label ?? fieldNode?.attributes?.description ?? "Field";
-    const sequence = Number(fieldNode?.attributes?.sequence ?? 0);
-    const attrs = valNode.attributes ?? {};
-    const display =
-      attrs.display_value ??
-      attrs.response ??
-      attrs.value ??
-      "";
     const fieldId = fieldRef?.id ?? `_v:${ref.id}`;
+    const fromMap = fieldRef ? fieldMap.get(String(fieldRef.id)) : undefined;
+    const fieldNode = fieldRef ? included.get(`${fieldRef.type}:${fieldRef.id}`) : null;
+    const label =
+      fromMap?.label ??
+      fieldNode?.attributes?.label ??
+      fieldNode?.attributes?.description ??
+      "Field";
+    const sequence = Number(fromMap?.sequence ?? fieldNode?.attributes?.sequence ?? 0);
+    const attrs = valNode.attributes ?? {};
+    const display = attrs.display_value ?? attrs.response ?? attrs.value ?? "";
     const cur = grouped.get(fieldId) ?? { label, sequence, values: [] as string[] };
     if (display !== null && display !== undefined && String(display).length > 0) {
       cur.values.push(String(display));
@@ -89,23 +90,42 @@ function buildFields(
     grouped.set(fieldId, cur);
   }
   return Array.from(grouped.values())
-    .map((g) => ({
-      label: g.label,
-      sequence: g.sequence,
-      value: g.values.join(", "),
-    }))
+    .map((g) => ({ label: g.label, sequence: g.sequence, value: g.values.join(", ") }))
     .sort((a, b) => a.sequence - b.sequence);
+}
+
+async function loadFormFieldMap(
+  formId: string,
+): Promise<Map<string, { label: string; sequence: number }>> {
+  const map = new Map<string, { label: string; sequence: number }>();
+  let next: string | null = `/forms/${formId}/form_fields?per_page=100`;
+  let pages = 0;
+  while (next && pages < 5) {
+    pages += 1;
+    try {
+      const json: any = await pcoFetch(next);
+      for (const f of json.data ?? []) {
+        const a = f.attributes ?? {};
+        map.set(String(f.id), {
+          label: a.label || a.description || "Field",
+          sequence: Number(a.sequence ?? 0),
+        });
+      }
+      next = json.links?.next ?? null;
+    } catch {
+      next = null;
+    }
+  }
+  return map;
 }
 
 export async function listFormSubmissions(
   formId: string,
   sinceIso: string,
 ): Promise<FormSubmission[]> {
-  // PCO's `where[created_at][gte]` filter is unreliable on form_submissions in
-  // some accounts (returns 0 even when submissions exist). Fetch newest first
-  // and filter client-side, stopping once we cross the cutoff.
   const sinceMs = Date.parse(sinceIso);
   const out: FormSubmission[] = [];
+  const fieldMap = await loadFormFieldMap(formId);
   const params = new URLSearchParams({
     include: "person,form_submission_values.form_field",
     order: "-created_at",
@@ -121,7 +141,6 @@ export async function listFormSubmissions(
       const createdAt: string = sub.attributes?.created_at ?? "";
       const createdMs = createdAt ? Date.parse(createdAt) : NaN;
       if (!isNaN(createdMs) && !isNaN(sinceMs) && createdMs < sinceMs) {
-        // Results are ordered newest-first; once we drop below the cutoff we are done.
         next = null;
         break outer;
       }
@@ -133,7 +152,7 @@ export async function listFormSubmissions(
         person: personNode
           ? { id: String(personNode.id), name: personName(personNode) ?? "Unknown" }
           : null,
-        fields: buildFields(sub, included),
+        fields: buildFields(sub, included, fieldMap),
       });
     }
     next = json.links?.next ?? null;
