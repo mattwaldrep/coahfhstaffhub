@@ -882,19 +882,24 @@ function SlotRow({
           <Input
             value={eventSearch}
             onChange={(e) => setEventSearch(e.target.value)}
-            placeholder="Search calendar events…"
+            placeholder="Search upcoming events…"
             className="h-8 text-sm"
           />
-          {eventResults.length > 0 && (
+          {eventResults.length === 0 ? (
+            <div className="text-xs text-muted-foreground px-1">No upcoming events found.</div>
+          ) : (
             <ul className="border border-border rounded-md divide-y divide-border max-h-48 overflow-auto">
               {eventResults.map((ev) => (
                 <li key={ev.id}>
                   <button
                     type="button"
-                    className="w-full text-left text-sm px-2.5 py-1.5 hover:bg-muted truncate"
-                    onClick={() => setPickedEvent(ev)}
+                    className="w-full text-left text-sm px-2.5 py-1.5 hover:bg-muted flex items-center justify-between gap-2"
+                    onClick={() => setPickedEvent({ id: ev.id, title: ev.title })}
                   >
-                    {ev.title}
+                    <span className="truncate">{ev.title}</span>
+                    <span className="text-[11px] font-mono text-muted-foreground shrink-0">
+                      {format(new Date(ev.start_at), "EEE MMM d")}
+                    </span>
                   </button>
                 </li>
               ))}
