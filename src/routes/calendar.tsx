@@ -1295,11 +1295,11 @@ function CalendarBody() {
                 const tplItems = allTemplateItems.filter((i) => eventTemplateIds.includes(i.template_id));
                 const tplTotal = tplItems.length;
                 const tplDone = tplItems.filter((i) => templateStates[`${i.id}:${dateKey}`]).length;
-                 const nonOfficeSelected = form.room_ids.some((id) => {
+                 const nonOfficeIds = form.room_ids.filter((id) => {
                    const r = rooms.find((rm) => rm.id === id);
                    return r && r.name.trim().toLowerCase() !== "office";
                  });
-                 const roomConfirmed = !nonOfficeSelected || (roomRequestSubmitted && roomApprovalReceived);
+                 const roomConfirmed = nonOfficeIds.length === 0 || nonOfficeIds.every((id) => roomFlags[id]?.req && roomFlags[id]?.app);
                  const has_room = roomConfirmed && (form.room_ids.length > 0 || form.room_needed.trim().length > 0);
                  const r = scoreEvent({
                    category: form.category,
