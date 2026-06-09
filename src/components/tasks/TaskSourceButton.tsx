@@ -74,7 +74,7 @@ export function TaskSourceButton({ actionItemId, className }: Props) {
             </div>
             {source.href && (
               <Link
-                to={source.href}
+                to={source.href as string}
                 search={source.hrefSearch ?? undefined}
                 className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                 onClick={() => setOpen(false)}
