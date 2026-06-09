@@ -109,25 +109,25 @@ export const getTaskSource = createServerFn({ method: "POST" })
     if (item.source_onboarding_task_id) {
       const { data: ot } = await supabaseAdmin
         .from("onboarding_tasks")
-        .select("title,workflow_id")
+        .select("task_name,workflow_id")
         .eq("id", item.source_onboarding_task_id)
         .maybeSingle();
       let workflowName: string | null = null;
       if (ot?.workflow_id) {
         const { data: wf } = await supabaseAdmin
           .from("onboarding_workflows")
-          .select("name")
+          .select("new_hire_name")
           .eq("id", ot.workflow_id)
           .maybeSingle();
-        workflowName = wf?.name ?? null;
+        workflowName = wf?.new_hire_name ?? null;
       }
       return {
         ...base,
         kind: "onboarding_task",
         label: "Onboarding workflow",
         detail: workflowName
-          ? `${workflowName} — ${ot?.title ?? ""}`.trim()
-          : ot?.title ?? null,
+          ? `${workflowName} — ${ot?.task_name ?? ""}`.trim()
+          : ot?.task_name ?? null,
         href: ot?.workflow_id ? `/onboarding/${ot.workflow_id}` : null,
       };
     }
@@ -135,14 +135,14 @@ export const getTaskSource = createServerFn({ method: "POST" })
     if (item.source_workflow_id) {
       const { data: wf } = await supabaseAdmin
         .from("onboarding_workflows")
-        .select("name")
+        .select("new_hire_name")
         .eq("id", item.source_workflow_id)
         .maybeSingle();
       return {
         ...base,
         kind: "onboarding_workflow",
         label: "Onboarding workflow",
-        detail: wf?.name ?? null,
+        detail: wf?.new_hire_name ?? null,
         href: `/onboarding/${item.source_workflow_id}`,
       };
     }
