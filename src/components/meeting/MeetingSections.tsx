@@ -364,11 +364,11 @@ function EventList({
     (async () => {
       const { data } = await supabase
         .from("calendar_events")
-        .select("id,title,start_at,end_at,sub_calendar,leader_name,category,all_day,rrule,excluded_dates")
+        .select("id,title,start_at,end_at,sub_calendar,leader_name,category,all_day,rrule,excluded_dates,readiness")
         .or(
           `and(start_at.gte.${rangeStart.toISOString()},start_at.lte.${rangeEnd.toISOString()}),rrule.not.is.null`,
         );
-      setEvents((data ?? []) as EventRowLike[]);
+      setEvents((data ?? []) as EventRow[]);
 
       const { data: notes } = await supabase
         .from("meeting_event_notes")
