@@ -26,11 +26,14 @@ export type SundayOpsIssue = {
   image_url: string | null;
 };
 
-async function callOps(url: string, serviceDate: string) {
+async function callOps(rawUrl: string, serviceDate: string) {
   const secret = process.env.STAFF_HUB_SHARED_SECRET;
   if (!secret) throw new Error("STAFF_HUB_SHARED_SECRET not configured");
-  const full = `${url}${url.includes("?") ? "&" : "?"}date=${encodeURIComponent(serviceDate)}`;
-  const res = await fetch(full, {
+  // Strip any pre-existing `date` param (the secret may include a `?date=YYYY-MM-DD` placeholder)
+  const u = new URL(rawUrl);
+  u.searchParams.delete("date");
+  u.searchParams.set("date", serviceDate);
+  const res = await fetch(u.toString(), {
     method: "GET",
     headers: { "x-shared-secret": secret },
   });
