@@ -341,7 +341,8 @@ function EventList({
   showCategoryFilter?: boolean;
   filterStorageKey?: string;
 }) {
-  const [events, setEvents] = useState<EventRowLike[]>([]);
+  type EventRow = EventRowLike & { readiness?: "green" | "yellow" | "red" | null };
+  const [events, setEvents] = useState<EventRow[]>([]);
   const [eventNotes, setEventNotes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [excluded, setExcluded] = useState<Set<string>>(() => {
