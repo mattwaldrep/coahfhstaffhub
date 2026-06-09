@@ -82,7 +82,7 @@ function buildFields(
       attrs.value ??
       "";
     const fieldId = fieldRef?.id ?? `_v:${ref.id}`;
-    const cur = grouped.get(fieldId) ?? { label, sequence, values: [] };
+    const cur = grouped.get(fieldId) ?? { label, sequence, values: [] as string[] };
     if (display !== null && display !== undefined && String(display).length > 0) {
       cur.values.push(String(display));
     }
