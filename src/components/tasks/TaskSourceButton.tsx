@@ -12,6 +12,15 @@ interface Props {
   className?: string;
 }
 
+function buildHref(href: string, search?: Record<string, string> | null) {
+  if (!search || Object.keys(search).length === 0) return href;
+  const params = new URLSearchParams(search);
+  return `${href}?${params.toString()}`;
+}
+  actionItemId: string;
+  className?: string;
+}
+
 export function TaskSourceButton({ actionItemId, className }: Props) {
   const [open, setOpen] = useState(false);
   const [source, setSource] = useState<TaskSource | null>(null);
