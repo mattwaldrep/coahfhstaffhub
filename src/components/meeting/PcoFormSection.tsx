@@ -1,4 +1,3 @@
-import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLink, Loader2, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
@@ -22,10 +21,9 @@ export function PcoFormSection({
   subtitle: string;
   fetcher: Fetcher;
 }) {
-  const run = useServerFn(fetcher as any) as unknown as Fetcher;
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["pco-form-submissions", sectionKey, meetingId],
-    queryFn: () => run({ data: { meetingId } }),
+    queryFn: () => fetcher({ data: { meetingId } }),
     staleTime: 60_000,
   });
 
