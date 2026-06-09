@@ -764,7 +764,7 @@ function SlotRow({
   const [mode, setMode] = useState<"text" | "event">("text");
   const [textValue, setTextValue] = useState(row?.text_label ?? "");
   const [eventSearch, setEventSearch] = useState("");
-  const [eventResults, setEventResults] = useState<Array<{ id: string; title: string }>>([]);
+  const [eventResults, setEventResults] = useState<Array<{ id: string; title: string; start_at: string }>>([]);
   const [pickedEvent, setPickedEvent] = useState<{ id: string; title: string } | null>(null);
 
   useEffect(() => {
