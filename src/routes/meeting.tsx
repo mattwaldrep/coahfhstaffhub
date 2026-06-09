@@ -616,26 +616,24 @@ function buildSectionBlocks(p: SortableBodyProps): SectionBlock[] {
     {
       id: "first-step-cards",
       node: (
-        <LinkSection
+        <PcoFormSection
           meetingId={meeting.id}
           sectionKey="first_step_cards"
           title="First Step Cards"
-          subtitle="Review new submissions in PCO."
-          href="https://people.planningcenteronline.com/forms/161115"
-          linkLabel="Open First Step form in PCO"
+          subtitle="New First Step form submissions since the last meeting."
+          fetcher={listFirstStepSubmissions}
         />
       ),
     },
     {
       id: "next-step-cards",
       node: (
-        <LinkSection
+        <PcoFormSection
           meetingId={meeting.id}
           sectionKey="next_step_cards"
           title="Next Step Cards"
-          subtitle="Review next-step submissions in PCO."
-          href="https://people.planningcenteronline.com/forms/433638"
-          linkLabel="Open Next Step form in PCO"
+          subtitle="New Next Step form submissions since the last meeting."
+          fetcher={listNextStepSubmissions}
         />
       ),
     },
