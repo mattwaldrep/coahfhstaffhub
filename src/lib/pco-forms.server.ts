@@ -126,6 +126,7 @@ export async function listFormSubmissions(
   const sinceMs = Date.parse(sinceIso);
   const out: FormSubmission[] = [];
   const fieldMap = await loadFormFieldMap(formId);
+  console.log(`[pco-forms] form ${formId} fieldMap size=${fieldMap.size}`, Array.from(fieldMap.entries()).slice(0, 3));
   const params = new URLSearchParams({
     include: "person,form_submission_values.form_field",
     order: "-created_at",
@@ -133,10 +134,21 @@ export async function listFormSubmissions(
   });
   let next: string | null = `/forms/${formId}/form_submissions?${params.toString()}`;
   let pages = 0;
+  let logged = false;
   outer: while (next && pages < 10) {
     pages += 1;
     const json: any = await pcoFetch(next);
     const included = indexIncluded(json.included ?? []);
+    if (!logged && json.data?.length) {
+      logged = true;
+      const sample = json.data[0];
+      const valueRels = sample.relationships?.form_submission_values?.data ?? [];
+      const firstVal = valueRels[0] ? included.get(`${valueRels[0].type}:${valueRels[0].id}`) : null;
+      console.log(`[pco-forms] form ${formId} sub ${sample.id} valueRels=${valueRels.length}`);
+      console.log(`[pco-forms] firstVal rels:`, JSON.stringify(firstVal?.relationships ?? null).slice(0, 400));
+      console.log(`[pco-forms] firstVal attrs:`, JSON.stringify(firstVal?.attributes ?? null).slice(0, 300));
+      console.log(`[pco-forms] included types:`, Array.from(new Set((json.included ?? []).map((i: any) => i.type))));
+    }
     for (const sub of json.data ?? []) {
       const createdAt: string = sub.attributes?.created_at ?? "";
       const createdMs = createdAt ? Date.parse(createdAt) : NaN;
