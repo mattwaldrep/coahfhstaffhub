@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { listFormSubmissions, type FormSubmission } from "@/server/pco-forms.server";
+import { listFormSubmissions, type FormSubmission } from "./pco-forms.server";
 
 const FIRST_STEP_FORM_ID = "161115";
 const NEXT_STEP_FORM_ID = "433638";
