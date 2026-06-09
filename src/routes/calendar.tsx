@@ -575,7 +575,7 @@ function CalendarBody() {
         .select("*")
         .or(`and(start_at.gte.${range.start.toISOString()},start_at.lte.${range.end.toISOString()}),rrule.not.is.null`)
         .order("start_at", { ascending: true }),
-      supabase.from("event_rooms").select("event_id, room_id"),
+      supabase.from("event_rooms").select("event_id, room_id, request_submitted, approval_received"),
       supabase.from("class_series").select("id, name, default_leader_name, default_teacher_name, default_childcare_needed, default_room_id").eq("active", true).order("name"),
       supabase.from("rooms").select("id, name").eq("active", true).order("name"),
       supabase.from("checklist_templates" as any).select("*").order("name"),
@@ -585,12 +585,17 @@ function CalendarBody() {
     ]);
     setEvents(data ?? []);
     const map = new Map<string, string[]>();
-    for (const row of er ?? []) {
+    const flagsMap = new Map<string, Map<string, { req: boolean; app: boolean }>>();
+    for (const row of (er ?? []) as Array<{ event_id: string; room_id: string; request_submitted?: boolean; approval_received?: boolean }>) {
       const arr = map.get(row.event_id) ?? [];
       arr.push(row.room_id);
       map.set(row.event_id, arr);
+      const inner = flagsMap.get(row.event_id) ?? new Map<string, { req: boolean; app: boolean }>();
+      inner.set(row.room_id, { req: !!row.request_submitted, app: !!row.approval_received });
+      flagsMap.set(row.event_id, inner);
     }
     eventRoomsMap.current = map;
+    eventRoomFlagsMap.current = flagsMap;
     setClassSeries((cs ?? []) as ClassSeries[]);
     setRooms((rs ?? []) as Room[]);
     setAllTemplates(((tpls ?? []) as unknown) as ChecklistTemplate[]);
