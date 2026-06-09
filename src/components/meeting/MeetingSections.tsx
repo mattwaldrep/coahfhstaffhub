@@ -781,15 +781,17 @@ function SlotRow({
     let mounted = true;
     (async () => {
       const q = eventSearch.trim();
+      const nowIso = new Date().toISOString();
       let query = supabase
         .from("calendar_events")
         .select("id, title, start_at")
+        .gte("start_at", nowIso)
         .order("start_at", { ascending: true })
-        .limit(10);
+        .limit(25);
       if (q) query = query.ilike("title", `%${q}%`);
       const { data } = await query;
       if (!mounted) return;
-      setEventResults(((data ?? []) as Array<{ id: string; title: string }>));
+      setEventResults(((data ?? []) as Array<{ id: string; title: string; start_at: string }>));
     })();
     return () => { mounted = false; };
   }, [editing, mode, eventSearch]);
