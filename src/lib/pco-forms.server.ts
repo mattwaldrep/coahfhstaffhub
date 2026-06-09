@@ -140,3 +140,41 @@ export async function listFormSubmissions(
   }
   return out;
 }
+
+// ---- helpers used by pco-forms.functions.ts handlers ----
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+export const FIRST_STEP_FORM_ID = "161115";
+export const NEXT_STEP_FORM_ID = "433638";
+
+export async function assertMeetingRole(supabase: any, userId: string) {
+  const { data } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .in("role", ["core", "meeting"]);
+  if (!data || data.length === 0) throw new Error("Forbidden: meeting role required");
+}
+
+export async function resolveSince(meetingId: string): Promise<{ since: string; sinceLabel: string }> {
+  const { data: cur } = await supabaseAdmin
+    .from("meetings")
+    .select("meeting_date")
+    .eq("id", meetingId)
+    .maybeSingle();
+  const currentDate = (cur?.meeting_date as string) ?? new Date().toISOString().slice(0, 10);
+  const { data: prev } = await supabaseAdmin
+    .from("meetings")
+    .select("meeting_date")
+    .lt("meeting_date", currentDate)
+    .order("meeting_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (prev?.meeting_date) {
+    const iso = new Date(`${prev.meeting_date as string}T00:00:00Z`).toISOString();
+    return { since: iso, sinceLabel: prev.meeting_date as string };
+  }
+  const d = new Date(`${currentDate}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - 7);
+  return { since: d.toISOString(), sinceLabel: d.toISOString().slice(0, 10) };
+}
