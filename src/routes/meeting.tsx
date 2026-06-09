@@ -481,6 +481,8 @@ type SortableBodyProps = {
   meeting: Meeting;
   agenda: AgendaItem[];
   actions: ActionItem[];
+  fetchFirstStepSubmissions: (args: { data: { meetingId: string } }) => Promise<import("@/lib/pco-forms.functions").FormSubmissionsResponse>;
+  fetchNextStepSubmissions: (args: { data: { meetingId: string } }) => Promise<import("@/lib/pco-forms.functions").FormSubmissionsResponse>;
   newAgenda: string;
   setNewAgenda: (v: string) => void;
   addAgenda: () => void;
@@ -608,7 +610,7 @@ function SortableSection({
 type SectionBlock = { id: string; node: ReactNode; isDivider?: boolean };
 
 function buildSectionBlocks(p: SortableBodyProps): SectionBlock[] {
-  const { meeting, agenda, actions, notesDraft } = p;
+  const { meeting, agenda, actions, notesDraft, fetchFirstStepSubmissions, fetchNextStepSubmissions } = p;
   return [
     { id: "devotional", node: <DevotionalSection meetingId={meeting.id} /> },
     { id: "divider:recurring", isDivider: true, node: <SectionDivider label="Recurring Agenda Items" /> },
@@ -623,7 +625,7 @@ function buildSectionBlocks(p: SortableBodyProps): SectionBlock[] {
           sectionKey="first_step_cards"
           title="First Step Cards"
           subtitle="New First Step form submissions since the last meeting."
-          fetcher={listFirstStepSubmissions}
+          fetcher={fetchFirstStepSubmissions}
         />
       ),
     },
@@ -635,7 +637,7 @@ function buildSectionBlocks(p: SortableBodyProps): SectionBlock[] {
           sectionKey="next_step_cards"
           title="Next Step Cards"
           subtitle="New Next Step form submissions since the last meeting."
-          fetcher={listNextStepSubmissions}
+          fetcher={fetchNextStepSubmissions}
         />
       ),
     },
