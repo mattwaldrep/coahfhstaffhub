@@ -98,17 +98,18 @@ async function loadFormFieldMap(
   formId: string,
 ): Promise<Map<string, { label: string; sequence: number }>> {
   const map = new Map<string, { label: string; sequence: number }>();
-  // Try the dedicated endpoint first, then fall back to including form_fields on the form.
   const tryPaths = [
     `/forms/${formId}/form_fields?per_page=100`,
     `/forms/${formId}?include=form_fields`,
+    `/forms/${formId}/form_submissions?include=form_submission_values.form_field&per_page=1`,
   ];
   for (const path of tryPaths) {
     try {
       const json: any = await pcoFetch(path);
-      const rows: any[] = Array.isArray(json.data)
+      const fromIncluded = (json.included ?? []).filter((n: any) => n.type === "FormField");
+      const rows: any[] = Array.isArray(json.data) && json.data[0]?.type === "FormField"
         ? json.data
-        : (json.included ?? []).filter((n: any) => n.type === "FormField");
+        : fromIncluded;
       for (const f of rows) {
         const a = f.attributes ?? {};
         map.set(String(f.id), {
@@ -116,6 +117,7 @@ async function loadFormFieldMap(
           sequence: Number(a.sequence ?? 0),
         });
       }
+      console.log(`[pco-forms] loadFormFieldMap(${formId}) ${path} -> ${rows.length} fields, included types: ${Array.from(new Set((json.included ?? []).map((i: any) => i.type)))}`);
       if (map.size > 0) break;
     } catch (e: any) {
       console.error(`[pco-forms] loadFormFieldMap(${formId}) ${path} failed:`, e?.message);
