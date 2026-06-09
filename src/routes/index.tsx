@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { NextBestAction } from "@/components/dashboard/NextBestAction";
 import { CongregationPulse } from "@/components/dashboard/CongregationPulse";
 import { PastoralAttentionCard } from "@/components/dashboard/PastoralAttentionCard";
+import { TaskSourceButton } from "@/components/tasks/TaskSourceButton";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
