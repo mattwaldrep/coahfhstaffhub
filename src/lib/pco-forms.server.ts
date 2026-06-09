@@ -112,7 +112,8 @@ async function loadFormFieldMap(
         });
       }
       next = json.links?.next ?? null;
-    } catch {
+    } catch (e: any) {
+      console.error(`[pco-forms] loadFormFieldMap(${formId}) failed:`, e?.message);
       next = null;
     }
   }
