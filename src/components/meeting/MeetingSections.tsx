@@ -764,7 +764,7 @@ function SlotRow({
   const [mode, setMode] = useState<"text" | "event">("text");
   const [textValue, setTextValue] = useState(row?.text_label ?? "");
   const [eventSearch, setEventSearch] = useState("");
-  const [eventResults, setEventResults] = useState<Array<{ id: string; title: string }>>([]);
+  const [eventResults, setEventResults] = useState<Array<{ id: string; title: string; start_at: string }>>([]);
   const [pickedEvent, setPickedEvent] = useState<{ id: string; title: string } | null>(null);
 
   useEffect(() => {
@@ -781,15 +781,17 @@ function SlotRow({
     let mounted = true;
     (async () => {
       const q = eventSearch.trim();
+      const nowIso = new Date().toISOString();
       let query = supabase
         .from("calendar_events")
         .select("id, title, start_at")
+        .gte("start_at", nowIso)
         .order("start_at", { ascending: true })
-        .limit(10);
+        .limit(25);
       if (q) query = query.ilike("title", `%${q}%`);
       const { data } = await query;
       if (!mounted) return;
-      setEventResults(((data ?? []) as Array<{ id: string; title: string }>));
+      setEventResults(((data ?? []) as Array<{ id: string; title: string; start_at: string }>));
     })();
     return () => { mounted = false; };
   }, [editing, mode, eventSearch]);
@@ -880,19 +882,24 @@ function SlotRow({
           <Input
             value={eventSearch}
             onChange={(e) => setEventSearch(e.target.value)}
-            placeholder="Search calendar events…"
+            placeholder="Search upcoming events…"
             className="h-8 text-sm"
           />
-          {eventResults.length > 0 && (
+          {eventResults.length === 0 ? (
+            <div className="text-xs text-muted-foreground px-1">No upcoming events found.</div>
+          ) : (
             <ul className="border border-border rounded-md divide-y divide-border max-h-48 overflow-auto">
               {eventResults.map((ev) => (
                 <li key={ev.id}>
                   <button
                     type="button"
-                    className="w-full text-left text-sm px-2.5 py-1.5 hover:bg-muted truncate"
-                    onClick={() => setPickedEvent(ev)}
+                    className="w-full text-left text-sm px-2.5 py-1.5 hover:bg-muted flex items-center justify-between gap-2"
+                    onClick={() => setPickedEvent({ id: ev.id, title: ev.title })}
                   >
-                    {ev.title}
+                    <span className="truncate">{ev.title}</span>
+                    <span className="text-[11px] font-mono text-muted-foreground shrink-0">
+                      {format(new Date(ev.start_at), "EEE MMM d")}
+                    </span>
                   </button>
                 </li>
               ))}
