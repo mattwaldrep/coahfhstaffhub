@@ -29,6 +29,7 @@ import {
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { pushActionItemToGoogleTasks, pushActionItemsBulk, autoPushIfEnabled } from "@/lib/google-tasks.functions";
+import { TaskSourceButton } from "@/components/tasks/TaskSourceButton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -1410,7 +1411,10 @@ export function ReviewTasksSection() {
                         title="Mark complete"
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm">{a.title}</div>
+                        <div className="text-sm flex items-center gap-1.5">
+                          <span className="truncate">{a.title}</span>
+                          <TaskSourceButton actionItemId={a.id} />
+                        </div>
                         <div className="mt-0.5">
                           <DueDatePicker value={a.due_date} onChange={(d) => setDue(a.id, d)} />
                         </div>
