@@ -1438,10 +1438,9 @@ function CalendarBody() {
                 <Label>Location</Label>
                 <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
                 {rooms.length > 0 && (() => {
-                  const nonOfficeSelected = form.room_ids.some((id) => {
-                    const r = rooms.find((rm) => rm.id === id);
-                    return r && r.name.trim().toLowerCase() !== "office";
-                  });
+                  const nonOfficeSelectedRooms = form.room_ids
+                    .map((id) => rooms.find((rm) => rm.id === id))
+                    .filter((r): r is Room => !!r && r.name.trim().toLowerCase() !== "office");
                   return (
                     <div className="space-y-2 pt-2">
                       <Label className="text-xs">Rooms</Label>
@@ -1455,8 +1454,16 @@ function CalendarBody() {
                               onClick={() => {
                                 if (on) {
                                   setForm({ ...form, room_ids: form.room_ids.filter((x) => x !== r.id) });
+                                  setRoomFlags((prev) => {
+                                    const next = { ...prev };
+                                    delete next[r.id];
+                                    return next;
+                                  });
                                 } else {
                                   setForm({ ...form, room_ids: [...form.room_ids, r.id] });
+                                  setRoomFlags((prev) =>
+                                    prev[r.id] ? prev : { ...prev, [r.id]: { req: false, app: false } },
+                                  );
                                 }
                               }}
                               className={`text-xs px-2.5 py-1 rounded-full border transition ${
@@ -1466,22 +1473,40 @@ function CalendarBody() {
                           );
                         })}
                       </div>
-                      {nonOfficeSelected && (
-                        <div className="space-y-1.5 pt-2 pl-1">
-                          <label className="flex items-center gap-2 text-xs">
-                            <Checkbox
-                              checked={roomRequestSubmitted}
-                              onCheckedChange={(v) => setRoomRequestSubmitted(v === true)}
-                            />
-                            Room request submitted
-                          </label>
-                          <label className="flex items-center gap-2 text-xs">
-                            <Checkbox
-                              checked={roomApprovalReceived}
-                              onCheckedChange={(v) => setRoomApprovalReceived(v === true)}
-                            />
-                            Approval received
-                          </label>
+                      {nonOfficeSelectedRooms.length > 0 && (
+                        <div className="space-y-2 pt-2">
+                          {nonOfficeSelectedRooms.map((r) => {
+                            const f = roomFlags[r.id] ?? { req: false, app: false };
+                            return (
+                              <div key={r.id} className="rounded-md border border-border/60 p-2 space-y-1.5">
+                                <div className="text-xs font-medium">{r.name}</div>
+                                <label className="flex items-center gap-2 text-xs">
+                                  <Checkbox
+                                    checked={f.req}
+                                    onCheckedChange={(v) =>
+                                      setRoomFlags((prev) => ({
+                                        ...prev,
+                                        [r.id]: { ...(prev[r.id] ?? { req: false, app: false }), req: v === true },
+                                      }))
+                                    }
+                                  />
+                                  Room request submitted
+                                </label>
+                                <label className="flex items-center gap-2 text-xs">
+                                  <Checkbox
+                                    checked={f.app}
+                                    onCheckedChange={(v) =>
+                                      setRoomFlags((prev) => ({
+                                        ...prev,
+                                        [r.id]: { ...(prev[r.id] ?? { req: false, app: false }), app: v === true },
+                                      }))
+                                    }
+                                  />
+                                  Approval received
+                                </label>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                       <label className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
