@@ -471,14 +471,17 @@ function CalendarBody() {
 
   function readinessFor(occ: Occurrence) {
     const roomIds = eventRoomsMap.current.get(occ.id) ?? [];
-    const nonOfficeSelected = roomIds.some((id) => {
+    const flagMap = eventRoomFlagsMap.current.get(occ.id) ?? new Map<string, { req: boolean; app: boolean }>();
+    const nonOfficeIds = roomIds.filter((id) => {
       const r = rooms.find((rm) => rm.id === id);
       return r && r.name.toLowerCase() !== "office";
     });
     const roomConfirmed =
-      !nonOfficeSelected ||
-      (((occ as any).room_request_submitted ?? false) &&
-        ((occ as any).room_approval_received ?? false));
+      nonOfficeIds.length === 0 ||
+      nonOfficeIds.every((id) => {
+        const f = flagMap.get(id);
+        return !!f && f.req && f.app;
+      });
     const has_room =
       roomConfirmed && (roomIds.length > 0 || (occ.room_needed ?? "").trim().length > 0);
     const adHoc = eventChecklistMap.current.get(occ.id) ?? { total: 0, done: 0 };
