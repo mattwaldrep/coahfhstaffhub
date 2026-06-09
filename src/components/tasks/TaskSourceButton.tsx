@@ -17,9 +17,7 @@ function buildHref(href: string, search?: Record<string, string> | null) {
   const params = new URLSearchParams(search);
   return `${href}?${params.toString()}`;
 }
-  actionItemId: string;
-  className?: string;
-}
+
 
 export function TaskSourceButton({ actionItemId, className }: Props) {
   const [open, setOpen] = useState(false);
