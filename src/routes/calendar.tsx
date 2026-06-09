@@ -804,8 +804,21 @@ function CalendarBody() {
       childcare_arranged: form.childcare_arranged,
       room_not_needed: form.room_not_needed,
       leader_not_needed: form.leader_not_needed,
-      room_request_submitted: roomRequestSubmitted,
-      room_approval_received: roomApprovalReceived,
+      // Aggregate flags kept for legacy readers; per-room truth lives in event_rooms.
+      room_request_submitted: (() => {
+        const ids = form.room_ids.filter((id) => {
+          const r = rooms.find((rm) => rm.id === id);
+          return r && r.name.trim().toLowerCase() !== "office";
+        });
+        return ids.length > 0 && ids.every((id) => roomFlags[id]?.req);
+      })(),
+      room_approval_received: (() => {
+        const ids = form.room_ids.filter((id) => {
+          const r = rooms.find((rm) => rm.id === id);
+          return r && r.name.trim().toLowerCase() !== "office";
+        });
+        return ids.length > 0 && ids.every((id) => roomFlags[id]?.app);
+      })(),
       class_series_id: form.class_series_id || null,
     };
     const result = form.id
