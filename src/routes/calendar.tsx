@@ -667,8 +667,7 @@ function CalendarBody() {
     setChecklist([]);
     setEventTemplateIds([]);
     setTemplateStates({});
-    setRoomRequestSubmitted(false);
-    setRoomApprovalReceived(false);
+    setRoomFlags({});
     setSundaySlots({ sunday_announcement: [], ministry_highlight: [] });
     initialSundaySlots.current = { sunday_announcement: [], ministry_highlight: [] };
     setOpen(true);
