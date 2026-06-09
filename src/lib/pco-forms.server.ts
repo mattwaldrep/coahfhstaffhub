@@ -98,7 +98,7 @@ async function loadFormFieldMap(
   formId: string,
 ): Promise<Map<string, { label: string; sequence: number }>> {
   const map = new Map<string, { label: string; sequence: number }>();
-  let next: string | null = `/forms/${formId}/form_fields?per_page=100`;
+  let next: string | null = `/forms/${formId}/fields?per_page=100`;
   let pages = 0;
   while (next && pages < 5) {
     pages += 1;
@@ -112,7 +112,8 @@ async function loadFormFieldMap(
         });
       }
       next = json.links?.next ?? null;
-    } catch {
+    } catch (e: any) {
+      console.error(`[pco-forms] loadFormFieldMap(${formId}) failed:`, e?.message);
       next = null;
     }
   }
