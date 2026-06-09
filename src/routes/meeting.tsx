@@ -80,6 +80,8 @@ function todayISO() {
 
 function MeetingPage() {
   const { user } = useAuth();
+  const fetchFirstStepSubmissions = useServerFn(listFirstStepSubmissions);
+  const fetchNextStepSubmissions = useServerFn(listNextStepSubmissions);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [agenda, setAgenda] = useState<AgendaItem[]>([]);
   const [actions, setActions] = useState<ActionItem[]>([]);
@@ -389,6 +391,8 @@ function MeetingPage() {
             meeting={meeting}
             agenda={agenda}
             actions={actions}
+            fetchFirstStepSubmissions={fetchFirstStepSubmissions}
+            fetchNextStepSubmissions={fetchNextStepSubmissions}
             newAgenda={newAgenda}
             setNewAgenda={setNewAgenda}
             addAgenda={addAgenda}
