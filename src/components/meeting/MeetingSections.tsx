@@ -326,6 +326,11 @@ function avg(nums: (number | null)[]): number | null {
 
 /* ---------- 5. & 11. Events sections ---------- */
 
+function ReadinessDot({ r }: { r: "green" | "yellow" | "red" }) {
+  const color = r === "green" ? "bg-success" : r === "yellow" ? "bg-warning" : "bg-destructive";
+  return <span className={`inline-block w-1.5 h-1.5 rounded-full ${color}`} aria-label={`Readiness ${r}`} />;
+}
+
 function EventList({
   meetingId,
   rangeStart,
@@ -341,7 +346,8 @@ function EventList({
   showCategoryFilter?: boolean;
   filterStorageKey?: string;
 }) {
-  const [events, setEvents] = useState<EventRowLike[]>([]);
+  type EventRow = EventRowLike & { readiness?: "green" | "yellow" | "red" | null };
+  const [events, setEvents] = useState<EventRow[]>([]);
   const [eventNotes, setEventNotes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [excluded, setExcluded] = useState<Set<string>>(() => {
@@ -363,11 +369,11 @@ function EventList({
     (async () => {
       const { data } = await supabase
         .from("calendar_events")
-        .select("id,title,start_at,end_at,sub_calendar,leader_name,category,all_day,rrule,excluded_dates")
+        .select("id,title,start_at,end_at,sub_calendar,leader_name,category,all_day,rrule,excluded_dates,readiness")
         .or(
           `and(start_at.gte.${rangeStart.toISOString()},start_at.lte.${rangeEnd.toISOString()}),rrule.not.is.null`,
         );
-      setEvents((data ?? []) as EventRowLike[]);
+      setEvents((data ?? []) as EventRow[]);
 
       const { data: notes } = await supabase
         .from("meeting_event_notes")
@@ -502,7 +508,14 @@ function EventList({
                     {format(o.occurrence_date, "EEE MMM d")}
                     {!o.all_day && ` · ${format(o.occurrence_date, "h:mma").toLowerCase()}`}
                   </span>
-                  <span className="text-sm font-medium">{o.title}</span>
+                  <Link
+                    to="/calendar"
+                    search={{ event: o.id }}
+                    className="text-sm font-medium hover:underline inline-flex items-center gap-1.5"
+                  >
+                    <span>{o.title}</span>
+                    {o.readiness && <ReadinessDot r={o.readiness} />}
+                  </Link>
                   {o.leader_name && (
                     <span className="text-xs text-muted-foreground">— {o.leader_name}</span>
                   )}
