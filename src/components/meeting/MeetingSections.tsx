@@ -503,7 +503,14 @@ function EventList({
                     {format(o.occurrence_date, "EEE MMM d")}
                     {!o.all_day && ` · ${format(o.occurrence_date, "h:mma").toLowerCase()}`}
                   </span>
-                  <span className="text-sm font-medium">{o.title}</span>
+                  <Link
+                    to="/calendar"
+                    search={{ event: o.id }}
+                    className="text-sm font-medium hover:underline inline-flex items-center gap-1.5"
+                  >
+                    <span>{o.title}</span>
+                    {o.readiness && <ReadinessDot r={o.readiness} />}
+                  </Link>
                   {o.leader_name && (
                     <span className="text-xs text-muted-foreground">— {o.leader_name}</span>
                   )}
