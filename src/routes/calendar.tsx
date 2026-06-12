@@ -71,6 +71,11 @@ import {
   setChecklistItemDone,
 } from "@/lib/checklist-tasks.functions";
 import { notifyCommentMentions } from "@/lib/event-comments.functions";
+import {
+  listEventCategories,
+  addEventCategory,
+  deleteEventCategory,
+} from "@/lib/event-categories.functions";
 
 import { toast } from "sonner";
 import { useUndoableAction } from "@/lib/use-undoable-action";
@@ -93,7 +98,7 @@ const SUB_CALS = [
   { value: "general", label: "General", color: "var(--cal-general)" },
 ];
 
-const CATEGORIES = [
+const DEFAULT_CATEGORIES = [
   "Holiday", "Leadership", "Women", "Men", "Class", "Social",
   "Kids/Youth", "Liturgical", "Meeting", "Church Plant",
   "Community Group", "Love DOT", "Prayer", "Core Team", "Other",
