@@ -435,6 +435,25 @@ function CalendarBody() {
   );
   const [categoryFilter, setCategoryFilter] = useState<string>(loadedPrefs?.categoryFilter ?? "all");
   const [flagFilter, setFlagFilter] = useState<"all" | "pco" | "missions">(loadedPrefs?.flagFilter ?? "all");
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>(
+    DEFAULT_CATEGORIES.map((n) => ({ id: n, name: n })),
+  );
+  const [manageCatOpen, setManageCatOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const fetchCategories = useServerFn(listEventCategories);
+  const addCategoryFn = useServerFn(addEventCategory);
+  const deleteCategoryFn = useServerFn(deleteEventCategory);
+  const reloadCategories = async () => {
+    try {
+      const rows = await fetchCategories();
+      if (Array.isArray(rows) && rows.length > 0) {
+        setCategories(rows.map((r: any) => ({ id: r.id, name: r.name })));
+      }
+    } catch (e) {
+      console.error("loadCategories", e);
+    }
+  };
+  useEffect(() => { reloadCategories(); }, []);
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
