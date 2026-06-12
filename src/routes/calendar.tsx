@@ -1275,9 +1275,14 @@ function CalendarBody() {
             <SelectTrigger className="h-8 w-[10rem] text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All categories</SelectItem>
-              {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              {categories.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
+          {canEdit && (
+            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setManageCatOpen(true)}>
+              Manage
+            </Button>
+          )}
           <Select value={flagFilter} onValueChange={(v) => setFlagFilter(v as typeof flagFilter)}>
             <SelectTrigger className="h-8 w-[10rem] text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
