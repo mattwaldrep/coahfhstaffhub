@@ -71,6 +71,11 @@ import {
   setChecklistItemDone,
 } from "@/lib/checklist-tasks.functions";
 import { notifyCommentMentions } from "@/lib/event-comments.functions";
+import {
+  listEventCategories,
+  addEventCategory,
+  deleteEventCategory,
+} from "@/lib/event-categories.functions";
 
 import { toast } from "sonner";
 import { useUndoableAction } from "@/lib/use-undoable-action";
@@ -93,7 +98,7 @@ const SUB_CALS = [
   { value: "general", label: "General", color: "var(--cal-general)" },
 ];
 
-const CATEGORIES = [
+const DEFAULT_CATEGORIES = [
   "Holiday", "Leadership", "Women", "Men", "Class", "Social",
   "Kids/Youth", "Liturgical", "Meeting", "Church Plant",
   "Community Group", "Love DOT", "Prayer", "Core Team", "Other",
@@ -430,6 +435,25 @@ function CalendarBody() {
   );
   const [categoryFilter, setCategoryFilter] = useState<string>(loadedPrefs?.categoryFilter ?? "all");
   const [flagFilter, setFlagFilter] = useState<"all" | "pco" | "missions">(loadedPrefs?.flagFilter ?? "all");
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>(
+    DEFAULT_CATEGORIES.map((n) => ({ id: n, name: n })),
+  );
+  const [manageCatOpen, setManageCatOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const fetchCategories = useServerFn(listEventCategories);
+  const addCategoryFn = useServerFn(addEventCategory);
+  const deleteCategoryFn = useServerFn(deleteEventCategory);
+  const reloadCategories = async () => {
+    try {
+      const rows = await fetchCategories();
+      if (Array.isArray(rows) && rows.length > 0) {
+        setCategories(rows.map((r: any) => ({ id: r.id, name: r.name })));
+      }
+    } catch (e) {
+      console.error("loadCategories", e);
+    }
+  };
+  useEffect(() => { reloadCategories(); }, []);
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
@@ -1251,9 +1275,14 @@ function CalendarBody() {
             <SelectTrigger className="h-8 w-[10rem] text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All categories</SelectItem>
-              {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              {categories.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
+          {canEdit && (
+            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setManageCatOpen(true)}>
+              Manage
+            </Button>
+          )}
           <Select value={flagFilter} onValueChange={(v) => setFlagFilter(v as typeof flagFilter)}>
             <SelectTrigger className="h-8 w-[10rem] text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -1283,6 +1312,77 @@ function CalendarBody() {
       {view === "week" && <WeekStrip cursor={cursor} occurrences={visible} onPickDay={openNew} onPickEvent={openEdit} canEdit={canEdit} />}
       {view === "list" && <ListView occurrences={visible} conflictMap={conflictMap} onPickEvent={openEdit} readinessOf={readinessFor} />}
 
+
+      <Dialog open={manageCatOpen} onOpenChange={setManageCatOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Manage event categories</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                value={newCatName}
+                onChange={(e) => setNewCatName(e.target.value)}
+                placeholder="New category name"
+                onKeyDown={async (e) => {
+                  if (e.key === "Enter" && newCatName.trim()) {
+                    e.preventDefault();
+                    try {
+                      await addCategoryFn({ data: { name: newCatName.trim() } });
+                      setNewCatName("");
+                      await reloadCategories();
+                    } catch (err: any) {
+                      toast.error(err?.message ?? "Failed to add category");
+                    }
+                  }
+                }}
+              />
+              <Button
+                onClick={async () => {
+                  if (!newCatName.trim()) return;
+                  try {
+                    await addCategoryFn({ data: { name: newCatName.trim() } });
+                    setNewCatName("");
+                    await reloadCategories();
+                  } catch (err: any) {
+                    toast.error(err?.message ?? "Failed to add category");
+                  }
+                }}
+              >
+                Add
+              </Button>
+            </div>
+            <div className="max-h-80 overflow-y-auto border rounded-md divide-y">
+              {categories.length === 0 && (
+                <div className="p-3 text-sm text-muted-foreground">No categories yet.</div>
+              )}
+              {categories.map((c) => (
+                <div key={c.id} className="flex items-center justify-between px-3 py-2 text-sm">
+                  <span>{c.name}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={async () => {
+                      if (!confirm(`Delete category "${c.name}"? Existing events keep their label.`)) return;
+                      try {
+                        await deleteCategoryFn({ data: { id: c.id } });
+                        await reloadCategories();
+                      } catch (err: any) {
+                        toast.error(err?.message ?? "Failed to delete category");
+                      }
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setManageCatOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto sm:rounded-lg max-sm:!w-screen max-sm:!max-w-none max-sm:!h-[100dvh] max-sm:!rounded-none max-sm:!max-h-none">
@@ -1372,7 +1472,7 @@ function CalendarBody() {
                   <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="_none">None</SelectItem>
-                    {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {categories.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
