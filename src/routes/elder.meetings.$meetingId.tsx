@@ -466,7 +466,7 @@ function AgendaItemRow({ item, isFullElder, reload, meetingId, mentionUsers, isE
         });
       } catch (e: any) {
         toast.error(e.message ?? "Failed to save notes");
-        return;
+        return false;
       }
     }
     const mentions = extractMentions(html);
@@ -483,7 +483,9 @@ function AgendaItemRow({ item, isFullElder, reload, meetingId, mentionUsers, isE
       }
     }
     reload();
+    return true;
   }
+
 
   if (editing) {
     return (
@@ -578,17 +580,38 @@ function AgendaItemRow({ item, isFullElder, reload, meetingId, mentionUsers, isE
       </button>
       </div>
       {notesOpen && (
-        <div className="pl-1">
+        <div className="pl-1 space-y-2">
           <RichTextEditor
             value={notesDraft}
             onChange={setNotesDraft}
             placeholder="Notes for this item… (type @ to assign a task)"
             minHeight={72}
             mentionUsers={mentionUsers}
-            onBlur={saveNotes}
           />
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              disabled={saving || (notesDraft === (item.body ?? ""))}
+              onClick={async () => {
+                setSaving(true);
+                const ok = await saveNotes(notesDraft);
+                setSaving(false);
+                if (ok) setNotesOpen(false);
+              }}
+            >
+              <Check className="w-3 h-3 mr-1" /> Save notes
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => { setNotesDraft(item.body ?? ""); setNotesOpen(false); }}
+            >
+              <X className="w-3 h-3 mr-1" /> Cancel
+            </Button>
+          </div>
         </div>
       )}
+
     </div>
   );
 }
@@ -736,9 +759,10 @@ function JointItemCard({ item, meetingId, reload, mentionUsers, canEdit, subKey 
   const hasNotes = !!(item.body && item.body.replace(/<[^>]+>/g, "").trim());
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<string>(item.body ?? "");
+  const [saving, setSaving] = useState(false);
   useEffect(() => { setDraft(item.body ?? ""); }, [item.body]);
 
-  async function saveNotes(html: string) {
+  async function saveNotes(html: string): Promise<boolean> {
     if ((item.body ?? "") !== html) {
       try {
         await upsertJointItem({
@@ -746,7 +770,7 @@ function JointItemCard({ item, meetingId, reload, mentionUsers, canEdit, subKey 
         });
       } catch (e: any) {
         toast.error(e.message ?? "Failed to save notes");
-        return;
+        return false;
       }
     }
     const mentions = extractMentions(html);
@@ -761,6 +785,7 @@ function JointItemCard({ item, meetingId, reload, mentionUsers, canEdit, subKey 
       }
     }
     reload();
+    return true;
   }
 
   return (
@@ -793,15 +818,35 @@ function JointItemCard({ item, meetingId, reload, mentionUsers, canEdit, subKey 
       </div>
       {item.body && !open && <RichTextView html={item.body} className="mt-1 text-xs text-muted-foreground" />}
       {open && canEdit && (
-        <div className="mt-2">
+        <div className="mt-2 space-y-2">
           <RichTextEditor
             value={draft}
             onChange={setDraft}
             placeholder="Notes for this item… (type @ to assign a task)"
             minHeight={72}
             mentionUsers={mentionUsers}
-            onBlur={saveNotes}
           />
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              disabled={saving || draft === (item.body ?? "")}
+              onClick={async () => {
+                setSaving(true);
+                const ok = await saveNotes(draft);
+                setSaving(false);
+                if (ok) setOpen(false);
+              }}
+            >
+              <Check className="w-3 h-3 mr-1" /> Save notes
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => { setDraft(item.body ?? ""); setOpen(false); }}
+            >
+              <X className="w-3 h-3 mr-1" /> Cancel
+            </Button>
+          </div>
         </div>
       )}
     </div>
