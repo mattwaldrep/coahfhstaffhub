@@ -15,7 +15,8 @@ import {
 export const listElderMeetings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertElderAccess(context.supabase, context.userId);
+    await assertElderHubAccess(context.supabase, context.userId);
+    // RLS filters to joint meetings only for deacon-only users
     const { data, error } = await context.supabase
       .from("elder_meetings")
       .select("id, meeting_date, meeting_type, title, status, location, completed_at, created_at")
