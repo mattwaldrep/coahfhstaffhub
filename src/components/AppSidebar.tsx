@@ -60,8 +60,11 @@ const CG_ITEMS: NavItem[] = [
 ];
 
 export function AppSidebar() {
-  const { hasRole, hasElderAccess, isCgCoach } = useAuth();
+  const { hasRole, hasElderHubAccess, isDeaconOnly, isCgCoach } = useAuth();
   const isCore = hasRole("core");
+  const elderItems = isDeaconOnly
+    ? ELDER_ITEMS.filter((i) => i.to === "/elder/meetings")
+    : ELDER_ITEMS;
 
   const PRIMARY: NavItem[] = [
     { to: "/", label: "Home", icon: Home, exact: true },
@@ -170,10 +173,10 @@ export function AppSidebar() {
           {!collapsed && <SidebarGroupLabel>Staff Hub</SidebarGroupLabel>}
           <SidebarGroupContent>{renderTree(PRIMARY)}</SidebarGroupContent>
         </SidebarGroup>
-        {hasElderAccess && (
+        {hasElderHubAccess && (
           <SidebarGroup>
             {!collapsed && <SidebarGroupLabel>Elder Hub</SidebarGroupLabel>}
-            <SidebarGroupContent>{renderTree(ELDER_ITEMS)}</SidebarGroupContent>
+            <SidebarGroupContent>{renderTree(elderItems)}</SidebarGroupContent>
           </SidebarGroup>
         )}
         {isCgCoach && (

@@ -6,6 +6,8 @@ import {
   getElderTier,
   assertElderAccess,
   assertFullElder,
+  assertElderHubAccess,
+  assertJointEditAccess,
 } from "@/server/elder.server";
 
 // ---------- Meetings ----------
@@ -13,7 +15,8 @@ import {
 export const listElderMeetings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertElderAccess(context.supabase, context.userId);
+    await assertElderHubAccess(context.supabase, context.userId);
+    // RLS filters to joint meetings only for deacon-only users
     const { data, error } = await context.supabase
       .from("elder_meetings")
       .select("id, meeting_date, meeting_type, title, status, location, completed_at, created_at")
@@ -26,19 +29,38 @@ export const getElderMeeting = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertElderAccess(context.supabase, context.userId);
+    const access = await assertElderHubAccess(context.supabase, context.userId);
     const sb = context.supabase;
-    const [meeting, attendees, agenda, notes, actions, joint] = await Promise.all([
-      sb.from("elder_meetings").select("*").eq("id", data.id).maybeSingle(),
+    const { data: meeting } = await sb.from("elder_meetings").select("*").eq("id", data.id).maybeSingle();
+    if (!meeting) throw new Error("Meeting not found");
+
+    if (access.deaconOnly) {
+      // Deacons only see joint meetings, and only the joint section.
+      if (meeting.meeting_type !== "joint") throw new Error("Meeting not found");
+      const { data: joint } = await sb
+        .from("elder_joint_deacon_items")
+        .select("*")
+        .eq("meeting_id", data.id)
+        .order("position");
+      return {
+        meeting,
+        attendees: [],
+        agenda: [],
+        sectionNotes: [],
+        actionItems: [],
+        jointItems: joint ?? [],
+      };
+    }
+
+    const [attendees, agenda, notes, actions, joint] = await Promise.all([
       sb.from("elder_meeting_attendees").select("*").eq("meeting_id", data.id),
       sb.from("elder_agenda_items").select("*").eq("meeting_id", data.id).order("position"),
       sb.from("elder_section_notes").select("*").eq("meeting_id", data.id),
       sb.from("elder_action_items").select("*").eq("meeting_id", data.id).order("created_at"),
       sb.from("elder_joint_deacon_items").select("*").eq("meeting_id", data.id).order("position"),
     ]);
-    if (!meeting.data) throw new Error("Meeting not found");
     return {
-      meeting: meeting.data,
+      meeting,
       attendees: attendees.data ?? [],
       agenda: agenda.data ?? [],
       sectionNotes: notes.data ?? [],
@@ -400,8 +422,8 @@ export const upsertJointItem = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const tier = await assertElderAccess(context.supabase, context.userId);
-    if (data.executive_session && tier !== "elder") throw new Error("Forbidden");
+    const access = await assertJointEditAccess(context.supabase, context.userId);
+    if (data.executive_session && access !== "elder") throw new Error("Forbidden");
     if (data.id) {
       const { id, ...patch } = data;
       const { error } = await supabaseAdmin.from("elder_joint_deacon_items").update(patch).eq("id", id);
@@ -421,7 +443,7 @@ export const deleteJointItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertElderAccess(context.supabase, context.userId);
+    await assertJointEditAccess(context.supabase, context.userId);
     const { error } = await supabaseAdmin.from("elder_joint_deacon_items").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

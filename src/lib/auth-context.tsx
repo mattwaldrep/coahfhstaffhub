@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "core" | "meeting" | "extended" | "elder" | "elder_candidate" | "cg_coach";
+export type AppRole = "core" | "meeting" | "extended" | "elder" | "elder_candidate" | "cg_coach" | "deacon" | "chair_of_deacons";
 
 interface AuthContextValue {
   session: Session | null;
@@ -16,6 +16,10 @@ interface AuthContextValue {
   hasElderAccess: boolean;
   isFullElder: boolean;
   isCgCoach: boolean;
+  hasDeaconAccess: boolean;
+  isChairOfDeacons: boolean;
+  isDeaconOnly: boolean;
+  hasElderHubAccess: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -53,6 +57,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasElderAccess = roles.includes("elder") || roles.includes("elder_candidate");
   const isFullElder = roles.includes("elder");
   const isCgCoach = roles.includes("cg_coach");
+  const hasDeaconAccess = roles.includes("deacon") || roles.includes("chair_of_deacons");
+  const isChairOfDeacons = roles.includes("chair_of_deacons");
+  const isDeaconOnly = hasDeaconAccess && !hasElderAccess;
+  const hasElderHubAccess = hasElderAccess || hasDeaconAccess;
 
   const value: AuthContextValue = {
     session,
@@ -68,6 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     hasElderAccess,
     isFullElder,
     isCgCoach,
+    hasDeaconAccess,
+    isChairOfDeacons,
+    isDeaconOnly,
+    hasElderHubAccess,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

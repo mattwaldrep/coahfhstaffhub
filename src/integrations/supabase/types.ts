@@ -2565,6 +2565,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_deacon_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2573,6 +2574,7 @@ export type Database = {
         Returns: boolean
       }
       is_cg_coach: { Args: { _user_id: string }; Returns: boolean }
+      is_chair_of_deacons: { Args: { _user_id: string }; Returns: boolean }
       is_full_elder: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
@@ -2583,6 +2585,8 @@ export type Database = {
         | "elder"
         | "elder_candidate"
         | "cg_coach"
+        | "deacon"
+        | "chair_of_deacons"
       elder_motion_choice: "yes" | "no" | "abstain"
       elder_motion_outcome: "open" | "passed" | "failed" | "tied"
       plan_submission_status:
@@ -2737,6 +2741,8 @@ export const Constants = {
         "elder",
         "elder_candidate",
         "cg_coach",
+        "deacon",
+        "chair_of_deacons",
       ],
       elder_motion_choice: ["yes", "no", "abstain"],
       elder_motion_outcome: ["open", "passed", "failed", "tied"],

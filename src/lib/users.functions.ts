@@ -28,6 +28,34 @@ export const listUsers = createServerFn({ method: "GET" })
   });
 
 const STAFF_ROLES = ["core", "meeting", "extended"] as const;
+const DEACON_ROLES = ["deacon", "chair_of_deacons"] as const;
+
+export const setUserDeaconTier = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        userId: z.string().uuid(),
+        tier: z.enum(["none", "deacon", "chair_of_deacons"]),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCore(context.supabase, context.userId);
+    await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("user_id", data.userId)
+      .in("role", [...DEACON_ROLES]);
+    if (data.tier !== "none") {
+      const { error } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: data.userId, role: data.tier });
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
 const ELDER_ROLES = ["elder", "elder_candidate"] as const;
 
 export const setUserRole = createServerFn({ method: "POST" })

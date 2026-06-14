@@ -1,47 +1,52 @@
-## Goal
+# Deacons & Joint Meetings
 
-Replace the two "open in PCO" link-only sections with live submission lists. Each row shows the submitter and **all** form field answers, for submissions created since the previous staff meeting.
+## What's changing
 
-## Backend
+1. Two new user roles: **Deacon** and **Chair of Deacons** (assignable from the Users page, same UX pattern as Elder/Elder Candidate).
+2. Joint elder meetings already have a `meeting_type = "joint"` toggle on creation. We keep that toggle and reuse the existing `elder_joint_deacon_items` table (with its three sub-sections: *What we need to know*, *How can we serve / resource*, *Upcoming events*).
+3. On a joint meeting detail page, elders now see **both** the standard elder agenda **and** a new "Deacons & Elders" block (the three sub-sections). On a standard meeting, no change.
+4. Deacons (plain + Chair) get a stripped-down Elder Hub: only joint meetings appear in their list, and inside a meeting they only see the Deacons & Elders block — no other sections, no action items, no executive content, no sidebar items beyond the Elder Hub.
+5. Write access on the Deacons & Elders block: **Chair of Deacons** and **full Elders** only. Plain Deacons and Elder Candidates are read-only.
 
-**`src/server/pco-forms.server.ts`** (new)
-- `listFormSubmissions(formId, sinceIso)` — calls PCO People API:
-  - `GET /people/v2/forms/{formId}/form_submissions?where[created_at][gte]=…&include=person,form_submission_values.form_field&order=-created_at&per_page=100`
-  - Walks pagination, returns `{ id, created_at, person: { id, name } | null, fields: [{ label, value, sequence }] }[]`
-  - Reuses the existing `PCO_APP_ID` / `PCO_SECRET` basic auth via a small `pcoFetch` helper (same pattern as `pco.server.ts` / `pco-services.server.ts`).
-  - Resolves field labels from the included `FormField` resource and concatenates multi-value answers (checkbox lists) into a single string.
+## Where the work lands
 
-**`src/lib/pco-forms.functions.ts`** (new)
-- `listFirstStepSubmissions` and `listNextStepSubmissions` server fns, both `requireSupabaseAuth` + meeting/core role check (mirrors `assertMeetingRole` in `meeting.functions.ts`).
-- Input: `{ meetingId: uuid }`. Handler:
-  1. Loads the current meeting's `meeting_date`.
-  2. Finds the previous completed meeting (`status='completed'`, `meeting_date < current`, order desc, limit 1). If none, falls back to 7 days before current.
-  3. Calls `listFormSubmissions(FORM_ID, sinceIso)` with the hard-coded form IDs already in `meeting.tsx` (`161115` and `433638`).
-  4. Returns `{ submissions, since, formUrl }`.
+**Database (migration)**
+- Add `'deacon'` and `'chair_of_deacons'` to the `app_role` enum.
+- New helper functions `public.has_deacon_access(uuid)` and `public.is_chair_of_deacons(uuid)`.
+- Update RLS on `elder_meetings`, `elder_joint_deacon_items`, and `elder_section_notes` (for the joint section notes only) so deacons can SELECT joint meetings + joint items, and chair-of-deacons can INSERT/UPDATE/DELETE joint items + joint section notes. Standard elder content stays elder-only.
 
-External-service failure handling: on PCO error, return `{ submissions: [], since, formUrl, error: string }` so the UI can show a fallback instead of blanking the section.
+**Auth context (`src/lib/auth-context.tsx`)**
+- Extend `AppRole` union with the two new roles.
+- Add `isDeacon`, `isChairOfDeacons`, `hasDeaconAccess` flags.
+- Treat deacon access as a path into the Elder Hub (so the existing `hasElderAccess` gate either widens to include deacons, or we add a parallel `hasElderHubAccess`).
 
-## Frontend
+**Sidebar / shell**
+- Show the Elder Hub link for deacons.
+- For deacons, only the "Meetings" tab is visible inside the Elder Hub (no Motions / Pastoral Care / Archive / Settings / Overview).
 
-**`src/components/meeting/PcoFormSection.tsx`** (new)
-- Props: `{ meetingId, sectionKey, title, subtitle, formUrl, fetcher }` where `fetcher` is one of the two server fns.
-- Uses `useServerFn` + `useQuery` keyed on `[sectionKey, meetingId]`.
-- Renders inside the existing `StandingSection` (collapsed by default) with:
-  - Header line: "N submissions since {previous meeting date}" + "Open form in PCO" outline button.
-  - List of cards, each card:
-    - Submitter name (or "Anonymous") + submitted timestamp.
-    - All fields rendered as `label: value` rows (always expanded, per user choice).
-    - "Open submission" link to `https://people.planningcenteronline.com/forms/{formId}/responses/{submissionId}`.
-  - Loading skeleton, empty state ("No new submissions since last meeting"), and error state (shows message + keeps the PCO link).
-- Keeps the existing `NotesField` at the bottom so meeting notes still persist.
+**Server functions (`src/lib/elder.functions.ts` + `src/server/elder.server.ts`)**
+- New `assertDeaconOrElderAccess` helper.
+- `listElderMeetings`: if caller is deacon-only (no elder access), filter to `meeting_type = 'joint'`.
+- `getElderMeeting`: if deacon-only, return only `{ meeting, jointItems }` (and a joint-section notes row if we add one) — strip agenda, section notes, action items, attendees. If meeting is not joint, 404 for deacons.
+- `upsertJointItem` / `deleteJointItem`: allow if caller is full elder OR chair of deacons. Block plain deacons + elder candidates from writes.
+- Joint-section free-form notes (if we keep them — see Open question) gated the same way.
 
-**`src/routes/meeting.tsx`**
-- Swap the two `LinkSection` blocks (`first-step-cards`, `next-step-cards`) for `PcoFormSection` instances, passing the matching fetcher and form URL. No other section changes.
+**Routes / UI**
+- `src/routes/elder.meetings.$meetingId.tsx`: always render `StandardSections` for elders/candidates; additionally render a new `JointDeaconSection` card (the three sub-sections) when `meeting_type === "joint"`. For deacon-only viewers, render *only* the `JointDeaconSection`, and hide the status dropdown, action items block, and exec controls. Pass `canEditJoint` (elder OR chair) into the section so plain deacons see a read-only view.
+- `src/routes/elder.tsx`: filter the tab list for deacon-only users to just "Meetings".
+- `src/routes/elder.index.tsx` / `elder.motions.tsx` / `elder.pastoral-care.tsx` / `elder.archive.tsx` / `elder.settings.tsx`: redirect deacon-only users to `/elder/meetings`.
+- `src/routes/users.tsx`: add Deacon / Chair-of-Deacons assignment controls (mirroring the existing Elder tier selector). Likely a new `setUserDeaconTier` server function in `users.functions.ts` analogous to `setUserElderTier`.
+- `src/routes/elder.meetings.index.tsx`: keep the existing Type select (Standard / Joint Elder/Deacon Meeting) — that's the per-meeting toggle the user asked for. Hide the "New meeting" button for deacon-only users.
 
-## Technical Notes
+**Memory**
+- Update `mem://security` (or add a deacon rule) so future scanners know: deacons must never see elder agenda, executive session, action items, or non-joint meetings; chair-of-deacons writes are scoped to joint items + joint section notes.
 
-- Form IDs stay in the route file (already there): `161115` First Step, `433638` Next Step.
-- PCO People API field-data shape: each `FormSubmissionValue` has `attributes.display_value` (preferred) plus a `form_field` relationship; we sort by the field's `sequence` attribute so output matches the form's question order.
-- Pagination: PCO returns `links.next`; cap at ~5 pages (500 submissions) defensively — a weekly window will never approach that.
-- All PCO calls stay server-side; `PCO_APP_ID` / `PCO_SECRET` are already configured.
-- No database/schema changes. No new secrets. No changes to role gating beyond reusing `meeting`/`core`.
+## Open question I'll resolve while building
+
+The existing joint sub-sections store one-line entries (title + body) but have no shared free-form notes field. I'll add a single notes textarea per sub-section *only* if it's trivial; otherwise I'll leave the current item-list UX as-is and we can iterate. Either way the access rules above hold.
+
+## Out of scope
+
+- Auto-scheduling which meetings are joint (you confirmed it's just the per-meeting toggle).
+- Deacon-only motions, pastoral care, or archive views.
+- Migrating any historical joint meetings — existing rows already have `meeting_type = 'joint'` and will work.

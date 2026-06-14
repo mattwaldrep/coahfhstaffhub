@@ -43,7 +43,7 @@ const JOINT_SUBSECTIONS = [
 
 function MeetingDetail() {
   const { meetingId } = Route.useParams();
-  const { isFullElder } = useAuth();
+  const { isFullElder, hasElderAccess, isDeaconOnly, isChairOfDeacons } = useAuth();
   const [data, setData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [mentionUsers, setMentionUsers] = useState<MentionUser[]>([]);
@@ -82,6 +82,7 @@ function MeetingDetail() {
 
   const m = data.meeting;
   const isJoint = m.meeting_type === "joint";
+  const canEditJoint = hasElderAccess || isChairOfDeacons;
 
   return (
     <div className="space-y-6">
@@ -97,30 +98,36 @@ function MeetingDetail() {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <select
-            className="bg-background border border-border rounded h-8 px-2 text-xs"
-            value={m.status}
-            onChange={async (e) => {
-              await updateElderMeeting({ data: { id: m.id, status: e.target.value as any } });
-              load();
-            }}
-          >
-            <option value="draft">Draft</option>
-            <option value="in_progress">In Progress</option>
-            <option value="complete">Complete</option>
-            <option value="archived">Archived</option>
-          </select>
-        </div>
+        {!isDeaconOnly && (
+          <div className="flex items-center gap-2">
+            <select
+              className="bg-background border border-border rounded h-8 px-2 text-xs"
+              value={m.status}
+              onChange={async (e) => {
+                await updateElderMeeting({ data: { id: m.id, status: e.target.value as any } });
+                load();
+              }}
+            >
+              <option value="draft">Draft</option>
+              <option value="in_progress">In Progress</option>
+              <option value="complete">Complete</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+        )}
       </div>
 
-      {isJoint ? (
-        <JointSections meetingId={meetingId} items={data.jointItems} reload={load} mentionUsers={mentionUsers} />
-      ) : (
+      {!isDeaconOnly && (
         <StandardSections meetingId={meetingId} agenda={data.agenda} sectionNotes={data.sectionNotes} isFullElder={isFullElder} reload={load} mentionUsers={mentionUsers} />
       )}
 
-      <ActionItemsBlock meetingId={meetingId} items={data.actionItems} isFullElder={isFullElder} reload={load} />
+      {isJoint && (
+        <JointSections meetingId={meetingId} items={data.jointItems} reload={load} mentionUsers={mentionUsers} canEdit={canEditJoint} />
+      )}
+
+      {!isDeaconOnly && (
+        <ActionItemsBlock meetingId={meetingId} items={data.actionItems} isFullElder={isFullElder} reload={load} />
+      )}
     </div>
   );
 }
@@ -510,27 +517,34 @@ function AgendaItemRow({ item, isFullElder, reload, meetingId }: any) {
   );
 }
 
-function JointSections({ meetingId, items, reload, mentionUsers }: any) {
+function JointSections({ meetingId, items, reload, mentionUsers, canEdit }: any) {
   return (
-    <div className="space-y-4">
-      {JOINT_SUBSECTIONS.map((s) => {
-        const subItems = items.filter((i: any) => i.sub_section === s.key);
-        return (
-          <JointSubSection
-            key={s.key}
-            sub={s}
-            meetingId={meetingId}
-            items={subItems}
-            reload={reload}
-            mentionUsers={mentionUsers}
-          />
-        );
-      })}
+    <div className="bg-surface border border-[oklch(0.55_0.15_280)]/30 ring-1 ring-[oklch(0.55_0.15_280)]/15 rounded-2xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-display font-semibold">Deacons & Elders</h3>
+        <span className="text-[10px] uppercase tracking-wider text-[oklch(0.55_0.15_280)]">Joint Section</span>
+      </div>
+      <div className="space-y-4">
+        {JOINT_SUBSECTIONS.map((s) => {
+          const subItems = items.filter((i: any) => i.sub_section === s.key);
+          return (
+            <JointSubSection
+              key={s.key}
+              sub={s}
+              meetingId={meetingId}
+              items={subItems}
+              reload={reload}
+              mentionUsers={mentionUsers}
+              canEdit={canEdit}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }
 
-function JointSubSection({ sub, meetingId, items, reload, mentionUsers }: any) {
+function JointSubSection({ sub, meetingId, items, reload, mentionUsers, canEdit }: any) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
 
@@ -566,25 +580,30 @@ function JointSubSection({ sub, meetingId, items, reload, mentionUsers }: any) {
       header={<><span>{sub.label}</span><span className="text-[10px] text-muted-foreground ml-1">({items.length})</span></>}
     >
       <div className="p-4 space-y-3">
+        {items.length === 0 && <div className="text-xs text-muted-foreground">None yet.</div>}
         {items.map((it: any) => (
           <div key={it.id} className="border border-border rounded-lg p-3 group">
             <div className="flex items-start justify-between gap-2">
               <div className="text-sm font-medium flex-1">{it.title}</div>
-              <button
-                onClick={async () => { if (!confirm("Delete?")) return; await deleteJointItem({ data: { id: it.id } }); reload(); }}
-                className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              {canEdit && (
+                <button
+                  onClick={async () => { if (!confirm("Delete?")) return; await deleteJointItem({ data: { id: it.id } }); reload(); }}
+                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
             {it.body && <RichTextView html={it.body} className="mt-1 text-xs text-muted-foreground" />}
           </div>
         ))}
-        <div className="space-y-2">
-          <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} className="h-8 text-sm" />
-          <RichTextEditor value={body} onChange={setBody} placeholder="Notes (optional · type @ to assign a task)" minHeight={72} mentionUsers={mentionUsers} />
-          <Button size="sm" variant="outline" onClick={add}><Plus className="w-3 h-3 mr-1" /> Add</Button>
-        </div>
+        {canEdit && (
+          <div className="space-y-2">
+            <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} className="h-8 text-sm" />
+            <RichTextEditor value={body} onChange={setBody} placeholder="Notes (optional · type @ to assign a task)" minHeight={72} mentionUsers={mentionUsers} />
+            <Button size="sm" variant="outline" onClick={add}><Plus className="w-3 h-3 mr-1" /> Add</Button>
+          </div>
+        )}
       </div>
     </CollapsibleCard>
   );
