@@ -422,8 +422,8 @@ export const upsertJointItem = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const tier = await assertElderAccess(context.supabase, context.userId);
-    if (data.executive_session && tier !== "elder") throw new Error("Forbidden");
+    const access = await assertJointEditAccess(context.supabase, context.userId);
+    if (data.executive_session && access !== "elder") throw new Error("Forbidden");
     if (data.id) {
       const { id, ...patch } = data;
       const { error } = await supabaseAdmin.from("elder_joint_deacon_items").update(patch).eq("id", id);
