@@ -517,22 +517,29 @@ function AgendaItemRow({ item, isFullElder, reload, meetingId }: any) {
   );
 }
 
-function JointSections({ meetingId, items, reload, mentionUsers }: any) {
+function JointSections({ meetingId, items, reload, mentionUsers, canEdit }: any) {
   return (
-    <div className="space-y-4">
-      {JOINT_SUBSECTIONS.map((s) => {
-        const subItems = items.filter((i: any) => i.sub_section === s.key);
-        return (
-          <JointSubSection
-            key={s.key}
-            sub={s}
-            meetingId={meetingId}
-            items={subItems}
-            reload={reload}
-            mentionUsers={mentionUsers}
-          />
-        );
-      })}
+    <div className="bg-surface border border-[oklch(0.55_0.15_280)]/30 ring-1 ring-[oklch(0.55_0.15_280)]/15 rounded-2xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-display font-semibold">Deacons & Elders</h3>
+        <span className="text-[10px] uppercase tracking-wider text-[oklch(0.55_0.15_280)]">Joint Section</span>
+      </div>
+      <div className="space-y-4">
+        {JOINT_SUBSECTIONS.map((s) => {
+          const subItems = items.filter((i: any) => i.sub_section === s.key);
+          return (
+            <JointSubSection
+              key={s.key}
+              sub={s}
+              meetingId={meetingId}
+              items={subItems}
+              reload={reload}
+              mentionUsers={mentionUsers}
+              canEdit={canEdit}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }
