@@ -63,7 +63,7 @@ function ElderShell() {
         className="-mt-3 -mx-4 sm:mx-0 px-4 sm:px-0 flex gap-1 overflow-x-auto sm:flex-wrap sm:border-b sm:border-border scrollbar-none snap-x snap-mandatory"
         aria-label="Eldership sections"
       >
-        {TABS.map((t) => {
+        {tabs.map((t) => {
           const active = t.exact ? pathname === t.to : pathname === t.to || pathname.startsWith(t.to + "/");
           return (
             <Link
