@@ -466,7 +466,7 @@ function AgendaItemRow({ item, isFullElder, reload, meetingId, mentionUsers, isE
         });
       } catch (e: any) {
         toast.error(e.message ?? "Failed to save notes");
-        return;
+        return false;
       }
     }
     const mentions = extractMentions(html);
@@ -483,7 +483,9 @@ function AgendaItemRow({ item, isFullElder, reload, meetingId, mentionUsers, isE
       }
     }
     reload();
+    return true;
   }
+
 
   if (editing) {
     return (
