@@ -52,6 +52,7 @@ type Row = {
   full_name: string | null;
   avatar_url: string | null;
   created_at: string;
+  last_sign_in_at: string | null;
   roles: string[];
 };
 
@@ -260,14 +261,15 @@ function Body() {
 
 
       <div className="overflow-x-auto">
-        <div className="bg-surface border border-border rounded-2xl overflow-hidden min-w-[820px]">
-          <div className="grid grid-cols-12 px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
+        <div className="bg-surface border border-border rounded-2xl overflow-hidden min-w-[920px]">
+          <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
             <div className="col-span-3">User</div>
             <div className="col-span-2">Role</div>
             <div className="col-span-2">Elder</div>
             <div className="col-span-2">Deacon</div>
             <div className="col-span-1">CG</div>
             <div className="col-span-1">Joined</div>
+            <div className="col-span-1">Last login</div>
             <div className="col-span-1 text-right">·</div>
           </div>
           {loading && <div className="p-6 text-sm text-muted-foreground">Loading…</div>}
@@ -289,7 +291,7 @@ function Body() {
             const isCg = r.roles.includes("cg_coach");
             const isSelf = r.id === user?.id;
             return (
-              <div key={r.id} className="grid grid-cols-12 items-center px-4 py-3 border-b border-border last:border-0 hover:bg-background/40">
+              <div key={r.id} className="grid grid-cols-[repeat(13,minmax(0,1fr))] items-center px-4 py-3 border-b border-border last:border-0 hover:bg-background/40">
                 <div className="col-span-3 flex items-center gap-3 min-w-0">
                   <div className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xs font-medium shrink-0">
                     {(r.full_name ?? r.email ?? "?").slice(0, 1).toUpperCase()}
@@ -340,6 +342,9 @@ function Body() {
                 </div>
                 <div className="col-span-1 text-xs text-muted-foreground">
                   {format(new Date(r.created_at), "MMM d, yyyy")}
+                </div>
+                <div className="col-span-1 text-xs text-muted-foreground">
+                  {r.last_sign_in_at ? format(new Date(r.last_sign_in_at), "MMM d, yyyy") : "—"}
                 </div>
                 <div className="col-span-1 flex justify-end">
                   {!isSelf && (
