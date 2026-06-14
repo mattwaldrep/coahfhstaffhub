@@ -130,12 +130,12 @@ function MeetingDetail() {
         )}
       </div>
 
-      {!isDeaconOnly && (
-        <StandardSections meetingId={meetingId} agenda={data.agenda} sectionNotes={data.sectionNotes} isFullElder={isFullElder} reload={load} mentionUsers={mentionUsers} />
-      )}
-
       {isJoint && (
         <JointSections meetingId={meetingId} items={data.jointItems} reload={load} mentionUsers={mentionUsers} canEdit={canEditJoint} />
+      )}
+
+      {!isDeaconOnly && (
+        <StandardSections meetingId={meetingId} agenda={data.agenda} sectionNotes={data.sectionNotes} isFullElder={isFullElder} reload={load} mentionUsers={mentionUsers} />
       )}
 
       {!isDeaconOnly && (
