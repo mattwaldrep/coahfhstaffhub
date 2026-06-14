@@ -27,6 +27,7 @@ export const listUsers = createServerFn({ method: "GET" })
     }));
   });
 
+const STAFF_ROLES = ["core", "meeting", "extended"] as const;
 const DEACON_ROLES = ["deacon", "chair_of_deacons"] as const;
 
 export const setUserDeaconTier = createServerFn({ method: "POST" })
