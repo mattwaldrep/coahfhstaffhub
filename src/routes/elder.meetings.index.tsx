@@ -13,6 +13,7 @@ import {
 import { Plus, Calendar as CalendarIcon, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { listElderMeetings, createElderMeeting, updateElderMeeting, deleteElderMeeting } from "@/lib/elder.functions";
+import { useAuth } from "@/lib/auth-context";
 
 function parseLocalDate(s: string) {
   const [y, m, d] = s.split("-").map(Number);
@@ -24,6 +25,8 @@ export const Route = createFileRoute("/elder/meetings/")({
 });
 
 function ElderMeetingsList() {
+  const { isDeaconOnly, hasElderAccess } = useAuth();
+  const canCreate = hasElderAccess;
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -64,10 +67,14 @@ function ElderMeetingsList() {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-display font-semibold">Meetings</h2>
-        <Button size="sm" onClick={() => setOpen(true)}>
-          <Plus className="w-4 h-4 mr-1.5" /> New meeting
-        </Button>
+        <h2 className="text-lg font-display font-semibold">
+          {isDeaconOnly ? "Joint Elder/Deacon Meetings" : "Meetings"}
+        </h2>
+        {canCreate && (
+          <Button size="sm" onClick={() => setOpen(true)}>
+            <Plus className="w-4 h-4 mr-1.5" /> New meeting
+          </Button>
+        )}
       </div>
 
       <div className="bg-surface border border-border rounded-2xl divide-y divide-border">
