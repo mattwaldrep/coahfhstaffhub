@@ -428,6 +428,35 @@ function AgendaItemRow({ item, isFullElder, reload, meetingId, mentionUsers, isE
   const hasNotes = !!(item.body && item.body.replace(/<[^>]+>/g, "").trim());
   const [notesOpen, setNotesOpen] = useState(false);
   const [notesDraft, setNotesDraft] = useState<string>(item.body ?? "");
+  const navigate = useNavigate();
+  const [motionOpen, setMotionOpen] = useState(false);
+  const [motionDeadline, setMotionDeadline] = useState(() => {
+    const d = new Date(); d.setHours(d.getHours() + 72);
+    return d.toISOString().slice(0, 16);
+  });
+  const [motionSaving, setMotionSaving] = useState(false);
+
+  async function promoteToMotion() {
+    setMotionSaving(true);
+    try {
+      const plainTitle = (item.title ?? "").replace(/<[^>]+>/g, "").trim();
+      const plainBody = (item.body ?? "").replace(/<[^>]+>/g, "").trim();
+      const res: any = await createMotion({
+        data: {
+          title: plainTitle || "Untitled motion",
+          description: plainBody,
+          deadline_at: new Date(motionDeadline).toISOString(),
+        },
+      });
+      toast.success("Motion opened — elders notified");
+      setMotionOpen(false);
+      if (res?.id) navigate({ to: "/elder/motions/$motionId", params: { motionId: res.id } });
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to open motion");
+    } finally {
+      setMotionSaving(false);
+    }
+  }
 
   useEffect(() => { setDraftTitle(item.title ?? ""); }, [item.title]);
   useEffect(() => { setNotesDraft(item.body ?? ""); }, [item.body]);
