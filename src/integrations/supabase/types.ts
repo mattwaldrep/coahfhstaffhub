@@ -2583,6 +2583,8 @@ export type Database = {
         | "elder"
         | "elder_candidate"
         | "cg_coach"
+        | "deacon"
+        | "chair_of_deacons"
       elder_motion_choice: "yes" | "no" | "abstain"
       elder_motion_outcome: "open" | "passed" | "failed" | "tied"
       plan_submission_status:
@@ -2737,6 +2739,8 @@ export const Constants = {
         "elder",
         "elder_candidate",
         "cg_coach",
+        "deacon",
+        "chair_of_deacons",
       ],
       elder_motion_choice: ["yes", "no", "abstain"],
       elder_motion_outcome: ["open", "passed", "failed", "tied"],
