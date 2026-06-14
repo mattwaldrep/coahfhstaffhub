@@ -575,9 +575,23 @@ function AgendaItemRow({ item, isFullElder, reload, meetingId, mentionUsers, isE
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
+      </div>
+      {notesOpen && (
+        <div className="pl-1">
+          <RichTextEditor
+            value={notesDraft}
+            onChange={setNotesDraft}
+            placeholder="Notes for this item… (type @ to assign a task)"
+            minHeight={72}
+            mentionUsers={mentionUsers}
+            onBlur={saveNotes}
+          />
+        </div>
+      )}
     </div>
   );
 }
+
 
 function JointSections({ meetingId, items, reload, mentionUsers, canEdit }: any) {
   return (
