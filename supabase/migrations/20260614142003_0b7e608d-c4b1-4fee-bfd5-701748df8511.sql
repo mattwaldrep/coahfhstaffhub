@@ -1,0 +1,2 @@
+ALTER TABLE public.elder_meetings DROP CONSTRAINT elder_meetings_status_check;
+ALTER TABLE public.elder_meetings ADD CONSTRAINT elder_meetings_status_check CHECK (status = ANY (ARRAY['draft'::text, 'scheduled'::text, 'in_progress'::text, 'complete'::text, 'archived'::text]));
