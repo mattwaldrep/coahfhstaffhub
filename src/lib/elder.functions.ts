@@ -194,6 +194,7 @@ export const updateElderMeeting = createServerFn({ method: "POST" })
         start_time: z.string().nullable().optional(),
         notes: z.string().nullable().optional(),
         status: z.enum(["draft", "in_progress", "complete", "archived"]).optional(),
+        meeting_type: z.enum(["standard", "joint"]).optional(),
       })
       .parse(d),
   )

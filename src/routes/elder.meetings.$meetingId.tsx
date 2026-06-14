@@ -100,6 +100,19 @@ function MeetingDetail() {
         </div>
         {!isDeaconOnly && (
           <div className="flex items-center gap-2">
+            {isFullElder && (
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none border border-border rounded h-8 px-2">
+                <input
+                  type="checkbox"
+                  checked={isJoint}
+                  onChange={async (e) => {
+                    await updateElderMeeting({ data: { id: m.id, meeting_type: e.target.checked ? "joint" : "standard" } });
+                    load();
+                  }}
+                />
+                Joint Elder/Deacon
+              </label>
+            )}
             <select
               className="bg-background border border-border rounded h-8 px-2 text-xs"
               value={m.status}
