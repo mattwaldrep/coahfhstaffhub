@@ -580,17 +580,38 @@ function AgendaItemRow({ item, isFullElder, reload, meetingId, mentionUsers, isE
       </button>
       </div>
       {notesOpen && (
-        <div className="pl-1">
+        <div className="pl-1 space-y-2">
           <RichTextEditor
             value={notesDraft}
             onChange={setNotesDraft}
             placeholder="Notes for this item… (type @ to assign a task)"
             minHeight={72}
             mentionUsers={mentionUsers}
-            onBlur={saveNotes}
           />
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              disabled={saving || (notesDraft === (item.body ?? ""))}
+              onClick={async () => {
+                setSaving(true);
+                const ok = await saveNotes(notesDraft);
+                setSaving(false);
+                if (ok) setNotesOpen(false);
+              }}
+            >
+              <Check className="w-3 h-3 mr-1" /> Save notes
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => { setNotesDraft(item.body ?? ""); setNotesOpen(false); }}
+            >
+              <X className="w-3 h-3 mr-1" /> Cancel
+            </Button>
+          </div>
         </div>
       )}
+
     </div>
   );
 }
