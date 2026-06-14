@@ -43,7 +43,7 @@ const JOINT_SUBSECTIONS = [
 
 function MeetingDetail() {
   const { meetingId } = Route.useParams();
-  const { isFullElder } = useAuth();
+  const { isFullElder, hasElderAccess, isDeaconOnly, isChairOfDeacons } = useAuth();
   const [data, setData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [mentionUsers, setMentionUsers] = useState<MentionUser[]>([]);
@@ -82,6 +82,7 @@ function MeetingDetail() {
 
   const m = data.meeting;
   const isJoint = m.meeting_type === "joint";
+  const canEditJoint = hasElderAccess || isChairOfDeacons;
 
   return (
     <div className="space-y-6">
@@ -97,30 +98,36 @@ function MeetingDetail() {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <select
-            className="bg-background border border-border rounded h-8 px-2 text-xs"
-            value={m.status}
-            onChange={async (e) => {
-              await updateElderMeeting({ data: { id: m.id, status: e.target.value as any } });
-              load();
-            }}
-          >
-            <option value="draft">Draft</option>
-            <option value="in_progress">In Progress</option>
-            <option value="complete">Complete</option>
-            <option value="archived">Archived</option>
-          </select>
-        </div>
+        {!isDeaconOnly && (
+          <div className="flex items-center gap-2">
+            <select
+              className="bg-background border border-border rounded h-8 px-2 text-xs"
+              value={m.status}
+              onChange={async (e) => {
+                await updateElderMeeting({ data: { id: m.id, status: e.target.value as any } });
+                load();
+              }}
+            >
+              <option value="draft">Draft</option>
+              <option value="in_progress">In Progress</option>
+              <option value="complete">Complete</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+        )}
       </div>
 
-      {isJoint ? (
-        <JointSections meetingId={meetingId} items={data.jointItems} reload={load} mentionUsers={mentionUsers} />
-      ) : (
+      {!isDeaconOnly && (
         <StandardSections meetingId={meetingId} agenda={data.agenda} sectionNotes={data.sectionNotes} isFullElder={isFullElder} reload={load} mentionUsers={mentionUsers} />
       )}
 
-      <ActionItemsBlock meetingId={meetingId} items={data.actionItems} isFullElder={isFullElder} reload={load} />
+      {isJoint && (
+        <JointSections meetingId={meetingId} items={data.jointItems} reload={load} mentionUsers={mentionUsers} canEdit={canEditJoint} />
+      )}
+
+      {!isDeaconOnly && (
+        <ActionItemsBlock meetingId={meetingId} items={data.actionItems} isFullElder={isFullElder} reload={load} />
+      )}
     </div>
   );
 }
