@@ -262,7 +262,7 @@ function Body() {
 
       <div className="overflow-x-auto">
         <div className="bg-surface border border-border rounded-2xl overflow-hidden min-w-[920px]">
-          <div className="grid grid-cols-13 px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
+          <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
             <div className="col-span-3">User</div>
             <div className="col-span-2">Role</div>
             <div className="col-span-2">Elder</div>
@@ -291,7 +291,7 @@ function Body() {
             const isCg = r.roles.includes("cg_coach");
             const isSelf = r.id === user?.id;
             return (
-              <div key={r.id} className="grid grid-cols-13 items-center px-4 py-3 border-b border-border last:border-0 hover:bg-background/40">
+              <div key={r.id} className="grid grid-cols-[repeat(13,minmax(0,1fr))] items-center px-4 py-3 border-b border-border last:border-0 hover:bg-background/40">
                 <div className="col-span-3 flex items-center gap-3 min-w-0">
                   <div className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xs font-medium shrink-0">
                     {(r.full_name ?? r.email ?? "?").slice(0, 1).toUpperCase()}
