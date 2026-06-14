@@ -343,6 +343,9 @@ function Body() {
                 <div className="col-span-1 text-xs text-muted-foreground">
                   {format(new Date(r.created_at), "MMM d, yyyy")}
                 </div>
+                <div className="col-span-1 text-xs text-muted-foreground">
+                  {r.last_sign_in_at ? format(new Date(r.last_sign_in_at), "MMM d, yyyy") : "—"}
+                </div>
                 <div className="col-span-1 flex justify-end">
                   {!isSelf && (
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => remove(r)}>
