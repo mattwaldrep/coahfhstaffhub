@@ -173,10 +173,10 @@ export function AppSidebar() {
           {!collapsed && <SidebarGroupLabel>Staff Hub</SidebarGroupLabel>}
           <SidebarGroupContent>{renderTree(PRIMARY)}</SidebarGroupContent>
         </SidebarGroup>
-        {hasElderAccess && (
+        {hasElderHubAccess && (
           <SidebarGroup>
             {!collapsed && <SidebarGroupLabel>Elder Hub</SidebarGroupLabel>}
-            <SidebarGroupContent>{renderTree(ELDER_ITEMS)}</SidebarGroupContent>
+            <SidebarGroupContent>{renderTree(elderItems)}</SidebarGroupContent>
           </SidebarGroup>
         )}
         {isCgCoach && (
