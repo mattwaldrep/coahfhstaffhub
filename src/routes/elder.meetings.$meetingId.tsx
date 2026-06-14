@@ -255,9 +255,10 @@ function SectionCard({ section, meetingId, items, note, isFullElder, reload, men
             }
           }}
           renderItem={(item: any) => (
-            <AgendaItemRow item={item} isFullElder={isFullElder} reload={reload} meetingId={meetingId} />
+            <AgendaItemRow item={item} isFullElder={isFullElder} reload={reload} meetingId={meetingId} mentionUsers={mentionUsers} isExec={isExec} />
           )}
         />
+
         <div className="space-y-2">
           <RichTextEditor
             value={adding}
