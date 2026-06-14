@@ -13,6 +13,7 @@ import {
 import { Plus, Calendar as CalendarIcon, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { listElderMeetings, createElderMeeting, updateElderMeeting, deleteElderMeeting } from "@/lib/elder.functions";
+import { useAuth } from "@/lib/auth-context";
 
 function parseLocalDate(s: string) {
   const [y, m, d] = s.split("-").map(Number);
@@ -24,6 +25,8 @@ export const Route = createFileRoute("/elder/meetings/")({
 });
 
 function ElderMeetingsList() {
+  const { isDeaconOnly, hasElderAccess } = useAuth();
+  const canCreate = hasElderAccess;
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -64,17 +67,21 @@ function ElderMeetingsList() {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-display font-semibold">Meetings</h2>
-        <Button size="sm" onClick={() => setOpen(true)}>
-          <Plus className="w-4 h-4 mr-1.5" /> New meeting
-        </Button>
+        <h2 className="text-lg font-display font-semibold">
+          {isDeaconOnly ? "Joint Elder/Deacon Meetings" : "Meetings"}
+        </h2>
+        {canCreate && (
+          <Button size="sm" onClick={() => setOpen(true)}>
+            <Plus className="w-4 h-4 mr-1.5" /> New meeting
+          </Button>
+        )}
       </div>
 
       <div className="bg-surface border border-border rounded-2xl divide-y divide-border">
         {loading && <div className="p-6 text-sm text-muted-foreground">Loading…</div>}
         {!loading && rows.length === 0 && <div className="p-6 text-sm text-muted-foreground">No meetings yet.</div>}
         {rows.map((m) => (
-          <MeetingRow key={m.id} m={m} reload={load} />
+          <MeetingRow key={m.id} m={m} reload={load} canEdit={canCreate} />
         ))}
       </div>
 
@@ -113,7 +120,7 @@ function ElderMeetingsList() {
   );
 }
 
-function MeetingRow({ m, reload }: { m: any; reload: () => void }) {
+function MeetingRow({ m, reload, canEdit }: { m: any; reload: () => void; canEdit: boolean }) {
   const [editing, setEditing] = useState(false);
   const [date, setDate] = useState(m.meeting_date);
   const [title, setTitle] = useState(m.title ?? "");
@@ -165,20 +172,24 @@ function MeetingRow({ m, reload }: { m: any; reload: () => void }) {
           <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-muted text-muted-foreground">
             {m.status}
           </span>
-          <button
-            title="Reschedule"
-            onClick={() => setEditing(true)}
-            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground p-1"
-          >
-            <CalendarIcon className="w-4 h-4" />
-          </button>
-          <button
-            title="Delete meeting"
-            onClick={remove}
-            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive p-1"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {canEdit && (
+            <>
+              <button
+                title="Reschedule"
+                onClick={() => setEditing(true)}
+                className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground p-1"
+              >
+                <CalendarIcon className="w-4 h-4" />
+              </button>
+              <button
+                title="Delete meeting"
+                onClick={remove}
+                className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive p-1"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
       </div>
 
