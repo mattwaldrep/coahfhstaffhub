@@ -261,14 +261,15 @@ function Body() {
 
 
       <div className="overflow-x-auto">
-        <div className="bg-surface border border-border rounded-2xl overflow-hidden min-w-[820px]">
-          <div className="grid grid-cols-12 px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
+        <div className="bg-surface border border-border rounded-2xl overflow-hidden min-w-[920px]">
+          <div className="grid grid-cols-13 px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
             <div className="col-span-3">User</div>
             <div className="col-span-2">Role</div>
             <div className="col-span-2">Elder</div>
             <div className="col-span-2">Deacon</div>
             <div className="col-span-1">CG</div>
             <div className="col-span-1">Joined</div>
+            <div className="col-span-1">Last login</div>
             <div className="col-span-1 text-right">·</div>
           </div>
           {loading && <div className="p-6 text-sm text-muted-foreground">Loading…</div>}
