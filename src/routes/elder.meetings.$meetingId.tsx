@@ -589,6 +589,15 @@ function AgendaItemRow({ item, isFullElder, reload, meetingId, mentionUsers, isE
       </button>
       {isFullElder && (
         <button
+          title="Promote to motion"
+          onClick={() => setMotionOpen((o) => !o)}
+          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+        >
+          <Gavel className="w-3.5 h-3.5" />
+        </button>
+      )}
+      {isFullElder && (
+        <button
           title={item.executive_session ? "Make standard" : "Mark Executive"}
           onClick={async () => {
             await setAgendaExecutive({ data: { id: item.id, executive: !item.executive_session } });
