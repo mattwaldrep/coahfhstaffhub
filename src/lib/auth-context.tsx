@@ -57,6 +57,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasElderAccess = roles.includes("elder") || roles.includes("elder_candidate");
   const isFullElder = roles.includes("elder");
   const isCgCoach = roles.includes("cg_coach");
+  const hasDeaconAccess = roles.includes("deacon") || roles.includes("chair_of_deacons");
+  const isChairOfDeacons = roles.includes("chair_of_deacons");
+  const isDeaconOnly = hasDeaconAccess && !hasElderAccess;
+  const hasElderHubAccess = hasElderAccess || hasDeaconAccess;
 
   const value: AuthContextValue = {
     session,
@@ -72,6 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     hasElderAccess,
     isFullElder,
     isCgCoach,
+    hasDeaconAccess,
+    isChairOfDeacons,
+    isDeaconOnly,
+    hasElderHubAccess,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
