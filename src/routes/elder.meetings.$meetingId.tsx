@@ -15,7 +15,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { RichTextEditor, RichTextView, extractMentions } from "@/components/ui/rich-text-editor";
 import { LinkedText } from "@/lib/render-linked-text";
 import type { MentionUser } from "@/components/ui/mention-list";
-import { Plus, Trash2, Lock, Unlock, ChevronLeft, ChevronDown, ChevronRight, Check, Square, Bookmark, GripVertical, Pencil, X, MessageSquare } from "lucide-react";
+import { Plus, Trash2, Lock, Unlock, ChevronLeft, ChevronDown, ChevronRight, Check, Square, Bookmark, GripVertical, Pencil, X, MessageSquare, Gavel } from "lucide-react";
+import { createMotion } from "@/lib/elder-motions.functions";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { PastoralCareList } from "@/components/pastoral/PastoralCareList";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
@@ -426,6 +428,35 @@ function AgendaItemRow({ item, isFullElder, reload, meetingId, mentionUsers, isE
   const hasNotes = !!(item.body && item.body.replace(/<[^>]+>/g, "").trim());
   const [notesOpen, setNotesOpen] = useState(false);
   const [notesDraft, setNotesDraft] = useState<string>(item.body ?? "");
+  const navigate = useNavigate();
+  const [motionOpen, setMotionOpen] = useState(false);
+  const [motionDeadline, setMotionDeadline] = useState(() => {
+    const d = new Date(); d.setHours(d.getHours() + 72);
+    return d.toISOString().slice(0, 16);
+  });
+  const [motionSaving, setMotionSaving] = useState(false);
+
+  async function promoteToMotion() {
+    setMotionSaving(true);
+    try {
+      const plainTitle = (item.title ?? "").replace(/<[^>]+>/g, "").trim();
+      const plainBody = (item.body ?? "").replace(/<[^>]+>/g, "").trim();
+      const res: any = await createMotion({
+        data: {
+          title: plainTitle || "Untitled motion",
+          description: plainBody,
+          deadline_at: new Date(motionDeadline).toISOString(),
+        },
+      });
+      toast.success("Motion opened — elders notified");
+      setMotionOpen(false);
+      if (res?.id) navigate({ to: "/elder/motions/$motionId", params: { motionId: res.id } });
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to open motion");
+    } finally {
+      setMotionSaving(false);
+    }
+  }
 
   useEffect(() => { setDraftTitle(item.title ?? ""); }, [item.title]);
   useEffect(() => { setNotesDraft(item.body ?? ""); }, [item.body]);
@@ -558,6 +589,15 @@ function AgendaItemRow({ item, isFullElder, reload, meetingId, mentionUsers, isE
       </button>
       {isFullElder && (
         <button
+          title="Promote to motion"
+          onClick={() => setMotionOpen((o) => !o)}
+          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+        >
+          <Gavel className="w-3.5 h-3.5" />
+        </button>
+      )}
+      {isFullElder && (
+        <button
           title={item.executive_session ? "Make standard" : "Mark Executive"}
           onClick={async () => {
             await setAgendaExecutive({ data: { id: item.id, executive: !item.executive_session } });
@@ -611,6 +651,29 @@ function AgendaItemRow({ item, isFullElder, reload, meetingId, mentionUsers, isE
           </div>
         </div>
       )}
+      {motionOpen && isFullElder && (
+        <div className="pl-1 space-y-2 border-l-2 border-primary/30 ml-1">
+          <div className="text-xs text-muted-foreground">Open as motion — elders will be emailed.</div>
+          <div className="flex flex-wrap items-end gap-2">
+            <div>
+              <label className="text-[11px] text-muted-foreground block mb-0.5">Deadline</label>
+              <Input
+                type="datetime-local"
+                value={motionDeadline}
+                onChange={(e) => setMotionDeadline(e.target.value)}
+                className="h-8 text-sm"
+              />
+            </div>
+            <Button size="sm" disabled={motionSaving} onClick={promoteToMotion}>
+              <Gavel className="w-3 h-3 mr-1" /> {motionSaving ? "Opening…" : "Open motion"}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setMotionOpen(false)}>
+              <X className="w-3 h-3 mr-1" /> Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
 
     </div>
   );
