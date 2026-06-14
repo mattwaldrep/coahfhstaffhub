@@ -39,6 +39,7 @@ const JOINT_SUBSECTIONS = [
   { key: "need_to_know", label: "What we need to know" },
   { key: "resource", label: "How can we serve / resource" },
   { key: "upcoming", label: "Upcoming events" },
+  { key: "other", label: "Other / Ad hoc" },
 ];
 
 function MeetingDetail() {
