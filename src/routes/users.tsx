@@ -260,12 +260,13 @@ function Body() {
 
 
       <div className="overflow-x-auto">
-        <div className="bg-surface border border-border rounded-2xl overflow-hidden min-w-[720px]">
-          <div className="grid grid-cols-12 px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
+        <div className="bg-surface border border-border rounded-2xl overflow-hidden min-w-[820px]">
+          <div className="grid grid-cols-14 px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
             <div className="col-span-4">User</div>
             <div className="col-span-2">Role</div>
-            <div className="col-span-2">Elder access</div>
-            <div className="col-span-1">CG Coach</div>
+            <div className="col-span-2">Elder</div>
+            <div className="col-span-2">Deacon</div>
+            <div className="col-span-1">CG</div>
             <div className="col-span-2">Joined</div>
             <div className="col-span-1 text-right">·</div>
           </div>
@@ -280,10 +281,15 @@ function Body() {
               : r.roles.includes("elder_candidate")
               ? "elder_candidate"
               : "none";
+            const deaconTier: DeaconTier = r.roles.includes("chair_of_deacons")
+              ? "chair_of_deacons"
+              : r.roles.includes("deacon")
+              ? "deacon"
+              : "none";
             const isCg = r.roles.includes("cg_coach");
             const isSelf = r.id === user?.id;
             return (
-              <div key={r.id} className="grid grid-cols-12 items-center px-4 py-3 border-b border-border last:border-0 hover:bg-background/40">
+              <div key={r.id} className="grid grid-cols-14 items-center px-4 py-3 border-b border-border last:border-0 hover:bg-background/40">
                 <div className="col-span-4 flex items-center gap-3 min-w-0">
                   <div className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xs font-medium shrink-0">
                     {(r.full_name ?? r.email ?? "?").slice(0, 1).toUpperCase()}
@@ -310,6 +316,16 @@ function Body() {
                     <SelectTrigger className="h-8 w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {ELDER_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2 pr-2">
+                  <Select value={deaconTier} onValueChange={(v) => changeDeaconTier(r.id, v as DeaconTier)}>
+                    <SelectTrigger className="h-8 w-full"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {DEACON_OPTIONS.map((o) => (
                         <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                       ))}
                     </SelectContent>
