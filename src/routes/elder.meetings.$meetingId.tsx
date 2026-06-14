@@ -122,6 +122,7 @@ function MeetingDetail() {
               }}
             >
               <option value="draft">Draft</option>
+              <option value="scheduled">Scheduled</option>
               <option value="in_progress">In Progress</option>
               <option value="complete">Complete</option>
               <option value="archived">Archived</option>
