@@ -26,23 +26,25 @@ const TABS = [
 ];
 
 function ElderShell() {
-  const { hasElderAccess, isFullElder, loading } = useAuth();
+  const { hasElderHubAccess, hasElderAccess, isDeaconOnly, isFullElder, loading } = useAuth();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
 
   if (loading) return null;
 
-  if (!hasElderAccess) {
+  if (!hasElderHubAccess) {
     return (
       <div className="max-w-md mx-auto mt-20 text-center space-y-3">
         <ShieldAlert className="w-10 h-10 mx-auto text-muted-foreground" />
-        <h1 className="text-xl font-display font-semibold">Elder access only</h1>
+        <h1 className="text-xl font-display font-semibold">Elder Hub access only</h1>
         <p className="text-sm text-muted-foreground">
-          This area is restricted to elders and elder candidates.
+          This area is restricted to elders, elder candidates, and deacons.
         </p>
         <Button asChild variant="outline" size="sm"><Link to="/">Back home</Link></Button>
       </div>
     );
   }
+
+  const tabs = isDeaconOnly ? TABS.filter((t) => t.to === "/elder/meetings") : TABS;
 
   return (
     <div className="space-y-6">
