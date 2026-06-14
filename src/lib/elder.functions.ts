@@ -414,7 +414,7 @@ export const upsertJointItem = createServerFn({ method: "POST" })
       .object({
         id: z.string().uuid().optional(),
         meeting_id: z.string().uuid(),
-        sub_section: z.enum(["need_to_know", "resource", "upcoming"]),
+        sub_section: z.enum(["need_to_know", "resource", "upcoming", "other"]),
         title: z.string().min(1).max(500),
         body: z.string().max(10000).nullable().optional(),
         position: z.number().int().optional(),
