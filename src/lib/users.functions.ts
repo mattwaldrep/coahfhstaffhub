@@ -21,9 +21,20 @@ export const listUsers = createServerFn({ method: "GET" })
       arr.push(r.role);
       rolesByUser.set(r.user_id, arr);
     });
+    // Fetch last_sign_in_at from auth.users (paginate)
+    const lastSignInByUser = new Map<string, string | null>();
+    let page = 1;
+    while (true) {
+      const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
+      if (error) break;
+      data.users.forEach((u: any) => lastSignInByUser.set(u.id, u.last_sign_in_at ?? null));
+      if (!data.users.length || data.users.length < 1000) break;
+      page += 1;
+    }
     return (profiles ?? []).map((p: any) => ({
       ...p,
       roles: rolesByUser.get(p.id) ?? [],
+      last_sign_in_at: lastSignInByUser.get(p.id) ?? null,
     }));
   });
 
