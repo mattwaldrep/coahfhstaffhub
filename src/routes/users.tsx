@@ -16,7 +16,7 @@ import { Plus, Trash2, ShieldAlert, Users as UsersIcon } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
-  listUsers, setUserRole, inviteUser, removeUser, setUserElderTier, bulkInviteUsers, setUserCgCoach,
+  listUsers, setUserRole, inviteUser, removeUser, setUserElderTier, bulkInviteUsers, setUserCgCoach, setUserDeaconTier,
 } from "@/lib/users.functions";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -36,8 +36,15 @@ const ELDER_OPTIONS = [
   { value: "elder", label: "Full Elder" },
 ] as const;
 
+const DEACON_OPTIONS = [
+  { value: "none", label: "—" },
+  { value: "deacon", label: "Deacon" },
+  { value: "chair_of_deacons", label: "Chair of Deacons" },
+] as const;
+
 type Role = typeof ROLE_OPTIONS[number]["value"];
 type ElderTier = typeof ELDER_OPTIONS[number]["value"];
+type DeaconTier = typeof DEACON_OPTIONS[number]["value"];
 
 type Row = {
   id: string;
