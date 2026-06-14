@@ -52,6 +52,7 @@ type Row = {
   full_name: string | null;
   avatar_url: string | null;
   created_at: string;
+  last_sign_in_at: string | null;
   roles: string[];
 };
 
