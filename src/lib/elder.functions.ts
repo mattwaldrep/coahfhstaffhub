@@ -27,8 +27,6 @@ export const listElderMeetings = createServerFn({ method: "GET" })
 
 export const getElderMeeting = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-export const getElderMeeting = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const access = await assertElderHubAccess(context.supabase, context.userId);
