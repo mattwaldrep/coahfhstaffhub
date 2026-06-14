@@ -443,7 +443,7 @@ export const deleteJointItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertElderAccess(context.supabase, context.userId);
+    await assertJointEditAccess(context.supabase, context.userId);
     const { error } = await supabaseAdmin.from("elder_joint_deacon_items").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
