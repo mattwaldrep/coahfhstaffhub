@@ -267,7 +267,7 @@ function Body() {
             <div className="col-span-2">Elder</div>
             <div className="col-span-2">Deacon</div>
             <div className="col-span-1">CG</div>
-            <div className="col-span-2">Joined</div>
+            <div className="col-span-1">Joined</div>
             <div className="col-span-1 text-right">·</div>
           </div>
           {loading && <div className="p-6 text-sm text-muted-foreground">Loading…</div>}
