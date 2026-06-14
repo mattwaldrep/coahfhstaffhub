@@ -81,7 +81,7 @@ function ElderMeetingsList() {
         {loading && <div className="p-6 text-sm text-muted-foreground">Loading…</div>}
         {!loading && rows.length === 0 && <div className="p-6 text-sm text-muted-foreground">No meetings yet.</div>}
         {rows.map((m) => (
-          <MeetingRow key={m.id} m={m} reload={load} />
+          <MeetingRow key={m.id} m={m} reload={load} canEdit={canCreate} />
         ))}
       </div>
 
@@ -120,7 +120,7 @@ function ElderMeetingsList() {
   );
 }
 
-function MeetingRow({ m, reload }: { m: any; reload: () => void }) {
+function MeetingRow({ m, reload, canEdit }: { m: any; reload: () => void; canEdit: boolean }) {
   const [editing, setEditing] = useState(false);
   const [date, setDate] = useState(m.meeting_date);
   const [title, setTitle] = useState(m.title ?? "");
@@ -172,20 +172,24 @@ function MeetingRow({ m, reload }: { m: any; reload: () => void }) {
           <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-muted text-muted-foreground">
             {m.status}
           </span>
-          <button
-            title="Reschedule"
-            onClick={() => setEditing(true)}
-            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground p-1"
-          >
-            <CalendarIcon className="w-4 h-4" />
-          </button>
-          <button
-            title="Delete meeting"
-            onClick={remove}
-            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive p-1"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {canEdit && (
+            <>
+              <button
+                title="Reschedule"
+                onClick={() => setEditing(true)}
+                className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground p-1"
+              >
+                <CalendarIcon className="w-4 h-4" />
+              </button>
+              <button
+                title="Delete meeting"
+                onClick={remove}
+                className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive p-1"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
       </div>
 
