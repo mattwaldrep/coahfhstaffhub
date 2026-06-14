@@ -658,20 +658,7 @@ function JointSubSection({ sub, meetingId, items, reload, mentionUsers, canEdit 
       <div className="p-4 space-y-3">
         {items.length === 0 && <div className="text-xs text-muted-foreground">None yet.</div>}
         {items.map((it: any) => (
-          <div key={it.id} className="border border-border rounded-lg p-3 group">
-            <div className="flex items-start justify-between gap-2">
-              <div className="text-sm font-medium flex-1">{it.title}</div>
-              {canEdit && (
-                <button
-                  onClick={async () => { if (!confirm("Delete?")) return; await deleteJointItem({ data: { id: it.id } }); reload(); }}
-                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-            {it.body && <RichTextView html={it.body} className="mt-1 text-xs text-muted-foreground" />}
-          </div>
+          <JointItemCard key={it.id} item={it} meetingId={meetingId} reload={reload} mentionUsers={mentionUsers} canEdit={canEdit} subKey={sub.key} />
         ))}
         {canEdit && (
           <div className="space-y-2">
@@ -697,7 +684,83 @@ function ActionItemsBlock({ meetingId, items, isFullElder, reload }: any) {
       reload();
     } catch (e: any) {
       toast.error(e.message ?? "Failed");
+}
+
+function JointItemCard({ item, meetingId, reload, mentionUsers, canEdit, subKey }: any) {
+  const hasNotes = !!(item.body && item.body.replace(/<[^>]+>/g, "").trim());
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<string>(item.body ?? "");
+  useEffect(() => { setDraft(item.body ?? ""); }, [item.body]);
+
+  async function saveNotes(html: string) {
+    if ((item.body ?? "") !== html) {
+      try {
+        await upsertJointItem({
+          data: { id: item.id, meeting_id: meetingId, sub_section: subKey, title: item.title, body: html || null },
+        });
+      } catch (e: any) {
+        toast.error(e.message ?? "Failed to save notes");
+        return;
+      }
     }
+    const mentions = extractMentions(html);
+    if (mentions.length > 0) {
+      try {
+        const res: any = await createActionsFromMentions({ data: { meeting_id: meetingId, mentions } });
+        if (res?.created > 0) {
+          toast.success(`Created ${res.created} action item${res.created === 1 ? "" : "s"} from mentions`);
+        }
+      } catch (e: any) {
+        toast.error(e.message ?? "Failed to create action items");
+      }
+    }
+    reload();
+  }
+
+  return (
+    <div className="border border-border rounded-lg p-3 group">
+      <div className="flex items-start justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => canEdit && setOpen((o) => !o)}
+          className={`text-sm font-medium flex-1 text-left ${canEdit ? "hover:text-foreground/80 cursor-pointer" : "cursor-default"}`}
+        >
+          {item.title}
+        </button>
+        {canEdit && (
+          <>
+            <button
+              title={open ? "Hide notes" : hasNotes ? "Edit notes" : "Add notes"}
+              onClick={() => setOpen((o) => !o)}
+              className={`${hasNotes || open ? "text-foreground" : "opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground"}`}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={async () => { if (!confirm("Delete?")) return; await deleteJointItem({ data: { id: item.id } }); reload(); }}
+              className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </>
+        )}
+      </div>
+      {item.body && !open && <RichTextView html={item.body} className="mt-1 text-xs text-muted-foreground" />}
+      {open && canEdit && (
+        <div className="mt-2">
+          <RichTextEditor
+            value={draft}
+            onChange={setDraft}
+            placeholder="Notes for this item… (type @ to assign a task)"
+            minHeight={72}
+            mentionUsers={mentionUsers}
+            onBlur={saveNotes}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
   }
 
   return (
