@@ -291,7 +291,7 @@ function Body() {
             const isCg = r.roles.includes("cg_coach");
             const isSelf = r.id === user?.id;
             return (
-              <div key={r.id} className="grid grid-cols-12 items-center px-4 py-3 border-b border-border last:border-0 hover:bg-background/40">
+              <div key={r.id} className="grid grid-cols-13 items-center px-4 py-3 border-b border-border last:border-0 hover:bg-background/40">
                 <div className="col-span-3 flex items-center gap-3 min-w-0">
                   <div className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xs font-medium shrink-0">
                     {(r.full_name ?? r.email ?? "?").slice(0, 1).toUpperCase()}
