@@ -544,7 +544,7 @@ function JointSections({ meetingId, items, reload, mentionUsers, canEdit }: any)
   );
 }
 
-function JointSubSection({ sub, meetingId, items, reload, mentionUsers }: any) {
+function JointSubSection({ sub, meetingId, items, reload, mentionUsers, canEdit }: any) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
 
@@ -580,25 +580,30 @@ function JointSubSection({ sub, meetingId, items, reload, mentionUsers }: any) {
       header={<><span>{sub.label}</span><span className="text-[10px] text-muted-foreground ml-1">({items.length})</span></>}
     >
       <div className="p-4 space-y-3">
+        {items.length === 0 && <div className="text-xs text-muted-foreground">None yet.</div>}
         {items.map((it: any) => (
           <div key={it.id} className="border border-border rounded-lg p-3 group">
             <div className="flex items-start justify-between gap-2">
               <div className="text-sm font-medium flex-1">{it.title}</div>
-              <button
-                onClick={async () => { if (!confirm("Delete?")) return; await deleteJointItem({ data: { id: it.id } }); reload(); }}
-                className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              {canEdit && (
+                <button
+                  onClick={async () => { if (!confirm("Delete?")) return; await deleteJointItem({ data: { id: it.id } }); reload(); }}
+                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
             {it.body && <RichTextView html={it.body} className="mt-1 text-xs text-muted-foreground" />}
           </div>
         ))}
-        <div className="space-y-2">
-          <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} className="h-8 text-sm" />
-          <RichTextEditor value={body} onChange={setBody} placeholder="Notes (optional · type @ to assign a task)" minHeight={72} mentionUsers={mentionUsers} />
-          <Button size="sm" variant="outline" onClick={add}><Plus className="w-3 h-3 mr-1" /> Add</Button>
-        </div>
+        {canEdit && (
+          <div className="space-y-2">
+            <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} className="h-8 text-sm" />
+            <RichTextEditor value={body} onChange={setBody} placeholder="Notes (optional · type @ to assign a task)" minHeight={72} mentionUsers={mentionUsers} />
+            <Button size="sm" variant="outline" onClick={add}><Plus className="w-3 h-3 mr-1" /> Add</Button>
+          </div>
+        )}
       </div>
     </CollapsibleCard>
   );
