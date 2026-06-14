@@ -109,6 +109,16 @@ function Body() {
     }
   }
 
+  async function changeDeaconTier(userId: string, tier: DeaconTier) {
+    try {
+      await setUserDeaconTier({ data: { userId, tier } });
+      toast.success("Deacon tier updated");
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed");
+    }
+  }
+
   async function toggleCgCoach(userId: string, enabled: boolean) {
     try {
       await setUserCgCoach({ data: { userId, enabled } });
