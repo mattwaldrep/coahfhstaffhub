@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RichTextEditor, RichTextView, extractMentions } from "@/components/ui/rich-text-editor";
 import { LinkedText } from "@/lib/render-linked-text";
 import type { MentionUser } from "@/components/ui/mention-list";
-import { Plus, Trash2, Lock, Unlock, ChevronLeft, ChevronDown, ChevronRight, Check, Square, Bookmark, GripVertical, Pencil, X } from "lucide-react";
+import { Plus, Trash2, Lock, Unlock, ChevronLeft, ChevronDown, ChevronRight, Check, Square, Bookmark, GripVertical, Pencil, X, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { PastoralCareList } from "@/components/pastoral/PastoralCareList";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
@@ -255,9 +255,10 @@ function SectionCard({ section, meetingId, items, note, isFullElder, reload, men
             }
           }}
           renderItem={(item: any) => (
-            <AgendaItemRow item={item} isFullElder={isFullElder} reload={reload} meetingId={meetingId} />
+            <AgendaItemRow item={item} isFullElder={isFullElder} reload={reload} meetingId={meetingId} mentionUsers={mentionUsers} isExec={isExec} />
           )}
         />
+
         <div className="space-y-2">
           <RichTextEditor
             value={adding}
@@ -415,14 +416,18 @@ function SortableRow({ id, children }: { id: string; children: ReactNode }) {
   );
 }
 
-function AgendaItemRow({ item, isFullElder, reload, meetingId }: any) {
+function AgendaItemRow({ item, isFullElder, reload, meetingId, mentionUsers, isExec }: any) {
   const isNewBusiness = item.section_key === "new_business";
   const willCarry = isNewBusiness || !!item.carry_to_next;
   const [editing, setEditing] = useState(false);
   const [draftTitle, setDraftTitle] = useState(item.title ?? "");
   const [saving, setSaving] = useState(false);
+  const hasNotes = !!(item.body && item.body.replace(/<[^>]+>/g, "").trim());
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [notesDraft, setNotesDraft] = useState<string>(item.body ?? "");
 
   useEffect(() => { setDraftTitle(item.title ?? ""); }, [item.title]);
+  useEffect(() => { setNotesDraft(item.body ?? ""); }, [item.body]);
 
   async function saveEdit() {
     const plain = draftTitle.replace(/<[^>]+>/g, "").trim();
@@ -446,6 +451,39 @@ function AgendaItemRow({ item, isFullElder, reload, meetingId }: any) {
     }
   }
 
+  async function saveNotes(html: string) {
+    if ((item.body ?? "") !== html) {
+      try {
+        await upsertAgendaItem({
+          data: {
+            id: item.id,
+            meeting_id: meetingId,
+            section_key: item.section_key,
+            title: item.title,
+            body: html || null,
+          },
+        });
+      } catch (e: any) {
+        toast.error(e.message ?? "Failed to save notes");
+        return;
+      }
+    }
+    const mentions = extractMentions(html);
+    if (mentions.length > 0) {
+      try {
+        const res: any = await createActionsFromMentions({
+          data: { meeting_id: meetingId, executive_session: !!isExec || !!item.executive_session, mentions },
+        });
+        if (res?.created > 0) {
+          toast.success(`Created ${res.created} action item${res.created === 1 ? "" : "s"} from mentions`);
+        }
+      } catch (e: any) {
+        toast.error(e.message ?? "Failed to create action items");
+      }
+    }
+    reload();
+  }
+
   if (editing) {
     return (
       <div className="space-y-2">
@@ -463,30 +501,40 @@ function AgendaItemRow({ item, isFullElder, reload, meetingId }: any) {
   }
 
   return (
-    <div className="flex items-start gap-2 group">
-      <div className="flex-1 min-w-0">
-        <AgendaTitle value={item.title} className="text-sm" />
-        {item.body && <AgendaTitle value={item.body} className="text-xs text-muted-foreground mt-0.5" />}
-        <div className="flex gap-2 mt-0.5">
-          {item.source && (
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              {item.source === "carryover" ? "Carried over" : item.source}
-            </div>
+    <div className="group space-y-2">
+      <div className="flex items-start gap-2">
+        <div className="flex-1 min-w-0">
+          <AgendaTitle value={item.title} className="text-sm" />
+          {hasNotes && !notesOpen && (
+            <AgendaTitle value={item.body} className="text-xs text-muted-foreground mt-1" />
           )}
-          {willCarry && (
-            <div className="text-[10px] uppercase tracking-wider text-primary">
-              {isNewBusiness ? "Auto-carries to next" : "Will carry to next"}
-            </div>
-          )}
+          <div className="flex gap-2 mt-0.5">
+            {item.source && (
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                {item.source === "carryover" ? "Carried over" : item.source}
+              </div>
+            )}
+            {willCarry && (
+              <div className="text-[10px] uppercase tracking-wider text-primary">
+                {isNewBusiness ? "Auto-carries to next" : "Will carry to next"}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-      <button
-        title="Edit item"
-        onClick={() => setEditing(true)}
-        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
-      >
-        <Pencil className="w-3.5 h-3.5" />
-      </button>
+        <button
+          title={notesOpen ? "Hide notes" : hasNotes ? "Edit notes" : "Add notes"}
+          onClick={() => setNotesOpen((o) => !o)}
+          className={`${hasNotes || notesOpen ? "text-foreground" : "opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground"}`}
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+        </button>
+        <button
+          title="Edit item"
+          onClick={() => setEditing(true)}
+          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+        </button>
       <button
         title={
           isNewBusiness
@@ -527,9 +575,23 @@ function AgendaItemRow({ item, isFullElder, reload, meetingId }: any) {
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
+      </div>
+      {notesOpen && (
+        <div className="pl-1">
+          <RichTextEditor
+            value={notesDraft}
+            onChange={setNotesDraft}
+            placeholder="Notes for this item… (type @ to assign a task)"
+            minHeight={72}
+            mentionUsers={mentionUsers}
+            onBlur={saveNotes}
+          />
+        </div>
+      )}
     </div>
   );
 }
+
 
 function JointSections({ meetingId, items, reload, mentionUsers, canEdit }: any) {
   return (
