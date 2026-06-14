@@ -60,8 +60,11 @@ const CG_ITEMS: NavItem[] = [
 ];
 
 export function AppSidebar() {
-  const { hasRole, hasElderAccess, isCgCoach } = useAuth();
+  const { hasRole, hasElderHubAccess, isDeaconOnly, isCgCoach } = useAuth();
   const isCore = hasRole("core");
+  const elderItems = isDeaconOnly
+    ? ELDER_ITEMS.filter((i) => i.to === "/elder/meetings")
+    : ELDER_ITEMS;
 
   const PRIMARY: NavItem[] = [
     { to: "/", label: "Home", icon: Home, exact: true },
