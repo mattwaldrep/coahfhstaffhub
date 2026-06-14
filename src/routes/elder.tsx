@@ -29,6 +29,13 @@ const TABS = [
 function ElderShell() {
   const { hasElderHubAccess, hasElderAccess, isDeaconOnly, isFullElder, loading } = useAuth();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (loading || !isDeaconOnly) return;
+    const allowed = pathname === "/elder/meetings" || pathname.startsWith("/elder/meetings/");
+    if (!allowed) navigate({ to: "/elder/meetings", replace: true });
+  }, [loading, isDeaconOnly, pathname, navigate]);
 
   if (loading) return null;
 
