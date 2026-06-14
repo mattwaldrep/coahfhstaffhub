@@ -658,20 +658,7 @@ function JointSubSection({ sub, meetingId, items, reload, mentionUsers, canEdit 
       <div className="p-4 space-y-3">
         {items.length === 0 && <div className="text-xs text-muted-foreground">None yet.</div>}
         {items.map((it: any) => (
-          <div key={it.id} className="border border-border rounded-lg p-3 group">
-            <div className="flex items-start justify-between gap-2">
-              <div className="text-sm font-medium flex-1">{it.title}</div>
-              {canEdit && (
-                <button
-                  onClick={async () => { if (!confirm("Delete?")) return; await deleteJointItem({ data: { id: it.id } }); reload(); }}
-                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-            {it.body && <RichTextView html={it.body} className="mt-1 text-xs text-muted-foreground" />}
-          </div>
+          <JointItemCard key={it.id} item={it} meetingId={meetingId} reload={reload} mentionUsers={mentionUsers} canEdit={canEdit} subKey={sub.key} />
         ))}
         {canEdit && (
           <div className="space-y-2">
