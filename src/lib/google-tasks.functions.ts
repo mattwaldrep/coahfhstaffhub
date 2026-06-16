@@ -329,3 +329,49 @@ export const pushActionItemsBulk = createServerFn({ method: "POST" })
     }
     return { results };
   });
+
+export const setActionItemCompleted = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ actionItemId: z.string().uuid(), completed: z.boolean() }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { data: item, error } = await supabaseAdmin
+      .from("action_items")
+      .select("id, assignee_id, google_task_id")
+      .eq("id", data.actionItemId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!item) throw new Error("Action item not found");
+
+    const { error: upErr } = await supabaseAdmin
+      .from("action_items")
+      .update({ completed: data.completed })
+      .eq("id", item.id);
+    if (upErr) throw new Error(upErr.message);
+
+    // Mirror state to Google Tasks so the pull-sync doesn't revert it.
+    if (item.google_task_id && item.assignee_id) {
+      try {
+        const accessToken = await ensureAccessToken(item.assignee_id);
+        await fetch(
+          `https://tasks.googleapis.com/tasks/v1/lists/@default/tasks/${item.google_task_id}`,
+          {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(
+              data.completed
+                ? { status: "completed" }
+                : { status: "needsAction", completed: null },
+            ),
+          },
+        );
+      } catch {
+        // best-effort; app state is already authoritative
+      }
+    }
+    return { ok: true };
+  });
