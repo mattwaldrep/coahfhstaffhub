@@ -120,6 +120,87 @@ export const disconnectGoogle = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export type GoogleTaskItem = {
+  id: string;
+  title: string;
+  notes: string | null;
+  due: string | null;
+  status: "needsAction" | "completed";
+  completed: string | null;
+  updated: string | null;
+  webViewLink: string | null;
+  listId: string;
+  listTitle: string;
+};
+
+export const listMyGoogleTasks = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ connected: boolean; tasks: GoogleTaskItem[]; error?: string }> => {
+    const { data: row } = await supabaseAdmin
+      .from("user_integrations")
+      .select("user_id")
+      .eq("user_id", context.userId)
+      .eq("provider", "google_tasks")
+      .maybeSingle();
+    if (!row) return { connected: false, tasks: [] };
+
+    try {
+      const accessToken = await ensureAccessToken(context.userId);
+      // List task lists
+      const listsRes = await fetch("https://tasks.googleapis.com/tasks/v1/users/@me/lists?maxResults=100", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const listsJson: any = await listsRes.json();
+      if (!listsRes.ok) throw new Error(`Lists failed: ${JSON.stringify(listsJson)}`);
+      const lists: Array<{ id: string; title: string }> = listsJson.items ?? [];
+
+      const all: GoogleTaskItem[] = [];
+      for (const list of lists) {
+        let pageToken: string | undefined;
+        do {
+          const url = new URL(`https://tasks.googleapis.com/tasks/v1/lists/${list.id}/tasks`);
+          url.searchParams.set("showCompleted", "true");
+          url.searchParams.set("showHidden", "false");
+          url.searchParams.set("maxResults", "100");
+          if (pageToken) url.searchParams.set("pageToken", pageToken);
+          const r = await fetch(url.toString(), {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+          const j: any = await r.json();
+          if (!r.ok) throw new Error(`Tasks failed: ${JSON.stringify(j)}`);
+          for (const t of (j.items ?? []) as any[]) {
+            all.push({
+              id: t.id,
+              title: t.title ?? "(untitled)",
+              notes: t.notes ?? null,
+              due: t.due ?? null,
+              status: t.status === "completed" ? "completed" : "needsAction",
+              completed: t.completed ?? null,
+              updated: t.updated ?? null,
+              webViewLink: t.webViewLink ?? null,
+              listId: list.id,
+              listTitle: list.title,
+            });
+          }
+          pageToken = j.nextPageToken;
+        } while (pageToken);
+      }
+      // Sort: incomplete first, then by due date asc (nulls last), then by updated desc
+      all.sort((a, b) => {
+        if (a.status !== b.status) return a.status === "needsAction" ? -1 : 1;
+        const ad = a.due ? Date.parse(a.due) : Infinity;
+        const bd = b.due ? Date.parse(b.due) : Infinity;
+        if (ad !== bd) return ad - bd;
+        const au = a.updated ? Date.parse(a.updated) : 0;
+        const bu = b.updated ? Date.parse(b.updated) : 0;
+        return bu - au;
+      });
+      return { connected: true, tasks: all };
+    } catch (e: any) {
+      return { connected: true, tasks: [], error: e.message ?? "Failed to load Google Tasks" };
+    }
+  });
+
 async function refreshAccessToken(refreshToken: string) {
   const { id, secret } = getOAuthEnv();
   const res = await fetch("https://oauth2.googleapis.com/token", {

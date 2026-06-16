@@ -16,6 +16,7 @@ import { NextBestAction } from "@/components/dashboard/NextBestAction";
 import { CongregationPulse } from "@/components/dashboard/CongregationPulse";
 import { PastoralAttentionCard } from "@/components/dashboard/PastoralAttentionCard";
 import { TaskSourceButton } from "@/components/tasks/TaskSourceButton";
+import { GoogleTasksCard } from "@/components/dashboard/GoogleTasksCard";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -275,6 +276,8 @@ function Dashboard() {
               View all in Meeting <ArrowUpRight className="w-3 h-3" />
             </Link>
           </div>
+
+          <GoogleTasksCard />
 
           <div className="bg-surface border border-border rounded-2xl p-6 shadow-card">
             <h2 className="text-lg font-display font-semibold mb-3 flex items-center gap-2">
