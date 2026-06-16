@@ -249,19 +249,31 @@ export function AppShell({ children }: { children: ReactNode }) {
                       <ReactMarkdown
                         components={{
                           a: ({ href, children, ...rest }) => {
-                            const isInternal = href?.startsWith("/");
+                            let internalPath: string | null = null;
+                            if (href) {
+                              if (href.startsWith("/")) {
+                                internalPath = href;
+                              } else if (typeof window !== "undefined") {
+                                try {
+                                  const u = new URL(href, window.location.origin);
+                                  if (u.origin === window.location.origin) {
+                                    internalPath = u.pathname + u.search + u.hash;
+                                  }
+                                } catch { /* not a URL */ }
+                              }
+                            }
                             return (
                               <a
                                 {...rest}
-                                href={href}
-                                target={isInternal ? undefined : "_blank"}
-                                rel={isInternal ? undefined : "noopener noreferrer"}
+                                href={internalPath ?? href}
+                                target={internalPath ? undefined : "_blank"}
+                                rel={internalPath ? undefined : "noopener noreferrer"}
                                 className="text-primary underline underline-offset-2 hover:opacity-80"
                                 onClick={(e) => {
-                                  if (isInternal && href) {
+                                  if (internalPath) {
                                     e.preventDefault();
                                     setAiOpen(false);
-                                    navigate({ to: href as string });
+                                    window.location.assign(internalPath);
                                   }
                                 }}
                               >
