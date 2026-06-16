@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { getLatestLeadLikeJesusPost, type LLJPost } from "@/lib/lead-like-jesus.functions";
 import { pushActionItemToGoogleTasks, pushActionItemsBulk, autoPushIfEnabled } from "@/lib/google-tasks.functions";
 import { TaskSourceButton } from "@/components/tasks/TaskSourceButton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -163,18 +164,83 @@ export function NotesField({
 /* ---------- 1. & 2. Notes-only sections (Devotional, Lead Like Jesus) ---------- */
 
 export function DevotionalSection({ meetingId }: { meetingId: string }) {
+  const fetchPost = useServerFn(getLatestLeadLikeJesusPost);
+  const [post, setPost] = useState<LLJPost | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchPost()
+      .then((r) => {
+        if (cancelled) return;
+        setPost(r.post);
+        setError(r.error ?? null);
+      })
+      .catch((e) => !cancelled && setError(e?.message ?? "Failed to load"))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchPost]);
+
   return (
     <StandingSection
       title="Devotional — Lead Like Jesus"
       subtitle="Read the latest post together, then capture takeaways."
     >
       <div className="space-y-3">
-        <Button asChild variant="outline" size="sm">
-          <a href="https://leadlikejesus.com/blog/" target="_blank" rel="noreferrer">
-            <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-            Open Lead Like Jesus blog
-          </a>
-        </Button>
+        {loading ? (
+          <div className="text-sm text-muted-foreground inline-flex items-center gap-2">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading latest post…
+          </div>
+        ) : post ? (
+          <div className="rounded-lg border border-border bg-background/40 p-4">
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div className="min-w-0">
+                <h4 className="font-display font-semibold text-base leading-tight">{post.title}</h4>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {format(new Date(post.date), "MMM d, yyyy")} · leadlikejesus.com
+                </div>
+              </div>
+              <Button asChild variant="ghost" size="sm" className="shrink-0">
+                <a href={post.link} target="_blank" rel="noreferrer">
+                  <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                  Open
+                </a>
+              </Button>
+            </div>
+            <div
+              className="prose prose-sm dark:prose-invert max-w-none [&_img]:rounded-md [&_a]:text-primary"
+              style={expanded ? undefined : { maxHeight: "12rem", overflow: "hidden", maskImage: "linear-gradient(to bottom, black 70%, transparent)" }}
+              dangerouslySetInnerHTML={{ __html: post.contentHtml }}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="mt-2"
+              onClick={() => setExpanded((v) => !v)}
+            >
+              <ChevronDown className={`w-3.5 h-3.5 mr-1.5 transition-transform ${expanded ? "rotate-180" : ""}`} />
+              {expanded ? "Show less" : "Read full post"}
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="text-sm text-muted-foreground">
+              {error ? `Couldn't load the latest post (${error}).` : "No post available."}
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <a href="https://leadlikejesus.com/blog/" target="_blank" rel="noreferrer">
+                <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                Open Lead Like Jesus blog
+              </a>
+            </Button>
+          </div>
+        )}
         <NotesField
           meetingId={meetingId}
           sectionKey="devotional"
