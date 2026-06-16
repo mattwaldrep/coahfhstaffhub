@@ -261,7 +261,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                                   if (isInternal && href) {
                                     e.preventDefault();
                                     setAiOpen(false);
-                                    navigate({ to: href });
+                                    navigate({ to: href as string });
                                   }
                                 }}
                               >
