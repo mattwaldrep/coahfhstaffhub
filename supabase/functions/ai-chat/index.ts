@@ -39,31 +39,41 @@ Deno.serve(async (req) => {
     const today = new Date().toISOString().slice(0, 10);
     const sevenDays = new Date(Date.now() + 7 * 86400000).toISOString();
 
-    const [meetingRes, agendaRes, actionsRes, eventsRes, reviewsRes] = await Promise.all([
-      admin.from("meetings").select("*").eq("meeting_date", today).maybeSingle(),
+    const [meetingRes, agendaRes, actionsRes, eventsRes, reviewsRes, elderMeetingsRes, motionsRes] = await Promise.all([
+      admin.from("meetings").select("id,meeting_date,title").eq("meeting_date", today).maybeSingle(),
       admin
         .from("agenda_items")
-        .select("title,status,owner_name")
+        .select("id,title,status,owner_name,meeting_id")
         .order("position")
         .limit(40),
       admin
         .from("action_items")
-        .select("title,completed,due_date")
+        .select("id,title,completed,due_date,meeting_id")
         .eq("completed", false)
         .order("created_at", { ascending: false })
         .limit(40),
       admin
         .from("calendar_events")
-        .select("title,start_at,sub_calendar,leader_name,location")
+        .select("id,title,start_at,sub_calendar,leader_name,location")
         .gte("start_at", new Date().toISOString())
         .lte("start_at", sevenDays)
         .order("start_at")
         .limit(40),
       admin
         .from("sunday_reviews")
-        .select("*")
+        .select("id,service_date")
         .order("service_date", { ascending: false })
         .limit(4),
+      admin
+        .from("elder_meetings")
+        .select("id,meeting_date,title")
+        .order("meeting_date", { ascending: false })
+        .limit(10),
+      admin
+        .from("elder_motions")
+        .select("id,title,status,deadline_at")
+        .order("created_at", { ascending: false })
+        .limit(20),
     ]);
 
     const context = {
@@ -72,9 +82,20 @@ Deno.serve(async (req) => {
       open_action_items: actionsRes.data,
       next_7_days_events: eventsRes.data,
       recent_sunday_reviews: reviewsRes.data,
+      elder_meetings: elderMeetingsRes.data,
+      elder_motions: motionsRes.data,
     };
 
     const systemPrompt = `You are the COAH Staff Hub assistant for City on a Hill Forest Hills church staff. Be warm, concise, and pastoral in tone. Answer using the LIVE CONTEXT below when relevant. If asked about something outside the context, say so plainly. Format with short paragraphs and bullets.
+
+When you reference a specific item from the LIVE CONTEXT, link to it using Markdown links so the user can open it in the app. Use these path patterns (relative paths only, no domain):
+- Staff meeting: [Title](/meeting?id=<meetings.id>)
+- Agenda item / action item: link to its parent meeting using the same pattern
+- Calendar event: [Title](/calendar?eventId=<calendar_events.id>)
+- Sunday review: [Service date](/sunday-review?id=<sunday_reviews.id>)
+- Elder meeting: [Title](/elder/meetings/<elder_meetings.id>)
+- Elder motion: [Title](/elder/motions/<elder_motions.id>)
+Only link items that actually appear in the LIVE CONTEXT below. Never invent IDs. Prefer linking the item's name inline rather than dumping bare URLs.
 
 LIVE CONTEXT (JSON):
 ${JSON.stringify(context, null, 2)}`;

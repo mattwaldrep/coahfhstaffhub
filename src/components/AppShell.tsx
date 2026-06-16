@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, X, Send, Loader2, RotateCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import ReactMarkdown from "react-markdown";
 
 const CHAT_STORAGE_KEY = "coah-ai-chat-v1";
 
@@ -238,13 +239,43 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {messages.map((m, i) => (
                   <div
                     key={i}
-                    className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap ${
+                    className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
                       m.role === "user"
-                        ? "ml-auto bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground"
+                        ? "ml-auto bg-primary text-primary-foreground whitespace-pre-wrap"
+                        : "bg-muted text-foreground prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1"
                     }`}
                   >
-                    {m.content || "…"}
+                    {m.role === "assistant" ? (
+                      <ReactMarkdown
+                        components={{
+                          a: ({ href, children, ...rest }) => {
+                            const isInternal = href?.startsWith("/");
+                            return (
+                              <a
+                                {...rest}
+                                href={href}
+                                target={isInternal ? undefined : "_blank"}
+                                rel={isInternal ? undefined : "noopener noreferrer"}
+                                className="text-primary underline underline-offset-2 hover:opacity-80"
+                                onClick={(e) => {
+                                  if (isInternal && href) {
+                                    e.preventDefault();
+                                    setAiOpen(false);
+                                    navigate({ to: href as string });
+                                  }
+                                }}
+                              >
+                                {children}
+                              </a>
+                            );
+                          },
+                        }}
+                      >
+                        {m.content || "…"}
+                      </ReactMarkdown>
+                    ) : (
+                      m.content || "…"
+                    )}
                   </div>
                 ))}
                 {sending && messages[messages.length - 1]?.role === "user" && (
