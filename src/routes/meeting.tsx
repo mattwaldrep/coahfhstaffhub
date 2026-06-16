@@ -452,9 +452,16 @@ function MeetingPage() {
             reorderAgenda={reorderAgenda}
             newAction={newAction}
             setNewAction={setNewAction}
+            newActionAssignee={newActionAssignee}
+            setNewActionAssignee={setNewActionAssignee}
+            newActionDue={newActionDue}
+            setNewActionDue={setNewActionDue}
+            profiles={profiles}
             addAction={addAction}
             toggleAction={toggleAction}
             removeAction={removeAction}
+            reassignAction={reassignAction}
+            setActionDue={setActionDue}
             notesDraft={notesDraft}
             onNotesChange={onNotesChange}
           />
