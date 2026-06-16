@@ -1349,7 +1349,9 @@ export function ReviewTasksSection() {
   }, []);
 
   async function complete(id: string) {
-    await supabase.from("action_items").update({ completed: true }).eq("id", id);
+    // Use server fn so completion is mirrored to Google Tasks; otherwise the
+    // pull-sync hook will flip completed back to false within a few minutes.
+    await setActionItemCompleted({ data: { actionItemId: id, completed: true } });
   }
   async function reassign(id: string, assignee_id: string | null) {
     await supabase.from("action_items").update({ assignee_id }).eq("id", id);
