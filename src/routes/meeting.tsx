@@ -90,10 +90,21 @@ function MeetingPage() {
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [newAgenda, setNewAgenda] = useState("");
   const [newAction, setNewAction] = useState("");
+  const [newActionAssignee, setNewActionAssignee] = useState<string | null>(null);
+  const [newActionDue, setNewActionDue] = useState<string | null>(null);
+  const [profiles, setProfiles] = useState<Array<{ id: string; full_name: string | null; email: string | null }>>([]);
   const [notesDraft, setNotesDraft] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
   const notesTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const undo = useUndoableAction();
+
+  useEffect(() => {
+    supabase
+      .from("profiles")
+      .select("id,full_name,email")
+      .order("full_name")
+      .then(({ data }) => setProfiles((data ?? []) as any));
+  }, []);
 
   useEffect(() => {
     if (!user) return;
