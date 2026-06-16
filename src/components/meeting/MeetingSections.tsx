@@ -29,7 +29,7 @@ import {
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { getLatestLeadLikeJesusPost, type LLJPost } from "@/lib/lead-like-jesus.functions";
-import { pushActionItemToGoogleTasks, pushActionItemsBulk, autoPushIfEnabled } from "@/lib/google-tasks.functions";
+import { pushActionItemToGoogleTasks, pushActionItemsBulk, autoPushIfEnabled, setActionItemCompleted } from "@/lib/google-tasks.functions";
 import { TaskSourceButton } from "@/components/tasks/TaskSourceButton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -1349,7 +1349,9 @@ export function ReviewTasksSection() {
   }, []);
 
   async function complete(id: string) {
-    await supabase.from("action_items").update({ completed: true }).eq("id", id);
+    // Use server fn so completion is mirrored to Google Tasks; otherwise the
+    // pull-sync hook will flip completed back to false within a few minutes.
+    await setActionItemCompleted({ data: { actionItemId: id, completed: true } });
   }
   async function reassign(id: string, assignee_id: string | null) {
     await supabase.from("action_items").update({ assignee_id }).eq("id", id);
