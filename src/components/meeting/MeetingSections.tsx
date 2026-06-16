@@ -29,7 +29,7 @@ import {
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { getLatestLeadLikeJesusPost, type LLJPost } from "@/lib/lead-like-jesus.functions";
-import { pushActionItemToGoogleTasks, pushActionItemsBulk, autoPushIfEnabled } from "@/lib/google-tasks.functions";
+import { pushActionItemToGoogleTasks, pushActionItemsBulk, autoPushIfEnabled, setActionItemCompleted } from "@/lib/google-tasks.functions";
 import { TaskSourceButton } from "@/components/tasks/TaskSourceButton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
