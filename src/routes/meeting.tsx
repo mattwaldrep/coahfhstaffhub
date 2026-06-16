@@ -253,10 +253,46 @@ function MeetingPage() {
   const addAction = async () => {
     if (!meeting || !newAction.trim()) return;
     const title = newAction.trim();
+    const assignee_id = newActionAssignee;
+    const due_date = newActionDue;
     setNewAction("");
-    const { error } = await supabase
+    setNewActionAssignee(null);
+    setNewActionDue(null);
+    const { data: inserted, error } = await supabase
       .from("action_items")
-      .insert({ meeting_id: meeting.id, title, created_by: user?.id });
+      .insert({ meeting_id: meeting.id, title, created_by: user?.id, assignee_id, due_date })
+      .select("id")
+      .single();
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    if (assignee_id && inserted?.id) {
+      try {
+        const r: any = await autoPushIfEnabled({ data: { actionItemId: inserted.id } });
+        if (r?.pushed) toast.success("Sent to assignee's Google Tasks");
+      } catch {}
+    }
+  };
+
+  const reassignAction = async (id: string, assignee_id: string | null) => {
+    setActions((prev) => prev.map((a) => (a.id === id ? { ...a, assignee_id } : a)));
+    const { error } = await supabase.from("action_items").update({ assignee_id }).eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    if (assignee_id) {
+      try {
+        const r: any = await autoPushIfEnabled({ data: { actionItemId: id } });
+        if (r?.pushed) toast.success("Sent to assignee's Google Tasks");
+      } catch {}
+    }
+  };
+
+  const setActionDue = async (id: string, due_date: string | null) => {
+    setActions((prev) => prev.map((a) => (a.id === id ? { ...a, due_date } : a)));
+    const { error } = await supabase.from("action_items").update({ due_date }).eq("id", id);
     if (error) toast.error(error.message);
   };
 
