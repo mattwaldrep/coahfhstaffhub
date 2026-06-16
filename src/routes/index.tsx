@@ -277,6 +277,8 @@ function Dashboard() {
             </Link>
           </div>
 
+          <GoogleTasksCard />
+
           <div className="bg-surface border border-border rounded-2xl p-6 shadow-card">
             <h2 className="text-lg font-display font-semibold mb-3 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-warning" /> Alerts
