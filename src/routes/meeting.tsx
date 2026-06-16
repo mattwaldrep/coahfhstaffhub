@@ -553,9 +553,16 @@ type SortableBodyProps = {
   reorderAgenda: (items: AgendaItem[]) => void;
   newAction: string;
   setNewAction: (v: string) => void;
+  newActionAssignee: string | null;
+  setNewActionAssignee: (v: string | null) => void;
+  newActionDue: string | null;
+  setNewActionDue: (v: string | null) => void;
+  profiles: Array<{ id: string; full_name: string | null; email: string | null }>;
   addAction: () => void;
   toggleAction: (item: ActionItem) => void;
   removeAction: (id: string) => void;
+  reassignAction: (id: string, assignee_id: string | null) => void;
+  setActionDue: (id: string, due_date: string | null) => void;
   notesDraft: string;
   onNotesChange: (v: string) => void;
 };
