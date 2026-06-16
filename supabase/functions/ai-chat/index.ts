@@ -162,3 +162,68 @@ ${JSON.stringify(context, null, 2)}`;
     });
   }
 });
+
+async function fetchGoogleTasksForUser(admin: ReturnType<typeof createClient>, userId: string) {
+  const { data: row } = await admin
+    .from("user_integrations")
+    .select("access_token, refresh_token, expires_at")
+    .eq("user_id", userId)
+    .eq("provider", "google_tasks")
+    .maybeSingle();
+  if (!row?.refresh_token) return null;
+
+  let accessToken: string | null = row.access_token ?? null;
+  const exp = row.expires_at ? new Date(row.expires_at).getTime() : 0;
+  if (!accessToken || exp < Date.now() + 60_000) {
+    const id = Deno.env.get("GOOGLE_OAUTH_CLIENT_ID");
+    const secret = Deno.env.get("GOOGLE_OAUTH_CLIENT_SECRET");
+    if (!id || !secret) return null;
+    const r = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: id,
+        client_secret: secret,
+        grant_type: "refresh_token",
+        refresh_token: row.refresh_token,
+      }),
+    });
+    const j: any = await r.json();
+    if (!r.ok) throw new Error(`refresh failed: ${JSON.stringify(j)}`);
+    accessToken = j.access_token as string;
+    const newExp = new Date(Date.now() + (j.expires_in ?? 3600) * 1000).toISOString();
+    await admin
+      .from("user_integrations")
+      .update({ access_token: accessToken, expires_at: newExp })
+      .eq("user_id", userId)
+      .eq("provider", "google_tasks");
+  }
+
+  const listsRes = await fetch("https://tasks.googleapis.com/tasks/v1/users/@me/lists?maxResults=100", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const listsJson: any = await listsRes.json();
+  if (!listsRes.ok) throw new Error(`lists failed: ${JSON.stringify(listsJson)}`);
+  const lists: Array<{ id: string; title: string }> = listsJson.items ?? [];
+
+  const out: any[] = [];
+  for (const list of lists) {
+    const url = new URL(`https://tasks.googleapis.com/tasks/v1/lists/${list.id}/tasks`);
+    url.searchParams.set("showCompleted", "false");
+    url.searchParams.set("maxResults", "100");
+    const r = await fetch(url.toString(), { headers: { Authorization: `Bearer ${accessToken}` } });
+    const j: any = await r.json();
+    if (!r.ok) continue;
+    for (const t of (j.items ?? []) as any[]) {
+      out.push({
+        title: t.title,
+        notes: t.notes ?? null,
+        due: t.due ?? null,
+        status: t.status,
+        listTitle: list.title,
+        webViewLink: t.webViewLink ?? null,
+      });
+    }
+  }
+  return out;
+}
