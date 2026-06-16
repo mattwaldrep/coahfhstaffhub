@@ -1267,7 +1267,7 @@ function PushToGoogleTasksButton({ actionItemId, pushedAt, onPushed }: {
   );
 }
 
-function DueDatePicker({ value, onChange }: { value: string | null; onChange: (v: string | null) => void }) {
+export function DueDatePicker({ value, onChange }: { value: string | null; onChange: (v: string | null) => void }) {
   const [open, setOpen] = useState(false);
   const date = value ? new Date(value + "T12:00") : undefined;
   return (
