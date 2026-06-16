@@ -784,9 +784,30 @@ function buildSectionBlocks(p: SortableBodyProps): SectionBlock[] {
                 >
                   {item.completed && <Check className="w-3 h-3" />}
                 </button>
-                <span className={cn("flex-1 text-sm", item.completed && "line-through text-muted-foreground")}>
-                  {item.title}
-                </span>
+                <div className="flex-1 min-w-0">
+                  <div className={cn("text-sm", item.completed && "line-through text-muted-foreground")}>
+                    {item.title}
+                  </div>
+                  <div className="mt-0.5">
+                    <DueDatePicker value={item.due_date} onChange={(d) => p.setActionDue(item.id, d)} />
+                  </div>
+                </div>
+                <Select
+                  value={item.assignee_id ?? "unassigned"}
+                  onValueChange={(v) => p.reassignAction(item.id, v === "unassigned" ? null : v)}
+                >
+                  <SelectTrigger className="h-7 w-[8rem] text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    {p.profiles.map((pr) => (
+                      <SelectItem key={pr.id} value={pr.id}>
+                        {pr.full_name || pr.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <button
                   onClick={() => p.removeAction(item.id)}
                   className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
@@ -804,14 +825,33 @@ function buildSectionBlocks(p: SortableBodyProps): SectionBlock[] {
               e.preventDefault();
               p.addAction();
             }}
-            className="mt-4 flex gap-2"
+            className="mt-4 flex flex-wrap gap-2"
           >
             <input
               value={p.newAction}
               onChange={(e) => p.setNewAction(e.target.value)}
               placeholder="New action item…"
-              className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+              className="flex-1 min-w-[12rem] bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
             />
+            <Select
+              value={p.newActionAssignee ?? "unassigned"}
+              onValueChange={(v) => p.setNewActionAssignee(v === "unassigned" ? null : v)}
+            >
+              <SelectTrigger className="h-9 w-[10rem] text-xs">
+                <SelectValue placeholder="Assignee" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+                {p.profiles.map((pr) => (
+                  <SelectItem key={pr.id} value={pr.id}>
+                    {pr.full_name || pr.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex items-center px-2 border border-border rounded-lg bg-background">
+              <DueDatePicker value={p.newActionDue} onChange={p.setNewActionDue} />
+            </div>
             <Button type="submit" size="icon" disabled={!p.newAction.trim()}>
               <Plus className="w-4 h-4" />
             </Button>
