@@ -16,6 +16,7 @@ import { NextBestAction } from "@/components/dashboard/NextBestAction";
 import { CongregationPulse } from "@/components/dashboard/CongregationPulse";
 import { PastoralAttentionCard } from "@/components/dashboard/PastoralAttentionCard";
 import { TaskSourceButton } from "@/components/tasks/TaskSourceButton";
+import { GoogleTasksCard } from "@/components/dashboard/GoogleTasksCard";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
