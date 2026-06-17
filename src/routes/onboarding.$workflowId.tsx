@@ -520,6 +520,7 @@ function TaskRow({
   onSkip,
   onAdd,
   onDelete,
+  onEdit,
   onAssign,
   onUnassign,
   commentsByTask,
