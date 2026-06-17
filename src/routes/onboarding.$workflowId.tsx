@@ -908,6 +908,7 @@ function TaskRow({
               onSkip={onSkip}
               onAdd={onAdd}
               onDelete={onDelete}
+              onEdit={onEdit}
               onAssign={onAssign}
               onUnassign={onUnassign}
               commentsByTask={commentsByTask}
