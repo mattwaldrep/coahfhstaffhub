@@ -133,6 +133,10 @@ function WorkflowDetail() {
   const assignFn = useServerFn(assignOnboardingTask);
   const unassignFn = useServerFn(unassignOnboardingTask);
   const listUsersFn = useServerFn(listAssignableUsers);
+  const listCommentsFn = useServerFn(listOnboardingComments);
+  const addCommentFn = useServerFn(addOnboardingComment);
+  const deleteCommentFn = useServerFn(deleteOnboardingComment);
+  const { user } = useAuth();
 
   const { data: assignableUsers = [] } = useQuery<UserOption[]>({
     queryKey: ["assignable-users"],
@@ -146,8 +150,25 @@ function WorkflowDetail() {
     queryFn: () => getFn({ data: { id: workflowId } }),
   });
 
+  const { data: comments = [] } = useQuery<OnboardingComment[]>({
+    queryKey: ["onboarding-comments", workflowId],
+    queryFn: () => listCommentsFn({ data: { workflowId } }),
+  });
+
+  const commentsByTask = useMemo(() => {
+    const m = new Map<string, OnboardingComment[]>();
+    for (const c of comments) {
+      const arr = m.get(c.task_id) ?? [];
+      arr.push(c);
+      m.set(c.task_id, arr);
+    }
+    return m;
+  }, [comments]);
+
   const invalidate = () =>
     qc.invalidateQueries({ queryKey: ["onboarding-workflow", workflowId] });
+  const invalidateComments = () =>
+    qc.invalidateQueries({ queryKey: ["onboarding-comments", workflowId] });
 
   const tree = useMemo(() => buildTree(data?.tasks ?? []), [data?.tasks]);
   const sectionOrder = useMemo(() => {
