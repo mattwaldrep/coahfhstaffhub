@@ -539,6 +539,7 @@ function TaskRow({
   onSkip: (id: string, skipped: boolean) => void;
   onAdd: (parentId: string, name: string) => void;
   onDelete: (id: string) => void;
+  onEdit: (id: string, patch: { task_name?: string; description?: string | null }) => void;
   onAssign: (id: string, assigneeId: string, dueDate: string | null) => void;
   onUnassign: (id: string) => void;
   commentsByTask: Map<string, OnboardingComment[]>;
