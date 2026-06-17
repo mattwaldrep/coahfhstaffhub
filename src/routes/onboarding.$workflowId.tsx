@@ -550,6 +550,9 @@ function TaskRow({
 }) {
   const taskComments = commentsByTask.get(node.id) ?? [];
   const [commentDraft, setCommentDraft] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(node.task_name);
+  const [editDesc, setEditDesc] = useState(node.description ?? "");
   const hasChildren = node.children.length > 0;
   const isCol = collapsed[node.id];
 
