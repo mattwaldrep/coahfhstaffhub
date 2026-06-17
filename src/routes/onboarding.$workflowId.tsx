@@ -120,6 +120,14 @@ function flatLeaves(nodes: TaskNode[], acc: TaskNode[] = []): TaskNode[] {
   return acc;
 }
 
+function flatAll(nodes: TaskNode[], acc: TaskNode[] = []): TaskNode[] {
+  for (const n of nodes) {
+    acc.push(n);
+    if (n.children.length) flatAll(n.children, acc);
+  }
+  return acc;
+}
+
 function WorkflowDetail() {
   const { workflowId } = Route.useParams();
   const { hasRole } = useAuth();
@@ -339,7 +347,50 @@ function WorkflowDetail() {
                   ) : (
                     <ChevronDown className="w-4 h-4" />
                   )}
-                  {section}
+                  <span className="flex-1">{section}</span>
+                  {isCore && (
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Select
+                        value=""
+                        onValueChange={async (assigneeId) => {
+                          const allNodes = flatAll(roots);
+                          if (allNodes.length === 0) return;
+                          toast.info(`Assigning ${allNodes.length} task(s)...`);
+                          try {
+                            await Promise.all(
+                              allNodes.map((n) =>
+                                assignFn({
+                                  data: {
+                                    onboardingTaskId: n.id,
+                                    assigneeId,
+                                    dueDate: n.due_date ?? null,
+                                  },
+                                }),
+                              ),
+                            );
+                            toast.success("Section assigned");
+                            invalidate();
+                          } catch (e: any) {
+                            toast.error(e?.message ?? "Failed to assign section");
+                          }
+                        }}
+                      >
+                        <SelectTrigger
+                          className="h-7 w-[180px] text-xs font-normal"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <SelectValue placeholder="Assign section to..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {assignableUsers.map((u) => (
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.full_name || u.email}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </CardTitle>
               </CardHeader>
               {!isCol && (
