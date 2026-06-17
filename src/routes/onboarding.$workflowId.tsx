@@ -141,6 +141,7 @@ function WorkflowDetail() {
   const addFn = useServerFn(addAdHocTask);
   const statusFn = useServerFn(setWorkflowStatus);
   const delFn = useServerFn(deleteTask);
+  const updateFn = useServerFn(updateTask);
   const assignFn = useServerFn(assignOnboardingTask);
   const unassignFn = useServerFn(unassignOnboardingTask);
   const listUsersFn = useServerFn(listAssignableUsers);
