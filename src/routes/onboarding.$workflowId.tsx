@@ -771,6 +771,7 @@ function TaskRow({
               onUnassign={onUnassign}
               commentsByTask={commentsByTask}
               currentUserId={currentUserId}
+              showAllComments={showAllComments}
               onAddComment={onAddComment}
               onDeleteComment={onDeleteComment}
             />
