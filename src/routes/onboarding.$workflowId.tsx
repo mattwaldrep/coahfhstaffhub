@@ -601,22 +601,78 @@ function TaskRow({
         />
 
         <div className="flex-1 min-w-0">
-          <div
-            className={cn(
-              "text-sm truncate",
-              node.is_completed && !hasChildren && "line-through text-muted-foreground",
-              node.is_skipped && "line-through",
-            )}
-          >
-            {node.task_name}
-            {node.is_skipped && node.skipped_reason && (
-              <span className="ml-2 text-xs text-muted-foreground italic">
-                ({node.skipped_reason})
-              </span>
-            )}
-          </div>
-          {node.description && (
-            <div className="text-xs text-muted-foreground line-clamp-2">{node.description}</div>
+          {isEditing ? (
+            <div className="space-y-1.5 py-1">
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Task name"
+                className="h-8 text-sm"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setIsEditing(false);
+                    setEditName(node.task_name);
+                    setEditDesc(node.description ?? "");
+                  }
+                }}
+              />
+              <Textarea
+                value={editDesc}
+                onChange={(e) => setEditDesc(e.target.value)}
+                placeholder="Description (optional)"
+                rows={2}
+                className="text-sm"
+              />
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  className="h-7 px-3"
+                  disabled={!editName.trim()}
+                  onClick={() => {
+                    onEdit(node.id, {
+                      task_name: editName.trim(),
+                      description: editDesc.trim() ? editDesc.trim() : null,
+                    });
+                    setIsEditing(false);
+                  }}
+                >
+                  Save
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-3"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditName(node.task_name);
+                    setEditDesc(node.description ?? "");
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div
+                className={cn(
+                  "text-sm truncate",
+                  node.is_completed && !hasChildren && "line-through text-muted-foreground",
+                  node.is_skipped && "line-through",
+                )}
+              >
+                {node.task_name}
+                {node.is_skipped && node.skipped_reason && (
+                  <span className="ml-2 text-xs text-muted-foreground italic">
+                    ({node.skipped_reason})
+                  </span>
+                )}
+              </div>
+              {node.description && (
+                <div className="text-xs text-muted-foreground line-clamp-2">{node.description}</div>
+              )}
+            </>
           )}
           {(assigneeLabel || node.due_date || node.action_item_id) && (
             <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
