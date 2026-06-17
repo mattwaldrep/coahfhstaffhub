@@ -96,6 +96,7 @@ const SUB_CALS = [
   { value: "coah_lm", label: "COAH:LM", color: "var(--cal-lm)" },
   { value: "youth", label: "Youth", color: "var(--cal-youth)" },
   { value: "general", label: "General", color: "var(--cal-general)" },
+  { value: "missions_teams", label: "Missions Teams", color: "var(--cal-missions)" },
 ];
 
 const DEFAULT_CATEGORIES = [
