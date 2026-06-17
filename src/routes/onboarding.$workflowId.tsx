@@ -58,6 +58,7 @@ import {
   Undo2,
   MoreVertical,
   Trash2,
+  Pencil,
   UserPlus,
   UserMinus,
   CheckCircle2,
