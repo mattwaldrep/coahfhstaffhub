@@ -430,6 +430,15 @@ function WorkflowDetail() {
                         await delFn({ data: { task_id: id } });
                         invalidate();
                       }}
+                      onEdit={async (id, patch) => {
+                        try {
+                          await updateFn({ data: { task_id: id, ...patch } });
+                          toast.success("Updated");
+                          invalidate();
+                        } catch (e: any) {
+                          toast.error(e?.message ?? "Failed to update");
+                        }
+                      }}
                       onAssign={async (id, assigneeId, dueDate) => {
                         try {
                           await assignFn({
