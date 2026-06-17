@@ -34,6 +34,12 @@ import {
   listAssignableUsers,
 } from "@/lib/onboarding-tasks.functions";
 import {
+  listOnboardingComments,
+  addOnboardingComment,
+  deleteOnboardingComment,
+  type OnboardingComment,
+} from "@/lib/onboarding-comments.functions";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -54,6 +60,8 @@ import {
   UserPlus,
   UserMinus,
   CheckCircle2,
+  MessageSquare,
+  Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppShell } from "@/components/AppShell";
@@ -125,6 +133,10 @@ function WorkflowDetail() {
   const assignFn = useServerFn(assignOnboardingTask);
   const unassignFn = useServerFn(unassignOnboardingTask);
   const listUsersFn = useServerFn(listAssignableUsers);
+  const listCommentsFn = useServerFn(listOnboardingComments);
+  const addCommentFn = useServerFn(addOnboardingComment);
+  const deleteCommentFn = useServerFn(deleteOnboardingComment);
+  const { user } = useAuth();
 
   const { data: assignableUsers = [] } = useQuery<UserOption[]>({
     queryKey: ["assignable-users"],
@@ -138,8 +150,25 @@ function WorkflowDetail() {
     queryFn: () => getFn({ data: { id: workflowId } }),
   });
 
+  const { data: comments = [] } = useQuery<OnboardingComment[]>({
+    queryKey: ["onboarding-comments", workflowId],
+    queryFn: () => listCommentsFn({ data: { workflowId } }),
+  });
+
+  const commentsByTask = useMemo(() => {
+    const m = new Map<string, OnboardingComment[]>();
+    for (const c of comments) {
+      const arr = m.get(c.task_id) ?? [];
+      arr.push(c);
+      m.set(c.task_id, arr);
+    }
+    return m;
+  }, [comments]);
+
   const invalidate = () =>
     qc.invalidateQueries({ queryKey: ["onboarding-workflow", workflowId] });
+  const invalidateComments = () =>
+    qc.invalidateQueries({ queryKey: ["onboarding-comments", workflowId] });
 
   const tree = useMemo(() => buildTree(data?.tasks ?? []), [data?.tasks]);
   const sectionOrder = useMemo(() => {
@@ -356,7 +385,26 @@ function WorkflowDetail() {
                           toast.error(e?.message ?? "Failed");
                         }
                       }}
+                      commentsByTask={commentsByTask}
+                      currentUserId={user?.id ?? null}
+                      onAddComment={async (taskId, body) => {
+                        try {
+                          await addCommentFn({ data: { taskId, body } });
+                          invalidateComments();
+                        } catch (e: any) {
+                          toast.error(e?.message ?? "Failed to comment");
+                        }
+                      }}
+                      onDeleteComment={async (commentId) => {
+                        try {
+                          await deleteCommentFn({ data: { commentId } });
+                          invalidateComments();
+                        } catch (e: any) {
+                          toast.error(e?.message ?? "Failed");
+                        }
+                      }}
                     />
+
                   ))}
 
                   {isCore && (
@@ -399,6 +447,10 @@ function TaskRow({
   onDelete,
   onAssign,
   onUnassign,
+  commentsByTask,
+  currentUserId,
+  onAddComment,
+  onDeleteComment,
 }: {
   node: TaskNode;
   depth: number;
@@ -412,7 +464,13 @@ function TaskRow({
   onDelete: (id: string) => void;
   onAssign: (id: string, assigneeId: string, dueDate: string | null) => void;
   onUnassign: (id: string) => void;
+  commentsByTask: Map<string, OnboardingComment[]>;
+  currentUserId: string | null;
+  onAddComment: (taskId: string, body: string) => void | Promise<void>;
+  onDeleteComment: (commentId: string) => void | Promise<void>;
 }) {
+  const taskComments = commentsByTask.get(node.id) ?? [];
+  const [commentDraft, setCommentDraft] = useState("");
   const hasChildren = node.children.length > 0;
   const isCol = collapsed[node.id];
 
@@ -490,6 +548,88 @@ function TaskRow({
             </div>
           )}
         </div>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-7 px-2 gap-1",
+                taskComments.length === 0 && "opacity-0 group-hover:opacity-100 transition-opacity",
+              )}
+              title="Comments"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              {taskComments.length > 0 && (
+                <span className="text-xs">{taskComments.length}</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-3 space-y-3" align="end">
+            <div className="text-xs font-medium">Comments</div>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {taskComments.length === 0 && (
+                <div className="text-xs text-muted-foreground italic">No comments yet.</div>
+              )}
+              {taskComments.map((c) => (
+                <div key={c.id} className="text-xs border-l-2 border-muted pl-2 group/comment">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium">
+                      {c.author_name || c.author_email || "Unknown"}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {new Date(c.created_at).toLocaleString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                  <div className="whitespace-pre-wrap mt-0.5">{c.body}</div>
+                  {currentUserId === c.author_id && (
+                    <button
+                      type="button"
+                      className="text-[10px] text-muted-foreground hover:text-destructive opacity-0 group-hover/comment:opacity-100 transition-opacity"
+                      onClick={() => onDeleteComment(c.id)}
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Textarea
+                rows={2}
+                value={commentDraft}
+                onChange={(e) => setCommentDraft(e.target.value)}
+                placeholder="Add a comment…"
+                className="text-sm"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && commentDraft.trim()) {
+                    e.preventDefault();
+                    onAddComment(node.id, commentDraft.trim());
+                    setCommentDraft("");
+                  }
+                }}
+              />
+              <Button
+                size="sm"
+                className="h-auto"
+                disabled={!commentDraft.trim()}
+                onClick={() => {
+                  if (!commentDraft.trim()) return;
+                  onAddComment(node.id, commentDraft.trim());
+                  setCommentDraft("");
+                }}
+              >
+                <Send className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
 
         {isCore && (
           <div className="flex items-center gap-1">
@@ -615,7 +755,12 @@ function TaskRow({
               onDelete={onDelete}
               onAssign={onAssign}
               onUnassign={onUnassign}
+              commentsByTask={commentsByTask}
+              currentUserId={currentUserId}
+              onAddComment={onAddComment}
+              onDeleteComment={onDeleteComment}
             />
+
 
           ))}
           {isCore && (
