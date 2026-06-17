@@ -794,7 +794,7 @@ function TaskRow({
               )}
             </Button>
 
-            {!hasChildren && !node.is_skipped && (
+            {!node.is_skipped && (
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -810,12 +810,15 @@ function TaskRow({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-64 p-2 space-y-2" align="end">
-                  <div className="text-xs font-medium px-1">Assign onboarding task</div>
+                  <div className="text-xs font-medium px-1">
+                    Assign onboarding task{hasChildren ? " (and sub-items)" : ""}
+                  </div>
                   <Select
                     value={node.assignee_id ?? ""}
-                    onValueChange={(uid) =>
-                      onAssign(node.id, uid, node.due_date ?? null)
-                    }
+                    onValueChange={(uid) => {
+                      const targets = flatAll([node]);
+                      targets.forEach((t) => onAssign(t.id, uid, t.due_date ?? null));
+                    }}
                   >
                     <SelectTrigger className="h-8">
                       <SelectValue placeholder="Pick a user…" />
@@ -851,7 +854,9 @@ function TaskRow({
                     </Button>
                   )}
                   <div className="text-[10px] text-muted-foreground px-1">
-                    Task title includes the new hire's name so it makes sense in Google Tasks.
+                    {hasChildren
+                      ? "All sub-items get assigned to the same user. You can change individual items afterward."
+                      : "Task title includes the new hire's name so it makes sense in Google Tasks."}
                   </div>
                 </PopoverContent>
               </Popover>
