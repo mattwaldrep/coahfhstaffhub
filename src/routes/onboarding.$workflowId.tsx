@@ -187,6 +187,7 @@ function WorkflowDetail() {
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const toggle = (id: string) => setCollapsed((c) => ({ ...c, [id]: !c[id] }));
+  const [showAllComments, setShowAllComments] = useState(false);
 
   if (isLoading) return <div className="p-6 text-muted-foreground">Loading…</div>;
   if (!data) return null;
