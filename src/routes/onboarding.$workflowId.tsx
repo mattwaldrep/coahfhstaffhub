@@ -461,6 +461,7 @@ function TaskRow({
   onUnassign,
   commentsByTask,
   currentUserId,
+  showAllComments,
   onAddComment,
   onDeleteComment,
 }: {
@@ -478,6 +479,7 @@ function TaskRow({
   onUnassign: (id: string) => void;
   commentsByTask: Map<string, OnboardingComment[]>;
   currentUserId: string | null;
+  showAllComments?: boolean;
   onAddComment: (taskId: string, body: string) => void | Promise<void>;
   onDeleteComment: (commentId: string) => void | Promise<void>;
 }) {
