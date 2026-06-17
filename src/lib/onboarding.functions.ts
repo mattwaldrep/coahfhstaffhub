@@ -397,3 +397,30 @@ export const deleteTask = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const updateTask = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        task_id: z.string().uuid(),
+        task_name: z.string().min(1).max(500).optional(),
+        description: z.string().max(4000).nullable().optional(),
+        section_name: z.string().min(1).max(200).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCore(context.supabase, context.userId);
+    const patch: Record<string, any> = {};
+    if (data.task_name !== undefined) patch.task_name = data.task_name;
+    if (data.description !== undefined) patch.description = data.description;
+    if (data.section_name !== undefined) patch.section_name = data.section_name;
+    if (Object.keys(patch).length === 0) return { ok: true };
+    const { error } = await supabaseAdmin
+      .from("onboarding_tasks")
+      .update(patch)
+      .eq("id", data.task_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
