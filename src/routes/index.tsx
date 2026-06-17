@@ -12,7 +12,7 @@ import { expandEvents, type EventRowLike } from "@/lib/calendar-expand";
 import { classGaps } from "@/lib/class-gaps";
 import { InlineClassFixer } from "@/components/inline/InlineClassFixer";
 import { EmptyState } from "@/components/ui/empty-state";
-import { NextBestAction } from "@/components/dashboard/NextBestAction";
+
 import { CongregationPulse } from "@/components/dashboard/CongregationPulse";
 import { PastoralAttentionCard } from "@/components/dashboard/PastoralAttentionCard";
 import { TaskSourceButton } from "@/components/tasks/TaskSourceButton";
@@ -156,11 +156,11 @@ function Dashboard() {
         </p>
       </div>
 
-      <NextBestAction />
+      
 
       <div className="grid grid-cols-12 gap-6">
         {/* KPI cards */}
-        <div className="col-span-12 lg:col-span-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="col-span-12 lg:col-span-8 self-start grid grid-cols-2 lg:grid-cols-4 auto-rows-min gap-4">
           <Stat
             label="Attendance"
             value={fmtNum(headline?.avg_total_attendance)}
