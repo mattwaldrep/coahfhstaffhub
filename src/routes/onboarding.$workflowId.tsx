@@ -385,7 +385,26 @@ function WorkflowDetail() {
                           toast.error(e?.message ?? "Failed");
                         }
                       }}
+                      commentsByTask={commentsByTask}
+                      currentUserId={user?.id ?? null}
+                      onAddComment={async (taskId, body) => {
+                        try {
+                          await addCommentFn({ data: { taskId, body } });
+                          invalidateComments();
+                        } catch (e: any) {
+                          toast.error(e?.message ?? "Failed to comment");
+                        }
+                      }}
+                      onDeleteComment={async (commentId) => {
+                        try {
+                          await deleteCommentFn({ data: { commentId } });
+                          invalidateComments();
+                        } catch (e: any) {
+                          toast.error(e?.message ?? "Failed");
+                        }
+                      }}
                     />
+
                   ))}
 
                   {isCore && (
