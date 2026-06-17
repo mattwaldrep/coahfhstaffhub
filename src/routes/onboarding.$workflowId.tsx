@@ -673,7 +673,12 @@ function TaskRow({
               onDelete={onDelete}
               onAssign={onAssign}
               onUnassign={onUnassign}
+              commentsByTask={commentsByTask}
+              currentUserId={currentUserId}
+              onAddComment={onAddComment}
+              onDeleteComment={onDeleteComment}
             />
+
 
           ))}
           {isCore && (
