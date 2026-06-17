@@ -419,7 +419,7 @@ export const updateTask = createServerFn({ method: "POST" })
     if (Object.keys(patch).length === 0) return { ok: true };
     const { error } = await supabaseAdmin
       .from("onboarding_tasks")
-      .update(patch)
+      .update(patch as any)
       .eq("id", data.task_id);
     if (error) throw new Error(error.message);
     return { ok: true };
