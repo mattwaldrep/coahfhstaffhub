@@ -12,7 +12,7 @@ import { expandEvents, type EventRowLike } from "@/lib/calendar-expand";
 import { classGaps } from "@/lib/class-gaps";
 import { InlineClassFixer } from "@/components/inline/InlineClassFixer";
 import { EmptyState } from "@/components/ui/empty-state";
-import { NextBestAction } from "@/components/dashboard/NextBestAction";
+
 import { CongregationPulse } from "@/components/dashboard/CongregationPulse";
 import { PastoralAttentionCard } from "@/components/dashboard/PastoralAttentionCard";
 import { TaskSourceButton } from "@/components/tasks/TaskSourceButton";
