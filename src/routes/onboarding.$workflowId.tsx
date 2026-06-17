@@ -65,6 +65,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppShell } from "@/components/AppShell";
+import { Switch } from "@/components/ui/switch";
 
 type UserOption = { id: string; full_name: string | null; email: string | null };
 
