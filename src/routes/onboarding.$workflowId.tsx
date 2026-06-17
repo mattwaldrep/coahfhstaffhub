@@ -27,6 +27,7 @@ import {
   addAdHocTask,
   setWorkflowStatus,
   deleteTask,
+  updateTask,
 } from "@/lib/onboarding.functions";
 import {
   assignOnboardingTask,
@@ -57,6 +58,7 @@ import {
   Undo2,
   MoreVertical,
   Trash2,
+  Pencil,
   UserPlus,
   UserMinus,
   CheckCircle2,
@@ -139,6 +141,7 @@ function WorkflowDetail() {
   const addFn = useServerFn(addAdHocTask);
   const statusFn = useServerFn(setWorkflowStatus);
   const delFn = useServerFn(deleteTask);
+  const updateFn = useServerFn(updateTask);
   const assignFn = useServerFn(assignOnboardingTask);
   const unassignFn = useServerFn(unassignOnboardingTask);
   const listUsersFn = useServerFn(listAssignableUsers);
@@ -427,6 +430,15 @@ function WorkflowDetail() {
                         await delFn({ data: { task_id: id } });
                         invalidate();
                       }}
+                      onEdit={async (id, patch) => {
+                        try {
+                          await updateFn({ data: { task_id: id, ...patch } });
+                          toast.success("Updated");
+                          invalidate();
+                        } catch (e: any) {
+                          toast.error(e?.message ?? "Failed to update");
+                        }
+                      }}
                       onAssign={async (id, assigneeId, dueDate) => {
                         try {
                           await assignFn({
@@ -508,6 +520,7 @@ function TaskRow({
   onSkip,
   onAdd,
   onDelete,
+  onEdit,
   onAssign,
   onUnassign,
   commentsByTask,
@@ -526,6 +539,7 @@ function TaskRow({
   onSkip: (id: string, skipped: boolean) => void;
   onAdd: (parentId: string, name: string) => void;
   onDelete: (id: string) => void;
+  onEdit: (id: string, patch: { task_name?: string; description?: string | null }) => void;
   onAssign: (id: string, assigneeId: string, dueDate: string | null) => void;
   onUnassign: (id: string) => void;
   commentsByTask: Map<string, OnboardingComment[]>;
@@ -536,6 +550,9 @@ function TaskRow({
 }) {
   const taskComments = commentsByTask.get(node.id) ?? [];
   const [commentDraft, setCommentDraft] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(node.task_name);
+  const [editDesc, setEditDesc] = useState(node.description ?? "");
   const hasChildren = node.children.length > 0;
   const isCol = collapsed[node.id];
 
@@ -584,22 +601,78 @@ function TaskRow({
         />
 
         <div className="flex-1 min-w-0">
-          <div
-            className={cn(
-              "text-sm truncate",
-              node.is_completed && !hasChildren && "line-through text-muted-foreground",
-              node.is_skipped && "line-through",
-            )}
-          >
-            {node.task_name}
-            {node.is_skipped && node.skipped_reason && (
-              <span className="ml-2 text-xs text-muted-foreground italic">
-                ({node.skipped_reason})
-              </span>
-            )}
-          </div>
-          {node.description && (
-            <div className="text-xs text-muted-foreground line-clamp-2">{node.description}</div>
+          {isEditing ? (
+            <div className="space-y-1.5 py-1">
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Task name"
+                className="h-8 text-sm"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setIsEditing(false);
+                    setEditName(node.task_name);
+                    setEditDesc(node.description ?? "");
+                  }
+                }}
+              />
+              <Textarea
+                value={editDesc}
+                onChange={(e) => setEditDesc(e.target.value)}
+                placeholder="Description (optional)"
+                rows={2}
+                className="text-sm"
+              />
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  className="h-7 px-3"
+                  disabled={!editName.trim()}
+                  onClick={() => {
+                    onEdit(node.id, {
+                      task_name: editName.trim(),
+                      description: editDesc.trim() ? editDesc.trim() : null,
+                    });
+                    setIsEditing(false);
+                  }}
+                >
+                  Save
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-3"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditName(node.task_name);
+                    setEditDesc(node.description ?? "");
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div
+                className={cn(
+                  "text-sm truncate",
+                  node.is_completed && !hasChildren && "line-through text-muted-foreground",
+                  node.is_skipped && "line-through",
+                )}
+              >
+                {node.task_name}
+                {node.is_skipped && node.skipped_reason && (
+                  <span className="ml-2 text-xs text-muted-foreground italic">
+                    ({node.skipped_reason})
+                  </span>
+                )}
+              </div>
+              {node.description && (
+                <div className="text-xs text-muted-foreground line-clamp-2">{node.description}</div>
+              )}
+            </>
           )}
           {(assigneeLabel || node.due_date || node.action_item_id) && (
             <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
@@ -795,6 +868,9 @@ function TaskRow({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                  <Pencil className="w-3.5 h-3.5 mr-2" /> Edit
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onDelete(node.id)} className="text-destructive">
                   <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
                 </DropdownMenuItem>
@@ -894,6 +970,7 @@ function TaskRow({
               onSkip={onSkip}
               onAdd={onAdd}
               onDelete={onDelete}
+              onEdit={onEdit}
               onAssign={onAssign}
               onUnassign={onUnassign}
               commentsByTask={commentsByTask}
