@@ -754,6 +754,10 @@ function CalendarBody() {
 
   function openEdit(occ: Occurrence) {
     if (!canEdit) return;
+    if (occ.id.startsWith("mission:")) {
+      navigate({ to: "/missions" });
+      return;
+    }
     const ev = occ;
     let freq: FormState["freq"] = "WEEKLY";
     let interval = 1;
