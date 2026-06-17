@@ -447,6 +447,10 @@ function TaskRow({
   onDelete,
   onAssign,
   onUnassign,
+  commentsByTask,
+  currentUserId,
+  onAddComment,
+  onDeleteComment,
 }: {
   node: TaskNode;
   depth: number;
@@ -460,7 +464,13 @@ function TaskRow({
   onDelete: (id: string) => void;
   onAssign: (id: string, assigneeId: string, dueDate: string | null) => void;
   onUnassign: (id: string) => void;
+  commentsByTask: Map<string, OnboardingComment[]>;
+  currentUserId: string | null;
+  onAddComment: (taskId: string, body: string) => void | Promise<void>;
+  onDeleteComment: (commentId: string) => void | Promise<void>;
 }) {
+  const taskComments = commentsByTask.get(node.id) ?? [];
+  const [commentDraft, setCommentDraft] = useState("");
   const hasChildren = node.children.length > 0;
   const isCol = collapsed[node.id];
 
