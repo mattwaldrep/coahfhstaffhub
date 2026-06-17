@@ -406,6 +406,7 @@ function WorkflowDetail() {
                           toast.error(e?.message ?? "Failed to comment");
                         }
                       }}
+                      showAllComments={showAllComments}
                       onDeleteComment={async (commentId) => {
                         try {
                           await deleteCommentFn({ data: { commentId } });
