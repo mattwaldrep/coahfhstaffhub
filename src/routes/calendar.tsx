@@ -431,7 +431,7 @@ function CalendarBody() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [filters, setFilters] = useState<Record<string, boolean>>(
     loadedPrefs?.filters ?? {
-      forest_hills_main: true, coah_lm: true, youth: true, general: true,
+      forest_hills_main: true, coah_lm: true, youth: true, general: true, missions_teams: true,
     },
   );
   const [categoryFilter, setCategoryFilter] = useState<string>(loadedPrefs?.categoryFilter ?? "all");
