@@ -160,7 +160,7 @@ function Dashboard() {
 
       <div className="grid grid-cols-12 gap-6">
         {/* KPI cards */}
-        <div className="col-span-12 lg:col-span-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="col-span-12 lg:col-span-8 self-start grid grid-cols-2 lg:grid-cols-4 auto-rows-min gap-4">
           <Stat
             label="Attendance"
             value={fmtNum(headline?.avg_total_attendance)}
