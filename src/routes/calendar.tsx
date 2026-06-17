@@ -96,6 +96,7 @@ const SUB_CALS = [
   { value: "coah_lm", label: "COAH:LM", color: "var(--cal-lm)" },
   { value: "youth", label: "Youth", color: "var(--cal-youth)" },
   { value: "general", label: "General", color: "var(--cal-general)" },
+  { value: "missions_teams", label: "Missions Teams", color: "var(--cal-missions)" },
 ];
 
 const DEFAULT_CATEGORIES = [
@@ -430,7 +431,7 @@ function CalendarBody() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [filters, setFilters] = useState<Record<string, boolean>>(
     loadedPrefs?.filters ?? {
-      forest_hills_main: true, coah_lm: true, youth: true, general: true,
+      forest_hills_main: true, coah_lm: true, youth: true, general: true, missions_teams: true,
     },
   );
   const [categoryFilter, setCategoryFilter] = useState<string>(loadedPrefs?.categoryFilter ?? "all");
@@ -593,7 +594,7 @@ function CalendarBody() {
 
   async function load() {
     // Fetch events overlapping range, plus any recurring (which may have started earlier)
-    const [{ data }, { data: er }, { data: cs }, { data: rs }, { data: tpls }, { data: tplItems }, { data: atts }, { data: states }] = await Promise.all([
+    const [{ data }, { data: er }, { data: cs }, { data: rs }, { data: tpls }, { data: tplItems }, { data: atts }, { data: states }, { data: trips }] = await Promise.all([
       supabase
         .from("calendar_events")
         .select("*")
@@ -606,8 +607,61 @@ function CalendarBody() {
       supabase.from("checklist_template_items" as any).select("*").order("position"),
       supabase.from("event_template_attachments" as any).select("event_id, template_id"),
       supabase.from("event_template_item_state" as any).select("event_id, template_item_id, occurrence_date, done"),
+      supabase
+        .from("mission_trips")
+        .select("id, church_name, start_date, end_date, leader_name, status")
+        .not("start_date", "is", null),
     ]);
-    setEvents(data ?? []);
+    const missionRows: EventRow[] = [];
+    const rangeStartMs = range.start.getTime();
+    const rangeEndMs = range.end.getTime();
+    for (const t of (trips ?? []) as Array<{ id: string; church_name: string | null; start_date: string | null; end_date: string | null; leader_name: string | null; status: string | null }>) {
+      if (!t.start_date) continue;
+      const start = new Date(`${t.start_date}T00:00:00`);
+      const end = t.end_date ? new Date(`${t.end_date}T00:00:00`) : start;
+      const title = `${t.church_name ?? "Mission Team"} — Boston Mission Trip`;
+      const cur = new Date(start);
+      let idx = 0;
+      while (cur.getTime() <= end.getTime()) {
+        const ts = cur.getTime();
+        if (ts >= rangeStartMs && ts <= rangeEndMs) {
+          const iso = new Date(cur).toISOString();
+          missionRows.push({
+            id: `mission:${t.id}:${idx}`,
+            title,
+            description: null,
+            start_at: iso,
+            end_at: iso,
+            sub_calendar: "missions_teams",
+            leader_name: t.leader_name,
+            readiness: null,
+            location: null,
+            all_day: true,
+            category: null,
+            pco_registration: false,
+            rrule: null,
+            recurrence_end_date: null,
+            excluded_dates: [],
+            other_listings: [],
+            social_ads: false,
+            room_needed: null,
+            action_note: null,
+            missions_team_needed: false,
+            church_covering: null,
+            childcare_needed: false,
+            childcare_arranged: false,
+            room_not_needed: true,
+            leader_not_needed: true,
+            room_request_submitted: false,
+            room_approval_received: false,
+            class_series_id: null,
+          });
+        }
+        cur.setDate(cur.getDate() + 1);
+        idx += 1;
+      }
+    }
+    setEvents([...(data ?? []), ...missionRows]);
     const map = new Map<string, string[]>();
     const flagsMap = new Map<string, Map<string, { req: boolean; app: boolean }>>();
     for (const row of (er ?? []) as Array<{ event_id: string; room_id: string; request_submitted?: boolean; approval_received?: boolean }>) {
@@ -700,6 +754,10 @@ function CalendarBody() {
 
   function openEdit(occ: Occurrence) {
     if (!canEdit) return;
+    if (occ.id.startsWith("mission:")) {
+      navigate({ to: "/missions" });
+      return;
+    }
     const ev = occ;
     let freq: FormState["freq"] = "WEEKLY";
     let interval = 1;

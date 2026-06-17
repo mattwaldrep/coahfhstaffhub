@@ -49,6 +49,7 @@
   --color-cal-lm: var(--cal-lm);
   --color-cal-youth: var(--cal-youth);
   --color-cal-general: var(--cal-general);
+  --color-cal-missions: var(--cal-missions);
 
   --shadow-soft: 0 1px 2px 0 oklch(0 0 0 / 0.04), 0 1px 3px 0 oklch(0 0 0 / 0.06);
   --shadow-card: 0 1px 0 0 oklch(0 0 0 / 0.03);
@@ -95,6 +96,7 @@
   --cal-lm: oklch(0.6 0.16 320);
   --cal-youth: oklch(0.7 0.16 50);
   --cal-general: oklch(0.55 0.04 250);
+  --cal-missions: oklch(0.62 0.14 155);
 
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.22 0.015 60);
