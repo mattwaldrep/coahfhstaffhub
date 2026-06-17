@@ -34,6 +34,12 @@ import {
   listAssignableUsers,
 } from "@/lib/onboarding-tasks.functions";
 import {
+  listOnboardingComments,
+  addOnboardingComment,
+  deleteOnboardingComment,
+  type OnboardingComment,
+} from "@/lib/onboarding-comments.functions";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -54,6 +60,8 @@ import {
   UserPlus,
   UserMinus,
   CheckCircle2,
+  MessageSquare,
+  Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppShell } from "@/components/AppShell";
