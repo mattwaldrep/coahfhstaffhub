@@ -27,6 +27,7 @@ import {
   addAdHocTask,
   setWorkflowStatus,
   deleteTask,
+  updateTask,
 } from "@/lib/onboarding.functions";
 import {
   assignOnboardingTask,
