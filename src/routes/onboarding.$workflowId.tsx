@@ -313,6 +313,15 @@ function WorkflowDetail() {
       )}
 
 
+      <div className="flex items-center justify-end gap-2">
+        <span className="text-sm text-muted-foreground">Show all comments</span>
+        <Switch
+          checked={showAllComments}
+          onCheckedChange={setShowAllComments}
+          aria-label="Toggle all comments"
+        />
+      </div>
+
       <div className="space-y-4">
         {sectionOrder.map((section) => {
           const roots = tree.get(section) ?? [];
