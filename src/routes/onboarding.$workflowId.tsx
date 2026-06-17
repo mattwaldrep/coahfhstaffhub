@@ -120,6 +120,14 @@ function flatLeaves(nodes: TaskNode[], acc: TaskNode[] = []): TaskNode[] {
   return acc;
 }
 
+function flatAll(nodes: TaskNode[], acc: TaskNode[] = []): TaskNode[] {
+  for (const n of nodes) {
+    acc.push(n);
+    if (n.children.length) flatAll(n.children, acc);
+  }
+  return acc;
+}
+
 function WorkflowDetail() {
   const { workflowId } = Route.useParams();
   const { hasRole } = useAuth();
