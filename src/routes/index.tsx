@@ -213,7 +213,14 @@ function Dashboard() {
             value={fmtNum(headline?.avg_community_groups)}
             hint={deltaHint(headline?.avg_community_groups, prevHeadline?.avg_community_groups, statsRange ?? "latest week")}
           />
-          <Stat label="Active Missions" value="0" hint="teams deployed" />
+          <Link to="/missions" className="contents">
+            <Stat
+              label="Active Missions"
+              value={String(activeMissions)}
+              hint="teams in field"
+              badge={upcomingMissions > 0 ? `${upcomingMissions} upcoming` : undefined}
+            />
+          </Link>
 
           <div className="col-span-2 lg:col-span-4 bg-surface border border-border rounded-2xl p-6 shadow-card">
             <div className="flex items-center justify-between mb-4">
