@@ -65,6 +65,8 @@ function Dashboard() {
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [classAlerts, setClassAlerts] = useState<Array<{ id: string; title: string; date: Date; gaps: string[]; leader_name: string | null; leader_not_needed: boolean; childcare_needed: boolean; childcare_arranged: boolean }>>([]);
   const [alertsTick, setAlertsTick] = useState(0);
+  const [activeMissions, setActiveMissions] = useState(0);
+  const [upcomingMissions, setUpcomingMissions] = useState(0);
   const [headline, setHeadline] = useState<MetricsHeadline | null>(null);
   const [prevHeadline, setPrevHeadline] = useState<MetricsHeadline | null>(null);
   const [statsRange, setStatsRange] = useState<string | null>(null);
@@ -113,6 +115,40 @@ function Dashboard() {
           .slice(0, 8);
         setClassAlerts(alerts);
       });
+
+    // Missions: auto-advance to in_field on start date, then compute counts
+    (async () => {
+      const { data } = await supabase
+        .from("mission_trips")
+        .select("id,status,start_date,end_date");
+      const trips = (data ?? []) as Array<{ id: string; status: string; start_date: string | null; end_date: string | null }>;
+      const todayISO = format(new Date(), "yyyy-MM-dd");
+      const toActivate = trips.filter(
+        (t) =>
+          t.start_date &&
+          t.start_date <= todayISO &&
+          (!t.end_date || t.end_date >= todayISO) &&
+          ["not_started", "tbc", "pre_trip"].includes(t.status),
+      );
+      if (toActivate.length > 0) {
+        await supabase
+          .from("mission_trips")
+          .update({ status: "in_field" })
+          .in("id", toActivate.map((t) => t.id));
+        toActivate.forEach((t) => (t.status = "in_field"));
+      }
+      const active = trips.filter((t) => t.status === "in_field").length;
+      const in14 = format(new Date(Date.now() + 14 * 86400000), "yyyy-MM-dd");
+      const upcoming = trips.filter(
+        (t) =>
+          t.status === "pre_trip" &&
+          t.start_date &&
+          t.start_date > todayISO &&
+          t.start_date <= in14,
+      ).length;
+      setActiveMissions(active);
+      setUpcomingMissions(upcoming);
+    })();
   }, [alertsTick]);
 
   // Live metrics from Church Metrics — last 4 weeks vs preceding 4 weeks
@@ -177,7 +213,14 @@ function Dashboard() {
             value={fmtNum(headline?.avg_community_groups)}
             hint={deltaHint(headline?.avg_community_groups, prevHeadline?.avg_community_groups, statsRange ?? "latest week")}
           />
-          <Stat label="Active Missions" value="0" hint="teams deployed" />
+          <Link to="/missions" className="contents">
+            <Stat
+              label="Active Missions"
+              value={String(activeMissions)}
+              hint="teams in field"
+              badge={upcomingMissions > 0 ? `${upcomingMissions} upcoming` : undefined}
+            />
+          </Link>
 
           <div className="col-span-2 lg:col-span-4 bg-surface border border-border rounded-2xl p-6 shadow-card">
             <div className="flex items-center justify-between mb-4">
@@ -342,10 +385,17 @@ function deltaHint(curr?: number, prev?: number, fallback = "") {
   return `${sign}${pct.toFixed(1)}% vs prev week`;
 }
 
-function Stat({ label, value, hint, accent }: { label: string; value: string; hint: string; accent?: boolean }) {
+function Stat({ label, value, hint, accent, badge }: { label: string; value: string; hint: string; accent?: boolean; badge?: string }) {
   return (
-    <div className="bg-surface border border-border rounded-2xl p-5 shadow-card">
-      <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
+    <div className="bg-surface border border-border rounded-2xl p-5 shadow-card relative">
+      <div className="flex items-start justify-between gap-2">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
+        {badge && (
+          <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/15 text-primary font-semibold whitespace-nowrap">
+            {badge}
+          </span>
+        )}
+      </div>
       <div className={`mt-3 text-3xl font-display font-bold ${accent ? "text-primary" : ""}`}>{value}</div>
       <div className="text-xs text-muted-foreground mt-1">{hint}</div>
     </div>
