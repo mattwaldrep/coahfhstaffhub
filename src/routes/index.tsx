@@ -115,6 +115,40 @@ function Dashboard() {
           .slice(0, 8);
         setClassAlerts(alerts);
       });
+
+    // Missions: auto-advance to in_field on start date, then compute counts
+    (async () => {
+      const { data } = await supabase
+        .from("mission_trips")
+        .select("id,status,start_date,end_date");
+      const trips = (data ?? []) as Array<{ id: string; status: string; start_date: string | null; end_date: string | null }>;
+      const todayISO = format(new Date(), "yyyy-MM-dd");
+      const toActivate = trips.filter(
+        (t) =>
+          t.start_date &&
+          t.start_date <= todayISO &&
+          (!t.end_date || t.end_date >= todayISO) &&
+          ["not_started", "tbc", "pre_trip"].includes(t.status),
+      );
+      if (toActivate.length > 0) {
+        await supabase
+          .from("mission_trips")
+          .update({ status: "in_field" })
+          .in("id", toActivate.map((t) => t.id));
+        toActivate.forEach((t) => (t.status = "in_field"));
+      }
+      const active = trips.filter((t) => t.status === "in_field").length;
+      const in14 = format(new Date(Date.now() + 14 * 86400000), "yyyy-MM-dd");
+      const upcoming = trips.filter(
+        (t) =>
+          t.status === "pre_trip" &&
+          t.start_date &&
+          t.start_date > todayISO &&
+          t.start_date <= in14,
+      ).length;
+      setActiveMissions(active);
+      setUpcomingMissions(upcoming);
+    })();
   }, [alertsTick]);
 
   // Live metrics from Church Metrics — last 4 weeks vs preceding 4 weeks
