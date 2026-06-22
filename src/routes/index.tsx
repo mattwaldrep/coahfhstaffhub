@@ -385,10 +385,17 @@ function deltaHint(curr?: number, prev?: number, fallback = "") {
   return `${sign}${pct.toFixed(1)}% vs prev week`;
 }
 
-function Stat({ label, value, hint, accent }: { label: string; value: string; hint: string; accent?: boolean }) {
+function Stat({ label, value, hint, accent, badge }: { label: string; value: string; hint: string; accent?: boolean; badge?: string }) {
   return (
-    <div className="bg-surface border border-border rounded-2xl p-5 shadow-card">
-      <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
+    <div className="bg-surface border border-border rounded-2xl p-5 shadow-card relative">
+      <div className="flex items-start justify-between gap-2">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
+        {badge && (
+          <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/15 text-primary font-semibold whitespace-nowrap">
+            {badge}
+          </span>
+        )}
+      </div>
       <div className={`mt-3 text-3xl font-display font-bold ${accent ? "text-primary" : ""}`}>{value}</div>
       <div className="text-xs text-muted-foreground mt-1">{hint}</div>
     </div>
