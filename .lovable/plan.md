@@ -1,83 +1,96 @@
-Ship four staff/elder productivity boosts. All gated by existing role checks; no role/schema rework.
+## Goal
 
-## 1. Mission Trip Readiness Score (Itinerary & travel focus)
+Make opening a mission trip feel like walking through a **process**, not scrolling a long form. Each of the 12 booking-and-deployment steps becomes a discrete, navigable stage with just the tools that step needs, an explicit Complete / Skip / Reset state, and a clear sense of where you are in the journey.
 
-Per-trip 0–100 score based on travel/itinerary signals already on `mission_trips`:
+## New trip detail layout
 
-- Travel dates locked (`start_date` + `end_date` set) — 25
-- Itinerary doc exists (`itinerary_doc_url` OR `itinerary_file_path` OR `itinerary_link`) — 25
-- Itinerary owner assigned (`itinerary_owner`) and due date set (`itinerary_due_date`) — 20
-- Lodging confirmed (`lodging_status` = "confirmed") — 15
-- Transport confirmed (`transport_status` = "confirmed") — 15
+Replace the current top-to-bottom scroll dialog with a two-pane workspace inside the same Dialog (wider — `max-w-5xl`):
 
-Where it appears:
-- Missions module: badge + ring/progress on each team card with hover tooltip listing missing items.
-- Home dashboard "Active Missions" card: shows lowest-readiness in-field or pre-trip team as a subtle warning if score < 60.
+```text
+┌──────────────────────────────────────────────────────────────┐
+│  Grace Church  ·  Aug 4–9  ·  Team #14        Readiness 67%  │  ← sticky header
+│  Status: Pre-Trip ▾                          [Trip basics ▾] │     (basics collapse into a popover)
+├────────────────┬─────────────────────────────────────────────┤
+│ PHASE: INTAKE  │  Step 2 of 12 — Welcome email               │
+│  ✓ Confirmation│  ────────────────────────────────────────── │
+│  ● Welcome ema.│  Send the inquiry form + welcome message    │
+│  ○ Questionn…  │  to the team leader.                        │
+│                │                                             │
+│ PLANNING       │  [ Compose welcome email ]                  │
+│  ○ Planning ca.│  [ Copy inquiry link ]                      │
+│                │                                             │
+│ ITINERARY      │  Notes for this step …………………………………… │
+│  ⊘ Draft sched.│                                             │
+│  ○ Confirm sch.│                                             │
+│  ○ Supplies    │  ─────────────────────────────────────────  │
+│  ○ Final sched.│  [ ← Previous ]  [ Skip step ▾ ][ Mark done →]│
+│                │                                             │
+│ IN FIELD …     │                                             │
+│ WRAP-UP …      │                                             │
+└────────────────┴─────────────────────────────────────────────┘
+```
 
-Pure function in `src/lib/mission-readiness.ts` (no DB changes). Used in `src/routes/missions.tsx` and `src/routes/index.tsx`.
+- **Left rail**: the 12 steps grouped under 5 phase headings (Intake, Planning, Itinerary, In Field, Wrap-up). Each row shows an icon for its state (`✓` done, `●` active, `⊘` skipped, `○` pending) and is clickable to jump.
+- **Right pane**: one step at a time. Shows the step name, a 1-line description of what this step is, then ONLY the tool(s) and fields relevant to that step (welcome-email composer, planning-call panel, draft-itinerary panel + doc sync, pre-trip confirm checklist, final-schedule send, etc.). Other tools stay hidden.
+- **Footer in the right pane**: `Previous` · `Skip step ▾` · `Mark done →`. The skip button opens a small popover with an optional reason ("not needed because…"). Marking done auto-advances to the next non-skipped step. Already-done/skipped steps show `Reset` instead.
+- **Header**: trip name, dates, status pill, readiness %. A `Trip basics ▾` popover holds the church/dates/leader/status form so it's one click away but out of the flow. Save persists on blur.
 
-## 2. Elder Care Load Balancing (# assigned)
+## Skip behaviour
 
-New `CareLoadCard` on `/elder/pastoral-care` (and a compact version on `/elder`):
-- Pulls PCO care list via existing `listCareList` server fn.
-- Groups by `assigned_elder` field value, counts people per elder, shows avg + per-elder bars.
-- Highlights elders >120% of average (overloaded) and <60% (underloaded).
-- "Unassigned" bucket shown separately with link to re-assign in PCO.
+- New field on each trip: `skipped_steps: Record<string, boolean>` (mirrors the existing `steps` shape).
+- Readiness % = `(done + skipped) / total` so a skipped step no longer blocks the bar from reaching 100%.
+- Skipped steps render with a strikethrough + `Skipped` tag in the rail and on the kanban card tooltip. Status filter chips and "missing items" tooltips treat skipped as resolved.
+- Skipping is reversible — `Reset step` clears both done and skipped flags.
 
-New file: `src/components/pastoral/CareLoadCard.tsx`. No new server fn — reuses `listCareList`. No DB changes.
+## Phase → step grouping
 
-## 3. Touchpoint Nudges (In-app + weekly + threshold email)
+| Phase | Steps |
+| --- | --- |
+| Intake | Confirmation, Welcome email, Questionnaire received |
+| Planning | Planning call |
+| Itinerary | Draft schedule, Confirm schedule & staff leads, Place supplies orders, Send final schedule |
+| In Field | Orientation session, Daily leader check-in |
+| Wrap-up | Thank-you & feedback, Debrief call |
 
-Reuses existing `pastoral-gaps.functions.ts` (red = ≥60d or never, amber = ≥45d).
+Each phase header in the rail shows `done/total` for that phase.
 
-**In-app:** `PastoralAttentionCard` already shows reds on home. Add an elder-scoped variant that filters to people whose `assigned_elder` matches the viewer's full name (via `getMyElderName`). Add an amber section + count.
+## Step → tool mapping
 
-**Weekly email (Mondays 8am):** New `/api/public/hooks/elder-touchpoint-digest` route. For each elder (full_name in user_roles=elder), build list of their reds + ambers from `pco_touchpoints` + `pco_pastoral_notes`, render via existing email infra (`@/lib/email-templates/`), enqueue per-elder via `enqueue_email` RPC. Skip elders with 0 gaps. `pg_cron` job calls it weekly.
+| Step | Right-pane content |
+| --- | --- |
+| Confirmation | `InquiryPanel` (inquiry token, link, copy) |
+| Welcome email | "Compose welcome email" button + leader email field + inline note |
+| Questionnaire received | Inquiry submission summary (read-only) + planning-call scheduler shortcut |
+| Planning call | `PlanningCallPanel` (date/time, planning notes sections) |
+| Draft schedule | `DraftItineraryPanel` body editor + "Sync to Google Doc" + "Email draft" |
+| Confirm schedule & staff leads | `PreTripConfirmPanel` (the 3-item confirm checklist + coordinator on-call) |
+| Place supplies orders | Inline supplies notes (uses existing planning_notes.supplies) + outreach tracks |
+| Send final schedule | Doc URL + "Send final schedule" Gmail composer |
+| Orientation session | Notes + "Set on-call coordinator" reminder |
+| Daily leader check-in | Daily window times + simple per-day check-in log |
+| Thank-you & feedback | "Compose thank-you" email + feedback URL field |
+| Debrief call | Date + free-form notes |
 
-**Threshold email (per-person crossing 45d):** New `/api/public/hooks/elder-touchpoint-threshold` running daily at 8am. For each person, compute days since last contact. Track previously-notified state in a new tiny table `elder_threshold_notifications(pco_person_id text pk, last_threshold int, notified_at timestamptz)`. Send a single email to the assigned elder the day a person first crosses 45 or 60; reset when a fresh touchpoint is logged.
+Per-step `notes` field stored under a new `step_notes: Record<string, string>` column (or reuse `planning_notes` keyed by step key) so coordinators can leave context without dumping it into the generic `notes` field.
 
-DB change: create `elder_threshold_notifications` table with GRANTs + RLS (service_role only).
+## Card cleanup (Kanban)
 
-Cron jobs added via `supabase--insert` after route is deployed.
+Tighten the existing `TripCard` while we're here so the new flow has a clean entry point:
+- Top row: church name + status pill + readiness score badge.
+- Middle row: date range + leader name on one line.
+- Bottom row: phase progress dots (5 small pills, one per phase, filled proportional to done+skipped in that phase) instead of a single thin bar. Hover shows "Intake 2/3 · Planning 1/1 · …".
+- Quick actions (mail / phone / link / status select) stay in a single row at the bottom.
 
-## 4. "This Week" AI Digest (Home card + Monday email to core + elders)
+## Technical notes
 
-**Home card** (`src/components/dashboard/ThisWeekDigest.tsx`):
-- Server fn `getThisWeekDigest` (role-aware) gathers: upcoming calendar events (next 7d), pre-trip missions starting soon, pastoral reds/ambers (elders only), open elder action items (elders only), upcoming meetings, low-readiness events.
-- Calls Lovable AI Gateway (`google/gemini-3-flash-preview`) with a tight system prompt: 3–5 sentence paragraph naming the top 3 things this person should pay attention to this week. Returns `{ paragraph, generated_at }`.
-- Cached per-user per-day in memory on the server fn; client shows skeleton, then paragraph + small "Refresh" + "as of …".
+- **Schema migration**: add `skipped_steps jsonb not null default '{}'::jsonb` and `step_notes jsonb not null default '{}'::jsonb` to `public.mission_trips`. Backfill is no-op.
+- **State**: keep `form` shape but add `skipped_steps` and `step_notes`. Persist via the existing edit pathway.
+- **Refactor**: extract a `TripStepper` component (`src/components/missions/TripStepper.tsx`) that owns left-rail + right-pane + footer. Existing panel components (`InquiryPanel`, `PlanningCallPanel`, `DraftItineraryPanel`, `PreTripConfirmPanel`) get rendered by the stepper based on the active step key — they keep their internal logic untouched.
+- **Readiness scoring**: update `scoreTrip` / `readinessPct` to treat `skipped_steps[k] === true` as satisfied for the steps-derived portion, so kanban badges and the "missing items" tooltip match the new behavior.
+- **No design-system drift**: reuse existing tokens, shadcn `Tabs`-style rail styling, and `Checkbox`/`Button` primitives. No new colors.
 
-**Monday 7am email:** New `/api/public/hooks/weekly-digest-monday` route. For each user with role `core`/`meeting`/`elder`/`elder_candidate`, build their digest (reusing the same gather + AI call) and enqueue via existing email infra. Branded template `weekly-digest.tsx`. Idempotency key `weekly-digest-${userId}-${isoWeek}`. `pg_cron` Mondays 12:00 UTC (7am ET).
+## Out of scope
 
-No DB changes for the digest itself.
-
-## Files
-
-New:
-- `src/lib/mission-readiness.ts`
-- `src/components/pastoral/CareLoadCard.tsx`
-- `src/components/dashboard/ThisWeekDigest.tsx`
-- `src/lib/weekly-digest.functions.ts` (auth'd `getThisWeekDigest`)
-- `src/lib/email-templates/weekly-digest.tsx`
-- `src/lib/email-templates/elder-touchpoint-digest.tsx`
-- `src/lib/email-templates/touchpoint-threshold.tsx`
-- `src/routes/api/public/hooks/weekly-digest-monday.ts`
-- `src/routes/api/public/hooks/elder-touchpoint-digest.ts`
-- `src/routes/api/public/hooks/elder-touchpoint-threshold.ts`
-
-Edited:
-- `src/routes/missions.tsx` — show readiness on cards
-- `src/routes/index.tsx` — render `ThisWeekDigest`; readiness warning on Active Missions
-- `src/routes/elder.pastoral-care.tsx` + `src/components/pastoral/PastoralCareList.tsx` — embed `CareLoadCard`
-- `src/components/dashboard/PastoralAttentionCard.tsx` — add amber list + viewer scoping
-- `src/lib/email-templates/registry.ts` — register 3 new templates
-
-DB:
-- Migration: `elder_threshold_notifications` table
-- pg_cron: 3 schedules (weekly Mon digest, weekly Mon touchpoint, daily threshold)
-
-## Notes
-
-- All server fns use `requireSupabaseAuth` except public cron routes, which use the apikey-bearer pattern (`/api/public/*`) and load `supabaseAdmin` inside the handler.
-- AI calls go to Lovable AI Gateway with `LOVABLE_API_KEY` (already in secrets). I'll cap each digest call at ~500 tokens.
-- No new email provider — uses existing scaffolded `enqueue_email` + transactional infra.
+- Reordering or renaming the 12 steps.
+- Changing how trips move between Kanban columns.
+- Server-side automation triggered by completing steps (e.g. auto-send emails on mark-done) — buttons remain manual.
