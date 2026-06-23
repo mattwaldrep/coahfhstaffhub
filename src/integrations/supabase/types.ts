@@ -1391,6 +1391,27 @@ export type Database = {
           },
         ]
       }
+      elder_threshold_notifications: {
+        Row: {
+          last_notified_days: number
+          notified_at: string
+          pco_person_id: string
+          threshold: number
+        }
+        Insert: {
+          last_notified_days: number
+          notified_at?: string
+          pco_person_id: string
+          threshold: number
+        }
+        Update: {
+          last_notified_days?: number
+          notified_at?: string
+          pco_person_id?: string
+          threshold?: number
+        }
+        Relationships: []
+      }
       event_checklist_items: {
         Row: {
           action_item_id: string | null
