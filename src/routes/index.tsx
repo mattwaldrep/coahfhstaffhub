@@ -18,6 +18,8 @@ import { PastoralAttentionCard } from "@/components/dashboard/PastoralAttentionC
 import { ThisWeekDigest } from "@/components/dashboard/ThisWeekDigest";
 import { TaskSourceButton } from "@/components/tasks/TaskSourceButton";
 import { GoogleTasksCard } from "@/components/dashboard/GoogleTasksCard";
+import { useServerFn } from "@tanstack/react-start";
+import { setActionItemCompleted } from "@/lib/google-tasks.functions";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
