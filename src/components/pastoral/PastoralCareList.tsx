@@ -19,6 +19,7 @@ import {
 } from "@/lib/pastoral-care.functions";
 import { getPastoralGaps, type PastoralGap } from "@/lib/pastoral-gaps.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { CareLoadCard } from "@/components/pastoral/CareLoadCard";
 
 const HEALTH_OPTIONS = ["Thriving", "Healthy", "Watch", "Struggling", "Crisis", "Unknown"];
 // Severity ranking — higher = more urgent (used for "by health (urgent first)")
@@ -262,6 +263,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
 
   return (
     <div className="space-y-3">
+      {variant === "page" && <CareLoadCard />}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         {variant === "page" && (
           <div className="flex items-center gap-2 flex-wrap">
