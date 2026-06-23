@@ -64,6 +64,7 @@ function HomePage() {
 function Dashboard() {
   const { user, hasElderAccess } = useAuth();
   const metricsSession = useMetricsSession();
+  const completeAction = useServerFn(setActionItemCompleted);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [classAlerts, setClassAlerts] = useState<Array<{ id: string; title: string; date: Date; gaps: string[]; leader_name: string | null; leader_not_needed: boolean; childcare_needed: boolean; childcare_arranged: boolean }>>([]);
