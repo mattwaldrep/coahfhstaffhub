@@ -1323,8 +1323,9 @@ export function ReviewTasksSection() {
     const [{ data: a }, { data: p }] = await Promise.all([
       supabase
         .from("action_items")
-        .select("id,title,assignee_id,due_date,meeting_id,created_at,google_task_pushed_at")
+        .select("id,title,assignee_id,due_date,meeting_id,created_at,google_task_pushed_at,source_onboarding_task_id")
         .eq("completed", false)
+        .is("source_onboarding_task_id", null)
         .order("created_at", { ascending: true }),
       supabase.from("profiles").select("id,full_name,email"),
     ]);
