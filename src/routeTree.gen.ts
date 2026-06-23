@@ -48,9 +48,12 @@ import { Route as ElderMeetingsMeetingIdRouteImport } from './routes/elder.meeti
 import { Route as CalendarPlanningReviewRouteImport } from './routes/calendar_.planning.review'
 import { Route as CalendarPlanningSubmissionIdRouteImport } from './routes/calendar_.planning.$submissionId'
 import { Route as ApiGoogleOauthCallbackRouteImport } from './routes/api/google.oauth-callback'
+import { Route as ApiPublicHooksWeeklyDigestMondayRouteImport } from './routes/api/public/hooks.weekly-digest-monday'
 import { Route as ApiPublicHooksSyncGoogleTasksRouteImport } from './routes/api/public/hooks/sync-google-tasks'
 import { Route as ApiPublicHooksSundayReviewNudgeRouteImport } from './routes/api/public/hooks.sunday-review-nudge'
 import { Route as ApiPublicHooksSendWeeklyDigestRouteImport } from './routes/api/public/hooks/send-weekly-digest'
+import { Route as ApiPublicHooksElderTouchpointThresholdRouteImport } from './routes/api/public/hooks.elder-touchpoint-threshold'
+import { Route as ApiPublicHooksElderTouchpointDigestRouteImport } from './routes/api/public/hooks.elder-touchpoint-digest'
 import { Route as ApiPublicHooksAutoFinalizeMeetingRouteImport } from './routes/api/public/hooks.auto-finalize-meeting'
 import { Route as ApiPublicHooksActionItemsDigestRouteImport } from './routes/api/public/hooks.action-items-digest'
 import { Route as ApiPublicMissionsInquiryTokenRouteImport } from './routes/api/public/missions/inquiry.$token'
@@ -251,6 +254,12 @@ const ApiGoogleOauthCallbackRoute = ApiGoogleOauthCallbackRouteImport.update({
   path: '/api/google/oauth-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksWeeklyDigestMondayRoute =
+  ApiPublicHooksWeeklyDigestMondayRouteImport.update({
+    id: '/api/public/hooks/weekly-digest-monday',
+    path: '/api/public/hooks/weekly-digest-monday',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSyncGoogleTasksRoute =
   ApiPublicHooksSyncGoogleTasksRouteImport.update({
     id: '/api/public/hooks/sync-google-tasks',
@@ -267,6 +276,18 @@ const ApiPublicHooksSendWeeklyDigestRoute =
   ApiPublicHooksSendWeeklyDigestRouteImport.update({
     id: '/api/public/hooks/send-weekly-digest',
     path: '/api/public/hooks/send-weekly-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksElderTouchpointThresholdRoute =
+  ApiPublicHooksElderTouchpointThresholdRouteImport.update({
+    id: '/api/public/hooks/elder-touchpoint-threshold',
+    path: '/api/public/hooks/elder-touchpoint-threshold',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksElderTouchpointDigestRoute =
+  ApiPublicHooksElderTouchpointDigestRouteImport.update({
+    id: '/api/public/hooks/elder-touchpoint-digest',
+    path: '/api/public/hooks/elder-touchpoint-digest',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksAutoFinalizeMeetingRoute =
@@ -330,9 +351,12 @@ export interface FileRoutesByFullPath {
   '/elder/motions/': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
   '/api/public/hooks/auto-finalize-meeting': typeof ApiPublicHooksAutoFinalizeMeetingRoute
+  '/api/public/hooks/elder-touchpoint-digest': typeof ApiPublicHooksElderTouchpointDigestRoute
+  '/api/public/hooks/elder-touchpoint-threshold': typeof ApiPublicHooksElderTouchpointThresholdRoute
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
   '/api/public/hooks/sync-google-tasks': typeof ApiPublicHooksSyncGoogleTasksRoute
+  '/api/public/hooks/weekly-digest-monday': typeof ApiPublicHooksWeeklyDigestMondayRoute
   '/api/public/missions/inquiry/$token': typeof ApiPublicMissionsInquiryTokenRoute
 }
 export interface FileRoutesByTo {
@@ -373,9 +397,12 @@ export interface FileRoutesByTo {
   '/elder/motions': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
   '/api/public/hooks/auto-finalize-meeting': typeof ApiPublicHooksAutoFinalizeMeetingRoute
+  '/api/public/hooks/elder-touchpoint-digest': typeof ApiPublicHooksElderTouchpointDigestRoute
+  '/api/public/hooks/elder-touchpoint-threshold': typeof ApiPublicHooksElderTouchpointThresholdRoute
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
   '/api/public/hooks/sync-google-tasks': typeof ApiPublicHooksSyncGoogleTasksRoute
+  '/api/public/hooks/weekly-digest-monday': typeof ApiPublicHooksWeeklyDigestMondayRoute
   '/api/public/missions/inquiry/$token': typeof ApiPublicMissionsInquiryTokenRoute
 }
 export interface FileRoutesById {
@@ -421,9 +448,12 @@ export interface FileRoutesById {
   '/elder/motions/': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
   '/api/public/hooks/auto-finalize-meeting': typeof ApiPublicHooksAutoFinalizeMeetingRoute
+  '/api/public/hooks/elder-touchpoint-digest': typeof ApiPublicHooksElderTouchpointDigestRoute
+  '/api/public/hooks/elder-touchpoint-threshold': typeof ApiPublicHooksElderTouchpointThresholdRoute
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
   '/api/public/hooks/sync-google-tasks': typeof ApiPublicHooksSyncGoogleTasksRoute
+  '/api/public/hooks/weekly-digest-monday': typeof ApiPublicHooksWeeklyDigestMondayRoute
   '/api/public/missions/inquiry/$token': typeof ApiPublicMissionsInquiryTokenRoute
 }
 export interface FileRouteTypes {
@@ -470,9 +500,12 @@ export interface FileRouteTypes {
     | '/elder/motions/'
     | '/api/public/hooks/action-items-digest'
     | '/api/public/hooks/auto-finalize-meeting'
+    | '/api/public/hooks/elder-touchpoint-digest'
+    | '/api/public/hooks/elder-touchpoint-threshold'
     | '/api/public/hooks/send-weekly-digest'
     | '/api/public/hooks/sunday-review-nudge'
     | '/api/public/hooks/sync-google-tasks'
+    | '/api/public/hooks/weekly-digest-monday'
     | '/api/public/missions/inquiry/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -513,9 +546,12 @@ export interface FileRouteTypes {
     | '/elder/motions'
     | '/api/public/hooks/action-items-digest'
     | '/api/public/hooks/auto-finalize-meeting'
+    | '/api/public/hooks/elder-touchpoint-digest'
+    | '/api/public/hooks/elder-touchpoint-threshold'
     | '/api/public/hooks/send-weekly-digest'
     | '/api/public/hooks/sunday-review-nudge'
     | '/api/public/hooks/sync-google-tasks'
+    | '/api/public/hooks/weekly-digest-monday'
     | '/api/public/missions/inquiry/$token'
   id:
     | '__root__'
@@ -560,9 +596,12 @@ export interface FileRouteTypes {
     | '/elder/motions/'
     | '/api/public/hooks/action-items-digest'
     | '/api/public/hooks/auto-finalize-meeting'
+    | '/api/public/hooks/elder-touchpoint-digest'
+    | '/api/public/hooks/elder-touchpoint-threshold'
     | '/api/public/hooks/send-weekly-digest'
     | '/api/public/hooks/sunday-review-nudge'
     | '/api/public/hooks/sync-google-tasks'
+    | '/api/public/hooks/weekly-digest-monday'
     | '/api/public/missions/inquiry/$token'
   fileRoutesById: FileRoutesById
 }
@@ -594,9 +633,12 @@ export interface RootRouteChildren {
   ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
   ApiPublicHooksActionItemsDigestRoute: typeof ApiPublicHooksActionItemsDigestRoute
   ApiPublicHooksAutoFinalizeMeetingRoute: typeof ApiPublicHooksAutoFinalizeMeetingRoute
+  ApiPublicHooksElderTouchpointDigestRoute: typeof ApiPublicHooksElderTouchpointDigestRoute
+  ApiPublicHooksElderTouchpointThresholdRoute: typeof ApiPublicHooksElderTouchpointThresholdRoute
   ApiPublicHooksSendWeeklyDigestRoute: typeof ApiPublicHooksSendWeeklyDigestRoute
   ApiPublicHooksSundayReviewNudgeRoute: typeof ApiPublicHooksSundayReviewNudgeRoute
   ApiPublicHooksSyncGoogleTasksRoute: typeof ApiPublicHooksSyncGoogleTasksRoute
+  ApiPublicHooksWeeklyDigestMondayRoute: typeof ApiPublicHooksWeeklyDigestMondayRoute
   ApiPublicMissionsInquiryTokenRoute: typeof ApiPublicMissionsInquiryTokenRoute
 }
 
@@ -875,6 +917,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGoogleOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/weekly-digest-monday': {
+      id: '/api/public/hooks/weekly-digest-monday'
+      path: '/api/public/hooks/weekly-digest-monday'
+      fullPath: '/api/public/hooks/weekly-digest-monday'
+      preLoaderRoute: typeof ApiPublicHooksWeeklyDigestMondayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/sync-google-tasks': {
       id: '/api/public/hooks/sync-google-tasks'
       path: '/api/public/hooks/sync-google-tasks'
@@ -894,6 +943,20 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/send-weekly-digest'
       fullPath: '/api/public/hooks/send-weekly-digest'
       preLoaderRoute: typeof ApiPublicHooksSendWeeklyDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/elder-touchpoint-threshold': {
+      id: '/api/public/hooks/elder-touchpoint-threshold'
+      path: '/api/public/hooks/elder-touchpoint-threshold'
+      fullPath: '/api/public/hooks/elder-touchpoint-threshold'
+      preLoaderRoute: typeof ApiPublicHooksElderTouchpointThresholdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/elder-touchpoint-digest': {
+      id: '/api/public/hooks/elder-touchpoint-digest'
+      path: '/api/public/hooks/elder-touchpoint-digest'
+      fullPath: '/api/public/hooks/elder-touchpoint-digest'
+      preLoaderRoute: typeof ApiPublicHooksElderTouchpointDigestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/auto-finalize-meeting': {
@@ -1024,9 +1087,14 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksActionItemsDigestRoute: ApiPublicHooksActionItemsDigestRoute,
   ApiPublicHooksAutoFinalizeMeetingRoute:
     ApiPublicHooksAutoFinalizeMeetingRoute,
+  ApiPublicHooksElderTouchpointDigestRoute:
+    ApiPublicHooksElderTouchpointDigestRoute,
+  ApiPublicHooksElderTouchpointThresholdRoute:
+    ApiPublicHooksElderTouchpointThresholdRoute,
   ApiPublicHooksSendWeeklyDigestRoute: ApiPublicHooksSendWeeklyDigestRoute,
   ApiPublicHooksSundayReviewNudgeRoute: ApiPublicHooksSundayReviewNudgeRoute,
   ApiPublicHooksSyncGoogleTasksRoute: ApiPublicHooksSyncGoogleTasksRoute,
+  ApiPublicHooksWeeklyDigestMondayRoute: ApiPublicHooksWeeklyDigestMondayRoute,
   ApiPublicMissionsInquiryTokenRoute: ApiPublicMissionsInquiryTokenRoute,
 }
 export const routeTree = rootRouteImport
