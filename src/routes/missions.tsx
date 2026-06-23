@@ -27,6 +27,7 @@ import {
   ArrowUpDown, Copy, Send, FileUp,
 } from "lucide-react";
 import { toast } from "sonner";
+import { scoreTrip, readinessTone } from "@/lib/mission-readiness";
 
 type ViewMode = "timeline" | "kanban" | "table" | "calendar";
 const VIEW_STORAGE_KEY = "missions:view";
@@ -1020,12 +1021,21 @@ function TripCard({
 }) {
   const done = STEPS.filter((s) => trip.steps?.[s.key]).length;
   const pct = (done / STEPS.length) * 100;
+  const readiness = scoreTrip(trip);
   return (
     <div className="bg-background/60 border border-border rounded-xl p-3 hover:border-border/80 transition cursor-pointer group"
       onClick={onClick}>
       <div className="flex items-start justify-between gap-2 mb-1">
         <div className="font-medium text-sm leading-tight">{trip.church_name}</div>
-        <ProgressBadge steps={trip.steps ?? {}} />
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span
+            className={`text-[10px] font-semibold ${readinessTone(readiness.level)}`}
+            title={readiness.missing.length ? `Missing: ${readiness.missing.join(", ")}` : "All travel pieces in place"}
+          >
+            {readiness.score}
+          </span>
+          <ProgressBadge steps={trip.steps ?? {}} />
+        </div>
       </div>
       {trip.start_date && (
         <div className="text-[11px] text-muted-foreground">
