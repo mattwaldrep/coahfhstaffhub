@@ -286,11 +286,9 @@ function Dashboard() {
                   const overdue = a.due_date && a.due_date < todayStr;
                   const toggle = async () => {
                     setActions((prev) => prev.filter((x) => x.id !== a.id));
-                    const { error } = await supabase
-                      .from("action_items")
-                      .update({ completed: true })
-                      .eq("id", a.id);
-                    if (error) {
+                    try {
+                      await completeAction({ data: { actionItemId: a.id, completed: true } });
+                    } catch {
                       setActions((prev) => [...prev, a]);
                     }
                   };
