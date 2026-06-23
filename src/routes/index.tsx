@@ -18,6 +18,8 @@ import { PastoralAttentionCard } from "@/components/dashboard/PastoralAttentionC
 import { ThisWeekDigest } from "@/components/dashboard/ThisWeekDigest";
 import { TaskSourceButton } from "@/components/tasks/TaskSourceButton";
 import { GoogleTasksCard } from "@/components/dashboard/GoogleTasksCard";
+import { useServerFn } from "@tanstack/react-start";
+import { setActionItemCompleted } from "@/lib/google-tasks.functions";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -62,6 +64,7 @@ function HomePage() {
 function Dashboard() {
   const { user, hasElderAccess } = useAuth();
   const metricsSession = useMetricsSession();
+  const completeAction = useServerFn(setActionItemCompleted);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [classAlerts, setClassAlerts] = useState<Array<{ id: string; title: string; date: Date; gaps: string[]; leader_name: string | null; leader_not_needed: boolean; childcare_needed: boolean; childcare_arranged: boolean }>>([]);
@@ -283,11 +286,9 @@ function Dashboard() {
                   const overdue = a.due_date && a.due_date < todayStr;
                   const toggle = async () => {
                     setActions((prev) => prev.filter((x) => x.id !== a.id));
-                    const { error } = await supabase
-                      .from("action_items")
-                      .update({ completed: true })
-                      .eq("id", a.id);
-                    if (error) {
+                    try {
+                      await completeAction({ data: { actionItemId: a.id, completed: true } });
+                    } catch {
                       setActions((prev) => [...prev, a]);
                     }
                   };
