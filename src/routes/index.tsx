@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 
 import { CongregationPulse } from "@/components/dashboard/CongregationPulse";
 import { PastoralAttentionCard } from "@/components/dashboard/PastoralAttentionCard";
+import { ThisWeekDigest } from "@/components/dashboard/ThisWeekDigest";
 import { TaskSourceButton } from "@/components/tasks/TaskSourceButton";
 import { GoogleTasksCard } from "@/components/dashboard/GoogleTasksCard";
 
@@ -195,6 +196,7 @@ function Dashboard() {
       
 
       <div className="grid grid-cols-12 gap-6">
+        <ThisWeekDigest />
         {/* KPI cards */}
         <div className="col-span-12 lg:col-span-8 self-start grid grid-cols-2 lg:grid-cols-4 auto-rows-min gap-4">
           <Stat
