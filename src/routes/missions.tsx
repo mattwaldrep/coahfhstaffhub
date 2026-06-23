@@ -22,9 +22,12 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
+  Popover, PopoverContent, PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Plus, Trash2, ExternalLink, Mail, Phone, Upload, FileText, X as XIcon,
   LayoutGrid, List, Table as TableIcon, CalendarDays, ChevronLeft, ChevronRight,
-  ArrowUpDown, Copy, Send, FileUp,
+  ArrowUpDown, Copy, Send, FileUp, Check, Circle as CircleIcon, MinusCircle, ChevronRight as ChevronR, Settings2, RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { scoreTrip, readinessTone } from "@/lib/mission-readiness";
@@ -63,6 +66,30 @@ const STEPS = [
   { key: "thank_you", label: "Thank-you & feedback" },
   { key: "debrief", label: "Debrief call" },
 ];
+
+const PHASES: { key: string; label: string; stepKeys: string[] }[] = [
+  { key: "intake", label: "Intake", stepKeys: ["confirmation", "welcome_email", "questionnaire_received"] },
+  { key: "planning", label: "Planning", stepKeys: ["planning_call"] },
+  { key: "itinerary", label: "Itinerary", stepKeys: ["draft_schedule", "confirm_schedule", "place_supplies", "send_final_schedule"] },
+  { key: "field", label: "In Field", stepKeys: ["orientation", "daily_check_in"] },
+  { key: "wrapup", label: "Wrap-up", stepKeys: ["thank_you", "debrief"] },
+];
+
+const STEP_BLURBS: Record<string, string> = {
+  confirmation: "Acknowledge the inquiry and lock the trip into the calendar so the team knows we received their request.",
+  welcome_email: "Send the welcome email with the planning questionnaire link so the team can share goals, headcount, and constraints.",
+  questionnaire_received: "Review the team's responses before the planning call so you walk in with context, not blank pages.",
+  planning_call: "Run the planning call and capture notes against each section so nothing important slips through.",
+  draft_schedule: "Build a draft itinerary, sync it to a Google Doc, and email it to the leader for feedback.",
+  confirm_schedule: "Lock in staff leads for every activity, confirm meeting points, and align the supplies list to the final schedule.",
+  place_supplies: "Order the supplies the schedule actually needs — printing, snacks/water, CharlieCards, contingency.",
+  send_final_schedule: "Send the final schedule and trip guide to the team leader so they can brief their team.",
+  orientation: "Hold the orientation session on arrival — vision, expectations, safety, and the on-call coordinator.",
+  daily_check_in: "Check in with the team leader each day during the trip — wins, friction, anything we need to adjust.",
+  thank_you: "Send a thank-you note and the feedback form so we learn what worked and what to change next time.",
+  debrief: "Run an internal debrief — pastoral takeaways, ops lessons, and anything to roll into the next team's plan.",
+};
+
 
 const COLUMNS = [
   { value: "not_started", label: "Not started" },
@@ -114,6 +141,8 @@ type Trip = {
   confirm_checklist: Record<string, boolean>;
   itinerary_doc_id: string | null;
   itinerary_doc_url: string | null;
+  skipped_steps: Record<string, boolean>;
+  step_notes: Record<string, string>;
 };
 
 const OUTREACH_TRACK_OPTIONS = [
@@ -363,6 +392,8 @@ const emptyForm = (): Form => ({
   confirm_checklist: {},
   itinerary_doc_id: null,
   itinerary_doc_url: null,
+  skipped_steps: {},
+  step_notes: {},
 });
 
 function MissionsPage() {
@@ -390,6 +421,7 @@ function Body() {
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
   const [uploading, setUploading] = useState(false);
+  const [activeStep, setActiveStep] = useState<string>(STEPS[0].key);
   const [view, setView] = useState<ViewMode>(() => {
     if (typeof window === "undefined") return "timeline";
     const saved = window.localStorage.getItem(VIEW_STORAGE_KEY) as ViewMode | null;
@@ -424,6 +456,7 @@ function Body() {
     if (!canEdit) return;
     setEditingTrip(null);
     setForm(emptyForm());
+    setActiveStep(STEPS[0].key);
     setOpen(true);
   }
 
@@ -466,7 +499,13 @@ function Body() {
       confirm_checklist: t.confirm_checklist ?? {},
       itinerary_doc_id: t.itinerary_doc_id ?? null,
       itinerary_doc_url: t.itinerary_doc_url ?? null,
+      skipped_steps: t.skipped_steps ?? {},
+      step_notes: t.step_notes ?? {},
     });
+    const tSteps = t.steps ?? {};
+    const tSkipped = t.skipped_steps ?? {};
+    const firstOpen = STEPS.find((s) => !tSteps[s.key] && !tSkipped[s.key]);
+    setActiveStep((firstOpen ?? STEPS[STEPS.length - 1]).key);
     setOpen(true);
   }
 
@@ -507,6 +546,8 @@ function Body() {
       confirm_checklist: form.confirm_checklist ?? {},
       itinerary_doc_id: form.itinerary_doc_id,
       itinerary_doc_url: form.itinerary_doc_url,
+      skipped_steps: form.skipped_steps ?? {},
+      step_notes: form.step_notes ?? {},
     };
     const { error } = form.id
       ? await supabase.from("mission_trips").update(payload).eq("id", form.id)
@@ -786,154 +827,170 @@ function Body() {
 
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{form.id ? "Edit trip" : "New trip"}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={submit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2 col-span-2">
-                <Label>Church name</Label>
-                <Input value={form.church_name} onChange={(e) => setForm({ ...form, church_name: e.target.value })} required />
-              </div>
-              <div className="space-y-2">
-                <Label>Start date</Label>
-                <Input type="date" value={form.start_date ?? ""} onChange={(e) => setForm({ ...form, start_date: e.target.value || null })} />
-              </div>
-              <div className="space-y-2">
-                <Label>End date</Label>
-                <Input type="date" value={form.end_date ?? ""} onChange={(e) => setForm({ ...form, end_date: e.target.value || null })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Leader</Label>
-                <Input value={form.leader_name ?? ""} onChange={(e) => setForm({ ...form, leader_name: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as Status })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {COLUMNS.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Leader phone</Label>
-                <Input value={form.leader_phone ?? ""} onChange={(e) => setForm({ ...form, leader_phone: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Leader email</Label>
-                <Input type="email" value={form.leader_email ?? ""} onChange={(e) => setForm({ ...form, leader_email: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Primary focus</Label>
-                <Input value={form.primary_focus ?? ""} onChange={(e) => setForm({ ...form, primary_focus: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Team #</Label>
-                <Input value={form.team_number ?? ""} onChange={(e) => setForm({ ...form, team_number: e.target.value })} />
-              </div>
-              <div className="space-y-2 col-span-2">
-                <Label>Itinerary link</Label>
-                <Input value={form.itinerary_link ?? ""} onChange={(e) => setForm({ ...form, itinerary_link: e.target.value })} placeholder="https://…" />
-              </div>
-              <div className="space-y-2 col-span-2">
-                <Label>Itinerary file</Label>
-                {form.itinerary_file_path ? (
-                  <div className="flex items-center gap-2 text-sm bg-background/60 border border-border rounded-lg px-3 py-2">
-                    <FileText className="w-4 h-4 text-muted-foreground" />
-                    <button type="button" onClick={() => openItinerary(form.itinerary_file_path!)} className="flex-1 text-left truncate hover:underline">
-                      {form.itinerary_file_name ?? "View file"}
-                    </button>
-                    <button type="button" onClick={clearItinerary} className="text-muted-foreground hover:text-foreground">
-                      <XIcon className="w-4 h-4" />
-                    </button>
+        <DialogContent className="max-w-5xl max-h-[92vh] overflow-hidden p-0 flex flex-col">
+          <form onSubmit={submit} className="flex-1 flex flex-col min-h-0">
+            {/* Header */}
+            <div className="px-6 pt-5 pb-4 border-b border-border space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Input
+                      value={form.church_name}
+                      onChange={(e) => setForm({ ...form, church_name: e.target.value })}
+                      required
+                      placeholder="Church name"
+                      className="text-lg font-display font-semibold border-0 bg-transparent px-0 h-auto py-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 max-w-md"
+                    />
+                    <StatusPill status={form.status} />
                   </div>
-                ) : (
-                  <label className="flex items-center justify-center gap-2 text-sm text-muted-foreground border border-dashed border-border rounded-lg px-3 py-3 cursor-pointer hover:bg-background/40">
-                    <Upload className="w-4 h-4" />
-                    {uploading ? "Uploading…" : "Upload PDF or document"}
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
-                      onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadItinerary(f); }}
-                    />
-                  </label>
-                )}
-              </div>
-              <div className="space-y-2 col-span-2">
-                <Label>Notes</Label>
-                <Textarea rows={3} value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    {(form.start_date || form.end_date) && (
+                      <span className="inline-flex items-center gap-1">
+                        <CalendarDays className="w-3 h-3" />
+                        {form.start_date ? format(new Date(form.start_date), "MMM d, yyyy") : "?"}
+                        {form.end_date ? ` – ${format(new Date(form.end_date), "MMM d, yyyy")}` : ""}
+                      </span>
+                    )}
+                    {form.leader_name && <span>· {form.leader_name}</span>}
+                    {form.team_number && <span>· Team #{form.team_number}</span>}
+                    <span className="ml-auto inline-flex items-center gap-1.5">
+                      Readiness
+                      <span className="text-foreground font-semibold">{readinessPct(form.steps, form.skipped_steps)}%</span>
+                      <ProgressBadge steps={form.steps} skipped={form.skipped_steps} />
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button type="button" variant="outline" size="sm">
+                        <Settings2 className="w-3.5 h-3.5 mr-1.5" /> Trip basics
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-96 max-h-[70vh] overflow-y-auto" align="end">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Start date</Label>
+                          <Input type="date" value={form.start_date ?? ""} onChange={(e) => setForm({ ...form, start_date: e.target.value || null })} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">End date</Label>
+                          <Input type="date" value={form.end_date ?? ""} onChange={(e) => setForm({ ...form, end_date: e.target.value || null })} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Leader</Label>
+                          <Input value={form.leader_name ?? ""} onChange={(e) => setForm({ ...form, leader_name: e.target.value })} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Status</Label>
+                          <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as Status })}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {COLUMNS.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Leader phone</Label>
+                          <Input value={form.leader_phone ?? ""} onChange={(e) => setForm({ ...form, leader_phone: e.target.value })} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Leader email</Label>
+                          <Input type="email" value={form.leader_email ?? ""} onChange={(e) => setForm({ ...form, leader_email: e.target.value })} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Primary focus</Label>
+                          <Input value={form.primary_focus ?? ""} onChange={(e) => setForm({ ...form, primary_focus: e.target.value })} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Team #</Label>
+                          <Input value={form.team_number ?? ""} onChange={(e) => setForm({ ...form, team_number: e.target.value })} />
+                        </div>
+                        <div className="space-y-1.5 col-span-2">
+                          <Label className="text-xs">Itinerary link</Label>
+                          <Input value={form.itinerary_link ?? ""} onChange={(e) => setForm({ ...form, itinerary_link: e.target.value })} placeholder="https://…" />
+                        </div>
+                        <div className="space-y-1.5 col-span-2">
+                          <Label className="text-xs">Itinerary file</Label>
+                          {form.itinerary_file_path ? (
+                            <div className="flex items-center gap-2 text-sm bg-background/60 border border-border rounded-lg px-3 py-2">
+                              <FileText className="w-4 h-4 text-muted-foreground" />
+                              <button type="button" onClick={() => openItinerary(form.itinerary_file_path!)} className="flex-1 text-left truncate hover:underline">
+                                {form.itinerary_file_name ?? "View file"}
+                              </button>
+                              <button type="button" onClick={clearItinerary} className="text-muted-foreground hover:text-foreground">
+                                <XIcon className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <label className="flex items-center justify-center gap-2 text-sm text-muted-foreground border border-dashed border-border rounded-lg px-3 py-3 cursor-pointer hover:bg-background/40">
+                              <Upload className="w-4 h-4" />
+                              {uploading ? "Uploading…" : "Upload PDF or document"}
+                              <input
+                                type="file"
+                                className="hidden"
+                                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadItinerary(f); }}
+                              />
+                            </label>
+                          )}
+                        </div>
+                        <div className="space-y-1.5 col-span-2">
+                          <Label className="text-xs">General notes</Label>
+                          <Textarea rows={3} value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
             </div>
 
-            {editingTrip && (
-              <InquiryPanel trip={editingTrip} onCompose={() => openWelcomeEmail(editingTrip)} />
-            )}
-
-            <PlanningCallPanel form={form} setForm={setForm} />
-
-            <DraftItineraryPanel
-              form={form}
-              setForm={setForm}
-              canEmail={!!editingTrip && !!form.leader_email}
-              onEmail={() => {
-                if (!editingTrip) return;
-                openItineraryEmail(editingTrip, form.draft_itinerary || buildDraftItinerary(form));
-              }}
-              docUrl={form.itinerary_doc_url}
-              syncingDoc={syncingDoc}
-              onSyncDoc={handleSyncDoc}
-              canSyncDoc={!!editingTrip && !!(form.draft_itinerary || form.start_date)}
-              onSendFinalSchedule={async () => {
-                if (!editingTrip) return;
-                let url = form.itinerary_doc_url;
-                if (!url) {
-                  url = await handleSyncDoc();
-                  if (!url) return;
-                }
-                openFinalScheduleEmail(editingTrip, url);
-              }}
-            />
-
-
-            <PreTripConfirmPanel form={form} setForm={setForm} />
-
-
-
-
-
-
-            <div className="rounded-xl border border-border p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">Readiness checklist</Label>
-                <ProgressBadge steps={form.steps} />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                {STEPS.map((s) => (
-                  <label key={s.key} className="flex items-center gap-2 text-sm py-1">
-                    <Checkbox
-                      checked={!!form.steps[s.key]}
-                      onCheckedChange={(v) => setForm({ ...form, steps: { ...form.steps, [s.key]: !!v } })}
-                    />
-                    <span className={form.steps[s.key] ? "line-through text-muted-foreground" : ""}>{s.label}</span>
-                  </label>
-                ))}
+            {/* Body: stepper rail + step content */}
+            <div className="flex-1 flex min-h-0 overflow-hidden">
+              <StepperRail
+                steps={form.steps}
+                skipped={form.skipped_steps}
+                activeStep={activeStep}
+                onSelect={setActiveStep}
+              />
+              <div className="flex-1 overflow-y-auto px-6 py-5 min-w-0">
+                <StepContent
+                  stepKey={activeStep}
+                  form={form}
+                  setForm={setForm}
+                  editingTrip={editingTrip}
+                  openWelcomeEmail={openWelcomeEmail}
+                  openItineraryEmail={openItineraryEmail}
+                  openFinalScheduleEmail={openFinalScheduleEmail}
+                  handleSyncDoc={handleSyncDoc}
+                  syncingDoc={syncingDoc}
+                  buildDraftItinerary={buildDraftItinerary}
+                />
               </div>
             </div>
 
-            <DialogFooter className="flex sm:justify-between gap-2 flex-wrap">
-              {form.id ? (
-                <Button type="button" variant="ghost" onClick={remove}>
-                  <Trash2 className="w-4 h-4 mr-1.5" /> Delete
-                </Button>
-              ) : <span />}
-              <Button type="submit">{form.id ? "Save changes" : "Add trip"}</Button>
-            </DialogFooter>
+            {/* Footer */}
+            <div className="px-6 py-3 border-t border-border flex items-center justify-between gap-3 flex-wrap bg-background/40">
+              <div className="flex items-center gap-2">
+                {form.id ? (
+                  <Button type="button" variant="ghost" size="sm" onClick={remove}>
+                    <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+                  </Button>
+                ) : <span />}
+              </div>
+              <StepFooterControls
+                form={form}
+                setForm={setForm}
+                activeStep={activeStep}
+                setActiveStep={setActiveStep}
+              />
+              <Button type="submit" size="sm">{form.id ? "Save changes" : "Add trip"}</Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
+
 
       <Dialog open={!!emailDraftTrip} onOpenChange={(next) => { if (!next) setEmailDraftTrip(null); }}>
         <DialogContent className="max-w-2xl">
@@ -998,17 +1055,22 @@ function Body() {
   );
 }
 
-function ProgressBadge({ steps }: { steps: Record<string, boolean> }) {
+function ProgressBadge({ steps, skipped }: { steps: Record<string, boolean>; skipped?: Record<string, boolean> }) {
+  const sk = skipped ?? {};
   const done = STEPS.filter((s) => steps[s.key]).length;
-  const pct = Math.round((done / STEPS.length) * 100);
+  const skippedCount = STEPS.filter((s) => sk[s.key] && !steps[s.key]).length;
+  const satisfied = done + skippedCount;
+  const pct = Math.round((satisfied / STEPS.length) * 100);
   const color = pct === 100 ? "oklch(0.7 0.18 145)" : pct >= 50 ? "oklch(0.82 0.16 90)" : "oklch(0.65 0.22 25)";
+  const label = skippedCount > 0 ? `${done}/${STEPS.length} · ${skippedCount} skipped` : `${done}/${STEPS.length}`;
   return (
-    <span className="text-[11px] px-2 py-0.5 rounded-full"
+    <span className="text-[11px] px-2 py-0.5 rounded-full" title={label}
       style={{ background: `color-mix(in oklab, ${color} 22%, transparent)`, color }}>
       {done}/{STEPS.length}
     </span>
   );
 }
+
 
 function TripCard({
   trip, onClick, onMove, onCompose, canEdit,
@@ -1019,8 +1081,8 @@ function TripCard({
   onCompose: () => void;
   canEdit: boolean;
 }) {
-  const done = STEPS.filter((s) => trip.steps?.[s.key]).length;
-  const pct = (done / STEPS.length) * 100;
+  const stepsMap = trip.steps ?? {};
+  const skippedMap = trip.skipped_steps ?? {};
   const readiness = scoreTrip(trip);
   return (
     <div className="bg-background/60 border border-border rounded-xl p-3 hover:border-border/80 transition cursor-pointer group"
@@ -1034,7 +1096,7 @@ function TripCard({
           >
             {readiness.score}
           </span>
-          <ProgressBadge steps={trip.steps ?? {}} />
+          <ProgressBadge steps={stepsMap} skipped={skippedMap} />
         </div>
       </div>
       {trip.start_date && (
@@ -1049,9 +1111,22 @@ function TripCard({
       {trip.primary_focus && (
         <div className="text-[10px] text-muted-foreground/80 mt-1 line-clamp-2">{trip.primary_focus}</div>
       )}
-      <div className="mt-2 h-1 rounded-full bg-border overflow-hidden">
-        <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+      <div className="mt-2 flex items-center gap-1" title={PHASES.map((p) => `${p.label} ${p.stepKeys.filter((k) => stepsMap[k] || skippedMap[k]).length}/${p.stepKeys.length}`).join(" · ")}>
+        {PHASES.map((p) => {
+          const total = p.stepKeys.length;
+          const sat = p.stepKeys.filter((k) => stepsMap[k] || skippedMap[k]).length;
+          const ratio = sat / total;
+          return (
+            <div key={p.key} className="flex-1 h-1 rounded-full bg-border overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all"
+                style={{ width: `${ratio * 100}%` }}
+              />
+            </div>
+          );
+        })}
       </div>
+
       <div className="flex items-center gap-1.5 mt-2 text-muted-foreground">
         {trip.leader_email && (
           <button
@@ -1109,10 +1184,12 @@ function tripDateLabel(t: Trip) {
   return format(s, "MMM d, yyyy");
 }
 
-function readinessPct(steps: Record<string, boolean> | null | undefined) {
-  const done = STEPS.filter((s) => steps?.[s.key]).length;
-  return Math.round((done / STEPS.length) * 100);
+function readinessPct(steps: Record<string, boolean> | null | undefined, skipped?: Record<string, boolean> | null) {
+  const sk = skipped ?? {};
+  const satisfied = STEPS.filter((s) => steps?.[s.key] || sk[s.key]).length;
+  return Math.round((satisfied / STEPS.length) * 100);
 }
+
 
 type GroupKey = "in_field" | "this_month" | "next_month" | "later_year" | "next_year" | "no_date" | "past";
 const GROUP_ORDER: { key: GroupKey; label: string }[] = [
@@ -1191,7 +1268,7 @@ function TimelineView({
 }
 
 function TimelineRow({ trip, onClick, onCompose }: { trip: Trip; onClick: () => void; onCompose: () => void }) {
-  const pct = readinessPct(trip.steps);
+  const pct = readinessPct(trip.steps, trip.skipped_steps);
   return (
     <div
       onClick={onClick}
@@ -1303,9 +1380,9 @@ function TableView({
                 <td className="px-3 py-2 min-w-[8rem]">
                   <div className="flex items-center gap-2">
                     <div className="flex-1 h-1 rounded-full bg-border overflow-hidden">
-                      <div className="h-full bg-primary" style={{ width: `${readinessPct(t.steps)}%` }} />
+                      <div className="h-full bg-primary" style={{ width: `${readinessPct(t.steps, t.skipped_steps)}%` }} />
                     </div>
-                    <span className="text-[10px] text-muted-foreground w-8 text-right">{readinessPct(t.steps)}%</span>
+                    <span className="text-[10px] text-muted-foreground w-8 text-right">{readinessPct(t.steps, t.skipped_steps)}%</span>
                   </div>
                 </td>
               </tr>
@@ -1324,7 +1401,7 @@ function sortVal(t: Trip, k: SortKey): string | number | null {
     case "end_date": return t.end_date ?? null;
     case "leader_name": return (t.leader_name ?? "").toLowerCase();
     case "status": return t.status;
-    case "readiness": return readinessPct(t.steps);
+    case "readiness": return readinessPct(t.steps, t.skipped_steps);
   }
 }
 
@@ -1922,4 +1999,596 @@ function PreTripConfirmPanel({
   );
 }
 
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Trip stepper UI (rail / content / footer controls)
+   ────────────────────────────────────────────────────────────────────────── */
+
+type StepState = "done" | "skipped" | "active" | "pending";
+
+function stepStateOf(
+  key: string,
+  steps: Record<string, boolean>,
+  skipped: Record<string, boolean>,
+  activeKey: string,
+): StepState {
+  if (steps[key]) return "done";
+  if (skipped[key]) return "skipped";
+  if (key === activeKey) return "active";
+  return "pending";
+}
+
+function StepperRail({
+  steps,
+  skipped,
+  activeStep,
+  onSelect,
+}: {
+  steps: Record<string, boolean>;
+  skipped: Record<string, boolean>;
+  activeStep: string;
+  onSelect: (key: string) => void;
+}) {
+  return (
+    <aside className="w-64 shrink-0 border-r border-border bg-background/30 overflow-y-auto">
+      <ol className="py-3">
+        {PHASES.map((phase) => {
+          const total = phase.stepKeys.length;
+          const sat = phase.stepKeys.filter((k) => steps[k] || skipped[k]).length;
+          return (
+            <li key={phase.key} className="px-3 pb-2">
+              <div className="flex items-center justify-between px-1.5 py-1">
+                <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                  {phase.label}
+                </div>
+                <div className="text-[10px] text-muted-foreground">{sat}/{total}</div>
+              </div>
+              <ul className="space-y-0.5">
+                {phase.stepKeys.map((k) => {
+                  const step = STEPS.find((s) => s.key === k)!;
+                  const state = stepStateOf(k, steps, skipped, activeStep);
+                  const isActive = state === "active";
+                  return (
+                    <li key={k}>
+                      <button
+                        type="button"
+                        onClick={() => onSelect(k)}
+                        className={`w-full text-left flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition ${
+                          isActive
+                            ? "bg-primary/10 text-foreground border border-primary/30"
+                            : "hover:bg-background/60 border border-transparent text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <StepStateIcon state={state} />
+                        <span
+                          className={`flex-1 truncate ${
+                            state === "done" ? "line-through text-muted-foreground" : ""
+                          } ${state === "skipped" ? "line-through text-muted-foreground/70 italic" : ""}`}
+                        >
+                          {step.label}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </li>
+          );
+        })}
+      </ol>
+    </aside>
+  );
+}
+
+function StepStateIcon({ state }: { state: StepState }) {
+  if (state === "done") return <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />;
+  if (state === "skipped") return <MinusCircle className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />;
+  if (state === "active") return <CircleIcon className="w-3.5 h-3.5 fill-primary text-primary shrink-0" />;
+  return <CircleIcon className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />;
+}
+
+function StepFooterControls({
+  form,
+  setForm,
+  activeStep,
+  setActiveStep,
+}: {
+  form: Form;
+  setForm: React.Dispatch<React.SetStateAction<Form>>;
+  activeStep: string;
+  setActiveStep: (k: string) => void;
+}) {
+  const idx = STEPS.findIndex((s) => s.key === activeStep);
+  const isDone = !!form.steps[activeStep];
+  const isSkipped = !!form.skipped_steps[activeStep];
+
+  function advance() {
+    // jump to next step that isn't done/skipped, else next index
+    for (let i = idx + 1; i < STEPS.length; i++) {
+      const k = STEPS[i].key;
+      if (!form.steps[k] && !form.skipped_steps[k]) {
+        setActiveStep(k);
+        return;
+      }
+    }
+    if (idx + 1 < STEPS.length) setActiveStep(STEPS[idx + 1].key);
+  }
+
+  function markDone() {
+    setForm((prev) => ({
+      ...prev,
+      steps: { ...prev.steps, [activeStep]: true },
+      skipped_steps: { ...prev.skipped_steps, [activeStep]: false },
+    }));
+    advance();
+  }
+  function markSkip() {
+    setForm((prev) => ({
+      ...prev,
+      steps: { ...prev.steps, [activeStep]: false },
+      skipped_steps: { ...prev.skipped_steps, [activeStep]: true },
+    }));
+    advance();
+  }
+  function reset() {
+    setForm((prev) => ({
+      ...prev,
+      steps: { ...prev.steps, [activeStep]: false },
+      skipped_steps: { ...prev.skipped_steps, [activeStep]: false },
+    }));
+  }
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        disabled={idx === 0}
+        onClick={() => setActiveStep(STEPS[idx - 1].key)}
+      >
+        <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+      </Button>
+      {(isDone || isSkipped) ? (
+        <Button type="button" size="sm" variant="outline" onClick={reset}>
+          <RotateCcw className="w-3.5 h-3.5 mr-1.5" /> Reset step
+        </Button>
+      ) : (
+        <Button type="button" size="sm" variant="outline" onClick={markSkip}>
+          <MinusCircle className="w-3.5 h-3.5 mr-1.5" /> Skip step
+        </Button>
+      )}
+      {!isDone && (
+        <Button type="button" size="sm" onClick={markDone}>
+          <Check className="w-3.5 h-3.5 mr-1.5" /> Mark done
+        </Button>
+      )}
+      {idx < STEPS.length - 1 && (
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() => setActiveStep(STEPS[idx + 1].key)}
+        >
+          Next <ChevronR className="w-4 h-4 ml-1" />
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function StepContent({
+  stepKey,
+  form,
+  setForm,
+  editingTrip,
+  openWelcomeEmail,
+  openItineraryEmail,
+  openFinalScheduleEmail,
+  handleSyncDoc,
+  syncingDoc,
+  buildDraftItinerary,
+}: {
+  stepKey: string;
+  form: Form;
+  setForm: React.Dispatch<React.SetStateAction<Form>>;
+  editingTrip: Trip | null;
+  openWelcomeEmail: (t: Trip) => void;
+  openItineraryEmail: (t: Trip, body: string) => void;
+  openFinalScheduleEmail: (t: Trip, url: string) => void;
+  handleSyncDoc: () => Promise<string | null>;
+  syncingDoc: boolean;
+  buildDraftItinerary: (f: Form | Trip) => string;
+}) {
+  const step = STEPS.find((s) => s.key === stepKey);
+  if (!step) return null;
+  const idx = STEPS.findIndex((s) => s.key === stepKey);
+  const isDone = !!form.steps[stepKey];
+  const isSkipped = !!form.skipped_steps[stepKey];
+
+  function noteValue() {
+    return form.step_notes?.[stepKey] ?? "";
+  }
+  function setNote(v: string) {
+    setForm((prev) => ({ ...prev, step_notes: { ...prev.step_notes, [stepKey]: v } }));
+  }
+
+  return (
+    <div className="space-y-5 max-w-3xl">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Step {idx + 1} of {STEPS.length}
+          </div>
+          <h3 className="text-lg font-display font-semibold leading-tight">{step.label}</h3>
+          <p className="text-sm text-muted-foreground max-w-2xl">{STEP_BLURBS[stepKey]}</p>
+        </div>
+        <div className="shrink-0">
+          {isDone && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 font-semibold inline-flex items-center gap-1">
+              <Check className="w-3 h-3" /> Done
+            </span>
+          )}
+          {isSkipped && !isDone && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-semibold inline-flex items-center gap-1">
+              <MinusCircle className="w-3 h-3" /> Skipped
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <StepBody
+          stepKey={stepKey}
+          form={form}
+          setForm={setForm}
+          editingTrip={editingTrip}
+          openWelcomeEmail={openWelcomeEmail}
+          openItineraryEmail={openItineraryEmail}
+          openFinalScheduleEmail={openFinalScheduleEmail}
+          handleSyncDoc={handleSyncDoc}
+          syncingDoc={syncingDoc}
+          buildDraftItinerary={buildDraftItinerary}
+        />
+
+        <div className="space-y-1.5 pt-2 border-t border-border">
+          <Label className="text-xs text-muted-foreground">Step notes (visible to coordinators)</Label>
+          <Textarea
+            rows={3}
+            placeholder="Anything specific to this step worth remembering…"
+            value={noteValue()}
+            onChange={(e) => setNote(e.target.value)}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StepBody({
+  stepKey,
+  form,
+  setForm,
+  editingTrip,
+  openWelcomeEmail,
+  openItineraryEmail,
+  openFinalScheduleEmail,
+  handleSyncDoc,
+  syncingDoc,
+  buildDraftItinerary,
+}: {
+  stepKey: string;
+  form: Form;
+  setForm: React.Dispatch<React.SetStateAction<Form>>;
+  editingTrip: Trip | null;
+  openWelcomeEmail: (t: Trip) => void;
+  openItineraryEmail: (t: Trip, body: string) => void;
+  openFinalScheduleEmail: (t: Trip, url: string) => void;
+  handleSyncDoc: () => Promise<string | null>;
+  syncingDoc: boolean;
+  buildDraftItinerary: (f: Form | Trip) => string;
+}) {
+  switch (stepKey) {
+    case "confirmation": {
+      if (!editingTrip) {
+        return (
+          <div className="text-sm text-muted-foreground rounded-xl border border-dashed border-border p-4">
+            Save the trip first to generate the inquiry form link.
+          </div>
+        );
+      }
+      const url = inquiryFormUrl(editingTrip);
+      const submitted = !!editingTrip.inquiry_submitted_at;
+      return (
+        <div className="rounded-xl border border-border p-3 space-y-3 bg-background/40">
+          <div className="flex items-center justify-between gap-2">
+            <Label className="text-sm font-medium">Inquiry confirmation</Label>
+            {submitted ? (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary">
+                Questionnaire submitted {format(new Date(editingTrip.inquiry_submitted_at!), "MMM d")}
+              </span>
+            ) : (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                Awaiting questionnaire
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-sm bg-background/60 border border-border rounded-lg px-3 py-2">
+            <input readOnly value={url} className="flex-1 bg-transparent outline-none text-xs text-muted-foreground" />
+            <button
+              type="button"
+              onClick={() => { navigator.clipboard.writeText(url); toast.success("Link copied"); }}
+              className="text-muted-foreground hover:text-foreground" title="Copy link"
+            ><Copy className="w-4 h-4" /></button>
+            <a href={url} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground" title="Open form">
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            This is the planning questionnaire link you'll send in the welcome email. Mark this step done once the trip is in the calendar and the team knows we received their request.
+          </p>
+        </div>
+      );
+    }
+    case "welcome_email": {
+      return (
+        <div className="rounded-xl border border-border p-4 space-y-3 bg-background/40">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Leader email</Label>
+              <Input
+                type="email"
+                value={form.leader_email ?? ""}
+                onChange={(e) => setForm({ ...form, leader_email: e.target.value })}
+                placeholder="leader@church.org"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Leader name</Label>
+              <Input
+                value={form.leader_name ?? ""}
+                onChange={(e) => setForm({ ...form, leader_name: e.target.value })}
+              />
+            </div>
+          </div>
+          <div>
+            <Button
+              type="button"
+              size="sm"
+              disabled={!editingTrip || !form.leader_email}
+              onClick={() => editingTrip && openWelcomeEmail(editingTrip)}
+            >
+              <Send className="w-4 h-4 mr-1.5" /> Compose welcome email
+            </Button>
+            {!editingTrip && (
+              <p className="text-xs text-muted-foreground mt-2">Save the trip first to compose the email.</p>
+            )}
+            {editingTrip && !form.leader_email && (
+              <p className="text-xs text-muted-foreground mt-2">Add a leader email above to compose.</p>
+            )}
+          </div>
+        </div>
+      );
+    }
+    case "questionnaire_received": {
+      if (!editingTrip) {
+        return <div className="text-sm text-muted-foreground rounded-xl border border-dashed border-border p-4">Save the trip first.</div>;
+      }
+      const submitted = !!editingTrip.inquiry_submitted_at;
+      const anyResponses = !!((editingTrip as any).vision || (editingTrip as any).church_context || (editingTrip as any).alternate_dates);
+      return (
+        <div className="rounded-xl border border-border p-4 space-y-3 bg-background/40">
+          <div className="flex items-center gap-2">
+            {submitted ? (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary">
+                Submitted {format(new Date(editingTrip.inquiry_submitted_at!), "MMM d, yyyy")}
+              </span>
+            ) : (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                Awaiting response
+              </span>
+            )}
+          </div>
+          {anyResponses ? (
+            <div className="space-y-2">
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Team responses</div>
+              {(editingTrip as any).alternate_dates && <ResponseField label="Alternate dates" value={(editingTrip as any).alternate_dates} />}
+              {(editingTrip as any).vision && <ResponseField label="Vision & hope" value={(editingTrip as any).vision} />}
+              {(editingTrip as any).church_context && <ResponseField label="About the church" value={(editingTrip as any).church_context} />}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Once the team submits the questionnaire, their responses will show here. If you've received their answers another way, capture the highlights in the step notes below.</p>
+          )}
+        </div>
+      );
+    }
+    case "planning_call":
+      return <PlanningCallPanel form={form} setForm={setForm} />;
+    case "draft_schedule":
+      return (
+        <DraftItineraryPanel
+          form={form}
+          setForm={setForm}
+          canEmail={!!editingTrip && !!form.leader_email}
+          onEmail={() => {
+            if (!editingTrip) return;
+            openItineraryEmail(editingTrip, form.draft_itinerary || buildDraftItinerary(form));
+          }}
+          docUrl={form.itinerary_doc_url}
+          syncingDoc={syncingDoc}
+          onSyncDoc={handleSyncDoc}
+          canSyncDoc={!!editingTrip && !!(form.draft_itinerary || form.start_date)}
+          onSendFinalSchedule={async () => {
+            if (!editingTrip) return;
+            let url = form.itinerary_doc_url;
+            if (!url) {
+              url = await handleSyncDoc();
+              if (!url) return;
+            }
+            openFinalScheduleEmail(editingTrip, url);
+          }}
+        />
+      );
+    case "confirm_schedule":
+      return <PreTripConfirmPanel form={form} setForm={setForm} />;
+    case "place_supplies":
+      return (
+        <div className="rounded-xl border border-border p-4 space-y-3 bg-background/40">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Supplies & budget notes</Label>
+            <Textarea
+              rows={5}
+              placeholder="Printing, snacks/water, CharlieCards, contingency cash, anything ordered…"
+              value={form.planning_notes?.supplies ?? ""}
+              onChange={(e) => setForm({
+                ...form,
+                planning_notes: { ...(form.planning_notes ?? {}), supplies: e.target.value },
+              })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Outreach tracks</Label>
+            <div className="flex flex-wrap gap-1.5">
+              {OUTREACH_TRACK_OPTIONS.map((o) => {
+                const on = form.outreach_tracks.includes(o.value);
+                return (
+                  <button
+                    key={o.value}
+                    type="button"
+                    onClick={() => setForm({
+                      ...form,
+                      outreach_tracks: on
+                        ? form.outreach_tracks.filter((x) => x !== o.value)
+                        : [...form.outreach_tracks, o.value],
+                    })}
+                    className={`text-xs px-3 py-1 rounded-full border transition ${
+                      on ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {o.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    case "send_final_schedule":
+      return (
+        <div className="rounded-xl border border-border p-4 space-y-3 bg-background/40">
+          {form.itinerary_doc_url ? (
+            <div className="flex items-center gap-2 text-sm bg-background/60 border border-border rounded-lg px-3 py-2">
+              <FileText className="w-4 h-4 text-muted-foreground" />
+              <a href={form.itinerary_doc_url} target="_blank" rel="noreferrer" className="flex-1 truncate hover:underline">
+                {form.itinerary_doc_url}
+              </a>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">Sync the draft to a Google Doc on the previous step, then send it to the leader here.</p>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={!editingTrip || syncingDoc || !(form.draft_itinerary || form.start_date)}
+              onClick={handleSyncDoc}
+            >
+              <FileUp className="w-4 h-4 mr-1.5" /> {syncingDoc ? "Syncing…" : form.itinerary_doc_url ? "Re-sync doc" : "Sync to Google Doc"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              disabled={!editingTrip || !form.leader_email}
+              onClick={async () => {
+                if (!editingTrip) return;
+                let url = form.itinerary_doc_url;
+                if (!url) {
+                  url = await handleSyncDoc();
+                  if (!url) return;
+                }
+                openFinalScheduleEmail(editingTrip, url);
+              }}
+            >
+              <Send className="w-4 h-4 mr-1.5" /> Send final schedule
+            </Button>
+          </div>
+        </div>
+      );
+    case "orientation":
+      return (
+        <div className="rounded-xl border border-border p-4 space-y-3 bg-background/40">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">On-call coordinator</Label>
+              <Input
+                value={form.coordinator_on_call_name ?? ""}
+                onChange={(e) => setForm({ ...form, coordinator_on_call_name: e.target.value })}
+                placeholder="Name"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Coordinator phone</Label>
+              <Input
+                value={form.coordinator_on_call_phone ?? ""}
+                onChange={(e) => setForm({ ...form, coordinator_on_call_phone: e.target.value })}
+                placeholder="555-1212"
+              />
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">Cover vision, expectations, safety, and how to reach the on-call coordinator. Capture anything they raise in step notes below.</p>
+        </div>
+      );
+    case "daily_check_in":
+      return (
+        <div className="rounded-xl border border-border p-4 space-y-3 bg-background/40">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Daily window start</Label>
+              <Input
+                type="time"
+                value={form.daily_window_start ?? ""}
+                onChange={(e) => setForm({ ...form, daily_window_start: e.target.value || null })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Daily window end</Label>
+              <Input
+                type="time"
+                value={form.daily_window_end ?? ""}
+                onChange={(e) => setForm({ ...form, daily_window_end: e.target.value || null })}
+              />
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">Use the step notes below as a running daily log — date stamp each check-in, capture wins/friction, flag anything to adjust.</p>
+        </div>
+      );
+    case "thank_you":
+      return (
+        <div className="rounded-xl border border-border p-4 space-y-3 bg-background/40">
+          {form.leader_email ? (
+            <a
+              href={`mailto:${form.leader_email}?subject=${encodeURIComponent("Thank you for serving with us")}`}
+              className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg border border-border bg-surface hover:bg-background/60 transition"
+            >
+              <Mail className="w-4 h-4" /> Open thank-you email to {form.leader_email}
+            </a>
+          ) : (
+            <p className="text-xs text-muted-foreground">Add a leader email in Trip basics to open the thank-you compose.</p>
+          )}
+          <p className="text-xs text-muted-foreground">Send your thank-you and the feedback form link. Use step notes to capture what stood out — wins to celebrate, asks to follow up on.</p>
+        </div>
+      );
+    case "debrief":
+      return (
+        <div className="rounded-xl border border-border p-4 space-y-3 bg-background/40">
+          <p className="text-sm text-muted-foreground">
+            Internal debrief — pastoral takeaways, ops lessons, and anything to roll into the next team's plan. Capture it in the step notes below so the next coordinator inherits it.
+          </p>
+        </div>
+      );
+    default:
+      return null;
+  }
+}
 

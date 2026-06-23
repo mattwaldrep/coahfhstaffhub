@@ -2001,8 +2001,10 @@ export type Database = {
           planning_notes: Json
           position: number
           primary_focus: string | null
+          skipped_steps: Json
           start_date: string | null
           status: Database["public"]["Enums"]["trip_status"]
+          step_notes: Json
           steps: Json
           students_count: number | null
           team_headcount: number | null
@@ -2047,8 +2049,10 @@ export type Database = {
           planning_notes?: Json
           position?: number
           primary_focus?: string | null
+          skipped_steps?: Json
           start_date?: string | null
           status?: Database["public"]["Enums"]["trip_status"]
+          step_notes?: Json
           steps?: Json
           students_count?: number | null
           team_headcount?: number | null
@@ -2093,8 +2097,10 @@ export type Database = {
           planning_notes?: Json
           position?: number
           primary_focus?: string | null
+          skipped_steps?: Json
           start_date?: string | null
           status?: Database["public"]["Enums"]["trip_status"]
+          step_notes?: Json
           steps?: Json
           students_count?: number | null
           team_headcount?: number | null
