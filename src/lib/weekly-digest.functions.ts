@@ -101,21 +101,21 @@ export const getThisWeekDigest = createServerFn({ method: "GET" })
 
     // Elder-only facts
     if (isElder) {
-      try {
-        const { getPastoralGaps } = await import("@/lib/pastoral-gaps.functions");
-        const r: any = await (getPastoralGaps as any)({ context });
-        // Server-fn-as-function call may not work without proper context; fall back gracefully
-        if (r?.gaps) {
-          const reds = r.gaps.filter((g: any) => g.level === "red");
-          const ambers = r.gaps.filter((g: any) => g.level === "amber");
-          if (reds.length || ambers.length) {
-            facts.push(
-              `Pastoral attention: ${reds.length} people with no contact in 60+ days, ${ambers.length} approaching that threshold.`,
-            );
-          }
-        }
-      } catch {
-        /* noop */
+      const sixtyAgo = new Date(Date.now() - 60 * 86400000).toISOString();
+      const fortyFiveAgo = new Date(Date.now() - 45 * 86400000).toISOString();
+      const { count: redCount } = await supabase
+        .from("pco_touchpoints")
+        .select("pco_person_id", { count: "exact", head: true })
+        .lt("created_at", sixtyAgo);
+      const { count: amberCount } = await supabase
+        .from("pco_touchpoints")
+        .select("pco_person_id", { count: "exact", head: true })
+        .lt("created_at", fortyFiveAgo)
+        .gte("created_at", sixtyAgo);
+      if ((redCount ?? 0) > 0 || (amberCount ?? 0) > 0) {
+        facts.push(
+          `Pastoral attention: ${redCount ?? 0} touchpoints overdue 60+ days, ${amberCount ?? 0} in the 45-60 day window.`,
+        );
       }
 
       const { data: motions } = await supabase
