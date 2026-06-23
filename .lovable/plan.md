@@ -1,52 +1,83 @@
-# Deacons & Joint Meetings
+Ship four staff/elder productivity boosts. All gated by existing role checks; no role/schema rework.
 
-## What's changing
+## 1. Mission Trip Readiness Score (Itinerary & travel focus)
 
-1. Two new user roles: **Deacon** and **Chair of Deacons** (assignable from the Users page, same UX pattern as Elder/Elder Candidate).
-2. Joint elder meetings already have a `meeting_type = "joint"` toggle on creation. We keep that toggle and reuse the existing `elder_joint_deacon_items` table (with its three sub-sections: *What we need to know*, *How can we serve / resource*, *Upcoming events*).
-3. On a joint meeting detail page, elders now see **both** the standard elder agenda **and** a new "Deacons & Elders" block (the three sub-sections). On a standard meeting, no change.
-4. Deacons (plain + Chair) get a stripped-down Elder Hub: only joint meetings appear in their list, and inside a meeting they only see the Deacons & Elders block — no other sections, no action items, no executive content, no sidebar items beyond the Elder Hub.
-5. Write access on the Deacons & Elders block: **Chair of Deacons** and **full Elders** only. Plain Deacons and Elder Candidates are read-only.
+Per-trip 0–100 score based on travel/itinerary signals already on `mission_trips`:
 
-## Where the work lands
+- Travel dates locked (`start_date` + `end_date` set) — 25
+- Itinerary doc exists (`itinerary_doc_url` OR `itinerary_file_path` OR `itinerary_link`) — 25
+- Itinerary owner assigned (`itinerary_owner`) and due date set (`itinerary_due_date`) — 20
+- Lodging confirmed (`lodging_status` = "confirmed") — 15
+- Transport confirmed (`transport_status` = "confirmed") — 15
 
-**Database (migration)**
-- Add `'deacon'` and `'chair_of_deacons'` to the `app_role` enum.
-- New helper functions `public.has_deacon_access(uuid)` and `public.is_chair_of_deacons(uuid)`.
-- Update RLS on `elder_meetings`, `elder_joint_deacon_items`, and `elder_section_notes` (for the joint section notes only) so deacons can SELECT joint meetings + joint items, and chair-of-deacons can INSERT/UPDATE/DELETE joint items + joint section notes. Standard elder content stays elder-only.
+Where it appears:
+- Missions module: badge + ring/progress on each team card with hover tooltip listing missing items.
+- Home dashboard "Active Missions" card: shows lowest-readiness in-field or pre-trip team as a subtle warning if score < 60.
 
-**Auth context (`src/lib/auth-context.tsx`)**
-- Extend `AppRole` union with the two new roles.
-- Add `isDeacon`, `isChairOfDeacons`, `hasDeaconAccess` flags.
-- Treat deacon access as a path into the Elder Hub (so the existing `hasElderAccess` gate either widens to include deacons, or we add a parallel `hasElderHubAccess`).
+Pure function in `src/lib/mission-readiness.ts` (no DB changes). Used in `src/routes/missions.tsx` and `src/routes/index.tsx`.
 
-**Sidebar / shell**
-- Show the Elder Hub link for deacons.
-- For deacons, only the "Meetings" tab is visible inside the Elder Hub (no Motions / Pastoral Care / Archive / Settings / Overview).
+## 2. Elder Care Load Balancing (# assigned)
 
-**Server functions (`src/lib/elder.functions.ts` + `src/server/elder.server.ts`)**
-- New `assertDeaconOrElderAccess` helper.
-- `listElderMeetings`: if caller is deacon-only (no elder access), filter to `meeting_type = 'joint'`.
-- `getElderMeeting`: if deacon-only, return only `{ meeting, jointItems }` (and a joint-section notes row if we add one) — strip agenda, section notes, action items, attendees. If meeting is not joint, 404 for deacons.
-- `upsertJointItem` / `deleteJointItem`: allow if caller is full elder OR chair of deacons. Block plain deacons + elder candidates from writes.
-- Joint-section free-form notes (if we keep them — see Open question) gated the same way.
+New `CareLoadCard` on `/elder/pastoral-care` (and a compact version on `/elder`):
+- Pulls PCO care list via existing `listCareList` server fn.
+- Groups by `assigned_elder` field value, counts people per elder, shows avg + per-elder bars.
+- Highlights elders >120% of average (overloaded) and <60% (underloaded).
+- "Unassigned" bucket shown separately with link to re-assign in PCO.
 
-**Routes / UI**
-- `src/routes/elder.meetings.$meetingId.tsx`: always render `StandardSections` for elders/candidates; additionally render a new `JointDeaconSection` card (the three sub-sections) when `meeting_type === "joint"`. For deacon-only viewers, render *only* the `JointDeaconSection`, and hide the status dropdown, action items block, and exec controls. Pass `canEditJoint` (elder OR chair) into the section so plain deacons see a read-only view.
-- `src/routes/elder.tsx`: filter the tab list for deacon-only users to just "Meetings".
-- `src/routes/elder.index.tsx` / `elder.motions.tsx` / `elder.pastoral-care.tsx` / `elder.archive.tsx` / `elder.settings.tsx`: redirect deacon-only users to `/elder/meetings`.
-- `src/routes/users.tsx`: add Deacon / Chair-of-Deacons assignment controls (mirroring the existing Elder tier selector). Likely a new `setUserDeaconTier` server function in `users.functions.ts` analogous to `setUserElderTier`.
-- `src/routes/elder.meetings.index.tsx`: keep the existing Type select (Standard / Joint Elder/Deacon Meeting) — that's the per-meeting toggle the user asked for. Hide the "New meeting" button for deacon-only users.
+New file: `src/components/pastoral/CareLoadCard.tsx`. No new server fn — reuses `listCareList`. No DB changes.
 
-**Memory**
-- Update `mem://security` (or add a deacon rule) so future scanners know: deacons must never see elder agenda, executive session, action items, or non-joint meetings; chair-of-deacons writes are scoped to joint items + joint section notes.
+## 3. Touchpoint Nudges (In-app + weekly + threshold email)
 
-## Open question I'll resolve while building
+Reuses existing `pastoral-gaps.functions.ts` (red = ≥60d or never, amber = ≥45d).
 
-The existing joint sub-sections store one-line entries (title + body) but have no shared free-form notes field. I'll add a single notes textarea per sub-section *only* if it's trivial; otherwise I'll leave the current item-list UX as-is and we can iterate. Either way the access rules above hold.
+**In-app:** `PastoralAttentionCard` already shows reds on home. Add an elder-scoped variant that filters to people whose `assigned_elder` matches the viewer's full name (via `getMyElderName`). Add an amber section + count.
 
-## Out of scope
+**Weekly email (Mondays 8am):** New `/api/public/hooks/elder-touchpoint-digest` route. For each elder (full_name in user_roles=elder), build list of their reds + ambers from `pco_touchpoints` + `pco_pastoral_notes`, render via existing email infra (`@/lib/email-templates/`), enqueue per-elder via `enqueue_email` RPC. Skip elders with 0 gaps. `pg_cron` job calls it weekly.
 
-- Auto-scheduling which meetings are joint (you confirmed it's just the per-meeting toggle).
-- Deacon-only motions, pastoral care, or archive views.
-- Migrating any historical joint meetings — existing rows already have `meeting_type = 'joint'` and will work.
+**Threshold email (per-person crossing 45d):** New `/api/public/hooks/elder-touchpoint-threshold` running daily at 8am. For each person, compute days since last contact. Track previously-notified state in a new tiny table `elder_threshold_notifications(pco_person_id text pk, last_threshold int, notified_at timestamptz)`. Send a single email to the assigned elder the day a person first crosses 45 or 60; reset when a fresh touchpoint is logged.
+
+DB change: create `elder_threshold_notifications` table with GRANTs + RLS (service_role only).
+
+Cron jobs added via `supabase--insert` after route is deployed.
+
+## 4. "This Week" AI Digest (Home card + Monday email to core + elders)
+
+**Home card** (`src/components/dashboard/ThisWeekDigest.tsx`):
+- Server fn `getThisWeekDigest` (role-aware) gathers: upcoming calendar events (next 7d), pre-trip missions starting soon, pastoral reds/ambers (elders only), open elder action items (elders only), upcoming meetings, low-readiness events.
+- Calls Lovable AI Gateway (`google/gemini-3-flash-preview`) with a tight system prompt: 3–5 sentence paragraph naming the top 3 things this person should pay attention to this week. Returns `{ paragraph, generated_at }`.
+- Cached per-user per-day in memory on the server fn; client shows skeleton, then paragraph + small "Refresh" + "as of …".
+
+**Monday 7am email:** New `/api/public/hooks/weekly-digest-monday` route. For each user with role `core`/`meeting`/`elder`/`elder_candidate`, build their digest (reusing the same gather + AI call) and enqueue via existing email infra. Branded template `weekly-digest.tsx`. Idempotency key `weekly-digest-${userId}-${isoWeek}`. `pg_cron` Mondays 12:00 UTC (7am ET).
+
+No DB changes for the digest itself.
+
+## Files
+
+New:
+- `src/lib/mission-readiness.ts`
+- `src/components/pastoral/CareLoadCard.tsx`
+- `src/components/dashboard/ThisWeekDigest.tsx`
+- `src/lib/weekly-digest.functions.ts` (auth'd `getThisWeekDigest`)
+- `src/lib/email-templates/weekly-digest.tsx`
+- `src/lib/email-templates/elder-touchpoint-digest.tsx`
+- `src/lib/email-templates/touchpoint-threshold.tsx`
+- `src/routes/api/public/hooks/weekly-digest-monday.ts`
+- `src/routes/api/public/hooks/elder-touchpoint-digest.ts`
+- `src/routes/api/public/hooks/elder-touchpoint-threshold.ts`
+
+Edited:
+- `src/routes/missions.tsx` — show readiness on cards
+- `src/routes/index.tsx` — render `ThisWeekDigest`; readiness warning on Active Missions
+- `src/routes/elder.pastoral-care.tsx` + `src/components/pastoral/PastoralCareList.tsx` — embed `CareLoadCard`
+- `src/components/dashboard/PastoralAttentionCard.tsx` — add amber list + viewer scoping
+- `src/lib/email-templates/registry.ts` — register 3 new templates
+
+DB:
+- Migration: `elder_threshold_notifications` table
+- pg_cron: 3 schedules (weekly Mon digest, weekly Mon touchpoint, daily threshold)
+
+## Notes
+
+- All server fns use `requireSupabaseAuth` except public cron routes, which use the apikey-bearer pattern (`/api/public/*`) and load `supabaseAdmin` inside the handler.
+- AI calls go to Lovable AI Gateway with `LOVABLE_API_KEY` (already in secrets). I'll cap each digest call at ~500 tokens.
+- No new email provider — uses existing scaffolded `enqueue_email` + transactional infra.
