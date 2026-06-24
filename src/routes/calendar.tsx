@@ -665,7 +665,7 @@ function CalendarBody() {
         .from("comms_channel_managers" as any)
         .select("channel_key, manager_id");
       const map: Record<string, string> = {};
-      for (const r of (data ?? []) as Array<{ channel_key: string; manager_id: string | null }>) {
+      for (const r of (data ?? []) as unknown as Array<{ channel_key: string; manager_id: string | null }>) {
         if (r.manager_id) map[r.channel_key] = r.manager_id;
       }
       setCommsManagers(map);
