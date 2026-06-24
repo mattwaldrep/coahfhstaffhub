@@ -827,6 +827,35 @@ export type Database = {
           },
         ]
       }
+      comms_channel_managers: {
+        Row: {
+          channel_key: string
+          created_at: string
+          manager_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          channel_key: string
+          created_at?: string
+          manager_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          channel_key?: string
+          created_at?: string
+          manager_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comms_channel_managers_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       decisions: {
         Row: {
           created_at: string
