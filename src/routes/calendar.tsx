@@ -2836,6 +2836,56 @@ function CalendarBody() {
               </div>
             )}
 
+            {/* Day-of plan (rich text) + templates */}
+            <div className="space-y-2 border-t border-border pt-4">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <Label className="text-sm font-medium">Day-of plan</Label>
+                <div className="flex items-center gap-2">
+                  {planTemplates.length > 0 && (
+                    <Select onValueChange={(v) => loadPlanTemplateInto(v)}>
+                      <SelectTrigger className="h-8 w-[200px] text-xs">
+                        <SelectValue placeholder="Load template…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {planTemplates.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={saveDayPlanAsTemplate}
+                    disabled={!(form.day_of_plan || "").trim()}
+                  >
+                    Save as template
+                  </Button>
+                  {planTemplates.length > 0 && (form.day_of_plan || "").trim() && (
+                    <Select onValueChange={(v) => updatePlanTemplate(v)}>
+                      <SelectTrigger className="h-8 w-[180px] text-xs">
+                        <SelectValue placeholder="Update template…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {planTemplates.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Notes that don't belong in the readiness checklist — day-of logistics, run-of-show, packing lists, etc. Save as a template to reuse on next year's event.
+              </p>
+              <RichTextEditor
+                value={form.day_of_plan}
+                onChange={(html) => setForm((f) => ({ ...f, day_of_plan: html }))}
+                placeholder="Write your day-of plan…"
+                minHeight={140}
+              />
+            </div>
 
 
             {form.id && (
