@@ -236,11 +236,13 @@ type FormState = {
   description: string;
   pco_registration: boolean;
   recurs: boolean;
-  freq: "WEEKLY" | "MONTHLY" | "YEARLY";
+  freq: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
   interval: number;
   byweekday: string[];
   bysetpos: string;
   recurrence_end_date: string;
+  end_mode: "never" | "on" | "after";
+  count: string;
   other_listings: string[];
   social_ads: boolean;
   room_needed: string;
@@ -273,6 +275,8 @@ const emptyForm = (start = ""): FormState => ({
   byweekday: [],
   bysetpos: "",
   recurrence_end_date: "",
+  end_mode: "never",
+  count: "",
   other_listings: [],
   social_ads: false,
   room_needed: "",
@@ -291,7 +295,7 @@ const emptyForm = (start = ""): FormState => ({
 function buildRRule(f: FormState, startDate: Date): string | null {
   if (!f.recurs) return null;
   const freqMap: Record<string, Frequency> = {
-    WEEKLY: RRule.WEEKLY, MONTHLY: RRule.MONTHLY, YEARLY: RRule.YEARLY,
+    DAILY: RRule.DAILY, WEEKLY: RRule.WEEKLY, MONTHLY: RRule.MONTHLY, YEARLY: RRule.YEARLY,
   };
   const wdMap: Record<string, number> = {
     SU: RRule.SU.weekday, MO: RRule.MO.weekday, TU: RRule.TU.weekday,
@@ -302,9 +306,16 @@ function buildRRule(f: FormState, startDate: Date): string | null {
     interval: f.interval || 1,
     dtstart: startDate,
   };
-  if (f.byweekday.length) opts.byweekday = f.byweekday.map((w) => wdMap[w]);
-  if (f.bysetpos) opts.bysetpos = [parseInt(f.bysetpos, 10)];
-  if (f.recurrence_end_date) opts.until = new Date(f.recurrence_end_date + "T23:59:59");
+  if (f.byweekday.length && (f.freq === "WEEKLY" || f.freq === "MONTHLY")) {
+    opts.byweekday = f.byweekday.map((w) => wdMap[w]);
+  }
+  if (f.bysetpos && f.freq === "MONTHLY") opts.bysetpos = [parseInt(f.bysetpos, 10)];
+  if (f.end_mode === "on" && f.recurrence_end_date) {
+    opts.until = new Date(f.recurrence_end_date + "T23:59:59");
+  } else if (f.end_mode === "after" && f.count) {
+    const n = parseInt(f.count, 10);
+    if (n > 0) opts.count = n;
+  }
   return new RRule(opts).toString();
 }
 
@@ -763,11 +774,14 @@ function CalendarBody() {
     let interval = 1;
     let byweekday: string[] = [];
     let bysetpos = "";
+    let end_mode: FormState["end_mode"] = "never";
+    let count = "";
     if (ev.rrule) {
       try {
         const r = RRule.fromString(ev.rrule);
         const o = r.origOptions;
-        if (o.freq === RRule.MONTHLY) freq = "MONTHLY";
+        if (o.freq === RRule.DAILY) freq = "DAILY";
+        else if (o.freq === RRule.MONTHLY) freq = "MONTHLY";
         else if (o.freq === RRule.YEARLY) freq = "YEARLY";
         interval = o.interval ?? 1;
         if (o.byweekday) {
@@ -781,6 +795,8 @@ function CalendarBody() {
           const arr = Array.isArray(o.bysetpos) ? o.bysetpos : [o.bysetpos];
           bysetpos = String(arr[0]);
         }
+        if (o.count) { end_mode = "after"; count = String(o.count); }
+        else if (o.until || ev.recurrence_end_date) { end_mode = "on"; }
       } catch { /* ignore */ }
     }
     setForm({
@@ -799,6 +815,7 @@ function CalendarBody() {
       recurs: !!ev.rrule,
       freq, interval, byweekday, bysetpos,
       recurrence_end_date: ev.recurrence_end_date ?? "",
+      end_mode, count,
       other_listings: ev.other_listings ?? [],
       social_ads: (ev as any).social_ads ?? false,
       room_needed: ev.room_needed ?? "",
@@ -2006,6 +2023,7 @@ function CalendarBody() {
                     <Select value={form.freq} onValueChange={(v) => setForm({ ...form, freq: v as FormState["freq"] })}>
                       <SelectTrigger className="h-8 w-[8rem]"><SelectValue /></SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="DAILY">day(s)</SelectItem>
                         <SelectItem value="WEEKLY">week(s)</SelectItem>
                         <SelectItem value="MONTHLY">month(s)</SelectItem>
                         <SelectItem value="YEARLY">year(s)</SelectItem>
@@ -2073,13 +2091,64 @@ function CalendarBody() {
                   )}
 
                   <div className="space-y-2">
-                    <Label className="text-xs">Ends on (optional)</Label>
-                    <Input
-                      type="date"
-                      value={form.recurrence_end_date}
-                      onChange={(e) => setForm({ ...form, recurrence_end_date: e.target.value })}
-                    />
+                    <Label className="text-xs">Ends</Label>
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      {(["never","on","after"] as const).map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setForm({ ...form, end_mode: m })}
+                          className={`px-2 py-1 rounded-full border text-xs ${
+                            form.end_mode === m ? "bg-primary text-primary-foreground border-primary" : "border-border"
+                          }`}
+                        >
+                          {m === "never" ? "Never" : m === "on" ? "On date" : "After N times"}
+                        </button>
+                      ))}
+                    </div>
+                    {form.end_mode === "on" && (
+                      <Input
+                        type="date"
+                        value={form.recurrence_end_date}
+                        onChange={(e) => setForm({ ...form, recurrence_end_date: e.target.value })}
+                      />
+                    )}
+                    {form.end_mode === "after" && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Input
+                          type="number"
+                          min={1}
+                          className="w-20 h-8"
+                          value={form.count}
+                          onChange={(e) => setForm({ ...form, count: e.target.value })}
+                        />
+                        <span>occurrence(s)</span>
+                      </div>
+                    )}
                   </div>
+
+                  {(() => {
+                    try {
+                      if (!form.start_at) return null;
+                      const rrStr = buildRRule(form, new Date(form.start_at));
+                      if (!rrStr) return null;
+                      const rule = RRule.fromString(rrStr);
+                      const next = rule.all((_, i) => i < 5);
+                      if (!next.length) return null;
+                      return (
+                        <div className="rounded-md bg-muted/40 p-2 text-xs text-muted-foreground">
+                          <div className="font-medium mb-1 text-foreground">Next occurrences</div>
+                          <ul className="space-y-0.5">
+                            {next.map((d, i) => (
+                              <li key={i}>{format(d, "EEE, MMM d, yyyy")}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    } catch {
+                      return null;
+                    }
+                  })()}
                 </div>
               )}
             </div>
