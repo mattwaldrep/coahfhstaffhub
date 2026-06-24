@@ -2832,7 +2832,8 @@ function ListView({
               <div>{format(o.occurrence_date, "EEE, MMM d")}</div>
               <div className="text-xs">{o.all_day ? "All day" : format(o.occurrence_date, "p")}</div>
             </div>
-          </button>
+          </div>
+
         );
       })}
     </div>
