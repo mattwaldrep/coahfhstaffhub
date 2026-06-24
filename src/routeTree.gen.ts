@@ -22,6 +22,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FinanceRouteImport } from './routes/finance'
 import { Route as ElderRouteImport } from './routes/elder'
 import { Route as DecisionsRouteImport } from './routes/decisions'
+import { Route as CommsChannelsRouteImport } from './routes/comms-channels'
 import { Route as ChecklistsRouteImport } from './routes/checklists'
 import { Route as CgCoachingRouteImport } from './routes/cg-coaching'
 import { Route as CalendarRouteImport } from './routes/calendar'
@@ -121,6 +122,11 @@ const ElderRoute = ElderRouteImport.update({
 const DecisionsRoute = DecisionsRouteImport.update({
   id: '/decisions',
   path: '/decisions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommsChannelsRoute = CommsChannelsRouteImport.update({
+  id: '/comms-channels',
+  path: '/comms-channels',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChecklistsRoute = ChecklistsRouteImport.update({
@@ -314,6 +320,7 @@ export interface FileRoutesByFullPath {
   '/calendar': typeof CalendarRoute
   '/cg-coaching': typeof CgCoachingRouteWithChildren
   '/checklists': typeof ChecklistsRoute
+  '/comms-channels': typeof CommsChannelsRoute
   '/decisions': typeof DecisionsRoute
   '/elder': typeof ElderRouteWithChildren
   '/finance': typeof FinanceRoute
@@ -363,6 +370,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
   '/checklists': typeof ChecklistsRoute
+  '/comms-channels': typeof CommsChannelsRoute
   '/decisions': typeof DecisionsRoute
   '/finance': typeof FinanceRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -411,6 +419,7 @@ export interface FileRoutesById {
   '/calendar': typeof CalendarRoute
   '/cg-coaching': typeof CgCoachingRouteWithChildren
   '/checklists': typeof ChecklistsRoute
+  '/comms-channels': typeof CommsChannelsRoute
   '/decisions': typeof DecisionsRoute
   '/elder': typeof ElderRouteWithChildren
   '/finance': typeof FinanceRoute
@@ -463,6 +472,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/cg-coaching'
     | '/checklists'
+    | '/comms-channels'
     | '/decisions'
     | '/elder'
     | '/finance'
@@ -512,6 +522,7 @@ export interface FileRouteTypes {
     | '/'
     | '/calendar'
     | '/checklists'
+    | '/comms-channels'
     | '/decisions'
     | '/finance'
     | '/forgot-password'
@@ -559,6 +570,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/cg-coaching'
     | '/checklists'
+    | '/comms-channels'
     | '/decisions'
     | '/elder'
     | '/finance'
@@ -610,6 +622,7 @@ export interface RootRouteChildren {
   CalendarRoute: typeof CalendarRoute
   CgCoachingRoute: typeof CgCoachingRouteWithChildren
   ChecklistsRoute: typeof ChecklistsRoute
+  CommsChannelsRoute: typeof CommsChannelsRoute
   DecisionsRoute: typeof DecisionsRoute
   ElderRoute: typeof ElderRouteWithChildren
   FinanceRoute: typeof FinanceRoute
@@ -733,6 +746,13 @@ declare module '@tanstack/react-router' {
       path: '/decisions'
       fullPath: '/decisions'
       preLoaderRoute: typeof DecisionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/comms-channels': {
+      id: '/comms-channels'
+      path: '/comms-channels'
+      fullPath: '/comms-channels'
+      preLoaderRoute: typeof CommsChannelsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checklists': {
@@ -1063,6 +1083,7 @@ const rootRouteChildren: RootRouteChildren = {
   CalendarRoute: CalendarRoute,
   CgCoachingRoute: CgCoachingRouteWithChildren,
   ChecklistsRoute: ChecklistsRoute,
+  CommsChannelsRoute: CommsChannelsRoute,
   DecisionsRoute: DecisionsRoute,
   ElderRoute: ElderRouteWithChildren,
   FinanceRoute: FinanceRoute,

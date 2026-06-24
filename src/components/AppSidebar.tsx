@@ -86,6 +86,7 @@ export function AppSidebar() {
         ...(isCore ? [{ to: "/calendar/classes", label: "Classes", icon: GraduationCap }] : []),
         ...(isCore ? [{ to: "/rooms", label: "Rooms", icon: DoorOpen }] : []),
         ...(isCore ? [{ to: "/checklists", label: "Checklists", icon: ListChecks }] : []),
+        ...(isCore ? [{ to: "/comms-channels", label: "Comms Channels", icon: Megaphone }] : []),
       ],
     },
     { to: "/decisions", label: "Decisions", icon: Gavel },
