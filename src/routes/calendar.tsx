@@ -959,6 +959,7 @@ function CalendarBody() {
       class_series_id: ev.class_series_id ?? "",
       room_ids: eventRoomsMap.current.get(ev.id) ?? [],
       multi_day_mode: ((ev as any).multi_day_mode ?? "continuous") as "continuous" | "daily_hours",
+      day_of_plan: (ev as any).day_of_plan ?? "",
     });
 
     setEditingOccurrence(occ.occurrence_date);
