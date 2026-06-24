@@ -2840,6 +2840,81 @@ function ListView({
   );
 }
 
+function BulkEditBar({
+  selectedIds,
+  totalVisible,
+  categories,
+  busy,
+  onSelectAll,
+  onClear,
+  onApply,
+  onDelete,
+}: {
+  selectedIds: Set<string>;
+  totalVisible: number;
+  categories: { id: string; name: string }[];
+  busy: boolean;
+  onSelectAll: () => void;
+  onClear: () => void;
+  onApply: (patch: Record<string, unknown>) => Promise<void>;
+  onDelete: () => Promise<void>;
+}) {
+  const count = selectedIds.size;
+  return (
+    <div className="bg-surface border border-border rounded-2xl p-3 mb-4 flex flex-wrap items-center gap-2">
+      <div className="text-sm font-medium mr-2">
+        {count} selected
+        <span className="text-muted-foreground font-normal"> of {totalVisible}</span>
+      </div>
+      <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={onSelectAll} disabled={busy}>
+        Select all visible
+      </Button>
+      <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={onClear} disabled={busy || count === 0}>
+        Clear
+      </Button>
+      <div className="h-6 w-px bg-border mx-1" />
+      <Select
+        disabled={busy || count === 0}
+        onValueChange={(v) => onApply({ sub_calendar: v })}
+      >
+        <SelectTrigger className="h-8 w-[12rem] text-xs">
+          <SelectValue placeholder="Change sub-calendar…" />
+        </SelectTrigger>
+        <SelectContent>
+          {SUB_CALS.map((s) => (
+            <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select
+        disabled={busy || count === 0}
+        onValueChange={(v) => onApply({ category: v === "__none__" ? null : v })}
+      >
+        <SelectTrigger className="h-8 w-[12rem] text-xs">
+          <SelectValue placeholder="Change category…" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__none__">No category</SelectItem>
+          {categories.map((c) => (
+            <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <div className="flex-1" />
+      <Button
+        variant="destructive"
+        size="sm"
+        className="h-8 text-xs"
+        onClick={onDelete}
+        disabled={busy || count === 0}
+      >
+        <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Delete
+      </Button>
+    </div>
+  );
+}
+
+
 type CommentRow = {
   id: string;
   body: string;
