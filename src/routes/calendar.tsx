@@ -306,10 +306,12 @@ function buildRRule(f: FormState, startDate: Date): string | null {
     interval: f.interval || 1,
     dtstart: startDate,
   };
-  if (f.byweekday.length && (f.freq === "WEEKLY" || f.freq === "MONTHLY")) {
+  if (f.byweekday.length && (f.freq === "WEEKLY" || f.freq === "MONTHLY" || f.freq === "YEARLY")) {
     opts.byweekday = f.byweekday.map((w) => wdMap[w]);
   }
-  if (f.bysetpos && f.freq === "MONTHLY") opts.bysetpos = [parseInt(f.bysetpos, 10)];
+  if (f.bysetpos && (f.freq === "MONTHLY" || f.freq === "YEARLY")) {
+    opts.bysetpos = [parseInt(f.bysetpos, 10)];
+  }
   if (f.end_mode === "on" && f.recurrence_end_date) {
     opts.until = new Date(f.recurrence_end_date + "T23:59:59");
   } else if (f.end_mode === "after" && f.count) {
@@ -2053,16 +2055,27 @@ function CalendarBody() {
                     </div>
                   )}
 
-                  {form.freq === "MONTHLY" && (
+                  {(form.freq === "MONTHLY" || form.freq === "YEARLY") && (
                     <div className="space-y-2 text-sm">
                       <div className="text-xs text-muted-foreground">
-                        For "last Sunday of the month": pick "Last" + tap Sun below.
+                        Example: pick "Second" + tap Sun for the 2nd Sunday. Select multiple days for patterns like "2nd Tue & 2nd Thu".
                       </div>
                       <div className="flex items-center gap-2">
-                        <Select value={form.bysetpos || "_dom"} onValueChange={(v) => setForm({ ...form, bysetpos: v === "_dom" ? "" : v, byweekday: v === "_dom" ? [] : form.byweekday })}>
-                          <SelectTrigger className="h-8 w-[10rem]"><SelectValue /></SelectTrigger>
+                        <Select
+                          value={form.bysetpos || "_dom"}
+                          onValueChange={(v) => setForm({
+                            ...form,
+                            bysetpos: v === "_dom" ? "" : v,
+                            byweekday: v === "_dom" ? [] : form.byweekday,
+                          })}
+                        >
+                          <SelectTrigger className="h-8 w-[12rem]"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="_dom">On day {format(new Date(form.start_at || Date.now()), "d")}</SelectItem>
+                            <SelectItem value="_dom">
+                              {form.freq === "MONTHLY"
+                                ? `On day ${format(new Date(form.start_at || Date.now()), "d")}`
+                                : `On ${format(new Date(form.start_at || Date.now()), "MMM d")}`}
+                            </SelectItem>
                             <SelectItem value="1">First</SelectItem>
                             <SelectItem value="2">Second</SelectItem>
                             <SelectItem value="3">Third</SelectItem>
@@ -2078,7 +2091,12 @@ function CalendarBody() {
                             return (
                               <button
                                 key={w.v} type="button"
-                                onClick={() => setForm({ ...form, byweekday: on ? [] : [w.v] })}
+                                onClick={() => setForm({
+                                  ...form,
+                                  byweekday: on
+                                    ? form.byweekday.filter((x) => x !== w.v)
+                                    : [...form.byweekday, w.v],
+                                })}
                                 className={`w-8 h-8 text-xs rounded-full border ${
                                   on ? "bg-primary text-primary-foreground border-primary" : "border-border"
                                 }`}
@@ -2135,9 +2153,17 @@ function CalendarBody() {
                       const rule = RRule.fromString(rrStr);
                       const next = rule.all((_, i) => i < 5);
                       if (!next.length) return null;
+                      let summary = "";
+                      try { summary = rule.toText(); } catch { /* ignore */ }
                       return (
-                        <div className="rounded-md bg-muted/40 p-2 text-xs text-muted-foreground">
-                          <div className="font-medium mb-1 text-foreground">Next occurrences</div>
+                        <div className="rounded-md bg-muted/40 p-2 text-xs text-muted-foreground space-y-1">
+                          {summary && (
+                            <div className="text-foreground">
+                              <span className="font-medium">Repeats </span>
+                              <span className="capitalize">{summary}</span>
+                            </div>
+                          )}
+                          <div className="font-medium text-foreground">Next occurrences</div>
                           <ul className="space-y-0.5">
                             {next.map((d, i) => (
                               <li key={i}>{format(d, "EEE, MMM d, yyyy")}</li>
