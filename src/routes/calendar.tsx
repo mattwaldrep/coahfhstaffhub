@@ -3192,7 +3192,7 @@ function ListView({
                 })()}
 
                 {o.pco_registration && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">PCO</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">PCO Registrations</span>
                 )}
                 {(o.other_listings ?? [])
                   .filter((k) => LISTING_LABEL.has(k))
