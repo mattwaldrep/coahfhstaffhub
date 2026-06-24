@@ -186,6 +186,7 @@ type EventRow = {
   room_needed: string | null;
   action_note: string | null;
   missions_team_needed: boolean;
+  mission_trip_id: string | null;
   church_covering: string | null;
   childcare_needed: boolean;
   childcare_arranged: boolean;
