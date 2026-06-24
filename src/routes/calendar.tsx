@@ -2709,8 +2709,11 @@ function EventChip({ occ, compact, conflictCount, readiness }: {
       <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${ringColor}`} />
       {conflictCount ? <AlertTriangle className="w-2.5 h-2.5 text-amber-500 shrink-0" /> : null}
       <span className="truncate">
-        {!occ.all_day && <>{format(occ.occurrence_date, "h:mm")} </>}
+        {!occ.all_day && !occ.is_span_continuation && <>{format(occ.occurrence_date, "h:mm")} </>}
         {occ.title}
+        {occ.span_total_days && occ.span_total_days > 1 ? (
+          <span className="opacity-70"> · Day {occ.span_day_index}/{occ.span_total_days}</span>
+        ) : null}
       </span>
     </div>
   );
