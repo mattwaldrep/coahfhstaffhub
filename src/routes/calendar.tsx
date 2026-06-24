@@ -586,7 +586,7 @@ function CalendarBody() {
   const [eventTemplateIds, setEventTemplateIds] = useState<string[]>([]); // attached to current form event
   const [templateStates, setTemplateStates] = useState<Record<string, boolean>>({}); // key: `${item_id}:${YYYY-MM-DD}`
 
-  function readinessFor(occ: Occurrence) {
+  function readinessFor(occ: Occurrence): SplitReadiness {
     const roomIds = eventRoomsMap.current.get(occ.id) ?? [];
     const flagMap = eventRoomFlagsMap.current.get(occ.id) ?? new Map<string, { req: boolean; app: boolean }>();
     const nonOfficeIds = roomIds.filter((id) => {
@@ -601,7 +601,7 @@ function CalendarBody() {
       });
     const has_room =
       roomConfirmed && (roomIds.length > 0 || (occ.room_needed ?? "").trim().length > 0);
-    const adHoc = eventChecklistMap.current.get(occ.id) ?? { total: 0, done: 0 };
+    const adHoc = eventChecklistMap.current.get(occ.id) ?? { total: 0, done: 0, commsTotal: 0, commsDone: 0 };
     const tplIds = eventAttachmentsMap.current.get(occ.id) ?? [];
     const tplItems = allTemplateItems.filter((i) => tplIds.includes(i.template_id));
     const dateKey = format(occ.occurrence_date, "yyyy-MM-dd");
@@ -609,7 +609,7 @@ function CalendarBody() {
     for (const it of tplItems) {
       if (templateStateMap.current.get(`${occ.id}:${it.id}:${dateKey}`)) tplDone++;
     }
-    const r = scoreEvent({
+    const split = scoreEventSplit({
       category: occ.category,
       leader_name: occ.leader_name,
       childcare_needed: occ.childcare_needed,
@@ -619,13 +619,15 @@ function CalendarBody() {
       leader_not_needed: (occ as any).leader_not_needed ?? false,
       checklist_total: adHoc.total + tplItems.length,
       checklist_done: adHoc.done + tplDone,
+      comms_total: adHoc.commsTotal,
+      comms_done: adHoc.commsDone,
     });
     if (occ.missions_team_needed && !(occ as any).mission_trip_id) {
-      r.missing.push("Missions team");
-      r.score = Math.max(0, r.score - 15);
-      r.level = r.score >= 90 ? "ready" : r.score >= 60 ? "warning" : "critical";
+      split.planning.missing.push("Missions team");
+      split.planning.score = Math.max(0, split.planning.score - 15);
+      split.planning.level = split.planning.score >= 90 ? "ready" : split.planning.score >= 60 ? "warning" : "critical";
     }
-    return r;
+    return split;
   }
 
 
