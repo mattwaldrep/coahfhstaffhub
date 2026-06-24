@@ -186,6 +186,7 @@ type EventRow = {
   room_needed: string | null;
   action_note: string | null;
   missions_team_needed: boolean;
+  mission_trip_id: string | null;
   church_covering: string | null;
   childcare_needed: boolean;
   childcare_arranged: boolean;
@@ -262,6 +263,7 @@ type FormState = {
   room_needed: string;
   action_note: string;
   missions_team_needed: boolean;
+  mission_trip_id: string;
   church_covering: string;
   childcare_needed: boolean;
   childcare_arranged: boolean;
@@ -300,6 +302,7 @@ const emptyForm = (start = ""): FormState => ({
   room_needed: "",
   action_note: "",
   missions_team_needed: false,
+  mission_trip_id: "",
   church_covering: "",
   childcare_needed: false,
   childcare_arranged: false,
@@ -541,6 +544,7 @@ function CalendarBody() {
   const [newItem, setNewItem] = useState("");
   const [classSeries, setClassSeries] = useState<ClassSeries[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [missionTripOptions, setMissionTripOptions] = useState<Array<{ id: string; church_name: string | null; start_date: string | null; status: string | null }>>([]);
   // Per-room request/approval flags for the event currently being edited.
   // Keyed by room_id.
   const [roomFlags, setRoomFlags] = useState<Record<string, { req: boolean; app: boolean }>>({});
@@ -593,7 +597,7 @@ function CalendarBody() {
     for (const it of tplItems) {
       if (templateStateMap.current.get(`${occ.id}:${it.id}:${dateKey}`)) tplDone++;
     }
-    return scoreEvent({
+    const r = scoreEvent({
       category: occ.category,
       leader_name: occ.leader_name,
       childcare_needed: occ.childcare_needed,
@@ -604,6 +608,12 @@ function CalendarBody() {
       checklist_total: adHoc.total + tplItems.length,
       checklist_done: adHoc.done + tplDone,
     });
+    if (occ.missions_team_needed && !(occ as any).mission_trip_id) {
+      r.missing.push("Missions team");
+      r.score = Math.max(0, r.score - 15);
+      r.level = r.score >= 90 ? "ready" : r.score >= 60 ? "warning" : "critical";
+    }
+    return r;
   }
 
 
@@ -723,6 +733,7 @@ function CalendarBody() {
             room_needed: null,
             action_note: null,
             missions_team_needed: false,
+            mission_trip_id: null,
             church_covering: null,
             childcare_needed: false,
             childcare_arranged: false,
@@ -752,6 +763,7 @@ function CalendarBody() {
     eventRoomFlagsMap.current = flagsMap;
     setClassSeries((cs ?? []) as ClassSeries[]);
     setRooms((rs ?? []) as Room[]);
+    setMissionTripOptions(((trips ?? []) as Array<{ id: string; church_name: string | null; start_date: string | null; status: string | null }>));
     setAllTemplates(((tpls ?? []) as unknown) as ChecklistTemplate[]);
     setAllTemplateItems(((tplItems ?? []) as unknown) as TemplateItem[]);
 
@@ -901,6 +913,7 @@ function CalendarBody() {
       room_needed: ev.room_needed ?? "",
       action_note: ev.action_note ?? "",
       missions_team_needed: ev.missions_team_needed ?? false,
+      mission_trip_id: (ev as any).mission_trip_id ?? "",
       church_covering: ev.church_covering ?? "",
       childcare_needed: ev.childcare_needed ?? false,
       childcare_arranged: ev.childcare_arranged ?? false,
@@ -978,6 +991,7 @@ function CalendarBody() {
       room_needed: form.room_needed || null,
       action_note: form.action_note || null,
       missions_team_needed: form.missions_team_needed,
+      mission_trip_id: form.missions_team_needed && form.mission_trip_id ? form.mission_trip_id : null,
       church_covering: form.church_covering || null,
       childcare_needed: form.childcare_needed,
       childcare_arranged: form.childcare_arranged,
@@ -1143,6 +1157,7 @@ function CalendarBody() {
       room_needed: form.room_needed || null,
       action_note: form.action_note || null,
       missions_team_needed: form.missions_team_needed,
+      mission_trip_id: form.missions_team_needed && form.mission_trip_id ? form.mission_trip_id : null,
       church_covering: form.church_covering || null,
       childcare_needed: form.childcare_needed,
       childcare_arranged: form.childcare_arranged,
@@ -2369,23 +2384,6 @@ function CalendarBody() {
                 </div>
               </div>
 
-              <label className="flex items-center gap-2 text-sm">
-                <Switch
-                  checked={form.missions_team_needed}
-                  onCheckedChange={(v) => setForm({ ...form, missions_team_needed: v })}
-                />
-                Missions team needed
-              </label>
-              {form.missions_team_needed && (
-                <div className="space-y-2">
-                  <Label className="text-xs">Church covering</Label>
-                  <Input
-                    placeholder="e.g. Family Hope, COAH:LM, Both"
-                    value={form.church_covering}
-                    onChange={(e) => setForm({ ...form, church_covering: e.target.value })}
-                  />
-                </div>
-              )}
               {form.id && (
                 <div className="space-y-2 pt-2 border-t border-border/60">
                   <div className="flex items-center justify-between">
@@ -2553,6 +2551,62 @@ function CalendarBody() {
                 </div>
               )}
             </div>
+
+            {/* Missions Team */}
+            <div className="space-y-3 rounded-xl border border-border p-3">
+              <Label className="text-sm font-medium">Missions Team</Label>
+              <label className="flex items-center gap-2 text-sm">
+                <Switch
+                  checked={form.missions_team_needed}
+                  onCheckedChange={(v) =>
+                    setForm({ ...form, missions_team_needed: v, mission_trip_id: v ? form.mission_trip_id : "" })
+                  }
+                />
+                Missions team needed
+              </label>
+              {form.missions_team_needed && (
+                <>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Assigned missions team</Label>
+                    <Select
+                      value={form.mission_trip_id || "__none__"}
+                      onValueChange={(v) => setForm({ ...form, mission_trip_id: v === "__none__" ? "" : v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a scheduled missions team" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">— Not yet assigned —</SelectItem>
+                        {missionTripOptions
+                          .slice()
+                          .sort((a, b) => (a.start_date ?? "").localeCompare(b.start_date ?? ""))
+                          .map((t) => (
+                            <SelectItem key={t.id} value={t.id}>
+                              {(t.church_name ?? "Mission Team")}
+                              {t.start_date ? ` — ${t.start_date}` : ""}
+                              {t.status ? ` (${t.status})` : ""}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    {!form.mission_trip_id && (
+                      <p className="text-xs text-muted-foreground">
+                        No team assigned — readiness will be reduced until a team is selected.
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Church covering</Label>
+                    <Input
+                      placeholder="e.g. Family Hope, COAH:LM, Both"
+                      value={form.church_covering}
+                      onChange={(e) => setForm({ ...form, church_covering: e.target.value })}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
 
 
 

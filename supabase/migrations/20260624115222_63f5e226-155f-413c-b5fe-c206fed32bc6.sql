@@ -1,0 +1,2 @@
+ALTER TABLE public.calendar_events ADD COLUMN IF NOT EXISTS mission_trip_id uuid REFERENCES public.mission_trips(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_calendar_events_mission_trip_id ON public.calendar_events(mission_trip_id);
