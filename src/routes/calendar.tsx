@@ -597,7 +597,7 @@ function CalendarBody() {
     for (const it of tplItems) {
       if (templateStateMap.current.get(`${occ.id}:${it.id}:${dateKey}`)) tplDone++;
     }
-    return scoreEvent({
+    const r = scoreEvent({
       category: occ.category,
       leader_name: occ.leader_name,
       childcare_needed: occ.childcare_needed,
@@ -608,6 +608,12 @@ function CalendarBody() {
       checklist_total: adHoc.total + tplItems.length,
       checklist_done: adHoc.done + tplDone,
     });
+    if (occ.missions_team_needed && !(occ as any).mission_trip_id) {
+      r.missing.push("Missions team");
+      r.score = Math.max(0, r.score - 15);
+      r.level = r.score >= 90 ? "ready" : r.score >= 60 ? "warning" : "critical";
+    }
+    return r;
   }
 
 
