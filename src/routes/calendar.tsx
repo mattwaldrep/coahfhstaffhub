@@ -302,6 +302,7 @@ const emptyForm = (start = ""): FormState => ({
   room_needed: "",
   action_note: "",
   missions_team_needed: false,
+  mission_trip_id: "",
   church_covering: "",
   childcare_needed: false,
   childcare_arranged: false,
