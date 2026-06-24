@@ -431,8 +431,10 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
                   fields={fields!}
                   isFullElder={isFullElder}
                   meetingId={meetingId}
+                  healthOptions={healthOptions}
                   onHealthChanged={() => load(true)}
                 />
+
               )}
             </div>
           );
