@@ -974,48 +974,22 @@ function CalendarBody() {
       : await supabase.from("calendar_events").insert(payload).select("id").single();
     if (result.error) { toast.error(result.error.message); return; }
     const savedId = result.data?.id ?? form.id;
-    if (savedId) {
-      await supabase.from("event_rooms").delete().eq("event_id", savedId);
-      if (form.room_ids.length > 0) {
-        await supabase.from("event_rooms").insert(form.room_ids.map((rid) => ({
-          event_id: savedId,
-          room_id: rid,
-          request_submitted: !!roomFlags[rid]?.req,
-          approval_received: !!roomFlags[rid]?.app,
-        })) as any);
-      }
-      // Reconcile listing-channel checklist items with currently-enabled toggles
-      const enabledChannels: string[] = [
-        ...(form.pco_registration ? ["pco"] : []),
-        ...form.other_listings,
-        ...(form.social_ads ? ["social_ads"] : []),
-      ];
-      for (const key of Object.keys(LISTING_CHECKLIST_LABEL)) {
-        await syncListingChecklist(savedId, key, enabledChannels.includes(key));
-      }
-      // Reconcile Sunday slots (Ministry Highlight + Sunday Announcement)
-      for (const ch of SUNDAY_SLOT_CHANNELS) {
-        const enabled = form.other_listings.includes(ch);
-        const desired = enabled ? sundaySlots[ch] : [];
-        const prev = initialSundaySlots.current[ch] ?? [];
-        const toAdd = desired.filter((d) => !prev.includes(d));
-        const toRemove = prev.filter((d) => !desired.includes(d));
-        if (toRemove.length > 0) {
-          await supabase
-            .from("event_sunday_slots" as any)
-            .delete()
-            .eq("event_id", savedId)
-            .eq("channel", ch)
-            .in("sunday_date", toRemove);
-        }
-        if (toAdd.length > 0) {
-          await supabase
-            .from("event_sunday_slots" as any)
-            .insert(toAdd.map((d) => ({ event_id: savedId, channel: ch, sunday_date: d })));
-        }
-      }
-    }
 
+    // Optimistic UI: reflect the change in the calendar immediately, then
+    // close the dialog. Background reconciliation (rooms, listings, slots)
+    // runs after so the user isn't waiting on it.
+    if (savedId) {
+      setEvents((list) => {
+        const merged: EventRow = {
+          ...(list.find((e) => e.id === savedId) ?? ({} as EventRow)),
+          ...(payload as Partial<EventRow>),
+          id: savedId,
+          excluded_dates: list.find((e) => e.id === savedId)?.excluded_dates ?? [],
+        } as EventRow;
+        const exists = list.some((e) => e.id === savedId);
+        return exists ? list.map((e) => (e.id === savedId ? merged : e)) : [...list, merged];
+      });
+    }
     const gaps = classGaps(form);
     if (gaps.length > 0) {
       toast.warning(`Saved. Still needed: ${gaps.join(", ")}.`);
@@ -1023,7 +997,50 @@ function CalendarBody() {
       toast.success(form.id ? "Event updated" : "Event added");
     }
     setOpen(false);
-    load();
+
+    // Background reconciliation — does not block the UI.
+    (async () => {
+      if (savedId) {
+        await supabase.from("event_rooms").delete().eq("event_id", savedId);
+        if (form.room_ids.length > 0) {
+          await supabase.from("event_rooms").insert(form.room_ids.map((rid) => ({
+            event_id: savedId,
+            room_id: rid,
+            request_submitted: !!roomFlags[rid]?.req,
+            approval_received: !!roomFlags[rid]?.app,
+          })) as any);
+        }
+        const enabledChannels: string[] = [
+          ...(form.pco_registration ? ["pco"] : []),
+          ...form.other_listings,
+          ...(form.social_ads ? ["social_ads"] : []),
+        ];
+        for (const key of Object.keys(LISTING_CHECKLIST_LABEL)) {
+          await syncListingChecklist(savedId, key, enabledChannels.includes(key));
+        }
+        for (const ch of SUNDAY_SLOT_CHANNELS) {
+          const enabled = form.other_listings.includes(ch);
+          const desired = enabled ? sundaySlots[ch] : [];
+          const prev = initialSundaySlots.current[ch] ?? [];
+          const toAdd = desired.filter((d) => !prev.includes(d));
+          const toRemove = prev.filter((d) => !desired.includes(d));
+          if (toRemove.length > 0) {
+            await supabase
+              .from("event_sunday_slots" as any)
+              .delete()
+              .eq("event_id", savedId)
+              .eq("channel", ch)
+              .in("sunday_date", toRemove);
+          }
+          if (toAdd.length > 0) {
+            await supabase
+              .from("event_sunday_slots" as any)
+              .insert(toAdd.map((d) => ({ event_id: savedId, channel: ch, sunday_date: d })));
+          }
+        }
+      }
+      load();
+    })();
   }
 
 
