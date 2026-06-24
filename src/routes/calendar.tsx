@@ -59,6 +59,8 @@ import {
   UserPlus,
   UserMinus,
   CheckCircle2,
+  Search,
+  CheckSquare,
 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
