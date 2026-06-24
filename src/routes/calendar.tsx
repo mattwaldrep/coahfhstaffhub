@@ -544,6 +544,7 @@ function CalendarBody() {
   const [newItem, setNewItem] = useState("");
   const [classSeries, setClassSeries] = useState<ClassSeries[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [missionTripOptions, setMissionTripOptions] = useState<Array<{ id: string; church_name: string | null; start_date: string | null; status: string | null }>>([]);
   // Per-room request/approval flags for the event currently being edited.
   // Keyed by room_id.
   const [roomFlags, setRoomFlags] = useState<Record<string, { req: boolean; app: boolean }>>({});
