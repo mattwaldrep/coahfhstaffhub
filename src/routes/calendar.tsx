@@ -1149,6 +1149,7 @@ function CalendarBody() {
       room_needed: form.room_needed || null,
       action_note: form.action_note || null,
       missions_team_needed: form.missions_team_needed,
+      mission_trip_id: form.missions_team_needed && form.mission_trip_id ? form.mission_trip_id : null,
       church_covering: form.church_covering || null,
       childcare_needed: form.childcare_needed,
       childcare_arranged: form.childcare_arranged,
