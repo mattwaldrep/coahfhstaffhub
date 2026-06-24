@@ -569,6 +569,7 @@ function CalendarBody() {
   });
 
   const [assignableUsers, setAssignableUsers] = useState<UserOption[]>([]);
+  const [commsManagers, setCommsManagers] = useState<Record<string, string>>({});
   const assignFn = useServerFn(assignChecklistItem);
   const unassignFn = useServerFn(unassignChecklistItem);
   const setDoneFn = useServerFn(setChecklistItemDone);
@@ -658,6 +659,16 @@ function CalendarBody() {
         .select("id, full_name, email")
         .order("full_name");
       setAssignableUsers((data ?? []) as UserOption[]);
+    })();
+    (async () => {
+      const { data } = await supabase
+        .from("comms_channel_managers" as any)
+        .select("channel_key, manager_id");
+      const map: Record<string, string> = {};
+      for (const r of (data ?? []) as unknown as Array<{ channel_key: string; manager_id: string | null }>) {
+        if (r.manager_id) map[r.channel_key] = r.manager_id;
+      }
+      setCommsManagers(map);
     })();
   }, []);
 
@@ -1228,10 +1239,23 @@ function CalendarBody() {
         .eq("event_id", eventId)
         .eq("label", label)
         .maybeSingle();
-      if (!existing) {
-        await supabase
+      let itemId = existing?.id as string | undefined;
+      if (!itemId) {
+        const { data: inserted } = await supabase
           .from("event_checklist_items")
-          .insert({ event_id: eventId, label, position: checklist.length });
+          .insert({ event_id: eventId, label, position: checklist.length })
+          .select("id")
+          .single();
+        itemId = inserted?.id;
+      }
+      // Auto-assign to the channel manager, if one is configured.
+      const managerId = commsManagers[channelKey];
+      if (itemId && managerId) {
+        try {
+          await assignFn({ data: { checklistItemId: itemId, assigneeId: managerId } });
+        } catch {
+          // best-effort; checklist item is still created
+        }
       }
     } else {
       await supabase
