@@ -2887,7 +2887,7 @@ function MonthGrid({
   onPickDay: (d: Date) => void;
   onPickEvent: (o: Occurrence) => void;
   canEdit: boolean;
-  readinessOf: (occ: Occurrence) => ReturnType<typeof scoreEvent>;
+  readinessOf: (occ: Occurrence) => SplitReadiness;
 }) {
   const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 0 });
   const end = endOfWeek(endOfMonth(cursor), { weekStartsOn: 0 });
