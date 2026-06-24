@@ -1409,6 +1409,24 @@ function CalendarBody() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search events…"
+              className="h-8 w-[14rem] pl-7 text-xs"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="h-8 w-[10rem] text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -1429,6 +1447,22 @@ function CalendarBody() {
               <SelectItem value="missions">Missions team needed</SelectItem>
             </SelectContent>
           </Select>
+          {canEdit && (
+            <Button
+              variant={selectMode ? "default" : "ghost"}
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => {
+                const next = !selectMode;
+                setSelectMode(next);
+                setSelectedIds(new Set());
+                if (next) setView("list");
+              }}
+            >
+              <CheckSquare className="w-3.5 h-3.5 mr-1.5" />
+              {selectMode ? "Done" : "Select"}
+            </Button>
+          )}
           {SUB_CALS.map((s) => (
             <button
               key={s.value}
@@ -1446,9 +1480,76 @@ function CalendarBody() {
         </div>
       </div>
 
+      {selectMode && canEdit && (
+        <BulkEditBar
+          selectedIds={selectedIds}
+          totalVisible={new Set(visible.map((o) => o.id)).size}
+          categories={categories}
+          busy={bulkBusy}
+          onSelectAll={() => setSelectedIds(new Set(visible.map((o) => o.id)))}
+          onClear={() => setSelectedIds(new Set())}
+          onApply={async (patch) => {
+            if (selectedIds.size === 0) return;
+            setBulkBusy(true);
+            try {
+              const ids = Array.from(selectedIds);
+              const { error } = await supabase
+                .from("calendar_events")
+                .update(patch)
+                .in("id", ids);
+              if (error) throw new Error(error.message);
+              toast.success(`Updated ${ids.length} event${ids.length === 1 ? "" : "s"}`);
+              setSelectedIds(new Set());
+              await load();
+            } catch (e: any) {
+              toast.error(e?.message ?? "Bulk update failed");
+            } finally {
+              setBulkBusy(false);
+            }
+          }}
+          onDelete={async () => {
+            if (selectedIds.size === 0) return;
+            if (!confirm(`Delete ${selectedIds.size} event${selectedIds.size === 1 ? "" : "s"}? This cannot be undone.`)) return;
+            setBulkBusy(true);
+            try {
+              const ids = Array.from(selectedIds);
+              const { error } = await supabase
+                .from("calendar_events")
+                .delete()
+                .in("id", ids);
+              if (error) throw new Error(error.message);
+              toast.success(`Deleted ${ids.length} event${ids.length === 1 ? "" : "s"}`);
+              setSelectedIds(new Set());
+              await load();
+            } catch (e: any) {
+              toast.error(e?.message ?? "Bulk delete failed");
+            } finally {
+              setBulkBusy(false);
+            }
+          }}
+        />
+      )}
+
       {view === "month" && <MonthGrid cursor={cursor} occurrences={visible} conflictMap={conflictMap} onPickDay={openNew} onPickEvent={openEdit} canEdit={canEdit} readinessOf={readinessFor} />}
       {view === "week" && <WeekStrip cursor={cursor} occurrences={visible} onPickDay={openNew} onPickEvent={openEdit} canEdit={canEdit} />}
-      {view === "list" && <ListView occurrences={visible} conflictMap={conflictMap} onPickEvent={openEdit} readinessOf={readinessFor} />}
+      {view === "list" && (
+        <ListView
+          occurrences={visible}
+          conflictMap={conflictMap}
+          onPickEvent={openEdit}
+          readinessOf={readinessFor}
+          selectMode={selectMode}
+          selectedIds={selectedIds}
+          onToggleSelect={(id) => {
+            setSelectedIds((prev) => {
+              const next = new Set(prev);
+              if (next.has(id)) next.delete(id);
+              else next.add(id);
+              return next;
+            });
+          }}
+        />
+      )}
 
 
       <Dialog open={manageCatOpen} onOpenChange={setManageCatOpen}>
