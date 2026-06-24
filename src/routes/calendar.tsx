@@ -1232,13 +1232,52 @@ function CalendarBody() {
     }
   }
 
-  const occurrences = useMemo(
-    () => expandEvents(events, range.start, range.end),
-    [events, range.start.getTime(), range.end.getTime()],
-  );
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
+  // Global search: when a query is active, fetch matching events across all dates
+  // so results aren't limited to the current view's date range.
+  useEffect(() => {
+    const q = normalizedQuery;
+    if (!q) { setSearchEvents([]); return; }
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      const like = `%${q.replace(/[%_]/g, (m) => `\\${m}`)}%`;
+      const { data } = await supabase
+        .from("calendar_events")
+        .select("*")
+        .or(
+          [
+            `title.ilike.${like}`,
+            `description.ilike.${like}`,
+            `leader_name.ilike.${like}`,
+            `location.ilike.${like}`,
+            `room_needed.ilike.${like}`,
+            `category.ilike.${like}`,
+          ].join(","),
+        )
+        .order("start_at", { ascending: true })
+        .limit(500);
+      if (!cancelled) setSearchEvents((data ?? []) as EventRow[]);
+    }, 200);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [normalizedQuery]);
+
+  const occurrences = useMemo(() => {
+    if (normalizedQuery) {
+      // Expand across a wide window (-2 years to +3 years from today) so search hits
+      // recurring instances outside the current view too.
+      const today = new Date();
+      const wideStart = new Date(today.getFullYear() - 2, 0, 1);
+      const wideEnd = new Date(today.getFullYear() + 3, 11, 31);
+      const merged = [...events];
+      const ids = new Set(events.map((e) => e.id));
+      for (const e of searchEvents) if (!ids.has(e.id)) merged.push(e);
+      return expandEvents(merged, wideStart, wideEnd);
+    }
+    return expandEvents(events, range.start, range.end);
+  }, [events, searchEvents, normalizedQuery, range.start.getTime(), range.end.getTime()]);
 
   const startOfToday = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d; }, []);
-  const normalizedQuery = searchQuery.trim().toLowerCase();
   const visible = occurrences.filter((o) => {
     const cals = [o.sub_calendar, ...(o.other_listings ?? [])];
     if (!cals.some((c) => filters[c])) return false;
