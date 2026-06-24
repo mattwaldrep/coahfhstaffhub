@@ -1219,6 +1219,7 @@ function CalendarBody() {
         return ids.length > 0 && ids.every((id) => roomFlags[id]?.app);
       })(),
       multi_day_mode: form.multi_day_mode,
+      day_of_plan: form.day_of_plan || null,
     });
     if (insertErr) { toast.error(insertErr.message); return; }
     // 2) Add original occurrence date to excluded_dates on the series
