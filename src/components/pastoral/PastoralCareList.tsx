@@ -94,6 +94,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
       const merged = [...opts];
       for (const v of seenValues) if (!merged.includes(v)) merged.push(v);
       setHealthOptions(merged.length ? merged : DEFAULT_HEALTH_OPTIONS);
+    } catch (e: any) {
       toast.error(e.message ?? "Failed to load");
     } finally {
       setLoading(false);
