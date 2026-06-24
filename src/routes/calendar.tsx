@@ -1365,7 +1365,7 @@ function CalendarBody() {
     }));
     for (const c of items) {
       const conflicts = findConflicts(c, items);
-      if (conflicts.length) m.set(c.id, conflicts);
+      if (conflicts.length) m.set(c._key, conflicts);
     }
     return m;
     // eslint-disable-next-line react-hooks/exhaustive-deps
