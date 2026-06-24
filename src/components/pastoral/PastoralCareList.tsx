@@ -361,7 +361,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-[11px] uppercase tracking-wider text-muted-foreground shrink-0">Health</span>
         <div className="flex items-center gap-1.5 flex-wrap">
-          {HEALTH_OPTIONS.map((h) => {
+          {healthOptions.map((h: string) => {
             const active = healthFilter.has(h);
             const count = people.filter((p) => ((fields ? p.fields[fields.spiritual_health]?.value : null) ?? "Unknown") === h).length;
             return (
