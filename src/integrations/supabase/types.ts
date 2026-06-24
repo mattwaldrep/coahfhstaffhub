@@ -276,6 +276,7 @@ export type Database = {
           leader_name: string | null
           leader_not_needed: boolean
           location: string | null
+          mission_trip_id: string | null
           missions_team_needed: boolean
           other_listings: string[]
           pco_registration: boolean
@@ -310,6 +311,7 @@ export type Database = {
           leader_name?: string | null
           leader_not_needed?: boolean
           location?: string | null
+          mission_trip_id?: string | null
           missions_team_needed?: boolean
           other_listings?: string[]
           pco_registration?: boolean
@@ -344,6 +346,7 @@ export type Database = {
           leader_name?: string | null
           leader_not_needed?: boolean
           location?: string | null
+          mission_trip_id?: string | null
           missions_team_needed?: boolean
           other_listings?: string[]
           pco_registration?: boolean
@@ -380,6 +383,13 @@ export type Database = {
             columns: ["leader_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_mission_trip_id_fkey"
+            columns: ["mission_trip_id"]
+            isOneToOne: false
+            referencedRelation: "mission_trips"
             referencedColumns: ["id"]
           },
         ]
