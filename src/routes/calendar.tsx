@@ -59,6 +59,8 @@ import {
   UserPlus,
   UserMinus,
   CheckCircle2,
+  Search,
+  CheckSquare,
 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -474,6 +476,10 @@ function CalendarBody() {
   );
   const [categoryFilter, setCategoryFilter] = useState<string>(loadedPrefs?.categoryFilter ?? "all");
   const [flagFilter, setFlagFilter] = useState<"all" | "pco" | "missions">(loadedPrefs?.flagFilter ?? "all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>(
     DEFAULT_CATEGORIES.map((n) => ({ id: n, name: n })),
   );
@@ -1231,6 +1237,7 @@ function CalendarBody() {
   );
 
   const startOfToday = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d; }, []);
+  const normalizedQuery = searchQuery.trim().toLowerCase();
   const visible = occurrences.filter((o) => {
     const cals = [o.sub_calendar, ...(o.other_listings ?? [])];
     if (!cals.some((c) => filters[c])) return false;
@@ -1238,6 +1245,20 @@ function CalendarBody() {
     if (flagFilter === "pco" && !o.pco_registration) return false;
     if (flagFilter === "missions" && !o.missions_team_needed) return false;
     if (hidePast && o.occurrence_date < startOfToday) return false;
+    if (normalizedQuery) {
+      const hay = [
+        o.title,
+        o.description,
+        o.leader_name,
+        o.location,
+        o.room_needed,
+        o.category,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      if (!hay.includes(normalizedQuery)) return false;
+    }
     return true;
   });
 
@@ -1388,6 +1409,24 @@ function CalendarBody() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search events…"
+              className="h-8 w-[14rem] pl-7 text-xs"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="h-8 w-[10rem] text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -1408,6 +1447,22 @@ function CalendarBody() {
               <SelectItem value="missions">Missions team needed</SelectItem>
             </SelectContent>
           </Select>
+          {canEdit && (
+            <Button
+              variant={selectMode ? "default" : "ghost"}
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => {
+                const next = !selectMode;
+                setSelectMode(next);
+                setSelectedIds(new Set());
+                if (next) setView("list");
+              }}
+            >
+              <CheckSquare className="w-3.5 h-3.5 mr-1.5" />
+              {selectMode ? "Done" : "Select"}
+            </Button>
+          )}
           {SUB_CALS.map((s) => (
             <button
               key={s.value}
@@ -1425,9 +1480,76 @@ function CalendarBody() {
         </div>
       </div>
 
+      {selectMode && canEdit && (
+        <BulkEditBar
+          selectedIds={selectedIds}
+          totalVisible={new Set(visible.map((o) => o.id)).size}
+          categories={categories}
+          busy={bulkBusy}
+          onSelectAll={() => setSelectedIds(new Set(visible.map((o) => o.id)))}
+          onClear={() => setSelectedIds(new Set())}
+          onApply={async (patch) => {
+            if (selectedIds.size === 0) return;
+            setBulkBusy(true);
+            try {
+              const ids = Array.from(selectedIds);
+              const { error } = await supabase
+                .from("calendar_events")
+                .update(patch as never)
+                .in("id", ids);
+              if (error) throw new Error(error.message);
+              toast.success(`Updated ${ids.length} event${ids.length === 1 ? "" : "s"}`);
+              setSelectedIds(new Set());
+              await load();
+            } catch (e: any) {
+              toast.error(e?.message ?? "Bulk update failed");
+            } finally {
+              setBulkBusy(false);
+            }
+          }}
+          onDelete={async () => {
+            if (selectedIds.size === 0) return;
+            if (!confirm(`Delete ${selectedIds.size} event${selectedIds.size === 1 ? "" : "s"}? This cannot be undone.`)) return;
+            setBulkBusy(true);
+            try {
+              const ids = Array.from(selectedIds);
+              const { error } = await supabase
+                .from("calendar_events")
+                .delete()
+                .in("id", ids);
+              if (error) throw new Error(error.message);
+              toast.success(`Deleted ${ids.length} event${ids.length === 1 ? "" : "s"}`);
+              setSelectedIds(new Set());
+              await load();
+            } catch (e: any) {
+              toast.error(e?.message ?? "Bulk delete failed");
+            } finally {
+              setBulkBusy(false);
+            }
+          }}
+        />
+      )}
+
       {view === "month" && <MonthGrid cursor={cursor} occurrences={visible} conflictMap={conflictMap} onPickDay={openNew} onPickEvent={openEdit} canEdit={canEdit} readinessOf={readinessFor} />}
       {view === "week" && <WeekStrip cursor={cursor} occurrences={visible} onPickDay={openNew} onPickEvent={openEdit} canEdit={canEdit} />}
-      {view === "list" && <ListView occurrences={visible} conflictMap={conflictMap} onPickEvent={openEdit} readinessOf={readinessFor} />}
+      {view === "list" && (
+        <ListView
+          occurrences={visible}
+          conflictMap={conflictMap}
+          onPickEvent={openEdit}
+          readinessOf={readinessFor}
+          selectMode={selectMode}
+          selectedIds={selectedIds}
+          onToggleSelect={(id) => {
+            setSelectedIds((prev) => {
+              const next = new Set(prev);
+              if (next.has(id)) next.delete(id);
+              else next.add(id);
+              return next;
+            });
+          }}
+        />
+      )}
 
 
       <Dialog open={manageCatOpen} onOpenChange={setManageCatOpen}>
@@ -2611,7 +2733,23 @@ function WeekStrip({
   );
 }
 
-function ListView({ occurrences, conflictMap, onPickEvent, readinessOf }: { occurrences: Occurrence[]; conflictMap: Map<string, number>; onPickEvent: (o: Occurrence) => void; readinessOf: (occ: Occurrence) => ReturnType<typeof scoreEvent> }) {
+function ListView({
+  occurrences,
+  conflictMap,
+  onPickEvent,
+  readinessOf,
+  selectMode = false,
+  selectedIds,
+  onToggleSelect,
+}: {
+  occurrences: Occurrence[];
+  conflictMap: Map<string, number>;
+  onPickEvent: (o: Occurrence) => void;
+  readinessOf: (occ: Occurrence) => ReturnType<typeof scoreEvent>;
+  selectMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
+}) {
   if (occurrences.length === 0) {
     return (
       <div className="bg-surface border border-border rounded-2xl p-2">
@@ -2624,13 +2762,26 @@ function ListView({ occurrences, conflictMap, onPickEvent, readinessOf }: { occu
     <div className="bg-surface border border-border rounded-2xl divide-y divide-border">
       {occurrences.map((o, i) => {
         const cal = SUB_CALS.find((s) => s.value === o.sub_calendar)!;
+        const isSelected = selectedIds?.has(o.id) ?? false;
         return (
-          <button
+          <div
             key={`${o.id}-${i}`}
-            onClick={() => onPickEvent(o)}
-            className="w-full p-4 flex items-center gap-4 text-left hover:bg-background/40 transition"
+            onClick={() => {
+              if (selectMode) onToggleSelect?.(o.id);
+              else onPickEvent(o);
+            }}
+            className={`w-full p-4 flex items-center gap-4 text-left hover:bg-background/40 transition cursor-pointer ${isSelected ? "bg-primary/5" : ""}`}
           >
+            {selectMode && (
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={() => onToggleSelect?.(o.id)}
+                onClick={(e) => e.stopPropagation()}
+                aria-label={`Select ${o.title}`}
+              />
+            )}
             <div className="w-1 self-stretch rounded-full" style={{ background: cal.color }} />
+
             <div className="flex-1 min-w-0">
               <div className="font-medium flex items-center gap-2 flex-wrap">
                 {o.title}
@@ -2681,12 +2832,88 @@ function ListView({ occurrences, conflictMap, onPickEvent, readinessOf }: { occu
               <div>{format(o.occurrence_date, "EEE, MMM d")}</div>
               <div className="text-xs">{o.all_day ? "All day" : format(o.occurrence_date, "p")}</div>
             </div>
-          </button>
+          </div>
+
         );
       })}
     </div>
   );
 }
+
+function BulkEditBar({
+  selectedIds,
+  totalVisible,
+  categories,
+  busy,
+  onSelectAll,
+  onClear,
+  onApply,
+  onDelete,
+}: {
+  selectedIds: Set<string>;
+  totalVisible: number;
+  categories: { id: string; name: string }[];
+  busy: boolean;
+  onSelectAll: () => void;
+  onClear: () => void;
+  onApply: (patch: Record<string, unknown>) => Promise<void>;
+  onDelete: () => Promise<void>;
+}) {
+  const count = selectedIds.size;
+  return (
+    <div className="bg-surface border border-border rounded-2xl p-3 mb-4 flex flex-wrap items-center gap-2">
+      <div className="text-sm font-medium mr-2">
+        {count} selected
+        <span className="text-muted-foreground font-normal"> of {totalVisible}</span>
+      </div>
+      <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={onSelectAll} disabled={busy}>
+        Select all visible
+      </Button>
+      <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={onClear} disabled={busy || count === 0}>
+        Clear
+      </Button>
+      <div className="h-6 w-px bg-border mx-1" />
+      <Select
+        disabled={busy || count === 0}
+        onValueChange={(v) => onApply({ sub_calendar: v })}
+      >
+        <SelectTrigger className="h-8 w-[12rem] text-xs">
+          <SelectValue placeholder="Change sub-calendar…" />
+        </SelectTrigger>
+        <SelectContent>
+          {SUB_CALS.map((s) => (
+            <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select
+        disabled={busy || count === 0}
+        onValueChange={(v) => onApply({ category: v === "__none__" ? null : v })}
+      >
+        <SelectTrigger className="h-8 w-[12rem] text-xs">
+          <SelectValue placeholder="Change category…" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__none__">No category</SelectItem>
+          {categories.map((c) => (
+            <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <div className="flex-1" />
+      <Button
+        variant="destructive"
+        size="sm"
+        className="h-8 text-xs"
+        onClick={onDelete}
+        disabled={busy || count === 0}
+      >
+        <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Delete
+      </Button>
+    </div>
+  );
+}
+
 
 type CommentRow = {
   id: string;
