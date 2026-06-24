@@ -2733,7 +2733,23 @@ function WeekStrip({
   );
 }
 
-function ListView({ occurrences, conflictMap, onPickEvent, readinessOf }: { occurrences: Occurrence[]; conflictMap: Map<string, number>; onPickEvent: (o: Occurrence) => void; readinessOf: (occ: Occurrence) => ReturnType<typeof scoreEvent> }) {
+function ListView({
+  occurrences,
+  conflictMap,
+  onPickEvent,
+  readinessOf,
+  selectMode = false,
+  selectedIds,
+  onToggleSelect,
+}: {
+  occurrences: Occurrence[];
+  conflictMap: Map<string, number>;
+  onPickEvent: (o: Occurrence) => void;
+  readinessOf: (occ: Occurrence) => ReturnType<typeof scoreEvent>;
+  selectMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
+}) {
   if (occurrences.length === 0) {
     return (
       <div className="bg-surface border border-border rounded-2xl p-2">
@@ -2746,13 +2762,26 @@ function ListView({ occurrences, conflictMap, onPickEvent, readinessOf }: { occu
     <div className="bg-surface border border-border rounded-2xl divide-y divide-border">
       {occurrences.map((o, i) => {
         const cal = SUB_CALS.find((s) => s.value === o.sub_calendar)!;
+        const isSelected = selectedIds?.has(o.id) ?? false;
         return (
-          <button
+          <div
             key={`${o.id}-${i}`}
-            onClick={() => onPickEvent(o)}
-            className="w-full p-4 flex items-center gap-4 text-left hover:bg-background/40 transition"
+            onClick={() => {
+              if (selectMode) onToggleSelect?.(o.id);
+              else onPickEvent(o);
+            }}
+            className={`w-full p-4 flex items-center gap-4 text-left hover:bg-background/40 transition cursor-pointer ${isSelected ? "bg-primary/5" : ""}`}
           >
+            {selectMode && (
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={() => onToggleSelect?.(o.id)}
+                onClick={(e) => e.stopPropagation()}
+                aria-label={`Select ${o.title}`}
+              />
+            )}
             <div className="w-1 self-stretch rounded-full" style={{ background: cal.color }} />
+
             <div className="flex-1 min-w-0">
               <div className="font-medium flex items-center gap-2 flex-wrap">
                 {o.title}
