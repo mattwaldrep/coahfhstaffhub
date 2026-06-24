@@ -1353,8 +1353,9 @@ function CalendarBody() {
   // Per-occurrence conflict map keyed by `${eventId}-${time}`
   const conflictMap = useMemo(() => {
     const m = new Map<string, Conflict[]>();
-    const items: ConflictEvent[] = visible.map((o) => ({
-      id: `${o.id}-${o.occurrence_date.getTime()}`,
+    const items: Array<ConflictEvent & { _key: string }> = visible.map((o) => ({
+      id: o.id,
+      _key: `${o.id}-${o.occurrence_date.getTime()}`,
       title: o.title,
       start_at: o.occurrence_date.toISOString(),
       end_at: o.end_at,
@@ -1364,7 +1365,7 @@ function CalendarBody() {
     }));
     for (const c of items) {
       const conflicts = findConflicts(c, items);
-      if (conflicts.length) m.set(c.id, conflicts);
+      if (conflicts.length) m.set(c._key, conflicts);
     }
     return m;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2904,7 +2905,7 @@ function ListView({
                       className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 flex items-center gap-1"
                       title={`Conflicts with: ${formatConflicts(cs)}`}
                     >
-                      <AlertTriangle className="w-3 h-3" /> Conflicts with {cs.map((c) => c.other.title).join(", ")}
+                      <AlertTriangle className="w-3 h-3" /> Conflict
                     </span>
                   );
                 })()}
