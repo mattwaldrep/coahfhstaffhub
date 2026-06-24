@@ -2996,7 +2996,7 @@ function ListView({
   occurrences: Occurrence[];
   conflictMap: Map<string, Conflict[]>;
   onPickEvent: (o: Occurrence) => void;
-  readinessOf: (occ: Occurrence) => ReturnType<typeof scoreEvent>;
+  readinessOf: (occ: Occurrence) => SplitReadiness;
   selectMode?: boolean;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
