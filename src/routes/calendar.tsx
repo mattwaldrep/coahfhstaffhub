@@ -118,9 +118,9 @@ const READINESS_COLORS: Record<string, string> = {
 };
 
 const LISTING_CHANNELS: { key: string; label: string }[] = [
-  { key: "pco", label: "PCO" },
+  { key: "pco", label: "PCO Registrations" },
   { key: "eventbrite", label: "Eventbrite" },
-  { key: "google", label: "Google" },
+  { key: "google", label: "Google My Business" },
   { key: "community_cals", label: "Community Cals" },
   { key: "socials", label: "Socials" },
 ];
@@ -129,7 +129,7 @@ const LISTING_LABEL = new Map(LISTING_CHANNELS.map((c) => [c.key, c.label]));
 const COMMS_CHANNELS: { key: string; label: string }[] = [
   { key: "direct_email", label: "Direct Email" },
   { key: "push_notification", label: "Push Notification" },
-  { key: "sunday_slide", label: "Sunday Slide" },
+  { key: "sunday_slide", label: "ProPresenter Slide" },
   { key: "sunday_announcement", label: "Sunday Announcement" },
   { key: "ministry_highlight", label: "Ministry Highlight" },
   { key: "newsletter", label: "Newsletter" },
