@@ -1352,7 +1352,7 @@ function CalendarBody() {
 
   // Per-occurrence conflict map keyed by `${eventId}-${time}`
   const conflictMap = useMemo(() => {
-    const m = new Map<string, number>();
+    const m = new Map<string, Conflict[]>();
     const items: ConflictEvent[] = visible.map((o) => ({
       id: `${o.id}-${o.occurrence_date.getTime()}`,
       title: o.title,
@@ -1364,7 +1364,7 @@ function CalendarBody() {
     }));
     for (const c of items) {
       const conflicts = findConflicts(c, items);
-      if (conflicts.length) m.set(c.id, conflicts.length);
+      if (conflicts.length) m.set(c.id, conflicts);
     }
     return m;
     // eslint-disable-next-line react-hooks/exhaustive-deps
