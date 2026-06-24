@@ -2670,7 +2670,14 @@ function CalendarBody() {
                     );
                   })}
                 </div>
+                {form.id && checklist.some((i) => isCommsLabel(i.label)) && (
+                  <div className="space-y-1 pt-2 border-t border-border/60">
+                    <Label className="text-xs">Comms checklist</Label>
+                    {checklist.filter((i) => isCommsLabel(i.label)).map(renderChecklistRow)}
+                  </div>
+                )}
               </div>
+
 
               {form.id && (
                 <div className="space-y-2 pt-2 border-t border-border/60">
