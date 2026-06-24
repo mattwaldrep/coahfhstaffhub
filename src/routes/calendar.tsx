@@ -314,11 +314,28 @@ function buildRRule(f: FormState, startDate: Date): string | null {
     interval: f.interval || 1,
     dtstart: startDate,
   };
-  if (f.byweekday.length && (f.freq === "WEEKLY" || f.freq === "MONTHLY" || f.freq === "YEARLY")) {
+  // WEEKLY: byweekday selects days
+  if (f.freq === "WEEKLY" && f.byweekday.length) {
     opts.byweekday = f.byweekday.map((w) => wdMap[w]);
   }
-  if (f.bysetpos && (f.freq === "MONTHLY" || f.freq === "YEARLY")) {
-    opts.bysetpos = [parseInt(f.bysetpos, 10)];
+  // MONTHLY: either day-of-month list, or nth weekday
+  if (f.freq === "MONTHLY") {
+    if (f.monthly_mode === "nth") {
+      if (f.byweekday.length) opts.byweekday = f.byweekday.map((w) => wdMap[w]);
+      if (f.bysetpos) opts.bysetpos = [parseInt(f.bysetpos, 10)];
+    } else if (f.bymonthday.length) {
+      opts.bymonthday = f.bymonthday.map((d) => parseInt(d, 10));
+    }
+  }
+  // YEARLY: optional month list + (date OR nth weekday)
+  if (f.freq === "YEARLY") {
+    if (f.bymonth.length) opts.bymonth = f.bymonth.map((m) => parseInt(m, 10));
+    if (f.yearly_mode === "nth") {
+      if (f.byweekday.length) opts.byweekday = f.byweekday.map((w) => wdMap[w]);
+      if (f.bysetpos) opts.bysetpos = [parseInt(f.bysetpos, 10)];
+    } else if (f.bymonthday.length) {
+      opts.bymonthday = f.bymonthday.map((d) => parseInt(d, 10));
+    }
   }
   if (f.end_mode === "on" && f.recurrence_end_date) {
     opts.until = new Date(f.recurrence_end_date + "T23:59:59");
