@@ -140,15 +140,15 @@ const SUNDAY_SLOT_CHANNELS = ["sunday_announcement", "ministry_highlight"] as co
 type SundaySlotChannel = (typeof SUNDAY_SLOT_CHANNELS)[number];
 
 const LISTING_CHECKLIST_LABEL: Record<string, string> = {
-  pco: "Set up PCO registration",
+  pco: "Set up PCO Registrations",
   eventbrite: "List on Eventbrite",
-  google: "List on Google",
+  google: "List on Google My Business",
   community_cals: "List on community calendars",
   socials: "Post on socials",
   social_ads: "Run social ads",
   direct_email: "Send direct email",
   push_notification: "Send push notification",
-  sunday_slide: "Add to Sunday slides",
+  sunday_slide: "Add to ProPresenter slides",
   sunday_announcement: "Add to Sunday announcements",
   ministry_highlight: "Feature as Ministry Highlight",
   newsletter: "Include in newsletter",
