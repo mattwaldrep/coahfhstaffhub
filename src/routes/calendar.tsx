@@ -85,7 +85,7 @@ import {
 import { toast } from "sonner";
 import { useUndoableAction } from "@/lib/use-undoable-action";
 import { scoreEvent, readinessColor } from "@/lib/event-readiness";
-import { findConflicts, type ConflictEvent } from "@/lib/event-conflicts";
+import { findConflicts, type ConflictEvent, type Conflict } from "@/lib/event-conflicts";
 import { AlertTriangle } from "lucide-react";
 
 
@@ -1352,7 +1352,7 @@ function CalendarBody() {
 
   // Per-occurrence conflict map keyed by `${eventId}-${time}`
   const conflictMap = useMemo(() => {
-    const m = new Map<string, number>();
+    const m = new Map<string, Conflict[]>();
     const items: ConflictEvent[] = visible.map((o) => ({
       id: `${o.id}-${o.occurrence_date.getTime()}`,
       title: o.title,
@@ -1364,7 +1364,7 @@ function CalendarBody() {
     }));
     for (const c of items) {
       const conflicts = findConflicts(c, items);
-      if (conflicts.length) m.set(c.id, conflicts.length);
+      if (conflicts.length) m.set(c.id, conflicts);
     }
     return m;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2682,20 +2682,28 @@ function ReadinessBadge({ value }: { value: string }) {
   );
 }
 
-function EventChip({ occ, compact, conflictCount, readiness }: {
+function formatConflicts(conflicts: Conflict[] | undefined): string {
+  if (!conflicts || !conflicts.length) return "";
+  return conflicts
+    .map((c) => `${c.other.title} (${c.reason === "both" ? "same room & leader" : c.reason === "room" ? "same room" : "same leader"})`)
+    .join("; ");
+}
+
+function EventChip({ occ, compact, conflicts, readiness }: {
   occ: Occurrence;
   compact?: boolean;
-  conflictCount?: number;
+  conflicts?: Conflict[];
   readiness: ReturnType<typeof scoreEvent>;
 }) {
   const cal = SUB_CALS.find((s) => s.value === occ.sub_calendar)!;
   const gaps = classGaps(occ);
   const ringColor = readiness.level === "ready" ? "bg-emerald-500" : readiness.level === "warning" ? "bg-amber-500" : "bg-destructive";
+  const conflictCount = conflicts?.length ?? 0;
   const titleBits = [
     `${readiness.score}% ready`,
     readiness.missing.length ? `Missing: ${readiness.missing.join(", ")}` : "",
     gaps.length ? `Class needs: ${gaps.join(", ")}` : "",
-    conflictCount ? `${conflictCount} conflict${conflictCount === 1 ? "" : "s"}` : "",
+    conflictCount ? `Conflicts with: ${formatConflicts(conflicts)}` : "",
   ].filter(Boolean).join(" · ");
   return (
     <div
@@ -2724,7 +2732,7 @@ function MonthGrid({
 }: {
   cursor: Date;
   occurrences: Occurrence[];
-  conflictMap: Map<string, number>;
+  conflictMap: Map<string, Conflict[]>;
   onPickDay: (d: Date) => void;
   onPickEvent: (o: Occurrence) => void;
   canEdit: boolean;
@@ -2760,7 +2768,7 @@ function MonthGrid({
               <div className="space-y-0.5 overflow-hidden">
                 {dayEvents.slice(0, 3).map((o, i) => (
                   <div key={`${o.id}-${i}`} onClick={(e) => { e.stopPropagation(); onPickEvent(o); }}>
-                    <EventChip occ={o} conflictCount={conflictMap.get(`${o.id}-${o.occurrence_date.getTime()}`)} readiness={readinessOf(o)} />
+                    <EventChip occ={o} conflicts={conflictMap.get(`${o.id}-${o.occurrence_date.getTime()}`)} readiness={readinessOf(o)} />
                   </div>
                 ))}
                 {dayEvents.length > 3 && (
@@ -2835,7 +2843,7 @@ function ListView({
   onToggleSelect,
 }: {
   occurrences: Occurrence[];
-  conflictMap: Map<string, number>;
+  conflictMap: Map<string, Conflict[]>;
   onPickEvent: (o: Occurrence) => void;
   readinessOf: (occ: Occurrence) => ReturnType<typeof scoreEvent>;
   selectMode?: boolean;
@@ -2888,11 +2896,18 @@ function ListView({
                   const r = readinessOf(o);
                   return <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${readinessColor(r.level)}`} title={r.missing.join(", ") || "Ready"}>{r.score}%</span>;
                 })()}
-                {conflictMap.get(`${o.id}-${o.occurrence_date.getTime()}`) ? (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" /> Conflict
-                  </span>
-                ) : null}
+                {(() => {
+                  const cs = conflictMap.get(`${o.id}-${o.occurrence_date.getTime()}`);
+                  if (!cs || !cs.length) return null;
+                  return (
+                    <span
+                      className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 flex items-center gap-1"
+                      title={`Conflicts with: ${formatConflicts(cs)}`}
+                    >
+                      <AlertTriangle className="w-3 h-3" /> Conflicts with {cs.map((c) => c.other.title).join(", ")}
+                    </span>
+                  );
+                })()}
 
                 {o.pco_registration && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">PCO</span>
