@@ -3045,7 +3045,16 @@ function ListView({
                 {o.readiness && <ReadinessBadge value={o.readiness} />}
                 {(() => {
                   const r = readinessOf(o);
-                  return <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${readinessColor(r.level)}`} title={r.missing.join(", ") || "Ready"}>{r.score}%</span>;
+                  return (
+                    <>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${readinessColor(r.planning.level)}`} title={r.planning.missing.join(", ") || "Planning ready"}>
+                        Plan {r.planning.score}%
+                      </span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${readinessColor(r.comms.level)}`} title={r.comms.missing.join(", ") || "Comms ready"}>
+                        Comms {r.comms.score}%
+                      </span>
+                    </>
+                  );
                 })()}
                 {(() => {
                   const cs = conflictMap.get(`${o.id}-${o.occurrence_date.getTime()}`);
