@@ -726,6 +726,7 @@ function CalendarBody() {
             room_needed: null,
             action_note: null,
             missions_team_needed: false,
+            mission_trip_id: null,
             church_covering: null,
             childcare_needed: false,
             childcare_arranged: false,
