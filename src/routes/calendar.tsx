@@ -84,7 +84,7 @@ import {
 
 import { toast } from "sonner";
 import { useUndoableAction } from "@/lib/use-undoable-action";
-import { scoreEvent, readinessColor } from "@/lib/event-readiness";
+import { scoreEvent, scoreEventSplit, readinessColor, isCommsLabel, type SplitReadiness } from "@/lib/event-readiness";
 import { findConflicts, type ConflictEvent, type Conflict } from "@/lib/event-conflicts";
 import { AlertTriangle } from "lucide-react";
 
@@ -575,7 +575,7 @@ function CalendarBody() {
   const setDoneFn = useServerFn(setChecklistItemDone);
   const eventRoomsMap = useRef<Map<string, string[]>>(new Map());
   const eventRoomFlagsMap = useRef<Map<string, Map<string, { req: boolean; app: boolean }>>>(new Map());
-  const eventChecklistMap = useRef<Map<string, { total: number; done: number }>>(new Map());
+  const eventChecklistMap = useRef<Map<string, { total: number; done: number; commsTotal: number; commsDone: number }>>(new Map());
   const eventAttachmentsMap = useRef<Map<string, string[]>>(new Map());
   const templateStateMap = useRef<Map<string, boolean>>(new Map()); // key: `${event_id}:${item_id}:${YYYY-MM-DD}`
   const undo = useUndoableAction();
@@ -586,7 +586,7 @@ function CalendarBody() {
   const [eventTemplateIds, setEventTemplateIds] = useState<string[]>([]); // attached to current form event
   const [templateStates, setTemplateStates] = useState<Record<string, boolean>>({}); // key: `${item_id}:${YYYY-MM-DD}`
 
-  function readinessFor(occ: Occurrence) {
+  function readinessFor(occ: Occurrence): SplitReadiness {
     const roomIds = eventRoomsMap.current.get(occ.id) ?? [];
     const flagMap = eventRoomFlagsMap.current.get(occ.id) ?? new Map<string, { req: boolean; app: boolean }>();
     const nonOfficeIds = roomIds.filter((id) => {
@@ -601,7 +601,7 @@ function CalendarBody() {
       });
     const has_room =
       roomConfirmed && (roomIds.length > 0 || (occ.room_needed ?? "").trim().length > 0);
-    const adHoc = eventChecklistMap.current.get(occ.id) ?? { total: 0, done: 0 };
+    const adHoc = eventChecklistMap.current.get(occ.id) ?? { total: 0, done: 0, commsTotal: 0, commsDone: 0 };
     const tplIds = eventAttachmentsMap.current.get(occ.id) ?? [];
     const tplItems = allTemplateItems.filter((i) => tplIds.includes(i.template_id));
     const dateKey = format(occ.occurrence_date, "yyyy-MM-dd");
@@ -609,7 +609,7 @@ function CalendarBody() {
     for (const it of tplItems) {
       if (templateStateMap.current.get(`${occ.id}:${it.id}:${dateKey}`)) tplDone++;
     }
-    const r = scoreEvent({
+    const split = scoreEventSplit({
       category: occ.category,
       leader_name: occ.leader_name,
       childcare_needed: occ.childcare_needed,
@@ -619,13 +619,15 @@ function CalendarBody() {
       leader_not_needed: (occ as any).leader_not_needed ?? false,
       checklist_total: adHoc.total + tplItems.length,
       checklist_done: adHoc.done + tplDone,
+      comms_total: adHoc.commsTotal,
+      comms_done: adHoc.commsDone,
     });
     if (occ.missions_team_needed && !(occ as any).mission_trip_id) {
-      r.missing.push("Missions team");
-      r.score = Math.max(0, r.score - 15);
-      r.level = r.score >= 90 ? "ready" : r.score >= 60 ? "warning" : "critical";
+      split.planning.missing.push("Missions team");
+      split.planning.score = Math.max(0, split.planning.score - 15);
+      split.planning.level = split.planning.score >= 90 ? "ready" : split.planning.score >= 60 ? "warning" : "critical";
     }
-    return r;
+    return split;
   }
 
 
@@ -793,12 +795,18 @@ function CalendarBody() {
     // Per-event ad-hoc checklist counts (for readiness scoring everywhere)
     const { data: cli } = await supabase
       .from("event_checklist_items")
-      .select("event_id, done");
-    const cMap = new Map<string, { total: number; done: number }>();
-    for (const row of (cli ?? []) as Array<{ event_id: string; done: boolean }>) {
-      const cur = cMap.get(row.event_id) ?? { total: 0, done: 0 };
-      cur.total += 1;
-      if (row.done) cur.done += 1;
+      .select("event_id, done, label");
+    const cMap = new Map<string, { total: number; done: number; commsTotal: number; commsDone: number }>();
+    for (const row of (cli ?? []) as Array<{ event_id: string; done: boolean; label: string | null }>) {
+      const cur = cMap.get(row.event_id) ?? { total: 0, done: 0, commsTotal: 0, commsDone: 0 };
+      const isComms = isCommsLabel(row.label);
+      if (isComms) {
+        cur.commsTotal += 1;
+        if (row.done) cur.commsDone += 1;
+      } else {
+        cur.total += 1;
+        if (row.done) cur.done += 1;
+      }
       cMap.set(row.event_id, cur);
     }
     eventChecklistMap.current = cMap;
@@ -1783,7 +1791,11 @@ function CalendarBody() {
                  });
                  const roomConfirmed = nonOfficeIds.length === 0 || nonOfficeIds.every((id) => roomFlags[id]?.req && roomFlags[id]?.app);
                  const has_room = roomConfirmed && (form.room_ids.length > 0 || form.room_needed.trim().length > 0);
-                 const r = scoreEvent({
+                 const commsTotal = checklist.filter((i) => isCommsLabel(i.label)).length;
+                 const commsDone = checklist.filter((i) => isCommsLabel(i.label) && i.done).length;
+                 const logisticsTotal = checklist.length - commsTotal + tplTotal;
+                 const logisticsDone = checklist.filter((i) => !isCommsLabel(i.label) && i.done).length + tplDone;
+                 const r = scoreEventSplit({
                    category: form.category,
                    leader_name: form.leader_name,
                    childcare_needed: form.childcare_needed,
@@ -1791,14 +1803,21 @@ function CalendarBody() {
                    has_room,
                    room_not_needed: form.room_not_needed,
                    leader_not_needed: form.leader_not_needed,
-                   checklist_total: checklist.length + tplTotal,
-                   checklist_done: checklist.filter((i) => i.done).length + tplDone,
+                   checklist_total: logisticsTotal,
+                   checklist_done: logisticsDone,
+                   comms_total: commsTotal,
+                   comms_done: commsDone,
                  });
-                return (
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${readinessColor(r.level)}`} title={r.missing.join(", ") || "Ready"}>
-                    {r.score}% {r.level === "ready" ? "ready" : r.missing[0] ? `· need ${r.missing[0].toLowerCase()}` : ""}
-                  </span>
-                );
+                 return (
+                   <span className="flex items-center gap-1.5">
+                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${readinessColor(r.planning.level)}`} title={r.planning.missing.join(", ") || "Planning ready"}>
+                       Plan {r.planning.score}%
+                     </span>
+                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${readinessColor(r.comms.level)}`} title={r.comms.missing.join(", ") || "Comms ready"}>
+                       Comms {r.comms.score}%
+                     </span>
+                   </span>
+                 );
               })()}
             </DialogTitle>
           </DialogHeader>
@@ -2833,15 +2852,17 @@ function EventChip({ occ, compact, conflicts, readiness }: {
   occ: Occurrence;
   compact?: boolean;
   conflicts?: Conflict[];
-  readiness: ReturnType<typeof scoreEvent>;
+  readiness: SplitReadiness;
 }) {
   const cal = SUB_CALS.find((s) => s.value === occ.sub_calendar)!;
   const gaps = classGaps(occ);
-  const ringColor = readiness.level === "ready" ? "bg-emerald-500" : readiness.level === "warning" ? "bg-amber-500" : "bg-destructive";
+  const planDot = readiness.planning.level === "ready" ? "bg-emerald-500" : readiness.planning.level === "warning" ? "bg-amber-500" : "bg-destructive";
+  const commsDot = readiness.comms.level === "ready" ? "bg-emerald-500" : readiness.comms.level === "warning" ? "bg-amber-500" : "bg-destructive";
   const conflictCount = conflicts?.length ?? 0;
   const titleBits = [
-    `${readiness.score}% ready`,
-    readiness.missing.length ? `Missing: ${readiness.missing.join(", ")}` : "",
+    `Planning ${readiness.planning.score}% · Comms ${readiness.comms.score}%`,
+    readiness.planning.missing.length ? `Planning needs: ${readiness.planning.missing.join(", ")}` : "",
+    readiness.comms.missing.length ? `Comms needs: ${readiness.comms.missing.join(", ")}` : "",
     gaps.length ? `Class needs: ${gaps.join(", ")}` : "",
     conflictCount ? `Conflicts with: ${formatConflicts(conflicts)}` : "",
   ].filter(Boolean).join(" · ");
@@ -2854,7 +2875,8 @@ function EventChip({ occ, compact, conflicts, readiness }: {
       }}
       title={titleBits || undefined}
     >
-      <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${ringColor}`} />
+      <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${planDot}`} title="Planning readiness" />
+      <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${commsDot}`} title="Communications readiness" />
       {conflictCount ? <AlertTriangle className="w-2.5 h-2.5 text-amber-500 shrink-0" /> : null}
       <span className="truncate">
         {!occ.all_day && !occ.is_span_continuation && <>{format(occ.occurrence_date, "h:mm")} </>}
@@ -2876,7 +2898,7 @@ function MonthGrid({
   onPickDay: (d: Date) => void;
   onPickEvent: (o: Occurrence) => void;
   canEdit: boolean;
-  readinessOf: (occ: Occurrence) => ReturnType<typeof scoreEvent>;
+  readinessOf: (occ: Occurrence) => SplitReadiness;
 }) {
   const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 0 });
   const end = endOfWeek(endOfMonth(cursor), { weekStartsOn: 0 });
@@ -2985,7 +3007,7 @@ function ListView({
   occurrences: Occurrence[];
   conflictMap: Map<string, Conflict[]>;
   onPickEvent: (o: Occurrence) => void;
-  readinessOf: (occ: Occurrence) => ReturnType<typeof scoreEvent>;
+  readinessOf: (occ: Occurrence) => SplitReadiness;
   selectMode?: boolean;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
@@ -3034,7 +3056,16 @@ function ListView({
                 {o.readiness && <ReadinessBadge value={o.readiness} />}
                 {(() => {
                   const r = readinessOf(o);
-                  return <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${readinessColor(r.level)}`} title={r.missing.join(", ") || "Ready"}>{r.score}%</span>;
+                  return (
+                    <>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${readinessColor(r.planning.level)}`} title={r.planning.missing.join(", ") || "Planning ready"}>
+                        Plan {r.planning.score}%
+                      </span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${readinessColor(r.comms.level)}`} title={r.comms.missing.join(", ") || "Comms ready"}>
+                        Comms {r.comms.score}%
+                      </span>
+                    </>
+                  );
                 })()}
                 {(() => {
                   const cs = conflictMap.get(`${o.id}-${o.occurrence_date.getTime()}`);
