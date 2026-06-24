@@ -1,0 +1,1 @@
+ALTER TABLE public.calendar_events ADD COLUMN IF NOT EXISTS multi_day_mode text NOT NULL DEFAULT 'continuous' CHECK (multi_day_mode IN ('continuous','daily_hours'));
