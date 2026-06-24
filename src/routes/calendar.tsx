@@ -295,7 +295,7 @@ const emptyForm = (start = ""): FormState => ({
 function buildRRule(f: FormState, startDate: Date): string | null {
   if (!f.recurs) return null;
   const freqMap: Record<string, Frequency> = {
-    WEEKLY: RRule.WEEKLY, MONTHLY: RRule.MONTHLY, YEARLY: RRule.YEARLY,
+    DAILY: RRule.DAILY, WEEKLY: RRule.WEEKLY, MONTHLY: RRule.MONTHLY, YEARLY: RRule.YEARLY,
   };
   const wdMap: Record<string, number> = {
     SU: RRule.SU.weekday, MO: RRule.MO.weekday, TU: RRule.TU.weekday,
@@ -306,9 +306,16 @@ function buildRRule(f: FormState, startDate: Date): string | null {
     interval: f.interval || 1,
     dtstart: startDate,
   };
-  if (f.byweekday.length) opts.byweekday = f.byweekday.map((w) => wdMap[w]);
-  if (f.bysetpos) opts.bysetpos = [parseInt(f.bysetpos, 10)];
-  if (f.recurrence_end_date) opts.until = new Date(f.recurrence_end_date + "T23:59:59");
+  if (f.byweekday.length && (f.freq === "WEEKLY" || f.freq === "MONTHLY")) {
+    opts.byweekday = f.byweekday.map((w) => wdMap[w]);
+  }
+  if (f.bysetpos && f.freq === "MONTHLY") opts.bysetpos = [parseInt(f.bysetpos, 10)];
+  if (f.end_mode === "on" && f.recurrence_end_date) {
+    opts.until = new Date(f.recurrence_end_date + "T23:59:59");
+  } else if (f.end_mode === "after" && f.count) {
+    const n = parseInt(f.count, 10);
+    if (n > 0) opts.count = n;
+  }
   return new RRule(opts).toString();
 }
 
