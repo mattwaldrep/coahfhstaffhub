@@ -772,6 +772,7 @@ function CalendarBody() {
             room_approval_received: false,
             class_series_id: null,
             multi_day_mode: "continuous",
+            day_of_plan: null,
           });
         }
         cur.setDate(cur.getDate() + 1);
