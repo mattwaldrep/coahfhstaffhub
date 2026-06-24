@@ -236,11 +236,13 @@ type FormState = {
   description: string;
   pco_registration: boolean;
   recurs: boolean;
-  freq: "WEEKLY" | "MONTHLY" | "YEARLY";
+  freq: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
   interval: number;
   byweekday: string[];
   bysetpos: string;
   recurrence_end_date: string;
+  end_mode: "never" | "on" | "after";
+  count: string;
   other_listings: string[];
   social_ads: boolean;
   room_needed: string;
