@@ -2926,7 +2926,7 @@ function ListView({
             </div>
             <div className="text-sm text-muted-foreground shrink-0 text-right">
               <div>{format(o.occurrence_date, "EEE, MMM d")}</div>
-              <div className="text-xs">{o.all_day ? "All day" : format(o.occurrence_date, "p")}</div>
+              <div className="text-xs">{o.all_day || o.is_span_continuation ? "All day" : format(o.occurrence_date, "p")}</div>
             </div>
           </div>
 
