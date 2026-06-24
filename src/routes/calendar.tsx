@@ -2768,7 +2768,7 @@ function MonthGrid({
               <div className="space-y-0.5 overflow-hidden">
                 {dayEvents.slice(0, 3).map((o, i) => (
                   <div key={`${o.id}-${i}`} onClick={(e) => { e.stopPropagation(); onPickEvent(o); }}>
-                    <EventChip occ={o} conflictCount={conflictMap.get(`${o.id}-${o.occurrence_date.getTime()}`)} readiness={readinessOf(o)} />
+                    <EventChip occ={o} conflicts={conflictMap.get(`${o.id}-${o.occurrence_date.getTime()}`)} readiness={readinessOf(o)} />
                   </div>
                 ))}
                 {dayEvents.length > 3 && (
