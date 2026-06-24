@@ -575,7 +575,7 @@ function CalendarBody() {
   const setDoneFn = useServerFn(setChecklistItemDone);
   const eventRoomsMap = useRef<Map<string, string[]>>(new Map());
   const eventRoomFlagsMap = useRef<Map<string, Map<string, { req: boolean; app: boolean }>>>(new Map());
-  const eventChecklistMap = useRef<Map<string, { total: number; done: number }>>(new Map());
+  const eventChecklistMap = useRef<Map<string, { total: number; done: number; commsTotal: number; commsDone: number }>>(new Map());
   const eventAttachmentsMap = useRef<Map<string, string[]>>(new Map());
   const templateStateMap = useRef<Map<string, boolean>>(new Map()); // key: `${event_id}:${item_id}:${YYYY-MM-DD}`
   const undo = useUndoableAction();
