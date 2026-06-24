@@ -199,6 +199,56 @@ export async function listFieldOptions(field_definition_id: string): Promise<str
   return out.map((o) => o.value).filter((v) => (seen.has(v) ? false : (seen.add(v), true)));
 }
 
+let noteCategoryCache: { at: number; map: Record<string, string> } | null = null;
+const NOTE_CAT_CACHE_MS = 5 * 60_000;
+
+async function getNoteCategoryIdByName(name: string): Promise<string | null> {
+  const target = name.trim().toLowerCase();
+  if (!noteCategoryCache || Date.now() - noteCategoryCache.at > NOTE_CAT_CACHE_MS) {
+    const map: Record<string, string> = {};
+    let next: string | null = `/note_categories?per_page=100`;
+    while (next) {
+      const json: any = await pcoFetch(next);
+      for (const c of json.data ?? []) {
+        const n = String(c.attributes?.name ?? "").trim().toLowerCase();
+        if (n) map[n] = String(c.id);
+      }
+      next = json.links?.next ?? null;
+    }
+    noteCategoryCache = { at: Date.now(), map };
+  }
+  return noteCategoryCache.map[target] ?? null;
+}
+
+export async function createPersonNote(opts: {
+  person_id: string;
+  body: string;
+  category_name?: string;
+}): Promise<{ ok: boolean; id?: string; error?: string }> {
+  try {
+    const categoryName = opts.category_name ?? "Shepherding Notes";
+    const categoryId = await getNoteCategoryIdByName(categoryName);
+    if (!categoryId) {
+      return { ok: false, error: `PCO note category "${categoryName}" not found` };
+    }
+    const json: any = await pcoFetch(`/people/${opts.person_id}/notes`, {
+      method: "POST",
+      body: JSON.stringify({
+        data: {
+          type: "Note",
+          attributes: { note: opts.body },
+          relationships: {
+            note_category: { data: { type: "NoteCategory", id: categoryId } },
+          },
+        },
+      }),
+    });
+    return { ok: true, id: String(json?.data?.id ?? "") };
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Failed to create PCO note" };
+  }
+}
+
 export async function pcoPing(): Promise<{ ok: boolean; me?: string; error?: string }> {
   try {
     const json: any = await pcoFetch(`/me`);

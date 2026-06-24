@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
 import { supabaseAdmin } from "./admin.server";
-import { fetchCareList, setFieldDatum, pcoPing, invalidateCareListCache, listFieldDefinitions, listFieldOptions } from "@/server/pco.server";
+import { fetchCareList, setFieldDatum, pcoPing, invalidateCareListCache, listFieldDefinitions, listFieldOptions, createPersonNote } from "@/server/pco.server";
 
 async function getTier(supabase: any, userId: string): Promise<"elder" | "candidate" | null> {
   const { data } = await supabase
@@ -185,6 +185,29 @@ export const addPcoNote = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const tier = await assertAccess(context.supabase, context.userId);
     if (data.executive_session && tier !== "elder") throw new Error("Forbidden");
+
+    // Push to PCO under "Shepherding Notes" category (elder-only in PCO).
+    // Best-effort: if PCO push fails, we still record locally and surface a warning.
+    let pcoWarning: string | null = null;
+    try {
+      const { data: prof } = await supabaseAdmin
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", context.userId)
+        .maybeSingle();
+      const author = (prof?.full_name || prof?.email || "Staff Hub user").trim();
+      const stamp = new Date().toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
+      const prefix = `[Staff Hub — ${author} • ${stamp}${data.executive_session ? " • Executive session" : ""}]`;
+      const result = await createPersonNote({
+        person_id: data.pco_person_id,
+        body: `${prefix}\n\n${data.body}`,
+        category_name: "Shepherding Notes",
+      });
+      if (!result.ok) pcoWarning = result.error ?? "Failed to write PCO note";
+    } catch (e: any) {
+      pcoWarning = e?.message ?? "Failed to write PCO note";
+    }
+
     const { error } = await supabaseAdmin.from("pco_pastoral_notes").insert({
       pco_person_id: data.pco_person_id,
       body: data.body,
@@ -193,7 +216,7 @@ export const addPcoNote = createServerFn({ method: "POST" })
       author_id: context.userId,
     });
     if (error) throw new Error(error.message);
-    return { ok: true };
+    return { ok: true, pco_warning: pcoWarning };
   });
 
 export const deletePcoNote = createServerFn({ method: "POST" })
