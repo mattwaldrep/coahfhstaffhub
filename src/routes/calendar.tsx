@@ -1340,6 +1340,141 @@ function CalendarBody() {
     loadChecklist(form.id!);
   }
 
+  function renderChecklistRow(item: ChecklistItem) {
+    const assignee = assignableUsers.find((u) => u.id === item.assignee_id);
+    const assigneeLabel = assignee?.full_name || assignee?.email || null;
+    return (
+      <div key={item.id} className="flex items-center gap-2 group rounded-md border border-border/60 px-2 py-1.5">
+        <Checkbox checked={item.done} onCheckedChange={() => toggleChecklistItem(item)} />
+        <div className="flex-1 min-w-0">
+          {editingChecklistId === item.id ? (
+            <Input
+              autoFocus
+              value={editingChecklistLabel}
+              onChange={(e) => setEditingChecklistLabel(e.target.value)}
+              onBlur={async () => {
+                const next = editingChecklistLabel.trim();
+                setEditingChecklistId(null);
+                if (!next || next === item.label) return;
+                const { error } = await supabase
+                  .from("event_checklist_items")
+                  .update({ label: next })
+                  .eq("id", item.id);
+                if (error) { toast.error(error.message); return; }
+                if (item.action_item_id) {
+                  await supabase
+                    .from("action_items")
+                    .update({ title: next })
+                    .eq("id", item.action_item_id);
+                }
+                if (form.id) loadChecklist(form.id);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { e.preventDefault(); (e.target as HTMLInputElement).blur(); }
+                if (e.key === "Escape") { setEditingChecklistId(null); }
+              }}
+              className="h-7 text-sm"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => { setEditingChecklistId(item.id); setEditingChecklistLabel(item.label); }}
+              className={`block w-full text-left text-sm truncate hover:text-foreground ${item.done ? "line-through text-muted-foreground" : ""}`}
+              title="Click to edit"
+            >
+              {item.label}
+            </button>
+          )}
+          {(assigneeLabel || item.due_date || item.action_item_id) && (
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+              {assigneeLabel && <span>👤 {assigneeLabel}</span>}
+              {item.due_date && <span>📅 {item.due_date}</span>}
+              {item.action_item_id && (
+                <span title="Synced as a task" className="inline-flex items-center gap-0.5">
+                  <CheckCircle2 className="w-3 h-3" /> task
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+              title={item.assignee_id ? "Reassign" : "Assign to user"}
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-2 space-y-2" align="end">
+            <div className="text-xs font-medium px-1">Assign task</div>
+            <Select
+              value={item.assignee_id ?? ""}
+              onValueChange={async (uid) => {
+                try {
+                  await assignFn({ data: { checklistItemId: item.id, assigneeId: uid, dueDate: item.due_date } });
+                  toast.success("Assigned");
+                  loadChecklist(form.id!);
+                } catch (e: any) { toast.error(e.message ?? "Failed"); }
+              }}
+            >
+              <SelectTrigger className="h-8"><SelectValue placeholder="Pick a user…" /></SelectTrigger>
+              <SelectContent>
+                {assignableUsers.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              type="date"
+              value={item.due_date ?? ""}
+              onChange={async (e) => {
+                const v = e.target.value || null;
+                if (!item.assignee_id) {
+                  await supabase.from("event_checklist_items").update({ due_date: v }).eq("id", item.id);
+                  loadChecklist(form.id!);
+                  return;
+                }
+                try {
+                  await assignFn({ data: { checklistItemId: item.id, assigneeId: item.assignee_id, dueDate: v } });
+                  loadChecklist(form.id!);
+                } catch (err: any) { toast.error(err.message ?? "Failed"); }
+              }}
+              className="h-8"
+            />
+            {item.action_item_id && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start text-muted-foreground"
+                onClick={async () => {
+                  try {
+                    await unassignFn({ data: { checklistItemId: item.id } });
+                    toast.success("Task removed");
+                    loadChecklist(form.id!);
+                  } catch (e: any) { toast.error(e.message ?? "Failed"); }
+                }}
+              >
+                <UserMinus className="w-3.5 h-3.5 mr-1.5" /> Unassign
+              </Button>
+            )}
+            <div className="text-[10px] text-muted-foreground px-1">
+              Task title includes the event name and date so it makes sense in Google Tasks.
+            </div>
+          </PopoverContent>
+        </Popover>
+        <button type="button" onClick={() => deleteChecklistItem(item.id)}
+          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    );
+  }
+
+
+
   function currentOccurrenceDate(): Date {
     if (editingOccurrence) return editingOccurrence;
     if (form.start_at) {
@@ -2535,7 +2670,14 @@ function CalendarBody() {
                     );
                   })}
                 </div>
+                {form.id && checklist.some((i) => isCommsLabel(i.label)) && (
+                  <div className="space-y-1 pt-2 border-t border-border/60">
+                    <Label className="text-xs">Comms checklist</Label>
+                    {checklist.filter((i) => isCommsLabel(i.label)).map(renderChecklistRow)}
+                  </div>
+                )}
               </div>
+
 
               {form.id && (
                 <div className="space-y-2 pt-2 border-t border-border/60">
@@ -2544,139 +2686,9 @@ function CalendarBody() {
                     <ReadinessBadge value={deriveReadiness(checklist, form.readiness)} />
                   </div>
                   <div className="space-y-1">
-                    {checklist.map((item) => {
-                      const assignee = assignableUsers.find((u) => u.id === item.assignee_id);
-                      const assigneeLabel = assignee?.full_name || assignee?.email || null;
-                      return (
-                        <div key={item.id} className="flex items-center gap-2 group rounded-md border border-border/60 px-2 py-1.5">
-                          <Checkbox checked={item.done} onCheckedChange={() => toggleChecklistItem(item)} />
-                          <div className="flex-1 min-w-0">
-                            {editingChecklistId === item.id ? (
-                              <Input
-                                autoFocus
-                                value={editingChecklistLabel}
-                                onChange={(e) => setEditingChecklistLabel(e.target.value)}
-                                onBlur={async () => {
-                                  const next = editingChecklistLabel.trim();
-                                  setEditingChecklistId(null);
-                                  if (!next || next === item.label) return;
-                                  const { error } = await supabase
-                                    .from("event_checklist_items")
-                                    .update({ label: next })
-                                    .eq("id", item.id);
-                                  if (error) { toast.error(error.message); return; }
-                                  if (item.action_item_id) {
-                                    await supabase
-                                      .from("action_items")
-                                      .update({ title: next })
-                                      .eq("id", item.action_item_id);
-                                  }
-                                  if (form.id) loadChecklist(form.id);
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") { e.preventDefault(); (e.target as HTMLInputElement).blur(); }
-                                  if (e.key === "Escape") { setEditingChecklistId(null); }
-                                }}
-                                className="h-7 text-sm"
-                              />
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => { setEditingChecklistId(item.id); setEditingChecklistLabel(item.label); }}
-                                className={`block w-full text-left text-sm truncate hover:text-foreground ${item.done ? "line-through text-muted-foreground" : ""}`}
-                                title="Click to edit"
-                              >
-                                {item.label}
-                              </button>
-                            )}
-                            {(assigneeLabel || item.due_date || item.action_item_id) && (
-                              <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
-                                {assigneeLabel && <span>👤 {assigneeLabel}</span>}
-                                {item.due_date && <span>📅 {item.due_date}</span>}
-                                {item.action_item_id && (
-                                  <span title="Synced as a task" className="inline-flex items-center gap-0.5">
-                                    <CheckCircle2 className="w-3 h-3" /> task
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <button
-                                type="button"
-                                className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
-                                title={item.assignee_id ? "Reassign" : "Assign to user"}
-                              >
-                                <UserPlus className="w-3.5 h-3.5" />
-                              </button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-64 p-2 space-y-2" align="end">
-                              <div className="text-xs font-medium px-1">Assign task</div>
-                              <Select
-                                value={item.assignee_id ?? ""}
-                                onValueChange={async (uid) => {
-                                  try {
-                                    await assignFn({ data: { checklistItemId: item.id, assigneeId: uid, dueDate: item.due_date } });
-                                    toast.success("Assigned");
-                                    loadChecklist(form.id!);
-                                  } catch (e: any) { toast.error(e.message ?? "Failed"); }
-                                }}
-                              >
-                                <SelectTrigger className="h-8"><SelectValue placeholder="Pick a user…" /></SelectTrigger>
-                                <SelectContent>
-                                  {assignableUsers.map((u) => (
-                                    <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <Input
-                                type="date"
-                                value={item.due_date ?? ""}
-                                onChange={async (e) => {
-                                  const v = e.target.value || null;
-                                  if (!item.assignee_id) {
-                                    await supabase.from("event_checklist_items").update({ due_date: v }).eq("id", item.id);
-                                    loadChecklist(form.id!);
-                                    return;
-                                  }
-                                  try {
-                                    await assignFn({ data: { checklistItemId: item.id, assigneeId: item.assignee_id, dueDate: v } });
-                                    loadChecklist(form.id!);
-                                  } catch (err: any) { toast.error(err.message ?? "Failed"); }
-                                }}
-                                className="h-8"
-                              />
-                              {item.action_item_id && (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="w-full justify-start text-muted-foreground"
-                                  onClick={async () => {
-                                    try {
-                                      await unassignFn({ data: { checklistItemId: item.id } });
-                                      toast.success("Task removed");
-                                      loadChecklist(form.id!);
-                                    } catch (e: any) { toast.error(e.message ?? "Failed"); }
-                                  }}
-                                >
-                                  <UserMinus className="w-3.5 h-3.5 mr-1.5" /> Unassign
-                                </Button>
-                              )}
-                              <div className="text-[10px] text-muted-foreground px-1">
-                                Task title includes the event name and date so it makes sense in Google Tasks.
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                          <button type="button" onClick={() => deleteChecklistItem(item.id)}
-                            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground">
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      );
-                    })}
+                    {checklist.filter((i) => !isCommsLabel(i.label)).map(renderChecklistRow)}
                   </div>
+
 
                   <div className="flex gap-2">
                     <Input
