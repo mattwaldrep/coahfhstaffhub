@@ -815,6 +815,7 @@ function CalendarBody() {
       recurs: !!ev.rrule,
       freq, interval, byweekday, bysetpos,
       recurrence_end_date: ev.recurrence_end_date ?? "",
+      end_mode, count,
       other_listings: ev.other_listings ?? [],
       social_ads: (ev as any).social_ads ?? false,
       room_needed: ev.room_needed ?? "",
