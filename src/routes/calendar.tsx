@@ -240,6 +240,10 @@ type FormState = {
   interval: number;
   byweekday: string[];
   bysetpos: string;
+  bymonthday: string[];
+  bymonth: string[];
+  monthly_mode: "dom" | "nth";
+  yearly_mode: "date" | "nth";
   recurrence_end_date: string;
   end_mode: "never" | "on" | "after";
   count: string;
@@ -274,6 +278,10 @@ const emptyForm = (start = ""): FormState => ({
   interval: 1,
   byweekday: [],
   bysetpos: "",
+  bymonthday: [],
+  bymonth: [],
+  monthly_mode: "dom",
+  yearly_mode: "date",
   recurrence_end_date: "",
   end_mode: "never",
   count: "",
@@ -306,11 +314,28 @@ function buildRRule(f: FormState, startDate: Date): string | null {
     interval: f.interval || 1,
     dtstart: startDate,
   };
-  if (f.byweekday.length && (f.freq === "WEEKLY" || f.freq === "MONTHLY" || f.freq === "YEARLY")) {
+  // WEEKLY: byweekday selects days
+  if (f.freq === "WEEKLY" && f.byweekday.length) {
     opts.byweekday = f.byweekday.map((w) => wdMap[w]);
   }
-  if (f.bysetpos && (f.freq === "MONTHLY" || f.freq === "YEARLY")) {
-    opts.bysetpos = [parseInt(f.bysetpos, 10)];
+  // MONTHLY: either day-of-month list, or nth weekday
+  if (f.freq === "MONTHLY") {
+    if (f.monthly_mode === "nth") {
+      if (f.byweekday.length) opts.byweekday = f.byweekday.map((w) => wdMap[w]);
+      if (f.bysetpos) opts.bysetpos = [parseInt(f.bysetpos, 10)];
+    } else if (f.bymonthday.length) {
+      opts.bymonthday = f.bymonthday.map((d) => parseInt(d, 10));
+    }
+  }
+  // YEARLY: optional month list + (date OR nth weekday)
+  if (f.freq === "YEARLY") {
+    if (f.bymonth.length) opts.bymonth = f.bymonth.map((m) => parseInt(m, 10));
+    if (f.yearly_mode === "nth") {
+      if (f.byweekday.length) opts.byweekday = f.byweekday.map((w) => wdMap[w]);
+      if (f.bysetpos) opts.bysetpos = [parseInt(f.bysetpos, 10)];
+    } else if (f.bymonthday.length) {
+      opts.bymonthday = f.bymonthday.map((d) => parseInt(d, 10));
+    }
   }
   if (f.end_mode === "on" && f.recurrence_end_date) {
     opts.until = new Date(f.recurrence_end_date + "T23:59:59");
@@ -776,6 +801,10 @@ function CalendarBody() {
     let interval = 1;
     let byweekday: string[] = [];
     let bysetpos = "";
+    let bymonthday: string[] = [];
+    let bymonth: string[] = [];
+    let monthly_mode: FormState["monthly_mode"] = "dom";
+    let yearly_mode: FormState["yearly_mode"] = "date";
     let end_mode: FormState["end_mode"] = "never";
     let count = "";
     if (ev.rrule) {
@@ -797,6 +826,16 @@ function CalendarBody() {
           const arr = Array.isArray(o.bysetpos) ? o.bysetpos : [o.bysetpos];
           bysetpos = String(arr[0]);
         }
+        if (o.bymonthday) {
+          const arr = Array.isArray(o.bymonthday) ? o.bymonthday : [o.bymonthday];
+          bymonthday = arr.map((d) => String(d));
+        }
+        if (o.bymonth) {
+          const arr = Array.isArray(o.bymonth) ? o.bymonth : [o.bymonth];
+          bymonth = arr.map((m) => String(m));
+        }
+        if (freq === "MONTHLY") monthly_mode = bysetpos ? "nth" : "dom";
+        if (freq === "YEARLY") yearly_mode = bysetpos ? "nth" : "date";
         if (o.count) { end_mode = "after"; count = String(o.count); }
         else if (o.until || ev.recurrence_end_date) { end_mode = "on"; }
       } catch { /* ignore */ }
@@ -816,6 +855,7 @@ function CalendarBody() {
       pco_registration: ev.pco_registration,
       recurs: !!ev.rrule,
       freq, interval, byweekday, bysetpos,
+      bymonthday, bymonth, monthly_mode, yearly_mode,
       recurrence_end_date: ev.recurrence_end_date ?? "",
       end_mode, count,
       other_listings: ev.other_listings ?? [],
@@ -2034,79 +2074,205 @@ function CalendarBody() {
                   </div>
 
                   {form.freq === "WEEKLY" && (
-                    <div className="flex gap-1">
-                      {WEEKDAYS.map((w) => {
-                        const on = form.byweekday.includes(w.v);
-                        return (
-                          <button
-                            key={w.v} type="button"
-                            onClick={() => setForm({
-                              ...form,
-                              byweekday: on
-                                ? form.byweekday.filter((x) => x !== w.v)
-                                : [...form.byweekday, w.v],
-                            })}
-                            className={`w-8 h-8 text-xs rounded-full border ${
-                              on ? "bg-primary text-primary-foreground border-primary" : "border-border"
-                            }`}
-                          >{w.label}</button>
-                        );
-                      })}
+                    <div className="space-y-2">
+                      <div className="flex gap-1">
+                        {WEEKDAYS.map((w) => {
+                          const on = form.byweekday.includes(w.v);
+                          return (
+                            <button
+                              key={w.v} type="button"
+                              onClick={() => setForm({
+                                ...form,
+                                byweekday: on
+                                  ? form.byweekday.filter((x) => x !== w.v)
+                                  : [...form.byweekday, w.v],
+                              })}
+                              className={`w-8 h-8 text-xs rounded-full border ${
+                                on ? "bg-primary text-primary-foreground border-primary" : "border-border"
+                              }`}
+                            >{w.label}</button>
+                          );
+                        })}
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        <button
+                          type="button"
+                          className="text-xs px-2 py-1 rounded-full border border-border hover:bg-muted"
+                          onClick={() => setForm({ ...form, byweekday: ["MO","TU","WE","TH","FR"] })}
+                        >Weekdays</button>
+                        <button
+                          type="button"
+                          className="text-xs px-2 py-1 rounded-full border border-border hover:bg-muted"
+                          onClick={() => setForm({ ...form, byweekday: ["SA","SU"] })}
+                        >Weekends</button>
+                        <button
+                          type="button"
+                          className="text-xs px-2 py-1 rounded-full border border-border hover:bg-muted"
+                          onClick={() => setForm({ ...form, byweekday: [] })}
+                        >Clear</button>
+                      </div>
                     </div>
                   )}
 
-                  {(form.freq === "MONTHLY" || form.freq === "YEARLY") && (
-                    <div className="space-y-2 text-sm">
-                      <div className="text-xs text-muted-foreground">
-                        Example: pick "Second" + tap Sun for the 2nd Sunday. Select multiple days for patterns like "2nd Tue & 2nd Thu".
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Select
-                          value={form.bysetpos || "_dom"}
-                          onValueChange={(v) => setForm({
-                            ...form,
-                            bysetpos: v === "_dom" ? "" : v,
-                            byweekday: v === "_dom" ? [] : form.byweekday,
-                          })}
-                        >
-                          <SelectTrigger className="h-8 w-[12rem]"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="_dom">
-                              {form.freq === "MONTHLY"
-                                ? `On day ${format(new Date(form.start_at || Date.now()), "d")}`
-                                : `On ${format(new Date(form.start_at || Date.now()), "MMM d")}`}
-                            </SelectItem>
-                            <SelectItem value="1">First</SelectItem>
-                            <SelectItem value="2">Second</SelectItem>
-                            <SelectItem value="3">Third</SelectItem>
-                            <SelectItem value="4">Fourth</SelectItem>
-                            <SelectItem value="-1">Last</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      {form.bysetpos && (
-                        <div className="flex gap-1">
-                          {WEEKDAYS.map((w) => {
-                            const on = form.byweekday.includes(w.v);
-                            return (
-                              <button
-                                key={w.v} type="button"
-                                onClick={() => setForm({
-                                  ...form,
-                                  byweekday: on
-                                    ? form.byweekday.filter((x) => x !== w.v)
-                                    : [...form.byweekday, w.v],
-                                })}
-                                className={`w-8 h-8 text-xs rounded-full border ${
-                                  on ? "bg-primary text-primary-foreground border-primary" : "border-border"
-                                }`}
-                              >{w.label}</button>
-                            );
-                          })}
+                  {(form.freq === "MONTHLY" || form.freq === "YEARLY") && (() => {
+                    const isMonthly = form.freq === "MONTHLY";
+                    const mode = isMonthly ? form.monthly_mode : form.yearly_mode;
+                    const setMode = (m: "dom" | "nth" | "date") => {
+                      if (isMonthly) {
+                        setForm({
+                          ...form,
+                          monthly_mode: m === "nth" ? "nth" : "dom",
+                          bysetpos: m === "nth" ? form.bysetpos : "",
+                          byweekday: m === "nth" ? form.byweekday : [],
+                          bymonthday: m === "nth" ? [] : form.bymonthday,
+                        });
+                      } else {
+                        setForm({
+                          ...form,
+                          yearly_mode: m === "nth" ? "nth" : "date",
+                          bysetpos: m === "nth" ? form.bysetpos : "",
+                          byweekday: m === "nth" ? form.byweekday : [],
+                          bymonthday: m === "nth" ? [] : form.bymonthday,
+                        });
+                      }
+                    };
+                    const domLabel = isMonthly ? "Specific day(s) of month" : "Specific date(s)";
+                    return (
+                      <div className="space-y-3 text-sm">
+                        <div className="flex flex-wrap gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setMode(isMonthly ? "dom" : "date")}
+                            className={`text-xs px-2 py-1 rounded-full border ${
+                              mode !== "nth" ? "bg-primary text-primary-foreground border-primary" : "border-border"
+                            }`}
+                          >{domLabel}</button>
+                          <button
+                            type="button"
+                            onClick={() => setMode("nth")}
+                            className={`text-xs px-2 py-1 rounded-full border ${
+                              mode === "nth" ? "bg-primary text-primary-foreground border-primary" : "border-border"
+                            }`}
+                          >Nth weekday</button>
                         </div>
-                      )}
-                    </div>
-                  )}
+
+                        {!isMonthly && (
+                          <div className="space-y-1">
+                            <Label className="text-xs">In month(s) — leave empty for the start month</Label>
+                            <div className="flex flex-wrap gap-1">
+                              {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => {
+                                const v = String(i + 1);
+                                const on = form.bymonth.includes(v);
+                                return (
+                                  <button
+                                    key={v} type="button"
+                                    onClick={() => setForm({
+                                      ...form,
+                                      bymonth: on
+                                        ? form.bymonth.filter((x) => x !== v)
+                                        : [...form.bymonth, v],
+                                    })}
+                                    className={`text-xs px-2 py-1 rounded-md border ${
+                                      on ? "bg-primary text-primary-foreground border-primary" : "border-border"
+                                    }`}
+                                  >{m}</button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {mode !== "nth" && (
+                          <div className="space-y-1">
+                            <Label className="text-xs">
+                              Day of month {isMonthly ? "" : "(within selected months)"} — pick one or more
+                            </Label>
+                            <div className="grid grid-cols-7 gap-1">
+                              {Array.from({ length: 31 }, (_, i) => String(i + 1)).map((d) => {
+                                const on = form.bymonthday.includes(d);
+                                return (
+                                  <button
+                                    key={d} type="button"
+                                    onClick={() => setForm({
+                                      ...form,
+                                      bymonthday: on
+                                        ? form.bymonthday.filter((x) => x !== d)
+                                        : [...form.bymonthday, d],
+                                    })}
+                                    className={`h-7 text-xs rounded border ${
+                                      on ? "bg-primary text-primary-foreground border-primary" : "border-border"
+                                    }`}
+                                  >{d}</button>
+                                );
+                              })}
+                              {(() => {
+                                const on = form.bymonthday.includes("-1");
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={() => setForm({
+                                      ...form,
+                                      bymonthday: on
+                                        ? form.bymonthday.filter((x) => x !== "-1")
+                                        : [...form.bymonthday, "-1"],
+                                    })}
+                                    className={`h-7 text-xs rounded border col-span-2 ${
+                                      on ? "bg-primary text-primary-foreground border-primary" : "border-border"
+                                    }`}
+                                  >Last</button>
+                                );
+                              })()}
+                            </div>
+                            {form.bymonthday.length === 0 && (
+                              <div className="text-xs text-muted-foreground">
+                                Defaults to day {format(new Date(form.start_at || Date.now()), "d")} from the start date.
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {mode === "nth" && (
+                          <div className="space-y-2">
+                            <div className="text-xs text-muted-foreground">
+                              Example: "Second" + tap Sun = 2nd Sunday. Select multiple weekdays for patterns like "2nd Tue &amp; 2nd Thu".
+                            </div>
+                            <Select
+                              value={form.bysetpos || "1"}
+                              onValueChange={(v) => setForm({ ...form, bysetpos: v })}
+                            >
+                              <SelectTrigger className="h-8 w-[10rem]"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="1">First</SelectItem>
+                                <SelectItem value="2">Second</SelectItem>
+                                <SelectItem value="3">Third</SelectItem>
+                                <SelectItem value="4">Fourth</SelectItem>
+                                <SelectItem value="-1">Last</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <div className="flex gap-1">
+                              {WEEKDAYS.map((w) => {
+                                const on = form.byweekday.includes(w.v);
+                                return (
+                                  <button
+                                    key={w.v} type="button"
+                                    onClick={() => setForm({
+                                      ...form,
+                                      byweekday: on
+                                        ? form.byweekday.filter((x) => x !== w.v)
+                                        : [...form.byweekday, w.v],
+                                    })}
+                                    className={`w-8 h-8 text-xs rounded-full border ${
+                                      on ? "bg-primary text-primary-foreground border-primary" : "border-border"
+                                    }`}
+                                  >{w.label}</button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   <div className="space-y-2">
                     <Label className="text-xs">Ends</Label>
