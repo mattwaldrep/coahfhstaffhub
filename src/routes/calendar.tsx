@@ -197,7 +197,12 @@ type EventRow = {
 };
 
 
-type Occurrence = EventRow & { occurrence_date: Date };
+type Occurrence = EventRow & {
+  occurrence_date: Date;
+  span_day_index?: number;
+  span_total_days?: number;
+  is_span_continuation?: boolean;
+};
 
 type ChecklistItem = {
   id: string;
