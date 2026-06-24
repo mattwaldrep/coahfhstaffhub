@@ -278,6 +278,7 @@ export type Database = {
           location: string | null
           mission_trip_id: string | null
           missions_team_needed: boolean
+          multi_day_mode: string
           other_listings: string[]
           pco_registration: boolean
           readiness: Database["public"]["Enums"]["readiness"] | null
@@ -313,6 +314,7 @@ export type Database = {
           location?: string | null
           mission_trip_id?: string | null
           missions_team_needed?: boolean
+          multi_day_mode?: string
           other_listings?: string[]
           pco_registration?: boolean
           readiness?: Database["public"]["Enums"]["readiness"] | null
@@ -348,6 +350,7 @@ export type Database = {
           location?: string | null
           mission_trip_id?: string | null
           missions_team_needed?: boolean
+          multi_day_mode?: string
           other_listings?: string[]
           pco_registration?: boolean
           readiness?: Database["public"]["Enums"]["readiness"] | null

@@ -195,6 +195,7 @@ type EventRow = {
   room_request_submitted: boolean;
   room_approval_received: boolean;
   class_series_id: string | null;
+  multi_day_mode: "continuous" | "daily_hours";
 };
 
 
@@ -271,6 +272,7 @@ type FormState = {
   leader_not_needed: boolean;
   class_series_id: string;
   room_ids: string[];
+  multi_day_mode: "continuous" | "daily_hours";
 };
 
 const emptyForm = (start = ""): FormState => ({
@@ -310,6 +312,7 @@ const emptyForm = (start = ""): FormState => ({
   leader_not_needed: false,
   class_series_id: "",
   room_ids: [],
+  multi_day_mode: "continuous",
 });
 
 
@@ -375,15 +378,23 @@ function expandEvents(events: EventRow[], rangeStart: Date, rangeEnd: Date): Occ
       }
       return;
     }
+    const dailyHours = e.multi_day_mode === "daily_hours";
     for (let i = 0; i < totalDays; i++) {
-      const day = i === 0 ? baseStart : startOfDay(addDays(baseStart, i));
+      // For continuous spans, continuation days are startOfDay so they render "All day".
+      // For daily_hours, every day uses the same time-of-day as the base start.
+      const day =
+        i === 0
+          ? baseStart
+          : dailyHours
+            ? new Date(baseStart.getFullYear(), baseStart.getMonth(), baseStart.getDate() + i, baseStart.getHours(), baseStart.getMinutes())
+            : startOfDay(addDays(baseStart, i));
       if (day < rangeStart || day > rangeEnd) continue;
       out.push({
         ...e,
         occurrence_date: day,
         span_day_index: i + 1,
         span_total_days: totalDays,
-        is_span_continuation: i > 0,
+        is_span_continuation: i > 0 && !dailyHours,
       });
     }
   };
@@ -742,13 +753,14 @@ function CalendarBody() {
             room_request_submitted: false,
             room_approval_received: false,
             class_series_id: null,
+            multi_day_mode: "continuous",
           });
         }
         cur.setDate(cur.getDate() + 1);
         idx += 1;
       }
     }
-    setEvents([...(data ?? []), ...missionRows]);
+    setEvents([...(((data ?? []) as any[]).map((r) => ({ ...r, multi_day_mode: r.multi_day_mode ?? "continuous" })) as EventRow[]), ...missionRows]);
     const map = new Map<string, string[]>();
     const flagsMap = new Map<string, Map<string, { req: boolean; app: boolean }>>();
     for (const row of (er ?? []) as Array<{ event_id: string; room_id: string; request_submitted?: boolean; approval_received?: boolean }>) {
@@ -921,6 +933,7 @@ function CalendarBody() {
       leader_not_needed: (ev as any).leader_not_needed ?? false,
       class_series_id: ev.class_series_id ?? "",
       room_ids: eventRoomsMap.current.get(ev.id) ?? [],
+      multi_day_mode: ((ev as any).multi_day_mode ?? "continuous") as "continuous" | "daily_hours",
     });
 
     setEditingOccurrence(occ.occurrence_date);
@@ -1013,6 +1026,7 @@ function CalendarBody() {
         return ids.length > 0 && ids.every((id) => roomFlags[id]?.app);
       })(),
       class_series_id: form.class_series_id || null,
+      multi_day_mode: form.multi_day_mode,
     };
     const result = form.id
       ? await supabase.from("calendar_events").update(payload).eq("id", form.id).select("id").single()
@@ -1177,6 +1191,7 @@ function CalendarBody() {
         });
         return ids.length > 0 && ids.every((id) => roomFlags[id]?.app);
       })(),
+      multi_day_mode: form.multi_day_mode,
     });
     if (insertErr) { toast.error(insertErr.message); return; }
     // 2) Add original occurrence date to excluded_dates on the series
@@ -1847,6 +1862,52 @@ function CalendarBody() {
                 />
               </div>
             </div>
+            {(() => {
+              if (form.all_day || !form.start_at || !form.end_at) return null;
+              const s = new Date(form.start_at);
+              const eDt = new Date(form.end_at);
+              if (isNaN(s.getTime()) || isNaN(eDt.getTime())) return null;
+              const spans = differenceInCalendarDays(eDt, s) >= 1;
+              if (!spans) return null;
+              return (
+                <div className="rounded-xl border border-border p-3 space-y-2">
+                  <div className="text-sm font-medium">Multi-day event</div>
+                  <div className="text-xs text-muted-foreground">
+                    How should this event run across the days it spans?
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    <label className={`flex items-start gap-2 rounded-lg border p-2 cursor-pointer ${form.multi_day_mode === "continuous" ? "border-primary bg-primary/5" : "border-border"}`}>
+                      <input
+                        type="radio"
+                        className="mt-1"
+                        checked={form.multi_day_mode === "continuous"}
+                        onChange={() => setForm({ ...form, multi_day_mode: "continuous" })}
+                      />
+                      <span className="text-sm">
+                        <span className="font-medium">Continuous (overnight)</span>
+                        <span className="block text-xs text-muted-foreground">
+                          One event that runs straight through, e.g. a retreat or trip.
+                        </span>
+                      </span>
+                    </label>
+                    <label className={`flex items-start gap-2 rounded-lg border p-2 cursor-pointer ${form.multi_day_mode === "daily_hours" ? "border-primary bg-primary/5" : "border-border"}`}>
+                      <input
+                        type="radio"
+                        className="mt-1"
+                        checked={form.multi_day_mode === "daily_hours"}
+                        onChange={() => setForm({ ...form, multi_day_mode: "daily_hours" })}
+                      />
+                      <span className="text-sm">
+                        <span className="font-medium">Each day during set hours</span>
+                        <span className="block text-xs text-muted-foreground">
+                          Same time window each day (uses your start/end times above).
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              );
+            })()}
             {/* Recurrence */}
             <div className="space-y-3 rounded-xl border border-border p-3">
               <label className="flex items-center gap-2 text-sm font-medium">
