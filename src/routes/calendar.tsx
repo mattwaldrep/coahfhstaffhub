@@ -480,6 +480,7 @@ function CalendarBody() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [searchEvents, setSearchEvents] = useState<EventRow[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>(
     DEFAULT_CATEGORIES.map((n) => ({ id: n, name: n })),
   );
