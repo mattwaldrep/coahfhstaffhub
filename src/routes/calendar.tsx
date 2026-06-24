@@ -745,13 +745,14 @@ function CalendarBody() {
             room_request_submitted: false,
             room_approval_received: false,
             class_series_id: null,
+            multi_day_mode: "continuous",
           });
         }
         cur.setDate(cur.getDate() + 1);
         idx += 1;
       }
     }
-    setEvents([...(data ?? []), ...missionRows]);
+    setEvents([...(((data ?? []) as any[]).map((r) => ({ ...r, multi_day_mode: r.multi_day_mode ?? "continuous" })) as EventRow[]), ...missionRows]);
     const map = new Map<string, string[]>();
     const flagsMap = new Map<string, Map<string, { req: boolean; app: boolean }>>();
     for (const row of (er ?? []) as Array<{ event_id: string; room_id: string; request_submitted?: boolean; approval_received?: boolean }>) {
@@ -924,6 +925,7 @@ function CalendarBody() {
       leader_not_needed: (ev as any).leader_not_needed ?? false,
       class_series_id: ev.class_series_id ?? "",
       room_ids: eventRoomsMap.current.get(ev.id) ?? [],
+      multi_day_mode: ((ev as any).multi_day_mode ?? "continuous") as "continuous" | "daily_hours",
     });
 
     setEditingOccurrence(occ.occurrence_date);
