@@ -2732,7 +2732,7 @@ function MonthGrid({
 }: {
   cursor: Date;
   occurrences: Occurrence[];
-  conflictMap: Map<string, number>;
+  conflictMap: Map<string, Conflict[]>;
   onPickDay: (d: Date) => void;
   onPickEvent: (o: Occurrence) => void;
   canEdit: boolean;
