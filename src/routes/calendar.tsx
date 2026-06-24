@@ -195,6 +195,7 @@ type EventRow = {
   room_request_submitted: boolean;
   room_approval_received: boolean;
   class_series_id: string | null;
+  multi_day_mode: "continuous" | "daily_hours";
 };
 
 
@@ -271,6 +272,7 @@ type FormState = {
   leader_not_needed: boolean;
   class_series_id: string;
   room_ids: string[];
+  multi_day_mode: "continuous" | "daily_hours";
 };
 
 const emptyForm = (start = ""): FormState => ({
@@ -310,6 +312,7 @@ const emptyForm = (start = ""): FormState => ({
   leader_not_needed: false,
   class_series_id: "",
   room_ids: [],
+  multi_day_mode: "continuous",
 });
 
 
