@@ -275,6 +275,8 @@ const emptyForm = (start = ""): FormState => ({
   byweekday: [],
   bysetpos: "",
   recurrence_end_date: "",
+  end_mode: "never",
+  count: "",
   other_listings: [],
   social_ads: false,
   room_needed: "",
