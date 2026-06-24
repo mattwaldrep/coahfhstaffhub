@@ -2843,7 +2843,7 @@ function ListView({
   onToggleSelect,
 }: {
   occurrences: Occurrence[];
-  conflictMap: Map<string, number>;
+  conflictMap: Map<string, Conflict[]>;
   onPickEvent: (o: Occurrence) => void;
   readinessOf: (occ: Occurrence) => ReturnType<typeof scoreEvent>;
   selectMode?: boolean;
