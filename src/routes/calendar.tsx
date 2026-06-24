@@ -2905,7 +2905,7 @@ function ListView({
                       className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 flex items-center gap-1"
                       title={`Conflicts with: ${formatConflicts(cs)}`}
                     >
-                      <AlertTriangle className="w-3 h-3" /> Conflicts with {cs.map((c) => c.other.title).join(", ")}
+                      <AlertTriangle className="w-3 h-3" /> Conflict
                     </span>
                   );
                 })()}
