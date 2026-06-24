@@ -196,7 +196,10 @@ type EventRow = {
   room_approval_received: boolean;
   class_series_id: string | null;
   multi_day_mode: "continuous" | "daily_hours";
+  day_of_plan: string | null;
 };
+
+type PlanTemplate = { id: string; name: string; content: string; created_by: string | null };
 
 
 type Occurrence = EventRow & {
