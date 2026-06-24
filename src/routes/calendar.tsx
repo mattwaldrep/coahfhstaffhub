@@ -569,6 +569,7 @@ function CalendarBody() {
   });
 
   const [assignableUsers, setAssignableUsers] = useState<UserOption[]>([]);
+  const [commsManagers, setCommsManagers] = useState<Record<string, string>>({});
   const assignFn = useServerFn(assignChecklistItem);
   const unassignFn = useServerFn(unassignChecklistItem);
   const setDoneFn = useServerFn(setChecklistItemDone);
