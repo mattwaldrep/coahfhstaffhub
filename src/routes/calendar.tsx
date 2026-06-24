@@ -2876,6 +2876,11 @@ function ListView({
             <div className="flex-1 min-w-0">
               <div className="font-medium flex items-center gap-2 flex-wrap">
                 {o.title}
+                {o.span_total_days && o.span_total_days > 1 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                    Day {o.span_day_index}/{o.span_total_days}
+                  </span>
+                )}
                 {o.rrule && <Repeat className="w-3 h-3 text-muted-foreground" />}
                 {o.readiness && <ReadinessBadge value={o.readiness} />}
                 {(() => {
