@@ -26,9 +26,9 @@ export const Route = createFileRoute("/calendar_/planning/$submissionId")({
 });
 
 const LISTING_CHANNELS: { key: string; label: string }[] = [
-  { key: "pco", label: "PCO" },
+  { key: "pco", label: "PCO Registrations" },
   { key: "eventbrite", label: "Eventbrite" },
-  { key: "google", label: "Google" },
+  { key: "google", label: "Google My Business" },
   { key: "community_cals", label: "Community Cals" },
   { key: "socials", label: "Socials" },
 ];
