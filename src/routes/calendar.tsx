@@ -2091,13 +2091,64 @@ function CalendarBody() {
                   )}
 
                   <div className="space-y-2">
-                    <Label className="text-xs">Ends on (optional)</Label>
-                    <Input
-                      type="date"
-                      value={form.recurrence_end_date}
-                      onChange={(e) => setForm({ ...form, recurrence_end_date: e.target.value })}
-                    />
+                    <Label className="text-xs">Ends</Label>
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      {(["never","on","after"] as const).map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setForm({ ...form, end_mode: m })}
+                          className={`px-2 py-1 rounded-full border text-xs ${
+                            form.end_mode === m ? "bg-primary text-primary-foreground border-primary" : "border-border"
+                          }`}
+                        >
+                          {m === "never" ? "Never" : m === "on" ? "On date" : "After N times"}
+                        </button>
+                      ))}
+                    </div>
+                    {form.end_mode === "on" && (
+                      <Input
+                        type="date"
+                        value={form.recurrence_end_date}
+                        onChange={(e) => setForm({ ...form, recurrence_end_date: e.target.value })}
+                      />
+                    )}
+                    {form.end_mode === "after" && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Input
+                          type="number"
+                          min={1}
+                          className="w-20 h-8"
+                          value={form.count}
+                          onChange={(e) => setForm({ ...form, count: e.target.value })}
+                        />
+                        <span>occurrence(s)</span>
+                      </div>
+                    )}
                   </div>
+
+                  {(() => {
+                    try {
+                      if (!form.start_at) return null;
+                      const rrStr = buildRRule(form, new Date(form.start_at));
+                      if (!rrStr) return null;
+                      const rule = RRule.fromString(rrStr);
+                      const next = rule.all((_, i) => i < 5);
+                      if (!next.length) return null;
+                      return (
+                        <div className="rounded-md bg-muted/40 p-2 text-xs text-muted-foreground">
+                          <div className="font-medium mb-1 text-foreground">Next occurrences</div>
+                          <ul className="space-y-0.5">
+                            {next.map((d, i) => (
+                              <li key={i}>{format(d, "EEE, MMM d, yyyy")}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    } catch {
+                      return null;
+                    }
+                  })()}
                 </div>
               )}
             </div>
