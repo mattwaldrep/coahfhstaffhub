@@ -2841,15 +2841,17 @@ function EventChip({ occ, compact, conflicts, readiness }: {
   occ: Occurrence;
   compact?: boolean;
   conflicts?: Conflict[];
-  readiness: ReturnType<typeof scoreEvent>;
+  readiness: SplitReadiness;
 }) {
   const cal = SUB_CALS.find((s) => s.value === occ.sub_calendar)!;
   const gaps = classGaps(occ);
-  const ringColor = readiness.level === "ready" ? "bg-emerald-500" : readiness.level === "warning" ? "bg-amber-500" : "bg-destructive";
+  const planDot = readiness.planning.level === "ready" ? "bg-emerald-500" : readiness.planning.level === "warning" ? "bg-amber-500" : "bg-destructive";
+  const commsDot = readiness.comms.level === "ready" ? "bg-emerald-500" : readiness.comms.level === "warning" ? "bg-amber-500" : "bg-destructive";
   const conflictCount = conflicts?.length ?? 0;
   const titleBits = [
-    `${readiness.score}% ready`,
-    readiness.missing.length ? `Missing: ${readiness.missing.join(", ")}` : "",
+    `Planning ${readiness.planning.score}% · Comms ${readiness.comms.score}%`,
+    readiness.planning.missing.length ? `Planning needs: ${readiness.planning.missing.join(", ")}` : "",
+    readiness.comms.missing.length ? `Comms needs: ${readiness.comms.missing.join(", ")}` : "",
     gaps.length ? `Class needs: ${gaps.join(", ")}` : "",
     conflictCount ? `Conflicts with: ${formatConflicts(conflicts)}` : "",
   ].filter(Boolean).join(" · ");
@@ -2862,7 +2864,8 @@ function EventChip({ occ, compact, conflicts, readiness }: {
       }}
       title={titleBits || undefined}
     >
-      <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${ringColor}`} />
+      <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${planDot}`} title="Planning readiness" />
+      <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${commsDot}`} title="Communications readiness" />
       {conflictCount ? <AlertTriangle className="w-2.5 h-2.5 text-amber-500 shrink-0" /> : null}
       <span className="truncate">
         {!occ.all_day && !occ.is_span_continuation && <>{format(occ.occurrence_date, "h:mm")} </>}
