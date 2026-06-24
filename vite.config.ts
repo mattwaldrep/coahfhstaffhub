@@ -6,13 +6,32 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+const prosemirrorPackages = [
+  "prosemirror-changeset",
+  "prosemirror-commands",
+  "prosemirror-dropcursor",
+  "prosemirror-gapcursor",
+  "prosemirror-history",
+  "prosemirror-inputrules",
+  "prosemirror-keymap",
+  "prosemirror-model",
+  "prosemirror-schema-list",
+  "prosemirror-state",
+  "prosemirror-tables",
+  "prosemirror-transform",
+  "prosemirror-view",
+];
+
 export default defineConfig({
   vite: {
+    resolve: {
+      dedupe: prosemirrorPackages,
+    },
     ssr: {
       noExternal: ["rrule"],
     },
     optimizeDeps: {
-      include: ["rrule"],
+      include: ["rrule", ...prosemirrorPackages],
     },
   },
 });
