@@ -306,10 +306,12 @@ function buildRRule(f: FormState, startDate: Date): string | null {
     interval: f.interval || 1,
     dtstart: startDate,
   };
-  if (f.byweekday.length && (f.freq === "WEEKLY" || f.freq === "MONTHLY")) {
+  if (f.byweekday.length && (f.freq === "WEEKLY" || f.freq === "MONTHLY" || f.freq === "YEARLY")) {
     opts.byweekday = f.byweekday.map((w) => wdMap[w]);
   }
-  if (f.bysetpos && f.freq === "MONTHLY") opts.bysetpos = [parseInt(f.bysetpos, 10)];
+  if (f.bysetpos && (f.freq === "MONTHLY" || f.freq === "YEARLY")) {
+    opts.bysetpos = [parseInt(f.bysetpos, 10)];
+  }
   if (f.end_mode === "on" && f.recurrence_end_date) {
     opts.until = new Date(f.recurrence_end_date + "T23:59:59");
   } else if (f.end_mode === "after" && f.count) {
