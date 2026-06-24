@@ -268,6 +268,7 @@ export type Database = {
           class_series_id: string | null
           created_at: string
           created_by: string | null
+          day_of_plan: string | null
           description: string | null
           end_at: string | null
           excluded_dates: string[]
@@ -304,6 +305,7 @@ export type Database = {
           class_series_id?: string | null
           created_at?: string
           created_by?: string | null
+          day_of_plan?: string | null
           description?: string | null
           end_at?: string | null
           excluded_dates?: string[]
@@ -340,6 +342,7 @@ export type Database = {
           class_series_id?: string | null
           created_at?: string
           created_by?: string | null
+          day_of_plan?: string | null
           description?: string | null
           end_at?: string | null
           excluded_dates?: string[]
@@ -1525,6 +1528,33 @@ export type Database = {
           created_at?: string
           event_id?: string
           id?: string
+        }
+        Relationships: []
+      }
+      event_plan_templates: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }

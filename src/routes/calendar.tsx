@@ -68,6 +68,7 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -196,7 +197,10 @@ type EventRow = {
   room_approval_received: boolean;
   class_series_id: string | null;
   multi_day_mode: "continuous" | "daily_hours";
+  day_of_plan: string | null;
 };
+
+type PlanTemplate = { id: string; name: string; content: string; created_by: string | null };
 
 
 type Occurrence = EventRow & {
@@ -273,6 +277,7 @@ type FormState = {
   class_series_id: string;
   room_ids: string[];
   multi_day_mode: "continuous" | "daily_hours";
+  day_of_plan: string;
 };
 
 const emptyForm = (start = ""): FormState => ({
@@ -313,6 +318,7 @@ const emptyForm = (start = ""): FormState => ({
   class_series_id: "",
   room_ids: [],
   multi_day_mode: "continuous",
+  day_of_plan: "",
 });
 
 
@@ -586,6 +592,45 @@ function CalendarBody() {
   const [eventTemplateIds, setEventTemplateIds] = useState<string[]>([]); // attached to current form event
   const [templateStates, setTemplateStates] = useState<Record<string, boolean>>({}); // key: `${item_id}:${YYYY-MM-DD}`
 
+  // Day-of plan templates (rich text)
+  const [planTemplates, setPlanTemplates] = useState<PlanTemplate[]>([]);
+  async function loadPlanTemplates() {
+    const { data } = await supabase
+      .from("event_plan_templates" as any)
+      .select("id,name,content,created_by")
+      .order("name");
+    setPlanTemplates(((data ?? []) as any) as PlanTemplate[]);
+  }
+  useEffect(() => { loadPlanTemplates(); }, []);
+
+  async function saveDayPlanAsTemplate() {
+    const name = window.prompt("Template name", form.title ? `${form.title} — Day-of plan` : "Day-of plan");
+    if (!name) return;
+    const { error } = await supabase
+      .from("event_plan_templates" as any)
+      .insert({ name, content: form.day_of_plan || "", created_by: user?.id ?? null });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Saved as template");
+    loadPlanTemplates();
+  }
+  async function updatePlanTemplate(templateId: string) {
+    const { error } = await supabase
+      .from("event_plan_templates" as any)
+      .update({ content: form.day_of_plan || "" })
+      .eq("id", templateId);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Template updated");
+    loadPlanTemplates();
+  }
+  function loadPlanTemplateInto(templateId: string) {
+    const tpl = planTemplates.find((t) => t.id === templateId);
+    if (!tpl) return;
+    const existing = (form.day_of_plan || "").trim();
+    if (existing && !window.confirm("Replace the current day-of plan with this template?")) return;
+    setForm((f) => ({ ...f, day_of_plan: tpl.content || "" }));
+    toast.success(`Loaded "${tpl.name}"`);
+  }
+
   function readinessFor(occ: Occurrence): SplitReadiness {
     const roomIds = eventRoomsMap.current.get(occ.id) ?? [];
     const flagMap = eventRoomFlagsMap.current.get(occ.id) ?? new Map<string, { req: boolean; app: boolean }>();
@@ -767,6 +812,7 @@ function CalendarBody() {
             room_approval_received: false,
             class_series_id: null,
             multi_day_mode: "continuous",
+            day_of_plan: null,
           });
         }
         cur.setDate(cur.getDate() + 1);
@@ -953,6 +999,7 @@ function CalendarBody() {
       class_series_id: ev.class_series_id ?? "",
       room_ids: eventRoomsMap.current.get(ev.id) ?? [],
       multi_day_mode: ((ev as any).multi_day_mode ?? "continuous") as "continuous" | "daily_hours",
+      day_of_plan: (ev as any).day_of_plan ?? "",
     });
 
     setEditingOccurrence(occ.occurrence_date);
@@ -1046,6 +1093,7 @@ function CalendarBody() {
       })(),
       class_series_id: form.class_series_id || null,
       multi_day_mode: form.multi_day_mode,
+      day_of_plan: form.day_of_plan || null,
     };
     const result = form.id
       ? await supabase.from("calendar_events").update(payload).eq("id", form.id).select("id").single()
@@ -1211,6 +1259,7 @@ function CalendarBody() {
         return ids.length > 0 && ids.every((id) => roomFlags[id]?.app);
       })(),
       multi_day_mode: form.multi_day_mode,
+      day_of_plan: form.day_of_plan || null,
     });
     if (insertErr) { toast.error(insertErr.message); return; }
     // 2) Add original occurrence date to excluded_dates on the series
@@ -2787,6 +2836,56 @@ function CalendarBody() {
               </div>
             )}
 
+            {/* Day-of plan (rich text) + templates */}
+            <div className="space-y-2 border-t border-border pt-4">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <Label className="text-sm font-medium">Day-of plan</Label>
+                <div className="flex items-center gap-2">
+                  {planTemplates.length > 0 && (
+                    <Select onValueChange={(v) => loadPlanTemplateInto(v)}>
+                      <SelectTrigger className="h-8 w-[200px] text-xs">
+                        <SelectValue placeholder="Load template…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {planTemplates.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={saveDayPlanAsTemplate}
+                    disabled={!(form.day_of_plan || "").trim()}
+                  >
+                    Save as template
+                  </Button>
+                  {planTemplates.length > 0 && (form.day_of_plan || "").trim() && (
+                    <Select onValueChange={(v) => updatePlanTemplate(v)}>
+                      <SelectTrigger className="h-8 w-[180px] text-xs">
+                        <SelectValue placeholder="Update template…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {planTemplates.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Notes that don't belong in the readiness checklist — day-of logistics, run-of-show, packing lists, etc. Save as a template to reuse on next year's event.
+              </p>
+              <RichTextEditor
+                value={form.day_of_plan}
+                onChange={(html) => setForm((f) => ({ ...f, day_of_plan: html }))}
+                placeholder="Write your day-of plan…"
+                minHeight={140}
+              />
+            </div>
 
 
             {form.id && (
