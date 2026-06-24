@@ -526,12 +526,13 @@ function TouchpointLogDialog({
 
 
 function PersonPanel({
-  person, fields, isFullElder, meetingId, onHealthChanged,
+  person, fields, isFullElder, meetingId, healthOptions, onHealthChanged,
 }: {
   person: Person;
   fields: { assigned_elder: string; spiritual_health: string };
   isFullElder: boolean;
   meetingId?: string;
+  healthOptions: string[];
   onHealthChanged: () => void;
 }) {
   const [notes, setNotes] = useState<any[]>([]);
