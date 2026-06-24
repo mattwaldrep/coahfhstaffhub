@@ -2153,9 +2153,17 @@ function CalendarBody() {
                       const rule = RRule.fromString(rrStr);
                       const next = rule.all((_, i) => i < 5);
                       if (!next.length) return null;
+                      let summary = "";
+                      try { summary = rule.toText(); } catch { /* ignore */ }
                       return (
-                        <div className="rounded-md bg-muted/40 p-2 text-xs text-muted-foreground">
-                          <div className="font-medium mb-1 text-foreground">Next occurrences</div>
+                        <div className="rounded-md bg-muted/40 p-2 text-xs text-muted-foreground space-y-1">
+                          {summary && (
+                            <div className="text-foreground">
+                              <span className="font-medium">Repeats </span>
+                              <span className="capitalize">{summary}</span>
+                            </div>
+                          )}
+                          <div className="font-medium text-foreground">Next occurrences</div>
                           <ul className="space-y-0.5">
                             {next.map((d, i) => (
                               <li key={i}>{format(d, "EEE, MMM d, yyyy")}</li>
