@@ -21,8 +21,8 @@ import { getPastoralGaps, type PastoralGap } from "@/lib/pastoral-gaps.functions
 import { supabase } from "@/integrations/supabase/client";
 import { CareLoadCard } from "@/components/pastoral/CareLoadCard";
 
-const HEALTH_OPTIONS = ["Thriving", "Healthy", "Watch", "Struggling", "Crisis", "Unknown"];
-// Severity ranking — higher = more urgent (used for "by health (urgent first)")
+const DEFAULT_HEALTH_OPTIONS = ["Thriving", "Healthy", "Watch", "Struggling", "Crisis", "Unknown"];
+// Severity ranking — higher = more urgent. Unknown values default to mid-rank.
 const HEALTH_SEVERITY: Record<string, number> = {
   Crisis: 5, Struggling: 4, Watch: 3, Unknown: 2, Healthy: 1, Thriving: 0,
 };
