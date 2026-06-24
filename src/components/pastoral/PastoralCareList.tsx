@@ -84,16 +84,8 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
       setFields(res.fields);
       setPeople(res.people ?? []);
       const opts: string[] = Array.isArray(res.health_options) ? res.health_options : [];
-      // Merge PCO options with current values seen on people, so existing values
-      // (e.g. "Distracted", "Sick/Hurting") always appear even if not on the list.
-      const seenValues = new Set<string>();
-      for (const p of (res.people ?? []) as Person[]) {
-        const v = res.fields ? p.fields?.[res.fields.spiritual_health]?.value : null;
-        if (v && typeof v === "string") seenValues.add(v);
-      }
-      const merged = [...opts];
-      for (const v of seenValues) if (!merged.includes(v)) merged.push(v);
-      setHealthOptions(merged.length ? merged : DEFAULT_HEALTH_OPTIONS);
+      // Use ONLY PCO options so the dropdown matches Planning Center exactly.
+      setHealthOptions(opts);
     } catch (e: any) {
       toast.error(e.message ?? "Failed to load");
     } finally {
