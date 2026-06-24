@@ -2682,20 +2682,28 @@ function ReadinessBadge({ value }: { value: string }) {
   );
 }
 
-function EventChip({ occ, compact, conflictCount, readiness }: {
+function formatConflicts(conflicts: Conflict[] | undefined): string {
+  if (!conflicts || !conflicts.length) return "";
+  return conflicts
+    .map((c) => `${c.other.title} (${c.reason === "both" ? "same room & leader" : c.reason === "room" ? "same room" : "same leader"})`)
+    .join("; ");
+}
+
+function EventChip({ occ, compact, conflicts, readiness }: {
   occ: Occurrence;
   compact?: boolean;
-  conflictCount?: number;
+  conflicts?: Conflict[];
   readiness: ReturnType<typeof scoreEvent>;
 }) {
   const cal = SUB_CALS.find((s) => s.value === occ.sub_calendar)!;
   const gaps = classGaps(occ);
   const ringColor = readiness.level === "ready" ? "bg-emerald-500" : readiness.level === "warning" ? "bg-amber-500" : "bg-destructive";
+  const conflictCount = conflicts?.length ?? 0;
   const titleBits = [
     `${readiness.score}% ready`,
     readiness.missing.length ? `Missing: ${readiness.missing.join(", ")}` : "",
     gaps.length ? `Class needs: ${gaps.join(", ")}` : "",
-    conflictCount ? `${conflictCount} conflict${conflictCount === 1 ? "" : "s"}` : "",
+    conflictCount ? `Conflicts with: ${formatConflicts(conflicts)}` : "",
   ].filter(Boolean).join(" · ");
   return (
     <div
