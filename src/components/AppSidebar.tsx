@@ -29,6 +29,7 @@ import {
   HeartHandshake,
   ScrollText,
   DoorOpen,
+  Megaphone,
   Gavel,
   TrendingUp,
   GraduationCap,
