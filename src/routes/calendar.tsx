@@ -317,6 +317,7 @@ const emptyForm = (start = ""): FormState => ({
   class_series_id: "",
   room_ids: [],
   multi_day_mode: "continuous",
+  day_of_plan: "",
 });
 
 
