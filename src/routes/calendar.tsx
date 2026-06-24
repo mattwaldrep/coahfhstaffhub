@@ -1353,8 +1353,9 @@ function CalendarBody() {
   // Per-occurrence conflict map keyed by `${eventId}-${time}`
   const conflictMap = useMemo(() => {
     const m = new Map<string, Conflict[]>();
-    const items: ConflictEvent[] = visible.map((o) => ({
-      id: `${o.id}-${o.occurrence_date.getTime()}`,
+    const items: Array<ConflictEvent & { _key: string }> = visible.map((o) => ({
+      id: o.id,
+      _key: `${o.id}-${o.occurrence_date.getTime()}`,
       title: o.title,
       start_at: o.occurrence_date.toISOString(),
       end_at: o.end_at,
