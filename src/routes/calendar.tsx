@@ -276,6 +276,7 @@ type FormState = {
   class_series_id: string;
   room_ids: string[];
   multi_day_mode: "continuous" | "daily_hours";
+  day_of_plan: string;
 };
 
 const emptyForm = (start = ""): FormState => ({
