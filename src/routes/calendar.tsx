@@ -263,6 +263,7 @@ type FormState = {
   room_needed: string;
   action_note: string;
   missions_team_needed: boolean;
+  mission_trip_id: string;
   church_covering: string;
   childcare_needed: boolean;
   childcare_arranged: boolean;
