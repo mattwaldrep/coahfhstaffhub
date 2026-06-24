@@ -855,6 +855,7 @@ function CalendarBody() {
       pco_registration: ev.pco_registration,
       recurs: !!ev.rrule,
       freq, interval, byweekday, bysetpos,
+      bymonthday, bymonth, monthly_mode, yearly_mode,
       recurrence_end_date: ev.recurrence_end_date ?? "",
       end_mode, count,
       other_listings: ev.other_listings ?? [],
