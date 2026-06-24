@@ -793,12 +793,18 @@ function CalendarBody() {
     // Per-event ad-hoc checklist counts (for readiness scoring everywhere)
     const { data: cli } = await supabase
       .from("event_checklist_items")
-      .select("event_id, done");
-    const cMap = new Map<string, { total: number; done: number }>();
-    for (const row of (cli ?? []) as Array<{ event_id: string; done: boolean }>) {
-      const cur = cMap.get(row.event_id) ?? { total: 0, done: 0 };
-      cur.total += 1;
-      if (row.done) cur.done += 1;
+      .select("event_id, done, label");
+    const cMap = new Map<string, { total: number; done: number; commsTotal: number; commsDone: number }>();
+    for (const row of (cli ?? []) as Array<{ event_id: string; done: boolean; label: string | null }>) {
+      const cur = cMap.get(row.event_id) ?? { total: 0, done: 0, commsTotal: 0, commsDone: 0 };
+      const isComms = isCommsLabel(row.label);
+      if (isComms) {
+        cur.commsTotal += 1;
+        if (row.done) cur.commsDone += 1;
+      } else {
+        cur.total += 1;
+        if (row.done) cur.done += 1;
+      }
       cMap.set(row.event_id, cur);
     }
     eventChecklistMap.current = cMap;
