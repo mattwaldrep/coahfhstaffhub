@@ -378,15 +378,23 @@ function expandEvents(events: EventRow[], rangeStart: Date, rangeEnd: Date): Occ
       }
       return;
     }
+    const dailyHours = e.multi_day_mode === "daily_hours";
     for (let i = 0; i < totalDays; i++) {
-      const day = i === 0 ? baseStart : startOfDay(addDays(baseStart, i));
+      // For continuous spans, continuation days are startOfDay so they render "All day".
+      // For daily_hours, every day uses the same time-of-day as the base start.
+      const day =
+        i === 0
+          ? baseStart
+          : dailyHours
+            ? new Date(baseStart.getFullYear(), baseStart.getMonth(), baseStart.getDate() + i, baseStart.getHours(), baseStart.getMinutes())
+            : startOfDay(addDays(baseStart, i));
       if (day < rangeStart || day > rangeEnd) continue;
       out.push({
         ...e,
         occurrence_date: day,
         span_day_index: i + 1,
         span_total_days: totalDays,
-        is_span_continuation: i > 0,
+        is_span_continuation: i > 0 && !dailyHours,
       });
     }
   };
