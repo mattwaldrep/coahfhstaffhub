@@ -2378,22 +2378,60 @@ function CalendarBody() {
                 </div>
               </div>
 
+            </div>
+
+            {/* Missions Team */}
+            <div className="space-y-3 rounded-xl border border-border p-3">
+              <Label className="text-sm font-medium">Missions Team</Label>
               <label className="flex items-center gap-2 text-sm">
                 <Switch
                   checked={form.missions_team_needed}
-                  onCheckedChange={(v) => setForm({ ...form, missions_team_needed: v })}
+                  onCheckedChange={(v) =>
+                    setForm({ ...form, missions_team_needed: v, mission_trip_id: v ? form.mission_trip_id : "" })
+                  }
                 />
                 Missions team needed
               </label>
               {form.missions_team_needed && (
-                <div className="space-y-2">
-                  <Label className="text-xs">Church covering</Label>
-                  <Input
-                    placeholder="e.g. Family Hope, COAH:LM, Both"
-                    value={form.church_covering}
-                    onChange={(e) => setForm({ ...form, church_covering: e.target.value })}
-                  />
-                </div>
+                <>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Assigned missions team</Label>
+                    <Select
+                      value={form.mission_trip_id || "__none__"}
+                      onValueChange={(v) => setForm({ ...form, mission_trip_id: v === "__none__" ? "" : v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a scheduled missions team" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">— Not yet assigned —</SelectItem>
+                        {missionTripOptions
+                          .slice()
+                          .sort((a, b) => (a.start_date ?? "").localeCompare(b.start_date ?? ""))
+                          .map((t) => (
+                            <SelectItem key={t.id} value={t.id}>
+                              {(t.church_name ?? "Mission Team")}
+                              {t.start_date ? ` — ${t.start_date}` : ""}
+                              {t.status ? ` (${t.status})` : ""}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    {!form.mission_trip_id && (
+                      <p className="text-xs text-muted-foreground">
+                        No team assigned — readiness will be reduced until a team is selected.
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Church covering</Label>
+                    <Input
+                      placeholder="e.g. Family Hope, COAH:LM, Both"
+                      value={form.church_covering}
+                      onChange={(e) => setForm({ ...form, church_covering: e.target.value })}
+                    />
+                  </div>
+                </>
               )}
               {form.id && (
                 <div className="space-y-2 pt-2 border-t border-border/60">
