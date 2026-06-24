@@ -2023,6 +2023,7 @@ function CalendarBody() {
                     <Select value={form.freq} onValueChange={(v) => setForm({ ...form, freq: v as FormState["freq"] })}>
                       <SelectTrigger className="h-8 w-[8rem]"><SelectValue /></SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="DAILY">day(s)</SelectItem>
                         <SelectItem value="WEEKLY">week(s)</SelectItem>
                         <SelectItem value="MONTHLY">month(s)</SelectItem>
                         <SelectItem value="YEARLY">year(s)</SelectItem>
