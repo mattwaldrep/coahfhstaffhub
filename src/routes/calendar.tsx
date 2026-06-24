@@ -801,6 +801,10 @@ function CalendarBody() {
     let interval = 1;
     let byweekday: string[] = [];
     let bysetpos = "";
+    let bymonthday: string[] = [];
+    let bymonth: string[] = [];
+    let monthly_mode: FormState["monthly_mode"] = "dom";
+    let yearly_mode: FormState["yearly_mode"] = "date";
     let end_mode: FormState["end_mode"] = "never";
     let count = "";
     if (ev.rrule) {
@@ -822,6 +826,16 @@ function CalendarBody() {
           const arr = Array.isArray(o.bysetpos) ? o.bysetpos : [o.bysetpos];
           bysetpos = String(arr[0]);
         }
+        if (o.bymonthday) {
+          const arr = Array.isArray(o.bymonthday) ? o.bymonthday : [o.bymonthday];
+          bymonthday = arr.map((d) => String(d));
+        }
+        if (o.bymonth) {
+          const arr = Array.isArray(o.bymonth) ? o.bymonth : [o.bymonth];
+          bymonth = arr.map((m) => String(m));
+        }
+        if (freq === "MONTHLY") monthly_mode = bysetpos ? "nth" : "dom";
+        if (freq === "YEARLY") yearly_mode = bysetpos ? "nth" : "date";
         if (o.count) { end_mode = "after"; count = String(o.count); }
         else if (o.until || ev.recurrence_end_date) { end_mode = "on"; }
       } catch { /* ignore */ }
