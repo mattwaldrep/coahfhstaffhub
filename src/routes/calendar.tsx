@@ -1,14 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  addDays,
   addMonths,
   addWeeks,
+  differenceInCalendarDays,
   endOfMonth,
   endOfWeek,
   format,
   isSameDay,
   isSameMonth,
   isToday,
+  startOfDay,
   startOfMonth,
   startOfWeek,
 } from "date-fns";
@@ -194,7 +197,12 @@ type EventRow = {
 };
 
 
-type Occurrence = EventRow & { occurrence_date: Date };
+type Occurrence = EventRow & {
+  occurrence_date: Date;
+  span_day_index?: number;
+  span_total_days?: number;
+  is_span_continuation?: boolean;
+};
 
 type ChecklistItem = {
   id: string;
@@ -350,12 +358,37 @@ function buildRRule(f: FormState, startDate: Date): string | null {
 
 function expandEvents(events: EventRow[], rangeStart: Date, rangeEnd: Date): Occurrence[] {
   const out: Occurrence[] = [];
+
+
+  const pushSpan = (e: EventRow, baseStart: Date) => {
+    const baseEnd = e.end_at ? new Date(e.end_at) : null;
+    const totalDays =
+      baseEnd && baseEnd > baseStart
+        ? Math.max(1, differenceInCalendarDays(baseEnd, baseStart) + 1)
+        : 1;
+    if (totalDays === 1) {
+      if (baseStart >= rangeStart && baseStart <= rangeEnd) {
+        out.push({ ...e, occurrence_date: baseStart });
+      }
+      return;
+    }
+    for (let i = 0; i < totalDays; i++) {
+      const day = i === 0 ? baseStart : startOfDay(addDays(baseStart, i));
+      if (day < rangeStart || day > rangeEnd) continue;
+      out.push({
+        ...e,
+        occurrence_date: day,
+        span_day_index: i + 1,
+        span_total_days: totalDays,
+        is_span_continuation: i > 0,
+      });
+    }
+  };
+
   for (const e of events) {
     const start = new Date(e.start_at);
     if (!e.rrule) {
-      if (start >= rangeStart && start <= rangeEnd) {
-        out.push({ ...e, occurrence_date: start });
-      }
+      pushSpan(e, start);
       continue;
     }
     try {
@@ -365,12 +398,10 @@ function expandEvents(events: EventRow[], rangeStart: Date, rangeEnd: Date): Occ
       for (const d of dates) {
         const iso = format(d, "yyyy-MM-dd");
         if (skip.has(iso)) continue;
-        out.push({ ...e, occurrence_date: d });
+        pushSpan(e, d);
       }
     } catch {
-      if (start >= rangeStart && start <= rangeEnd) {
-        out.push({ ...e, occurrence_date: start });
-      }
+      pushSpan(e, start);
     }
   }
   return out.sort((a, b) => a.occurrence_date.getTime() - b.occurrence_date.getTime());
@@ -2678,8 +2709,11 @@ function EventChip({ occ, compact, conflictCount, readiness }: {
       <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${ringColor}`} />
       {conflictCount ? <AlertTriangle className="w-2.5 h-2.5 text-amber-500 shrink-0" /> : null}
       <span className="truncate">
-        {!occ.all_day && <>{format(occ.occurrence_date, "h:mm")} </>}
+        {!occ.all_day && !occ.is_span_continuation && <>{format(occ.occurrence_date, "h:mm")} </>}
         {occ.title}
+        {occ.span_total_days && occ.span_total_days > 1 ? (
+          <span className="opacity-70"> · Day {occ.span_day_index}/{occ.span_total_days}</span>
+        ) : null}
       </span>
     </div>
   );
@@ -2776,7 +2810,8 @@ function WeekStrip({
                   >
                     <div className="font-medium truncate">{o.title}</div>
                     <div className="text-[10px] text-muted-foreground">
-                      {o.all_day ? "All day" : format(o.occurrence_date, "p")}
+                      {o.all_day || o.is_span_continuation ? "All day" : format(o.occurrence_date, "p")}
+                      {o.span_total_days && o.span_total_days > 1 ? ` · Day ${o.span_day_index}/${o.span_total_days}` : ""}
                     </div>
                   </button>
                 );
@@ -2842,6 +2877,11 @@ function ListView({
             <div className="flex-1 min-w-0">
               <div className="font-medium flex items-center gap-2 flex-wrap">
                 {o.title}
+                {o.span_total_days && o.span_total_days > 1 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                    Day {o.span_day_index}/{o.span_total_days}
+                  </span>
+                )}
                 {o.rrule && <Repeat className="w-3 h-3 text-muted-foreground" />}
                 {o.readiness && <ReadinessBadge value={o.readiness} />}
                 {(() => {
@@ -2887,7 +2927,7 @@ function ListView({
             </div>
             <div className="text-sm text-muted-foreground shrink-0 text-right">
               <div>{format(o.occurrence_date, "EEE, MMM d")}</div>
-              <div className="text-xs">{o.all_day ? "All day" : format(o.occurrence_date, "p")}</div>
+              <div className="text-xs">{o.all_day || o.is_span_continuation ? "All day" : format(o.occurrence_date, "p")}</div>
             </div>
           </div>
 
