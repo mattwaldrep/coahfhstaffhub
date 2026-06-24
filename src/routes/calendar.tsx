@@ -118,9 +118,9 @@ const READINESS_COLORS: Record<string, string> = {
 };
 
 const LISTING_CHANNELS: { key: string; label: string }[] = [
-  { key: "pco", label: "PCO" },
+  { key: "pco", label: "PCO Registrations" },
   { key: "eventbrite", label: "Eventbrite" },
-  { key: "google", label: "Google" },
+  { key: "google", label: "Google My Business" },
   { key: "community_cals", label: "Community Cals" },
   { key: "socials", label: "Socials" },
 ];
@@ -129,7 +129,7 @@ const LISTING_LABEL = new Map(LISTING_CHANNELS.map((c) => [c.key, c.label]));
 const COMMS_CHANNELS: { key: string; label: string }[] = [
   { key: "direct_email", label: "Direct Email" },
   { key: "push_notification", label: "Push Notification" },
-  { key: "sunday_slide", label: "Sunday Slide" },
+  { key: "sunday_slide", label: "ProPresenter Slide" },
   { key: "sunday_announcement", label: "Sunday Announcement" },
   { key: "ministry_highlight", label: "Ministry Highlight" },
   { key: "newsletter", label: "Newsletter" },
@@ -140,15 +140,15 @@ const SUNDAY_SLOT_CHANNELS = ["sunday_announcement", "ministry_highlight"] as co
 type SundaySlotChannel = (typeof SUNDAY_SLOT_CHANNELS)[number];
 
 const LISTING_CHECKLIST_LABEL: Record<string, string> = {
-  pco: "Set up PCO registration",
+  pco: "Set up PCO Registrations",
   eventbrite: "List on Eventbrite",
-  google: "List on Google",
+  google: "List on Google My Business",
   community_cals: "List on community calendars",
   socials: "Post on socials",
   social_ads: "Run social ads",
   direct_email: "Send direct email",
   push_notification: "Send push notification",
-  sunday_slide: "Add to Sunday slides",
+  sunday_slide: "Add to ProPresenter slides",
   sunday_announcement: "Add to Sunday announcements",
   ministry_highlight: "Feature as Ministry Highlight",
   newsletter: "Include in newsletter",
@@ -1778,7 +1778,7 @@ function CalendarBody() {
             <SelectTrigger className="h-8 w-[10rem] text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All events</SelectItem>
-              <SelectItem value="pco">Needs PCO registration</SelectItem>
+              <SelectItem value="pco">Needs PCO Registrations</SelectItem>
               <SelectItem value="missions">Missions team needed</SelectItem>
             </SelectContent>
           </Select>
@@ -3192,7 +3192,7 @@ function ListView({
                 })()}
 
                 {o.pco_registration && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">PCO</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">PCO Registrations</span>
                 )}
                 {(o.other_listings ?? [])
                   .filter((k) => LISTING_LABEL.has(k))
