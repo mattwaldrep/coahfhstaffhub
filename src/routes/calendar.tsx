@@ -476,6 +476,10 @@ function CalendarBody() {
   );
   const [categoryFilter, setCategoryFilter] = useState<string>(loadedPrefs?.categoryFilter ?? "all");
   const [flagFilter, setFlagFilter] = useState<"all" | "pco" | "missions">(loadedPrefs?.flagFilter ?? "all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>(
     DEFAULT_CATEGORIES.map((n) => ({ id: n, name: n })),
   );
