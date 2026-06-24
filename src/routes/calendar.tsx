@@ -757,6 +757,7 @@ function CalendarBody() {
     eventRoomFlagsMap.current = flagsMap;
     setClassSeries((cs ?? []) as ClassSeries[]);
     setRooms((rs ?? []) as Room[]);
+    setMissionTripOptions(((trips ?? []) as Array<{ id: string; church_name: string | null; start_date: string | null; status: string | null }>));
     setAllTemplates(((tpls ?? []) as unknown) as ChecklistTemplate[]);
     setAllTemplateItems(((tplItems ?? []) as unknown) as TemplateItem[]);
 
