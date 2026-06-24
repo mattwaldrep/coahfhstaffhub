@@ -1791,7 +1791,11 @@ function CalendarBody() {
                  });
                  const roomConfirmed = nonOfficeIds.length === 0 || nonOfficeIds.every((id) => roomFlags[id]?.req && roomFlags[id]?.app);
                  const has_room = roomConfirmed && (form.room_ids.length > 0 || form.room_needed.trim().length > 0);
-                 const r = scoreEvent({
+                 const commsTotal = checklist.filter((i) => isCommsLabel(i.label)).length;
+                 const commsDone = checklist.filter((i) => isCommsLabel(i.label) && i.done).length;
+                 const logisticsTotal = checklist.length - commsTotal + tplTotal;
+                 const logisticsDone = checklist.filter((i) => !isCommsLabel(i.label) && i.done).length + tplDone;
+                 const r = scoreEventSplit({
                    category: form.category,
                    leader_name: form.leader_name,
                    childcare_needed: form.childcare_needed,
@@ -1799,14 +1803,21 @@ function CalendarBody() {
                    has_room,
                    room_not_needed: form.room_not_needed,
                    leader_not_needed: form.leader_not_needed,
-                   checklist_total: checklist.length + tplTotal,
-                   checklist_done: checklist.filter((i) => i.done).length + tplDone,
+                   checklist_total: logisticsTotal,
+                   checklist_done: logisticsDone,
+                   comms_total: commsTotal,
+                   comms_done: commsDone,
                  });
-                return (
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${readinessColor(r.level)}`} title={r.missing.join(", ") || "Ready"}>
-                    {r.score}% {r.level === "ready" ? "ready" : r.missing[0] ? `· need ${r.missing[0].toLowerCase()}` : ""}
-                  </span>
-                );
+                 return (
+                   <span className="flex items-center gap-1.5">
+                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${readinessColor(r.planning.level)}`} title={r.planning.missing.join(", ") || "Planning ready"}>
+                       Plan {r.planning.score}%
+                     </span>
+                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${readinessColor(r.comms.level)}`} title={r.comms.missing.join(", ") || "Comms ready"}>
+                       Comms {r.comms.score}%
+                     </span>
+                   </span>
+                 );
               })()}
             </DialogTitle>
           </DialogHeader>
