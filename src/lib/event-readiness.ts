@@ -121,15 +121,15 @@ export function readinessColor(level: ReadinessResult["level"]) {
 
 /** Set of checklist labels that count as communications (comms-channel tasks). */
 export const COMMS_CHECKLIST_LABELS = new Set<string>([
-  "Set up PCO registration",
+  "Set up PCO Registrations",
   "List on Eventbrite",
-  "List on Google",
+  "List on Google My Business",
   "List on community calendars",
   "Post on socials",
   "Run social ads",
   "Send direct email",
   "Send push notification",
-  "Add to Sunday slides",
+  "Add to ProPresenter slides",
   "Add to Sunday announcements",
   "Feature as Ministry Highlight",
   "Include in newsletter",
