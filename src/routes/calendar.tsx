@@ -358,8 +358,7 @@ function buildRRule(f: FormState, startDate: Date): string | null {
 
 function expandEvents(events: EventRow[], rangeStart: Date, rangeEnd: Date): Occurrence[] {
   const out: Occurrence[] = [];
-function expandEvents(events: EventRow[], rangeStart: Date, rangeEnd: Date): Occurrence[] {
-  const out: Occurrence[] = [];
+
 
   const pushSpan = (e: EventRow, baseStart: Date) => {
     const baseEnd = e.end_at ? new Date(e.end_at) : null;
