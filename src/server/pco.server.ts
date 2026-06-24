@@ -180,6 +180,25 @@ export async function listFieldDefinitions(): Promise<PcoFieldDef[]> {
   return out;
 }
 
+export async function listFieldOptions(field_definition_id: string): Promise<string[]> {
+  const out: { value: string; seq: number }[] = [];
+  let next: string | null = `/field_definitions/${field_definition_id}/field_options?per_page=100`;
+  while (next) {
+    const json: any = await pcoFetch(next);
+    for (const o of json.data ?? []) {
+      const v = o.attributes?.value;
+      if (typeof v === "string" && v.trim()) {
+        out.push({ value: v, seq: Number(o.attributes?.sequence ?? 0) });
+      }
+    }
+    next = json.links?.next ?? null;
+  }
+  out.sort((a, b) => a.seq - b.seq);
+  // De-dupe preserving order
+  const seen = new Set<string>();
+  return out.map((o) => o.value).filter((v) => (seen.has(v) ? false : (seen.add(v), true)));
+}
+
 export async function pcoPing(): Promise<{ ok: boolean; me?: string; error?: string }> {
   try {
     const json: any = await pcoFetch(`/me`);
