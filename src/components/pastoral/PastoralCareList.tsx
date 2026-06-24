@@ -74,7 +74,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
   const [myPeopleActive, setMyPeopleActive] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [gaps, setGaps] = useState<Record<string, PastoralGap>>({});
-  const [healthOptions, setHealthOptions] = useState<string[]>(DEFAULT_HEALTH_OPTIONS);
+  const [healthOptions, setHealthOptions] = useState<string[]>([]);
 
   const load = useCallback(async (refresh = false) => {
     refresh ? setRefreshing(true) : setLoading(true);
