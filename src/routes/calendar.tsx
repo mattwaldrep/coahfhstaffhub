@@ -1239,10 +1239,23 @@ function CalendarBody() {
         .eq("event_id", eventId)
         .eq("label", label)
         .maybeSingle();
-      if (!existing) {
-        await supabase
+      let itemId = existing?.id as string | undefined;
+      if (!itemId) {
+        const { data: inserted } = await supabase
           .from("event_checklist_items")
-          .insert({ event_id: eventId, label, position: checklist.length });
+          .insert({ event_id: eventId, label, position: checklist.length })
+          .select("id")
+          .single();
+        itemId = inserted?.id;
+      }
+      // Auto-assign to the channel manager, if one is configured.
+      const managerId = commsManagers[channelKey];
+      if (itemId && managerId) {
+        try {
+          await assignFn({ data: { checklistItemId: itemId, assigneeId: managerId } });
+        } catch {
+          // best-effort; checklist item is still created
+        }
       }
     } else {
       await supabase
