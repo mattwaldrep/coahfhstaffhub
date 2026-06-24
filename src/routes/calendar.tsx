@@ -1053,6 +1053,7 @@ function CalendarBody() {
       })(),
       class_series_id: form.class_series_id || null,
       multi_day_mode: form.multi_day_mode,
+      day_of_plan: form.day_of_plan || null,
     };
     const result = form.id
       ? await supabase.from("calendar_events").update(payload).eq("id", form.id).select("id").single()
