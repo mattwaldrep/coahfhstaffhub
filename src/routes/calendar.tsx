@@ -2896,11 +2896,18 @@ function ListView({
                   const r = readinessOf(o);
                   return <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${readinessColor(r.level)}`} title={r.missing.join(", ") || "Ready"}>{r.score}%</span>;
                 })()}
-                {conflictMap.get(`${o.id}-${o.occurrence_date.getTime()}`) ? (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" /> Conflict
-                  </span>
-                ) : null}
+                {(() => {
+                  const cs = conflictMap.get(`${o.id}-${o.occurrence_date.getTime()}`);
+                  if (!cs || !cs.length) return null;
+                  return (
+                    <span
+                      className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 flex items-center gap-1"
+                      title={`Conflicts with: ${formatConflicts(cs)}`}
+                    >
+                      <AlertTriangle className="w-3 h-3" /> Conflicts with {cs.map((c) => c.other.title).join(", ")}
+                    </span>
+                  );
+                })()}
 
                 {o.pco_registration && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">PCO</span>
