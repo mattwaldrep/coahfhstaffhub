@@ -602,7 +602,7 @@ function PersonPanel({
           >
             <SelectTrigger className="h-7 w-40 text-xs"><SelectValue placeholder="Set status" /></SelectTrigger>
             <SelectContent>
-              {HEALTH_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+              {healthOptions.map((o: string) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
             </SelectContent>
           </Select>
         ) : (
