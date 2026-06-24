@@ -84,7 +84,7 @@ import {
 
 import { toast } from "sonner";
 import { useUndoableAction } from "@/lib/use-undoable-action";
-import { scoreEvent, readinessColor } from "@/lib/event-readiness";
+import { scoreEvent, scoreEventSplit, readinessColor, isCommsLabel, type SplitReadiness } from "@/lib/event-readiness";
 import { findConflicts, type ConflictEvent, type Conflict } from "@/lib/event-conflicts";
 import { AlertTriangle } from "lucide-react";
 
