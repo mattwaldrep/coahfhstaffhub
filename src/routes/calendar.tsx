@@ -774,11 +774,14 @@ function CalendarBody() {
     let interval = 1;
     let byweekday: string[] = [];
     let bysetpos = "";
+    let end_mode: FormState["end_mode"] = "never";
+    let count = "";
     if (ev.rrule) {
       try {
         const r = RRule.fromString(ev.rrule);
         const o = r.origOptions;
-        if (o.freq === RRule.MONTHLY) freq = "MONTHLY";
+        if (o.freq === RRule.DAILY) freq = "DAILY";
+        else if (o.freq === RRule.MONTHLY) freq = "MONTHLY";
         else if (o.freq === RRule.YEARLY) freq = "YEARLY";
         interval = o.interval ?? 1;
         if (o.byweekday) {
@@ -792,6 +795,8 @@ function CalendarBody() {
           const arr = Array.isArray(o.bysetpos) ? o.bysetpos : [o.bysetpos];
           bysetpos = String(arr[0]);
         }
+        if (o.count) { end_mode = "after"; count = String(o.count); }
+        else if (o.until || ev.recurrence_end_date) { end_mode = "on"; }
       } catch { /* ignore */ }
     }
     setForm({
