@@ -1495,7 +1495,7 @@ function CalendarBody() {
               const ids = Array.from(selectedIds);
               const { error } = await supabase
                 .from("calendar_events")
-                .update(patch)
+                .update(patch as never)
                 .in("id", ids);
               if (error) throw new Error(error.message);
               toast.success(`Updated ${ids.length} event${ids.length === 1 ? "" : "s"}`);
