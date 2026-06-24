@@ -358,12 +358,38 @@ function buildRRule(f: FormState, startDate: Date): string | null {
 
 function expandEvents(events: EventRow[], rangeStart: Date, rangeEnd: Date): Occurrence[] {
   const out: Occurrence[] = [];
+function expandEvents(events: EventRow[], rangeStart: Date, rangeEnd: Date): Occurrence[] {
+  const out: Occurrence[] = [];
+
+  const pushSpan = (e: EventRow, baseStart: Date) => {
+    const baseEnd = e.end_at ? new Date(e.end_at) : null;
+    const totalDays =
+      baseEnd && baseEnd > baseStart
+        ? Math.max(1, differenceInCalendarDays(baseEnd, baseStart) + 1)
+        : 1;
+    if (totalDays === 1) {
+      if (baseStart >= rangeStart && baseStart <= rangeEnd) {
+        out.push({ ...e, occurrence_date: baseStart });
+      }
+      return;
+    }
+    for (let i = 0; i < totalDays; i++) {
+      const day = i === 0 ? baseStart : startOfDay(addDays(baseStart, i));
+      if (day < rangeStart || day > rangeEnd) continue;
+      out.push({
+        ...e,
+        occurrence_date: day,
+        span_day_index: i + 1,
+        span_total_days: totalDays,
+        is_span_continuation: i > 0,
+      });
+    }
+  };
+
   for (const e of events) {
     const start = new Date(e.start_at);
     if (!e.rrule) {
-      if (start >= rangeStart && start <= rangeEnd) {
-        out.push({ ...e, occurrence_date: start });
-      }
+      pushSpan(e, start);
       continue;
     }
     try {
@@ -373,12 +399,10 @@ function expandEvents(events: EventRow[], rangeStart: Date, rangeEnd: Date): Occ
       for (const d of dates) {
         const iso = format(d, "yyyy-MM-dd");
         if (skip.has(iso)) continue;
-        out.push({ ...e, occurrence_date: d });
+        pushSpan(e, d);
       }
     } catch {
-      if (start >= rangeStart && start <= rangeEnd) {
-        out.push({ ...e, occurrence_date: start });
-      }
+      pushSpan(e, start);
     }
   }
   return out.sort((a, b) => a.occurrence_date.getTime() - b.occurrence_date.getTime());
