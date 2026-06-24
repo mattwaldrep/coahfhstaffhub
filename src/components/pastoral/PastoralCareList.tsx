@@ -21,8 +21,8 @@ import { getPastoralGaps, type PastoralGap } from "@/lib/pastoral-gaps.functions
 import { supabase } from "@/integrations/supabase/client";
 import { CareLoadCard } from "@/components/pastoral/CareLoadCard";
 
-const HEALTH_OPTIONS = ["Thriving", "Healthy", "Watch", "Struggling", "Crisis", "Unknown"];
-// Severity ranking — higher = more urgent (used for "by health (urgent first)")
+const DEFAULT_HEALTH_OPTIONS = ["Thriving", "Healthy", "Watch", "Struggling", "Crisis", "Unknown"];
+// Severity ranking — higher = more urgent. Unknown values default to mid-rank.
 const HEALTH_SEVERITY: Record<string, number> = {
   Crisis: 5, Struggling: 4, Watch: 3, Unknown: 2, Healthy: 1, Thriving: 0,
 };
@@ -74,6 +74,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
   const [myPeopleActive, setMyPeopleActive] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [gaps, setGaps] = useState<Record<string, PastoralGap>>({});
+  const [healthOptions, setHealthOptions] = useState<string[]>(DEFAULT_HEALTH_OPTIONS);
 
   const load = useCallback(async (refresh = false) => {
     refresh ? setRefreshing(true) : setLoading(true);
@@ -82,6 +83,17 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
       setConfigured(res.configured);
       setFields(res.fields);
       setPeople(res.people ?? []);
+      const opts: string[] = Array.isArray(res.health_options) ? res.health_options : [];
+      // Merge PCO options with current values seen on people, so existing values
+      // (e.g. "Distracted", "Sick/Hurting") always appear even if not on the list.
+      const seenValues = new Set<string>();
+      for (const p of (res.people ?? []) as Person[]) {
+        const v = res.fields ? p.fields?.[res.fields.spiritual_health]?.value : null;
+        if (v && typeof v === "string") seenValues.add(v);
+      }
+      const merged = [...opts];
+      for (const v of seenValues) if (!merged.includes(v)) merged.push(v);
+      setHealthOptions(merged.length ? merged : DEFAULT_HEALTH_OPTIONS);
     } catch (e: any) {
       toast.error(e.message ?? "Failed to load");
     } finally {
@@ -360,7 +372,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-[11px] uppercase tracking-wider text-muted-foreground shrink-0">Health</span>
         <div className="flex items-center gap-1.5 flex-wrap">
-          {HEALTH_OPTIONS.map((h) => {
+          {healthOptions.map((h: string) => {
             const active = healthFilter.has(h);
             const count = people.filter((p) => ((fields ? p.fields[fields.spiritual_health]?.value : null) ?? "Unknown") === h).length;
             return (
@@ -430,8 +442,10 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
                   fields={fields!}
                   isFullElder={isFullElder}
                   meetingId={meetingId}
+                  healthOptions={healthOptions}
                   onHealthChanged={() => load(true)}
                 />
+
               )}
             </div>
           );
@@ -523,12 +537,13 @@ function TouchpointLogDialog({
 
 
 function PersonPanel({
-  person, fields, isFullElder, meetingId, onHealthChanged,
+  person, fields, isFullElder, meetingId, healthOptions, onHealthChanged,
 }: {
   person: Person;
   fields: { assigned_elder: string; spiritual_health: string };
   isFullElder: boolean;
   meetingId?: string;
+  healthOptions: string[];
   onHealthChanged: () => void;
 }) {
   const [notes, setNotes] = useState<any[]>([]);
@@ -598,7 +613,7 @@ function PersonPanel({
           >
             <SelectTrigger className="h-7 w-40 text-xs"><SelectValue placeholder="Set status" /></SelectTrigger>
             <SelectContent>
-              {HEALTH_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+              {healthOptions.map((o: string) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
             </SelectContent>
           </Select>
         ) : (

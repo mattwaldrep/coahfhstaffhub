@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
 import { supabaseAdmin } from "./admin.server";
-import { fetchCareList, setFieldDatum, pcoPing, invalidateCareListCache, listFieldDefinitions } from "@/server/pco.server";
+import { fetchCareList, setFieldDatum, pcoPing, invalidateCareListCache, listFieldDefinitions, listFieldOptions } from "@/server/pco.server";
 
 async function getTier(supabase: any, userId: string): Promise<"elder" | "candidate" | null> {
   const { data } = await supabase
@@ -107,12 +107,19 @@ export const listCareList = createServerFn({ method: "POST" })
       field_ids: [cfg.assigned_elder_field_id, cfg.spiritual_health_field_id],
       bypass_cache: data.refresh === true,
     });
+    let health_options: string[] = [];
+    try {
+      health_options = await listFieldOptions(cfg.spiritual_health_field_id);
+    } catch {
+      health_options = [];
+    }
     return {
       configured: true,
       fields: {
         assigned_elder: cfg.assigned_elder_field_id,
         spiritual_health: cfg.spiritual_health_field_id,
       },
+      health_options,
       people,
     };
   });
