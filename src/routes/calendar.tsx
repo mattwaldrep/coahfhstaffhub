@@ -1018,6 +1018,7 @@ function CalendarBody() {
         return ids.length > 0 && ids.every((id) => roomFlags[id]?.app);
       })(),
       class_series_id: form.class_series_id || null,
+      multi_day_mode: form.multi_day_mode,
     };
     const result = form.id
       ? await supabase.from("calendar_events").update(payload).eq("id", form.id).select("id").single()
