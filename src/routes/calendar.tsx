@@ -240,6 +240,10 @@ type FormState = {
   interval: number;
   byweekday: string[];
   bysetpos: string;
+  bymonthday: string[];
+  bymonth: string[];
+  monthly_mode: "dom" | "nth";
+  yearly_mode: "date" | "nth";
   recurrence_end_date: string;
   end_mode: "never" | "on" | "after";
   count: string;
