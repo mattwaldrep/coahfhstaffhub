@@ -905,6 +905,7 @@ function CalendarBody() {
       room_needed: ev.room_needed ?? "",
       action_note: ev.action_note ?? "",
       missions_team_needed: ev.missions_team_needed ?? false,
+      mission_trip_id: (ev as any).mission_trip_id ?? "",
       church_covering: ev.church_covering ?? "",
       childcare_needed: ev.childcare_needed ?? false,
       childcare_arranged: ev.childcare_arranged ?? false,
