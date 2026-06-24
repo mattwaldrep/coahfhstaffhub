@@ -2810,7 +2810,8 @@ function WeekStrip({
                   >
                     <div className="font-medium truncate">{o.title}</div>
                     <div className="text-[10px] text-muted-foreground">
-                      {o.all_day ? "All day" : format(o.occurrence_date, "p")}
+                      {o.all_day || o.is_span_continuation ? "All day" : format(o.occurrence_date, "p")}
+                      {o.span_total_days && o.span_total_days > 1 ? ` · Day ${o.span_day_index}/${o.span_total_days}` : ""}
                     </div>
                   </button>
                 );
