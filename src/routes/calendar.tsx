@@ -1862,6 +1862,52 @@ function CalendarBody() {
                 />
               </div>
             </div>
+            {(() => {
+              if (form.all_day || !form.start_at || !form.end_at) return null;
+              const s = new Date(form.start_at);
+              const eDt = new Date(form.end_at);
+              if (isNaN(s.getTime()) || isNaN(eDt.getTime())) return null;
+              const spans = differenceInCalendarDays(eDt, s) >= 1;
+              if (!spans) return null;
+              return (
+                <div className="rounded-xl border border-border p-3 space-y-2">
+                  <div className="text-sm font-medium">Multi-day event</div>
+                  <div className="text-xs text-muted-foreground">
+                    How should this event run across the days it spans?
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    <label className={`flex items-start gap-2 rounded-lg border p-2 cursor-pointer ${form.multi_day_mode === "continuous" ? "border-primary bg-primary/5" : "border-border"}`}>
+                      <input
+                        type="radio"
+                        className="mt-1"
+                        checked={form.multi_day_mode === "continuous"}
+                        onChange={() => setForm({ ...form, multi_day_mode: "continuous" })}
+                      />
+                      <span className="text-sm">
+                        <span className="font-medium">Continuous (overnight)</span>
+                        <span className="block text-xs text-muted-foreground">
+                          One event that runs straight through, e.g. a retreat or trip.
+                        </span>
+                      </span>
+                    </label>
+                    <label className={`flex items-start gap-2 rounded-lg border p-2 cursor-pointer ${form.multi_day_mode === "daily_hours" ? "border-primary bg-primary/5" : "border-border"}`}>
+                      <input
+                        type="radio"
+                        className="mt-1"
+                        checked={form.multi_day_mode === "daily_hours"}
+                        onChange={() => setForm({ ...form, multi_day_mode: "daily_hours" })}
+                      />
+                      <span className="text-sm">
+                        <span className="font-medium">Each day during set hours</span>
+                        <span className="block text-xs text-muted-foreground">
+                          Same time window each day (uses your start/end times above).
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              );
+            })()}
             {/* Recurrence */}
             <div className="space-y-3 rounded-xl border border-border p-3">
               <label className="flex items-center gap-2 text-sm font-medium">
