@@ -1237,6 +1237,7 @@ function CalendarBody() {
   );
 
   const startOfToday = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d; }, []);
+  const normalizedQuery = searchQuery.trim().toLowerCase();
   const visible = occurrences.filter((o) => {
     const cals = [o.sub_calendar, ...(o.other_listings ?? [])];
     if (!cals.some((c) => filters[c])) return false;
@@ -1244,6 +1245,20 @@ function CalendarBody() {
     if (flagFilter === "pco" && !o.pco_registration) return false;
     if (flagFilter === "missions" && !o.missions_team_needed) return false;
     if (hidePast && o.occurrence_date < startOfToday) return false;
+    if (normalizedQuery) {
+      const hay = [
+        o.title,
+        o.description,
+        o.leader_name,
+        o.location,
+        o.room_needed,
+        o.category,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      if (!hay.includes(normalizedQuery)) return false;
+    }
     return true;
   });
 
