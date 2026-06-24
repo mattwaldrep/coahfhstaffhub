@@ -68,6 +68,7 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 import { useServerFn } from "@tanstack/react-start";
 import {
