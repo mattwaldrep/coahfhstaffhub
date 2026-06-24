@@ -2055,16 +2055,27 @@ function CalendarBody() {
                     </div>
                   )}
 
-                  {form.freq === "MONTHLY" && (
+                  {(form.freq === "MONTHLY" || form.freq === "YEARLY") && (
                     <div className="space-y-2 text-sm">
                       <div className="text-xs text-muted-foreground">
-                        For "last Sunday of the month": pick "Last" + tap Sun below.
+                        Example: pick "Second" + tap Sun for the 2nd Sunday. Select multiple days for patterns like "2nd Tue & 2nd Thu".
                       </div>
                       <div className="flex items-center gap-2">
-                        <Select value={form.bysetpos || "_dom"} onValueChange={(v) => setForm({ ...form, bysetpos: v === "_dom" ? "" : v, byweekday: v === "_dom" ? [] : form.byweekday })}>
-                          <SelectTrigger className="h-8 w-[10rem]"><SelectValue /></SelectTrigger>
+                        <Select
+                          value={form.bysetpos || "_dom"}
+                          onValueChange={(v) => setForm({
+                            ...form,
+                            bysetpos: v === "_dom" ? "" : v,
+                            byweekday: v === "_dom" ? [] : form.byweekday,
+                          })}
+                        >
+                          <SelectTrigger className="h-8 w-[12rem]"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="_dom">On day {format(new Date(form.start_at || Date.now()), "d")}</SelectItem>
+                            <SelectItem value="_dom">
+                              {form.freq === "MONTHLY"
+                                ? `On day ${format(new Date(form.start_at || Date.now()), "d")}`
+                                : `On ${format(new Date(form.start_at || Date.now()), "MMM d")}`}
+                            </SelectItem>
                             <SelectItem value="1">First</SelectItem>
                             <SelectItem value="2">Second</SelectItem>
                             <SelectItem value="3">Third</SelectItem>
@@ -2080,7 +2091,12 @@ function CalendarBody() {
                             return (
                               <button
                                 key={w.v} type="button"
-                                onClick={() => setForm({ ...form, byweekday: on ? [] : [w.v] })}
+                                onClick={() => setForm({
+                                  ...form,
+                                  byweekday: on
+                                    ? form.byweekday.filter((x) => x !== w.v)
+                                    : [...form.byweekday, w.v],
+                                })}
                                 className={`w-8 h-8 text-xs rounded-full border ${
                                   on ? "bg-primary text-primary-foreground border-primary" : "border-border"
                                 }`}
