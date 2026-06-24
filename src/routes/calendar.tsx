@@ -591,6 +591,45 @@ function CalendarBody() {
   const [eventTemplateIds, setEventTemplateIds] = useState<string[]>([]); // attached to current form event
   const [templateStates, setTemplateStates] = useState<Record<string, boolean>>({}); // key: `${item_id}:${YYYY-MM-DD}`
 
+  // Day-of plan templates (rich text)
+  const [planTemplates, setPlanTemplates] = useState<PlanTemplate[]>([]);
+  async function loadPlanTemplates() {
+    const { data } = await supabase
+      .from("event_plan_templates" as any)
+      .select("id,name,content,created_by")
+      .order("name");
+    setPlanTemplates(((data ?? []) as any) as PlanTemplate[]);
+  }
+  useEffect(() => { loadPlanTemplates(); }, []);
+
+  async function saveDayPlanAsTemplate() {
+    const name = window.prompt("Template name", form.title ? `${form.title} — Day-of plan` : "Day-of plan");
+    if (!name) return;
+    const { error } = await supabase
+      .from("event_plan_templates" as any)
+      .insert({ name, content: form.day_of_plan || "", created_by: user?.id ?? null });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Saved as template");
+    loadPlanTemplates();
+  }
+  async function updatePlanTemplate(templateId: string) {
+    const { error } = await supabase
+      .from("event_plan_templates" as any)
+      .update({ content: form.day_of_plan || "" })
+      .eq("id", templateId);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Template updated");
+    loadPlanTemplates();
+  }
+  function loadPlanTemplateInto(templateId: string) {
+    const tpl = planTemplates.find((t) => t.id === templateId);
+    if (!tpl) return;
+    const existing = (form.day_of_plan || "").trim();
+    if (existing && !window.confirm("Replace the current day-of plan with this template?")) return;
+    setForm((f) => ({ ...f, day_of_plan: tpl.content || "" }));
+    toast.success(`Loaded "${tpl.name}"`);
+  }
+
   function readinessFor(occ: Occurrence): SplitReadiness {
     const roomIds = eventRoomsMap.current.get(occ.id) ?? [];
     const flagMap = eventRoomFlagsMap.current.get(occ.id) ?? new Map<string, { req: boolean; app: boolean }>();
