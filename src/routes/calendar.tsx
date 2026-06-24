@@ -1778,7 +1778,7 @@ function CalendarBody() {
             <SelectTrigger className="h-8 w-[10rem] text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All events</SelectItem>
-              <SelectItem value="pco">Needs PCO registration</SelectItem>
+              <SelectItem value="pco">Needs PCO Registrations</SelectItem>
               <SelectItem value="missions">Missions team needed</SelectItem>
             </SelectContent>
           </Select>
