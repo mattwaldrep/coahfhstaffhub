@@ -9,7 +9,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Lock, MessageSquarePlus, MessageSquare, RefreshCw, Search, Trash2, Link as LinkIcon, X, ArrowUpDown, History, UserCheck } from "lucide-react";
+import { Lock, MessageSquarePlus, MessageSquare, RefreshCw, Search, Trash2, Link as LinkIcon, X, ArrowUpDown, History, UserCheck, Clock } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
@@ -20,6 +20,9 @@ import {
 import { getPastoralGaps, type PastoralGap } from "@/lib/pastoral-gaps.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { CareLoadCard } from "@/components/pastoral/CareLoadCard";
+import { TextComposerDialog } from "@/components/pastoral/TextComposerDialog";
+import { LogReplyDialog } from "@/components/pastoral/LogReplyDialog";
+import { TextThread, type TextTouchpoint } from "@/components/pastoral/TextThread";
 
 const DEFAULT_HEALTH_OPTIONS = ["Thriving", "Healthy", "Watch", "Struggling", "Crisis", "Unknown"];
 // Severity ranking — higher = more urgent. Unknown values default to mid-rank.
