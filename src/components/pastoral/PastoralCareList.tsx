@@ -545,6 +545,9 @@ function PersonPanel({
   const [body, setBody] = useState("");
   const [exec, setExec] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [texts, setTexts] = useState<TextTouchpoint[]>([]);
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [replyOpen, setReplyOpen] = useState(false);
   const health = person.fields[fields.spiritual_health];
 
   const load = useCallback(async () => {
@@ -554,7 +557,15 @@ function PersonPanel({
     } catch { /* noop */ }
   }, [person.id]);
 
-  useEffect(() => { load(); }, [load]);
+  const loadTexts = useCallback(async () => {
+    try {
+      const rows: any = await listTouchpoints({ data: { pco_person_id: person.id, limit: 200 } });
+      const all: TextTouchpoint[] = (rows ?? []).filter((r: any) => r.kind === "text");
+      setTexts(all);
+    } catch { /* noop */ }
+  }, [person.id]);
+
+  useEffect(() => { load(); loadTexts(); }, [load, loadTexts]);
 
   useEffect(() => {
     const ch = supabase
@@ -566,6 +577,26 @@ function PersonPanel({
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [person.id, load]);
+
+  useEffect(() => {
+    const ch = supabase
+      .channel(`pco-touchpoints-${person.id}`)
+      .on("postgres_changes", {
+        event: "*", schema: "public", table: "pco_touchpoints",
+        filter: `pco_person_id=eq.${person.id}`,
+      }, loadTexts)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [person.id, loadTexts]);
+
+  // Most-recent text touchpoint determines "awaiting reply" state.
+  const lastText = useMemo(() => {
+    if (texts.length === 0) return null;
+    return [...texts].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    )[0];
+  }, [texts]);
+  const awaitingReply = lastText?.direction === "outbound";
 
   async function post() {
     if (!body.trim()) return;
@@ -615,41 +646,24 @@ function PersonPanel({
           <span className="text-xs">{health?.value ?? "Unknown"}</span>
         )}
         <div className="flex items-center gap-3 md:ml-auto flex-wrap w-full md:w-auto">
-          {(() => {
-            const firstName = person.name.split(/\s+/)[0] ?? "";
-            const draft = `Hey ${firstName}, `;
-            const href = person.phone
-              ? `sms:${person.phone}?&body=${encodeURIComponent(draft)}`
-              : undefined;
-            return (
-              <a
-                href={href}
-                onClick={(e) => {
-                  if (!person.phone) {
-                    e.preventDefault();
-                    toast.error("No phone number on file in Planning Center");
-                    return;
-                  }
-                  // Fire-and-forget log of the touchpoint
-                  logTouchpoint({
-                    data: {
-                      pco_person_id: person.id,
-                      person_name: person.name,
-                      kind: "text",
-                    },
-                  }).catch(() => { /* noop */ });
-                }}
-                className={`text-xs inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border ${
-                  person.phone
-                    ? "border-[oklch(0.55_0.15_280)]/30 text-[oklch(0.55_0.15_280)] hover:bg-[oklch(0.55_0.15_280)]/10"
-                    : "border-border text-muted-foreground opacity-60 cursor-not-allowed"
-                }`}
-                title={person.phone ? `Text ${person.phone}` : "No phone on file"}
-              >
-                <MessageSquare className="w-3.5 h-3.5" /> Text
-              </a>
-            );
-          })()}
+          <button
+            type="button"
+            onClick={() => {
+              if (!person.phone) {
+                toast.error("No phone number on file in Planning Center");
+                return;
+              }
+              setComposerOpen(true);
+            }}
+            className={`text-xs inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border ${
+              person.phone
+                ? "border-[oklch(0.55_0.15_280)]/30 text-[oklch(0.55_0.15_280)] hover:bg-[oklch(0.55_0.15_280)]/10"
+                : "border-border text-muted-foreground opacity-60 cursor-not-allowed"
+            }`}
+            title={person.phone ? `Text ${person.phone}` : "No phone on file"}
+          >
+            <MessageSquare className="w-3.5 h-3.5" /> Text
+          </button>
           <a
             href={`https://people.planningcenteronline.com/people/${person.id}`}
             target="_blank" rel="noreferrer"
@@ -658,8 +672,37 @@ function PersonPanel({
             <LinkIcon className="w-3.5 h-3.5" /> Open in PCO
           </a>
         </div>
-
       </div>
+
+      {awaitingReply && lastText && (
+        <div className="flex items-start gap-2 p-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10">
+          <Clock className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-medium">
+              Awaiting reply from {person.name.split(/\s+/)[0]}
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              Sent {format(new Date(lastText.created_at), "MMM d, h:mm a")}
+              {lastText.user_name ? ` by ${lastText.user_name}` : ""}
+            </div>
+          </div>
+          <Button size="sm" variant="outline" className="h-7 text-xs shrink-0" onClick={() => setReplyOpen(true)}>
+            + Log reply
+          </Button>
+        </div>
+      )}
+
+      {texts.length > 0 && (
+        <TextThread personName={person.name} touchpoints={texts} onChanged={loadTexts} />
+      )}
+
+      {!awaitingReply && texts.length > 0 && (
+        <div>
+          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setReplyOpen(true)}>
+            + Log a reply
+          </Button>
+        </div>
+      )}
 
       <div className="space-y-2">
         {notes.length === 0 && <div className="text-xs text-muted-foreground">No notes yet.</div>}
@@ -707,6 +750,23 @@ function PersonPanel({
         </div>
       </div>
 
+      {person.phone && (
+        <TextComposerDialog
+          open={composerOpen}
+          onOpenChange={setComposerOpen}
+          personId={person.id}
+          personName={person.name}
+          phone={person.phone}
+          onSent={loadTexts}
+        />
+      )}
+      <LogReplyDialog
+        open={replyOpen}
+        onOpenChange={setReplyOpen}
+        personId={person.id}
+        personName={person.name}
+        onLogged={loadTexts}
+      />
     </div>
   );
 }
