@@ -1,96 +1,112 @@
 ## Goal
 
-Make opening a mission trip feel like walking through a **process**, not scrolling a long form. Each of the 12 booking-and-deployment steps becomes a discrete, navigable stage with just the tools that step needs, an explicit Complete / Skip / Reset state, and a clear sense of where you are in the journey.
+Replace the bare `sms:` link on each pastoral care card with an in-app texting flow that:
 
-## New trip detail layout
+1. Lets the elder compose a message inside a dialog (not in the phone keyboard).
+2. Hands the finished message off to the elder's native SMS app — so the text leaves their personal number, preserving per-elder identity at zero cost.
+3. Auto-logs the outgoing message as a `text` touchpoint with `direction: 'outbound'` the moment the handoff happens.
+4. Surfaces an **"Awaiting reply"** pill on the card whenever the most recent text touchpoint is outbound, with a one-tap **Log reply** button so the elder can capture the response whenever they come back to the app (could be hours or days later).
+5. Renders the full back-and-forth as chat bubbles inline on the card, visible to all elders + elder candidates.
 
-Replace the current top-to-bottom scroll dialog with a two-pane workspace inside the same Dialog (wider — `max-w-5xl`):
+## Why structured replies instead of generic comments
+
+- **Conversation pairing:** outbound + inbound `text` touchpoints render as paired chat bubbles. A comment thread loses that structure.
+- **Counts toward pastoral contact:** the 45/60-day gap tracker already reads from `pco_touchpoints`. Logging the reply as a touchpoint means the contact registers; logging as a comment would not.
+- **Enables the "awaiting reply" state:** the app can detect that the last `text` touchpoint is outbound and prompt the elder to log when they're back. That signal only exists if replies have a distinct type/direction.
+
+## What the user will see
+
+**Compose dialog** (replaces the current Text button):
 
 ```text
-┌──────────────────────────────────────────────────────────────┐
-│  Grace Church  ·  Aug 4–9  ·  Team #14        Readiness 67%  │  ← sticky header
-│  Status: Pre-Trip ▾                          [Trip basics ▾] │     (basics collapse into a popover)
-├────────────────┬─────────────────────────────────────────────┤
-│ PHASE: INTAKE  │  Step 2 of 12 — Welcome email               │
-│  ✓ Confirmation│  ────────────────────────────────────────── │
-│  ● Welcome ema.│  Send the inquiry form + welcome message    │
-│  ○ Questionn…  │  to the team leader.                        │
-│                │                                             │
-│ PLANNING       │  [ Compose welcome email ]                  │
-│  ○ Planning ca.│  [ Copy inquiry link ]                      │
-│                │                                             │
-│ ITINERARY      │  Notes for this step …………………………………… │
-│  ⊘ Draft sched.│                                             │
-│  ○ Confirm sch.│                                             │
-│  ○ Supplies    │  ─────────────────────────────────────────  │
-│  ○ Final sched.│  [ ← Previous ]  [ Skip step ▾ ][ Mark done →]│
-│                │                                             │
-│ IN FIELD …     │                                             │
-│ WRAP-UP …      │                                             │
-└────────────────┴─────────────────────────────────────────────┘
+┌─ Text Jane Doe ────────────────────────────┐
+│ Phone: (555) 123-4567                      │
+│ Templates: [Checking in] [Praying] [Visit] │
+│ ┌────────────────────────────────────────┐ │
+│ │ Hi Jane, just wanted to check in...    │ │
+│ └────────────────────────────────────────┘ │
+│ 142 chars                                  │
+│            [Cancel]  [Open in Messages →]  │
+└────────────────────────────────────────────┘
 ```
 
-- **Left rail**: the 12 steps grouped under 5 phase headings (Intake, Planning, Itinerary, In Field, Wrap-up). Each row shows an icon for its state (`✓` done, `●` active, `⊘` skipped, `○` pending) and is clickable to jump.
-- **Right pane**: one step at a time. Shows the step name, a 1-line description of what this step is, then ONLY the tool(s) and fields relevant to that step (welcome-email composer, planning-call panel, draft-itinerary panel + doc sync, pre-trip confirm checklist, final-schedule send, etc.). Other tools stay hidden.
-- **Footer in the right pane**: `Previous` · `Skip step ▾` · `Mark done →`. The skip button opens a small popover with an optional reason ("not needed because…"). Marking done auto-advances to the next non-skipped step. Already-done/skipped steps show `Reset` instead.
-- **Header**: trip name, dates, status pill, readiness %. A `Trip basics ▾` popover holds the church/dates/leader/status form so it's one click away but out of the flow. Save persists on blur.
+Tapping **Open in Messages** does two things in the same click:
+- Saves an outbound `text` touchpoint (note = full body).
+- Triggers an `sms:` URL with the body pre-filled (iMessage / Android Messages opens).
 
-## Skip behaviour
+**On the card, after sending — "Awaiting reply" state:**
 
-- New field on each trip: `skipped_steps: Record<string, boolean>` (mirrors the existing `steps` shape).
-- Readiness % = `(done + skipped) / total` so a skipped step no longer blocks the bar from reaching 100%.
-- Skipped steps render with a strikethrough + `Skipped` tag in the rail and on the kanban card tooltip. Status filter chips and "missing items" tooltips treat skipped as resolved.
-- Skipping is reversible — `Reset step` clears both done and skipped flags.
+```text
+⏳ Awaiting reply from Jane · sent 2h ago by Mark
+   "Hi Jane, just wanted to check in..."
+                                    [+ Log reply]
+```
 
-## Phase → step grouping
+This pill stays visible until either (a) an inbound `text` touchpoint is logged for that person, or (b) the elder dismisses it. It's the entry point the elder hits when they reopen the app later.
 
-| Phase | Steps |
-| --- | --- |
-| Intake | Confirmation, Welcome email, Questionnaire received |
-| Planning | Planning call |
-| Itinerary | Draft schedule, Confirm schedule & staff leads, Place supplies orders, Send final schedule |
-| In Field | Orientation session, Daily leader check-in |
-| Wrap-up | Thank-you & feedback, Debrief call |
+**Log reply dialog** (one field):
 
-Each phase header in the rail shows `done/total` for that phase.
+```text
+┌─ Log Jane's reply ─────────────────────────┐
+│ ┌────────────────────────────────────────┐ │
+│ │ Thanks for checking in, I'm doing      │ │
+│ │ better this week.                      │ │
+│ └────────────────────────────────────────┘ │
+│ Received: [Now ▾]   (or pick date/time)   │
+│                        [Cancel]  [Save]    │
+└────────────────────────────────────────────┘
+```
 
-## Step → tool mapping
+Saved as an inbound `text` touchpoint. The pill disappears; the bubble appears in the thread.
 
-| Step | Right-pane content |
-| --- | --- |
-| Confirmation | `InquiryPanel` (inquiry token, link, copy) |
-| Welcome email | "Compose welcome email" button + leader email field + inline note |
-| Questionnaire received | Inquiry submission summary (read-only) + planning-call scheduler shortcut |
-| Planning call | `PlanningCallPanel` (date/time, planning notes sections) |
-| Draft schedule | `DraftItineraryPanel` body editor + "Sync to Google Doc" + "Email draft" |
-| Confirm schedule & staff leads | `PreTripConfirmPanel` (the 3-item confirm checklist + coordinator on-call) |
-| Place supplies orders | Inline supplies notes (uses existing planning_notes.supplies) + outreach tracks |
-| Send final schedule | Doc URL + "Send final schedule" Gmail composer |
-| Orientation session | Notes + "Set on-call coordinator" reminder |
-| Daily leader check-in | Daily window times + simple per-day check-in log |
-| Thank-you & feedback | "Compose thank-you" email + feedback URL field |
-| Debrief call | Date + free-form notes |
+**Thread view** on each card: consecutive `text` touchpoints group into chat bubbles — outbound right-aligned with the elder's name, inbound left-aligned with the person's name and the elder who logged it shown as a small footnote ("logged by Mark, 9:14 PM").
 
-Per-step `notes` field stored under a new `step_notes: Record<string, string>` column (or reuse `planning_notes` keyed by step key) so coordinators can leave context without dumping it into the generic `notes` field.
+## Visibility
 
-## Card cleanup (Kanban)
+Thread + reply logging visible to all elders and elder candidates (matches existing pastoral care list audience). No role gating changes — `pco_touchpoints` policies already cover this.
 
-Tighten the existing `TripCard` while we're here so the new flow has a clean entry point:
-- Top row: church name + status pill + readiness score badge.
-- Middle row: date range + leader name on one line.
-- Bottom row: phase progress dots (5 small pills, one per phase, filled proportional to done+skipped in that phase) instead of a single thin bar. Hover shows "Intake 2/3 · Planning 1/1 · …".
-- Quick actions (mail / phone / link / status select) stay in a single row at the bottom.
+## Technical details
 
-## Technical notes
+**Schema change:**
 
-- **Schema migration**: add `skipped_steps jsonb not null default '{}'::jsonb` and `step_notes jsonb not null default '{}'::jsonb` to `public.mission_trips`. Backfill is no-op.
-- **State**: keep `form` shape but add `skipped_steps` and `step_notes`. Persist via the existing edit pathway.
-- **Refactor**: extract a `TripStepper` component (`src/components/missions/TripStepper.tsx`) that owns left-rail + right-pane + footer. Existing panel components (`InquiryPanel`, `PlanningCallPanel`, `DraftItineraryPanel`, `PreTripConfirmPanel`) get rendered by the stepper based on the active step key — they keep their internal logic untouched.
-- **Readiness scoring**: update `scoreTrip` / `readinessPct` to treat `skipped_steps[k] === true` as satisfied for the steps-derived portion, so kanban badges and the "missing items" tooltip match the new behavior.
-- **No design-system drift**: reuse existing tokens, shadcn `Tabs`-style rail styling, and `Checkbox`/`Button` primitives. No new colors.
+```sql
+ALTER TABLE public.pco_touchpoints
+  ADD COLUMN direction text
+  CHECK (direction IN ('outbound', 'inbound') OR direction IS NULL);
+```
+
+Default `NULL` preserves history (older non-text or pre-feature touchpoints stay unaffected). No RLS change needed.
+
+**Server functions** (`src/lib/pastoral-care.functions.ts`):
+
+- Extend `logTouchpoint` validator with optional `direction: 'outbound' | 'inbound'` and an optional `created_at` override (used by Log reply when the elder picks "when did Jane actually reply?").
+- No new endpoint needed; reply logging reuses `logTouchpoint`.
+
+**Awaiting-reply detection:** pure client logic — for each person, find the most recent `text` touchpoint; if it's `direction = 'outbound'`, show the pill. No new DB column or query.
+
+**Templates:** 3–4 starter phrases hardcoded on the client for v1. Promote to a DB table later if needed (flagged as a follow-up, not in this plan).
+
+**`sms:` handoff:** reuse the existing platform-aware encode (`?&body=` on iOS, `?body=` on Android).
+
+**Safety:** outbound log fires *before* the `sms:` handoff so the record exists even if the elder cancels in Messages. A 5-second Undo toast (via the existing `useUndoableAction` hook) lets them retract an accidental composer-then-cancel.
+
+**Disabled state:** if `person.phone` is missing, Text button stays disabled with the current "No phone on file" tooltip.
+
+## File summary
+
+```text
+NEW:  src/components/pastoral/TextComposerDialog.tsx
+NEW:  src/components/pastoral/LogReplyDialog.tsx
+NEW:  src/components/pastoral/TextThread.tsx       (chat-bubble renderer)
+NEW:  src/components/pastoral/AwaitingReplyPill.tsx
+EDIT: src/components/pastoral/PastoralCareList.tsx (swap Text button, render pill + thread)
+EDIT: src/lib/pastoral-care.functions.ts           (extend logTouchpoint with direction + created_at)
+MIGRATION: add pco_touchpoints.direction column
+```
 
 ## Out of scope
 
-- Reordering or renaming the 12 steps.
-- Changing how trips move between Kanban columns.
-- Server-side automation triggered by completing steps (e.g. auto-send emails on mark-done) — buttons remain manual.
+- True automatic inbound capture (would require a paid provider like Twilio).
+- DB-backed editable templates.
+- MMS / image attachments.
+- Read receipts / delivery status.

@@ -247,20 +247,25 @@ export const logTouchpoint = createServerFn({ method: "POST" })
         person_name: z.string().max(200).nullable().optional(),
         kind: z.enum(["text", "call", "email", "in_person", "other"]),
         note: z.string().max(2000).nullable().optional(),
+        direction: z.enum(["outbound", "inbound"]).nullable().optional(),
+        created_at: z.string().datetime().optional(),
       })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertAccess(context.supabase, context.userId);
+    const insert: any = {
+      pco_person_id: data.pco_person_id,
+      person_name: data.person_name ?? null,
+      kind: data.kind,
+      note: data.note ?? null,
+      user_id: context.userId,
+    };
+    if (data.direction) insert.direction = data.direction;
+    if (data.created_at) insert.created_at = data.created_at;
     const { data: row, error } = await supabaseAdmin
       .from("pco_touchpoints")
-      .insert({
-        pco_person_id: data.pco_person_id,
-        person_name: data.person_name ?? null,
-        kind: data.kind,
-        note: data.note ?? null,
-        user_id: context.userId,
-      })
+      .insert(insert)
       .select("*")
       .single();
     if (error) throw new Error(error.message);

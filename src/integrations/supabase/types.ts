@@ -2454,6 +2454,7 @@ export type Database = {
       pco_touchpoints: {
         Row: {
           created_at: string
+          direction: string | null
           id: string
           kind: string
           note: string | null
@@ -2463,6 +2464,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          direction?: string | null
           id?: string
           kind: string
           note?: string | null
@@ -2472,6 +2474,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          direction?: string | null
           id?: string
           kind?: string
           note?: string | null
