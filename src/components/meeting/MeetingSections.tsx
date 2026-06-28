@@ -723,6 +723,24 @@ export function ThisSundaySection({ meetingDate }: { meetingDate: string }) {
           title: s.event_id ? (titles[s.event_id] ?? "(untitled)") : (s.text_label ?? ""),
         };
       }
+      // Auto-populate Core Value Highlight on the 3-week rotation if not set.
+      if (!map.core_value_highlight) {
+        const rotated = coreValueForSunday(sundayIso);
+        const { data: inserted } = await supabase
+          .from("event_sunday_slots" as any)
+          .insert({ sunday_date: sundayIso, channel: "core_value_highlight", text_label: rotated })
+          .select("id")
+          .single();
+        if (mounted && inserted) {
+          map.core_value_highlight = {
+            id: (inserted as any).id,
+            channel: "core_value_highlight",
+            event_id: null,
+            text_label: rotated,
+            title: rotated,
+          };
+        }
+      }
       setByChannel(map);
       setLoaded(true);
     })();
