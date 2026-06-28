@@ -73,10 +73,11 @@ const SLOT_TITLES: Record<string, string> = {
   ministry_highlight: "Ministry Highlight",
   announcement_1: "Announcement 1",
   announcement_2: "Announcement 2",
+  core_value_highlight: "Core Value Highlight",
 };
 
 export type PushSlotResult = {
-  slot: "ministry_highlight" | "announcement_1" | "announcement_2";
+  slot: "ministry_highlight" | "announcement_1" | "announcement_2" | "core_value_highlight";
   title: string;
   status: "updated" | "empty" | "missing_item";
 };
@@ -149,6 +150,7 @@ export const pushSundaySlotsToPco = createServerFn({ method: "POST" })
       "ministry_highlight",
       "announcement_1",
       "announcement_2",
+      "core_value_highlight",
     ];
     const results: PushSlotResult[] = [];
     for (const ch of channels) {

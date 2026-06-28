@@ -655,7 +655,19 @@ const SUNDAY_SLOTS = [
   { key: "ministry_highlight", label: "Ministry Highlight" },
   { key: "announcement_1", label: "Announcement 1" },
   { key: "announcement_2", label: "Announcement 2" },
+  { key: "core_value_highlight", label: "Core Value Highlight" },
 ] as const;
+
+const CORE_VALUE_ROTATION = ["Gospel", "Community", "Mission"] as const;
+// Anchor: Sunday 2024-01-07 starts the rotation on "Gospel".
+function coreValueForSunday(sundayIso: string): string {
+  const anchor = Date.UTC(2024, 0, 7); // 2024-01-07
+  const [y, m, d] = sundayIso.split("-").map(Number);
+  const target = Date.UTC(y, (m ?? 1) - 1, d ?? 1);
+  const weeks = Math.round((target - anchor) / (7 * 86400000));
+  const idx = ((weeks % 3) + 3) % 3;
+  return CORE_VALUE_ROTATION[idx];
+}
 
 type SundaySlotKey = (typeof SUNDAY_SLOTS)[number]["key"];
 
@@ -710,6 +722,24 @@ export function ThisSundaySection({ meetingDate }: { meetingDate: string }) {
           text_label: s.text_label,
           title: s.event_id ? (titles[s.event_id] ?? "(untitled)") : (s.text_label ?? ""),
         };
+      }
+      // Auto-populate Core Value Highlight on the 3-week rotation if not set.
+      if (!map.core_value_highlight) {
+        const rotated = coreValueForSunday(sundayIso);
+        const { data: inserted } = await supabase
+          .from("event_sunday_slots" as any)
+          .insert({ sunday_date: sundayIso, channel: "core_value_highlight", text_label: rotated })
+          .select("id")
+          .single();
+        if (mounted && inserted) {
+          map.core_value_highlight = {
+            id: (inserted as any).id,
+            channel: "core_value_highlight",
+            event_id: null,
+            text_label: rotated,
+            title: rotated,
+          };
+        }
       }
       setByChannel(map);
       setLoaded(true);
