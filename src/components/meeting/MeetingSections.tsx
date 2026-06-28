@@ -655,7 +655,19 @@ const SUNDAY_SLOTS = [
   { key: "ministry_highlight", label: "Ministry Highlight" },
   { key: "announcement_1", label: "Announcement 1" },
   { key: "announcement_2", label: "Announcement 2" },
+  { key: "core_value_highlight", label: "Core Value Highlight" },
 ] as const;
+
+const CORE_VALUE_ROTATION = ["Gospel", "Community", "Mission"] as const;
+// Anchor: Sunday 2024-01-07 starts the rotation on "Gospel".
+function coreValueForSunday(sundayIso: string): string {
+  const anchor = Date.UTC(2024, 0, 7); // 2024-01-07
+  const [y, m, d] = sundayIso.split("-").map(Number);
+  const target = Date.UTC(y, (m ?? 1) - 1, d ?? 1);
+  const weeks = Math.round((target - anchor) / (7 * 86400000));
+  const idx = ((weeks % 3) + 3) % 3;
+  return CORE_VALUE_ROTATION[idx];
+}
 
 type SundaySlotKey = (typeof SUNDAY_SLOTS)[number]["key"];
 
