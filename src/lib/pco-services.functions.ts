@@ -150,6 +150,7 @@ export const pushSundaySlotsToPco = createServerFn({ method: "POST" })
       "ministry_highlight",
       "announcement_1",
       "announcement_2",
+      "core_value_highlight",
     ];
     const results: PushSlotResult[] = [];
     for (const ch of channels) {
