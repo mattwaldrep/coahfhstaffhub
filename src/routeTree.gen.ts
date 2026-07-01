@@ -47,6 +47,7 @@ import { Route as CgCoachingSettingsRouteImport } from './routes/cg-coaching.set
 import { Route as CalendarPublicRouteImport } from './routes/calendar_.public'
 import { Route as CalendarPlanningRouteImport } from './routes/calendar_.planning'
 import { Route as CalendarClassesRouteImport } from './routes/calendar_.classes'
+import { Route as AnnualPlanningBudgetRouteImport } from './routes/annual-planning.budget'
 import { Route as ElderMotionsIndexRouteImport } from './routes/elder.motions.index'
 import { Route as ElderMeetingsIndexRouteImport } from './routes/elder.meetings.index'
 import { Route as MinistryPlansPlanIdReviewRouteImport } from './routes/ministry-plans.$planId.review'
@@ -255,6 +256,11 @@ const CalendarClassesRoute = CalendarClassesRouteImport.update({
   path: '/calendar/classes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnnualPlanningBudgetRoute = AnnualPlanningBudgetRouteImport.update({
+  id: '/annual-planning/budget',
+  path: '/annual-planning/budget',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ElderMotionsIndexRoute = ElderMotionsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -372,6 +378,7 @@ export interface FileRoutesByFullPath {
   '/sunday-review': typeof SundayReviewRoute
   '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
+  '/annual-planning/budget': typeof AnnualPlanningBudgetRoute
   '/calendar/classes': typeof CalendarClassesRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
@@ -427,6 +434,7 @@ export interface FileRoutesByTo {
   '/sunday-review': typeof SundayReviewRoute
   '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
+  '/annual-planning/budget': typeof AnnualPlanningBudgetRoute
   '/calendar/classes': typeof CalendarClassesRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
@@ -483,6 +491,7 @@ export interface FileRoutesById {
   '/sunday-review': typeof SundayReviewRoute
   '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
+  '/annual-planning/budget': typeof AnnualPlanningBudgetRoute
   '/calendar_/classes': typeof CalendarClassesRoute
   '/calendar_/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar_/public': typeof CalendarPublicRoute
@@ -542,6 +551,7 @@ export interface FileRouteTypes {
     | '/sunday-review'
     | '/trends'
     | '/users'
+    | '/annual-planning/budget'
     | '/calendar/classes'
     | '/calendar/planning'
     | '/calendar/public'
@@ -597,6 +607,7 @@ export interface FileRouteTypes {
     | '/sunday-review'
     | '/trends'
     | '/users'
+    | '/annual-planning/budget'
     | '/calendar/classes'
     | '/calendar/planning'
     | '/calendar/public'
@@ -652,6 +663,7 @@ export interface FileRouteTypes {
     | '/sunday-review'
     | '/trends'
     | '/users'
+    | '/annual-planning/budget'
     | '/calendar_/classes'
     | '/calendar_/planning'
     | '/calendar_/public'
@@ -710,6 +722,7 @@ export interface RootRouteChildren {
   SundayReviewRoute: typeof SundayReviewRoute
   TrendsRoute: typeof TrendsRoute
   UsersRoute: typeof UsersRoute
+  AnnualPlanningBudgetRoute: typeof AnnualPlanningBudgetRoute
   CalendarClassesRoute: typeof CalendarClassesRoute
   CalendarPlanningRoute: typeof CalendarPlanningRouteWithChildren
   CalendarPublicRoute: typeof CalendarPublicRoute
@@ -1001,6 +1014,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CalendarClassesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/annual-planning/budget': {
+      id: '/annual-planning/budget'
+      path: '/annual-planning/budget'
+      fullPath: '/annual-planning/budget'
+      preLoaderRoute: typeof AnnualPlanningBudgetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/elder/motions/': {
       id: '/elder/motions/'
       path: '/'
@@ -1229,6 +1249,7 @@ const rootRouteChildren: RootRouteChildren = {
   SundayReviewRoute: SundayReviewRoute,
   TrendsRoute: TrendsRoute,
   UsersRoute: UsersRoute,
+  AnnualPlanningBudgetRoute: AnnualPlanningBudgetRoute,
   CalendarClassesRoute: CalendarClassesRoute,
   CalendarPlanningRoute: CalendarPlanningRouteWithChildren,
   CalendarPublicRoute: CalendarPublicRoute,
