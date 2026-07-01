@@ -13,6 +13,7 @@ import { Route as UsersRouteImport } from './routes/users'
 import { Route as TrendsRouteImport } from './routes/trends'
 import { Route as SundayReviewRouteImport } from './routes/sunday-review'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ServeLeadersRouteImport } from './routes/serve-leaders'
 import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as MissionsRouteImport } from './routes/missions'
@@ -77,6 +78,11 @@ const SundayReviewRoute = SundayReviewRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServeLeadersRoute = ServeLeadersRouteImport.update({
+  id: '/serve-leaders',
+  path: '/serve-leaders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RoomsRoute = RoomsRouteImport.update({
@@ -330,6 +336,7 @@ export interface FileRoutesByFullPath {
   '/missions': typeof MissionsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
+  '/serve-leaders': typeof ServeLeadersRoute
   '/settings': typeof SettingsRoute
   '/sunday-review': typeof SundayReviewRoute
   '/trends': typeof TrendsRoute
@@ -379,6 +386,7 @@ export interface FileRoutesByTo {
   '/missions': typeof MissionsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
+  '/serve-leaders': typeof ServeLeadersRoute
   '/settings': typeof SettingsRoute
   '/sunday-review': typeof SundayReviewRoute
   '/trends': typeof TrendsRoute
@@ -429,6 +437,7 @@ export interface FileRoutesById {
   '/missions': typeof MissionsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
+  '/serve-leaders': typeof ServeLeadersRoute
   '/settings': typeof SettingsRoute
   '/sunday-review': typeof SundayReviewRoute
   '/trends': typeof TrendsRoute
@@ -482,6 +491,7 @@ export interface FileRouteTypes {
     | '/missions'
     | '/reset-password'
     | '/rooms'
+    | '/serve-leaders'
     | '/settings'
     | '/sunday-review'
     | '/trends'
@@ -531,6 +541,7 @@ export interface FileRouteTypes {
     | '/missions'
     | '/reset-password'
     | '/rooms'
+    | '/serve-leaders'
     | '/settings'
     | '/sunday-review'
     | '/trends'
@@ -580,6 +591,7 @@ export interface FileRouteTypes {
     | '/missions'
     | '/reset-password'
     | '/rooms'
+    | '/serve-leaders'
     | '/settings'
     | '/sunday-review'
     | '/trends'
@@ -632,6 +644,7 @@ export interface RootRouteChildren {
   MissionsRoute: typeof MissionsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RoomsRoute: typeof RoomsRoute
+  ServeLeadersRoute: typeof ServeLeadersRoute
   SettingsRoute: typeof SettingsRoute
   SundayReviewRoute: typeof SundayReviewRoute
   TrendsRoute: typeof TrendsRoute
@@ -683,6 +696,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/serve-leaders': {
+      id: '/serve-leaders'
+      path: '/serve-leaders'
+      fullPath: '/serve-leaders'
+      preLoaderRoute: typeof ServeLeadersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rooms': {
@@ -1093,6 +1113,7 @@ const rootRouteChildren: RootRouteChildren = {
   MissionsRoute: MissionsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RoomsRoute: RoomsRoute,
+  ServeLeadersRoute: ServeLeadersRoute,
   SettingsRoute: SettingsRoute,
   SundayReviewRoute: SundayReviewRoute,
   TrendsRoute: TrendsRoute,
