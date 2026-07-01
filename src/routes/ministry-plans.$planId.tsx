@@ -387,9 +387,10 @@ function ProgramsStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
 function StructureStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
   return (
     <div className="space-y-2">
-      <Label>Organizational structure</Label>
+      <h3 className="font-medium">III. Organizational Structure</h3>
       <p className="text-xs text-muted-foreground">
-        Describe your structure including coaches / leads and volunteers.
+        Outline the organizational structure of your ministry including coaches
+        and volunteers.
       </p>
       <Textarea
         rows={10}
@@ -403,25 +404,34 @@ function StructureStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) 
 
 function SwotStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {(
-        [
-          ["strengths", "Strengths"],
-          ["weaknesses", "Weaknesses"],
-          ["opportunities", "Opportunities"],
-          ["threats", "Threats"],
-        ] as const
-      ).map(([key, label]) => (
-        <div key={key} className="rounded-md border p-3 space-y-2">
-          <Label>{label}</Label>
-          <BulletList
-            items={plan[key] as string[]}
-            onChange={(next) => patch(key, next as any, { debounce: 0 })}
-            placeholder={`Add ${label.toLowerCase()}…`}
-            editable
-          />
-        </div>
-      ))}
+    <div className="space-y-3">
+      <div>
+        <h3 className="font-medium">IV. SWOT Analysis</h3>
+        <p className="text-xs text-muted-foreground">
+          Evaluate the conditions of your ministry area. The SWOT profile should
+          help you plan goals for the new ministry year.
+        </p>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        {(
+          [
+            ["strengths", "Strengths within the ministry"],
+            ["weaknesses", "Weaknesses within the ministry"],
+            ["opportunities", "Opportunities for the future"],
+            ["threats", "Threats to the health of the ministry"],
+          ] as const
+        ).map(([key, label]) => (
+          <div key={key} className="rounded-md border p-3 space-y-2">
+            <Label>{label}</Label>
+            <BulletList
+              items={plan[key] as string[]}
+              onChange={(next) => patch(key, next as any, { debounce: 0 })}
+              placeholder="Add item…"
+              editable
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
