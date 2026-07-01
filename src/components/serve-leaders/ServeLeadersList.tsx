@@ -49,6 +49,7 @@ export function ServeLeadersList() {
   const [statusFilter, setStatusFilter] = useState<"any" | "due" | "recent">("any");
   const [meta, setMeta] = useState<Record<string, Meta>>({});
   const [logOpen, setLogOpen] = useState(false);
+  const [monthlyOpen, setMonthlyOpen] = useState(false);
 
   const load = useCallback(async (refresh = false) => {
     refresh ? setRefreshing(true) : setLoading(true);
