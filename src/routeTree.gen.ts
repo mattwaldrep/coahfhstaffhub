@@ -45,6 +45,7 @@ import { Route as CalendarPlanningRouteImport } from './routes/calendar_.plannin
 import { Route as CalendarClassesRouteImport } from './routes/calendar_.classes'
 import { Route as ElderMotionsIndexRouteImport } from './routes/elder.motions.index'
 import { Route as ElderMeetingsIndexRouteImport } from './routes/elder.meetings.index'
+import { Route as AuthenticatedMinistryPlansIndexRouteImport } from './routes/_authenticated/ministry-plans.index'
 import { Route as ElderMotionsMotionIdRouteImport } from './routes/elder.motions.$motionId'
 import { Route as ElderMeetingsMeetingIdRouteImport } from './routes/elder.meetings.$meetingId'
 import { Route as CalendarPlanningReviewRouteImport } from './routes/calendar_.planning.review'
@@ -240,6 +241,12 @@ const ElderMeetingsIndexRoute = ElderMeetingsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ElderMeetingsRoute,
 } as any)
+const AuthenticatedMinistryPlansIndexRoute =
+  AuthenticatedMinistryPlansIndexRouteImport.update({
+    id: '/_authenticated/ministry-plans/',
+    path: '/ministry-plans/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ElderMotionsMotionIdRoute = ElderMotionsMotionIdRouteImport.update({
   id: '/$motionId',
   path: '/$motionId',
@@ -361,6 +368,7 @@ export interface FileRoutesByFullPath {
   '/calendar/planning/review': typeof CalendarPlanningReviewRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/motions/$motionId': typeof ElderMotionsMotionIdRoute
+  '/ministry-plans/': typeof AuthenticatedMinistryPlansIndexRoute
   '/elder/meetings/': typeof ElderMeetingsIndexRoute
   '/elder/motions/': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
@@ -409,6 +417,7 @@ export interface FileRoutesByTo {
   '/calendar/planning/review': typeof CalendarPlanningReviewRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/motions/$motionId': typeof ElderMotionsMotionIdRoute
+  '/ministry-plans': typeof AuthenticatedMinistryPlansIndexRoute
   '/elder/meetings': typeof ElderMeetingsIndexRoute
   '/elder/motions': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
@@ -462,6 +471,7 @@ export interface FileRoutesById {
   '/calendar_/planning/review': typeof CalendarPlanningReviewRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/motions/$motionId': typeof ElderMotionsMotionIdRoute
+  '/_authenticated/ministry-plans/': typeof AuthenticatedMinistryPlansIndexRoute
   '/elder/meetings/': typeof ElderMeetingsIndexRoute
   '/elder/motions/': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
@@ -516,6 +526,7 @@ export interface FileRouteTypes {
     | '/calendar/planning/review'
     | '/elder/meetings/$meetingId'
     | '/elder/motions/$motionId'
+    | '/ministry-plans/'
     | '/elder/meetings/'
     | '/elder/motions/'
     | '/api/public/hooks/action-items-digest'
@@ -564,6 +575,7 @@ export interface FileRouteTypes {
     | '/calendar/planning/review'
     | '/elder/meetings/$meetingId'
     | '/elder/motions/$motionId'
+    | '/ministry-plans'
     | '/elder/meetings'
     | '/elder/motions'
     | '/api/public/hooks/action-items-digest'
@@ -616,6 +628,7 @@ export interface FileRouteTypes {
     | '/calendar_/planning/review'
     | '/elder/meetings/$meetingId'
     | '/elder/motions/$motionId'
+    | '/_authenticated/ministry-plans/'
     | '/elder/meetings/'
     | '/elder/motions/'
     | '/api/public/hooks/action-items-digest'
@@ -657,6 +670,7 @@ export interface RootRouteChildren {
   OnboardingTemplatesRoute: typeof OnboardingTemplatesRoute
   OnboardingIndexRoute: typeof OnboardingIndexRoute
   ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
+  AuthenticatedMinistryPlansIndexRoute: typeof AuthenticatedMinistryPlansIndexRoute
   ApiPublicHooksActionItemsDigestRoute: typeof ApiPublicHooksActionItemsDigestRoute
   ApiPublicHooksAutoFinalizeMeetingRoute: typeof ApiPublicHooksAutoFinalizeMeetingRoute
   ApiPublicHooksElderTouchpointDigestRoute: typeof ApiPublicHooksElderTouchpointDigestRoute
@@ -922,6 +936,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ElderMeetingsIndexRouteImport
       parentRoute: typeof ElderMeetingsRoute
     }
+    '/_authenticated/ministry-plans/': {
+      id: '/_authenticated/ministry-plans/'
+      path: '/ministry-plans'
+      fullPath: '/ministry-plans/'
+      preLoaderRoute: typeof AuthenticatedMinistryPlansIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/elder/motions/$motionId': {
       id: '/elder/motions/$motionId'
       path: '/$motionId'
@@ -1126,6 +1147,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingTemplatesRoute: OnboardingTemplatesRoute,
   OnboardingIndexRoute: OnboardingIndexRoute,
   ApiGoogleOauthCallbackRoute: ApiGoogleOauthCallbackRoute,
+  AuthenticatedMinistryPlansIndexRoute: AuthenticatedMinistryPlansIndexRoute,
   ApiPublicHooksActionItemsDigestRoute: ApiPublicHooksActionItemsDigestRoute,
   ApiPublicHooksAutoFinalizeMeetingRoute:
     ApiPublicHooksAutoFinalizeMeetingRoute,
