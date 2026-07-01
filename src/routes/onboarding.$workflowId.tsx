@@ -401,6 +401,66 @@ function WorkflowDetail() {
                   )}
                   <span className="flex-1">{section}</span>
                   {isCore && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center gap-1 mr-1"
+                    >
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        title="Move section up"
+                        onClick={async () => {
+                          try {
+                            await reorderSectionFn({
+                              data: {
+                                workflow_id: workflowId,
+                                section_name: section,
+                                direction: "up",
+                              },
+                            });
+                            invalidateSections();
+                          } catch (e: any) {
+                            toast.error(e?.message ?? "Failed to reorder");
+                          }
+                        }}
+                      >
+                        <ArrowUp className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        title="Move section down"
+                        onClick={async () => {
+                          try {
+                            await reorderSectionFn({
+                              data: {
+                                workflow_id: workflowId,
+                                section_name: section,
+                                direction: "down",
+                              },
+                            });
+                            invalidateSections();
+                          } catch (e: any) {
+                            toast.error(e?.message ?? "Failed to reorder");
+                          }
+                        }}
+                      >
+                        <ArrowDown className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        title="Rename section"
+                        onClick={() => setRenameDialog({ old: section, next: section })}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                  {isCore && (
                     <div onClick={(e) => e.stopPropagation()}>
                       <Select
                         value=""
