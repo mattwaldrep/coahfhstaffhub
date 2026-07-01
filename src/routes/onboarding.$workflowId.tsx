@@ -41,6 +41,24 @@ import {
   type OnboardingComment,
 } from "@/lib/onboarding-comments.functions";
 import {
+  listWorkflowSections,
+  reorderWorkflowSection,
+  renameWorkflowSection,
+  listWorkflowDocuments,
+  recordWorkflowDocument,
+  getWorkflowDocumentUrl,
+  deleteWorkflowDocument,
+} from "@/lib/onboarding-extras.functions";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -64,6 +82,12 @@ import {
   CheckCircle2,
   MessageSquare,
   Send,
+  ArrowUp,
+  ArrowDown,
+  Paperclip,
+  Download,
+  FileText,
+  Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppShell } from "@/components/AppShell";
