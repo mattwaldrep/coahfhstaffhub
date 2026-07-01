@@ -43,6 +43,7 @@ import {
 import {
   listWorkflowSections,
   reorderWorkflowSection,
+  setWorkflowSectionOrder,
   renameWorkflowSection,
   listWorkflowDocuments,
   recordWorkflowDocument,
@@ -82,8 +83,7 @@ import {
   CheckCircle2,
   MessageSquare,
   Send,
-  ArrowUp,
-  ArrowDown,
+  GripVertical,
   Paperclip,
   Download,
   FileText,
@@ -174,6 +174,7 @@ function WorkflowDetail() {
   const deleteCommentFn = useServerFn(deleteOnboardingComment);
   const listSectionsFn = useServerFn(listWorkflowSections);
   const reorderSectionFn = useServerFn(reorderWorkflowSection);
+  const setSectionOrderFn = useServerFn(setWorkflowSectionOrder);
   const renameSectionFn = useServerFn(renameWorkflowSection);
   const listDocsFn = useServerFn(listWorkflowDocuments);
   const recordDocFn = useServerFn(recordWorkflowDocument);
@@ -248,6 +249,27 @@ function WorkflowDetail() {
   const [showAllComments, setShowAllComments] = useState(false);
   const [renameDialog, setRenameDialog] = useState<{ old: string; next: string } | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [dragSection, setDragSection] = useState<string | null>(null);
+  const [dragOverSection, setDragOverSection] = useState<string | null>(null);
+
+  const handleSectionDrop = async (target: string) => {
+    const src = dragSection;
+    setDragSection(null);
+    setDragOverSection(null);
+    if (!src || src === target) return;
+    const next = sectionOrder.filter((s) => s !== src);
+    const idx = next.indexOf(target);
+    if (idx === -1) return;
+    next.splice(idx, 0, src);
+    try {
+      await setSectionOrderFn({
+        data: { workflow_id: workflowId, section_names: next },
+      });
+      invalidateSections();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to reorder");
+    }
+  };
 
   if (isLoading) return <div className="p-6 text-muted-foreground">Loading…</div>;
   if (!data) return null;
@@ -388,12 +410,56 @@ function WorkflowDetail() {
           const secKey = `sec:${section}`;
           const isCol = collapsed[secKey];
           return (
-            <Card key={section}>
+            <Card
+              key={section}
+              onDragOver={(e) => {
+                if (!dragSection || dragSection === section) return;
+                e.preventDefault();
+                if (dragOverSection !== section) setDragOverSection(section);
+              }}
+              onDragLeave={() => {
+                if (dragOverSection === section) setDragOverSection(null);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                handleSectionDrop(section);
+              }}
+              className={cn(
+                "transition-colors",
+                dragSection === section && "opacity-50",
+                dragOverSection === section &&
+                  dragSection &&
+                  dragSection !== section &&
+                  "ring-2 ring-primary",
+              )}
+            >
               <CardHeader
                 className="pb-2 cursor-pointer select-none"
                 onClick={() => toggle(secKey)}
               >
                 <CardTitle className="text-base flex items-center gap-2">
+                  {isCore && (
+                    <span
+                      draggable
+                      onDragStart={(e) => {
+                        e.stopPropagation();
+                        setDragSection(section);
+                        e.dataTransfer.effectAllowed = "move";
+                        try {
+                          e.dataTransfer.setData("text/plain", section);
+                        } catch {}
+                      }}
+                      onDragEnd={() => {
+                        setDragSection(null);
+                        setDragOverSection(null);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground -ml-1"
+                      title="Drag to reorder"
+                    >
+                      <GripVertical className="w-4 h-4" />
+                    </span>
+                  )}
                   {isCol ? (
                     <ChevronRight className="w-4 h-4" />
                   ) : (
@@ -405,50 +471,6 @@ function WorkflowDetail() {
                       onClick={(e) => e.stopPropagation()}
                       className="flex items-center gap-1 mr-1"
                     >
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        title="Move section up"
-                        onClick={async () => {
-                          try {
-                            await reorderSectionFn({
-                              data: {
-                                workflow_id: workflowId,
-                                section_name: section,
-                                direction: "up",
-                              },
-                            });
-                            invalidateSections();
-                          } catch (e: any) {
-                            toast.error(e?.message ?? "Failed to reorder");
-                          }
-                        }}
-                      >
-                        <ArrowUp className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        title="Move section down"
-                        onClick={async () => {
-                          try {
-                            await reorderSectionFn({
-                              data: {
-                                workflow_id: workflowId,
-                                section_name: section,
-                                direction: "down",
-                              },
-                            });
-                            invalidateSections();
-                          } catch (e: any) {
-                            toast.error(e?.message ?? "Failed to reorder");
-                          }
-                        }}
-                      >
-                        <ArrowDown className="w-3.5 h-3.5" />
-                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
