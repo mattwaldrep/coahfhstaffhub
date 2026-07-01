@@ -181,7 +181,7 @@ export function ReviewDocument({
                   {g.execution_steps.filter((s) => s.text).length > 0 && (
                     <CardContent className="pt-2">
                       <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
-                        Execution steps
+                        Communication &amp; execution
                       </p>
                       <ul className="list-disc pl-5 text-sm space-y-1">
                         {g.execution_steps
