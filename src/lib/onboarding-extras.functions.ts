@@ -114,6 +114,30 @@ export const reorderWorkflowSection = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const setWorkflowSectionOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        workflow_id: z.string().uuid(),
+        section_names: z.array(z.string().min(1).max(200)).min(1),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCore(context.supabase, context.userId);
+    // Ensure any missing sections exist, then set order = index * 10
+    const updates = data.section_names.map((name, i) => ({
+      workflow_id: data.workflow_id,
+      section_name: name,
+      sort_order: (i + 1) * 10,
+    }));
+    await supabaseAdmin
+      .from("onboarding_workflow_sections")
+      .upsert(updates, { onConflict: "workflow_id,section_name" });
+    return { ok: true };
+  });
+
 export const renameWorkflowSection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
