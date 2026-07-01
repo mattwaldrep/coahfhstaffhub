@@ -17,12 +17,14 @@ export function LogReplyDialog({
   personId,
   personName,
   onLogged,
+  logTouchpoint = defaultLogTouchpoint,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   personId: string;
   personName: string;
   onLogged?: () => void;
+  logTouchpoint?: typeof defaultLogTouchpoint;
 }) {
   const [body, setBody] = useState("");
   const [useCustomTime, setUseCustomTime] = useState(false);
