@@ -32,6 +32,7 @@ import { Route as OnboardingIndexRouteImport } from './routes/onboarding.index'
 import { Route as MinistryPlansIndexRouteImport } from './routes/ministry-plans.index'
 import { Route as ElderIndexRouteImport } from './routes/elder.index'
 import { Route as CgCoachingIndexRouteImport } from './routes/cg-coaching.index'
+import { Route as AnnualPlanningIndexRouteImport } from './routes/annual-planning.index'
 import { Route as OnboardingTemplatesRouteImport } from './routes/onboarding.templates'
 import { Route as OnboardingWorkflowIdRouteImport } from './routes/onboarding.$workflowId'
 import { Route as MinistryPlansAdminRouteImport } from './routes/ministry-plans.admin'
@@ -178,6 +179,11 @@ const CgCoachingIndexRoute = CgCoachingIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => CgCoachingRoute,
+} as any)
+const AnnualPlanningIndexRoute = AnnualPlanningIndexRouteImport.update({
+  id: '/annual-planning/',
+  path: '/annual-planning/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingTemplatesRoute = OnboardingTemplatesRouteImport.update({
   id: '/onboarding/templates',
@@ -380,6 +386,7 @@ export interface FileRoutesByFullPath {
   '/ministry-plans/admin': typeof MinistryPlansAdminRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
+  '/annual-planning/': typeof AnnualPlanningIndexRoute
   '/cg-coaching/': typeof CgCoachingIndexRoute
   '/elder/': typeof ElderIndexRoute
   '/ministry-plans/': typeof MinistryPlansIndexRoute
@@ -432,6 +439,7 @@ export interface FileRoutesByTo {
   '/ministry-plans/admin': typeof MinistryPlansAdminRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
+  '/annual-planning': typeof AnnualPlanningIndexRoute
   '/cg-coaching': typeof CgCoachingIndexRoute
   '/elder': typeof ElderIndexRoute
   '/ministry-plans': typeof MinistryPlansIndexRoute
@@ -489,6 +497,7 @@ export interface FileRoutesById {
   '/ministry-plans/admin': typeof MinistryPlansAdminRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
+  '/annual-planning/': typeof AnnualPlanningIndexRoute
   '/cg-coaching/': typeof CgCoachingIndexRoute
   '/elder/': typeof ElderIndexRoute
   '/ministry-plans/': typeof MinistryPlansIndexRoute
@@ -547,6 +556,7 @@ export interface FileRouteTypes {
     | '/ministry-plans/admin'
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
+    | '/annual-planning/'
     | '/cg-coaching/'
     | '/elder/'
     | '/ministry-plans/'
@@ -599,6 +609,7 @@ export interface FileRouteTypes {
     | '/ministry-plans/admin'
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
+    | '/annual-planning'
     | '/cg-coaching'
     | '/elder'
     | '/ministry-plans'
@@ -655,6 +666,7 @@ export interface FileRouteTypes {
     | '/ministry-plans/admin'
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
+    | '/annual-planning/'
     | '/cg-coaching/'
     | '/elder/'
     | '/ministry-plans/'
@@ -706,6 +718,7 @@ export interface RootRouteChildren {
   MinistryPlansAdminRoute: typeof MinistryPlansAdminRoute
   OnboardingWorkflowIdRoute: typeof OnboardingWorkflowIdRoute
   OnboardingTemplatesRoute: typeof OnboardingTemplatesRoute
+  AnnualPlanningIndexRoute: typeof AnnualPlanningIndexRoute
   MinistryPlansIndexRoute: typeof MinistryPlansIndexRoute
   OnboardingIndexRoute: typeof OnboardingIndexRoute
   ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
@@ -882,6 +895,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/cg-coaching/'
       preLoaderRoute: typeof CgCoachingIndexRouteImport
       parentRoute: typeof CgCoachingRoute
+    }
+    '/annual-planning/': {
+      id: '/annual-planning/'
+      path: '/annual-planning'
+      fullPath: '/annual-planning/'
+      preLoaderRoute: typeof AnnualPlanningIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/onboarding/templates': {
       id: '/onboarding/templates'
@@ -1217,6 +1237,7 @@ const rootRouteChildren: RootRouteChildren = {
   MinistryPlansAdminRoute: MinistryPlansAdminRoute,
   OnboardingWorkflowIdRoute: OnboardingWorkflowIdRoute,
   OnboardingTemplatesRoute: OnboardingTemplatesRoute,
+  AnnualPlanningIndexRoute: AnnualPlanningIndexRoute,
   MinistryPlansIndexRoute: MinistryPlansIndexRoute,
   OnboardingIndexRoute: OnboardingIndexRoute,
   ApiGoogleOauthCallbackRoute: ApiGoogleOauthCallbackRoute,
