@@ -132,3 +132,45 @@ export async function listGroupLeaders(groupId: string, opts?: { bypass_cache?: 
   leadersCache.set(groupId, { at: Date.now(), data: out });
   return out;
 }
+
+// ---- Leader groups for a given person ----
+const personLeaderGroupsCache = new Map<string, { at: number; data: string[] }>();
+const PERSON_LEADER_CACHE_MS = 5 * 60_000;
+
+export async function listLeaderGroupsForPerson(
+  personId: string,
+  opts?: { bypass_cache?: boolean },
+): Promise<string[]> {
+  const cached = personLeaderGroupsCache.get(personId);
+  if (!opts?.bypass_cache && cached && Date.now() - cached.at < PERSON_LEADER_CACHE_MS) {
+    return cached.data;
+  }
+  const names: string[] = [];
+  try {
+    let next: string | null = `${PCO_GROUPS_BASE}/people/${encodeURIComponent(personId)}/memberships?include=group&per_page=100`;
+    while (next) {
+      const json: any = await pcoFetch(next);
+      const included: any[] = json.included ?? [];
+      for (const m of json.data ?? []) {
+        const role = String(m.attributes?.role ?? "").toLowerCase();
+        if (role !== "leader") continue;
+        const groupRel = m.relationships?.group?.data;
+        if (!groupRel) continue;
+        const g = included.find((i) => i.type === "Group" && i.id === groupRel.id);
+        if (!g) continue;
+        if (g.attributes?.archived_at) continue;
+        const name = g.attributes?.name;
+        if (name) names.push(String(name));
+      }
+      next = json.links?.next ?? null;
+    }
+  } catch {
+    // ignore, return what we have
+  }
+  // De-dupe preserving order
+  const seen = new Set<string>();
+  const out = names.filter((n) => (seen.has(n) ? false : (seen.add(n), true)));
+  personLeaderGroupsCache.set(personId, { at: Date.now(), data: out });
+  return out;
+}
+

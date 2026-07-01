@@ -29,7 +29,17 @@ type Person = {
   id: string;
   name: string;
   phone?: string | null;
+  leader_groups?: string[];
 };
+
+function formatLeaderTitle(groups: string[] | undefined): string | null {
+  if (!groups || groups.length === 0) return null;
+  const suffix = (g: string) => (/leader|team|ministry/i.test(g) ? g : `${g} Team Leader`);
+  if (groups.length === 1) return suffix(groups[0]);
+  if (groups.length === 2) return `${suffix(groups[0])} · ${suffix(groups[1])}`;
+  return `${suffix(groups[0])} +${groups.length - 1} more`;
+}
+
 
 type Meta = { last: string | null; count: number };
 
@@ -277,6 +287,11 @@ export function ServeLeadersList() {
                   <StatusDot state={state} days={d} />
                   <div className="min-w-0">
                     <div className="text-sm font-medium truncate">{p.name}</div>
+                    {formatLeaderTitle(p.leader_groups) && (
+                      <div className="text-[11px] text-[oklch(0.55_0.15_280)] truncate">
+                        {formatLeaderTitle(p.leader_groups)}
+                      </div>
+                    )}
                     <div className="text-xs text-muted-foreground truncate">
                       {last
                         ? `Last contact ${formatDistanceToNow(new Date(last), { addSuffix: true })}`
@@ -284,6 +299,7 @@ export function ServeLeadersList() {
                       {count ? ` · ${count} touchpoint${count === 1 ? "" : "s"}` : ""}
                     </div>
                   </div>
+
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusBadge state={state} days={d} />

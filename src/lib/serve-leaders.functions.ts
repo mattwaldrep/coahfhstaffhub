@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
 import { supabaseAdmin } from "./admin.server";
 import { fetchCareList, pcoPing } from "@/server/pco.server";
+import { listLeaderGroupsForPerson } from "@/server/pco-groups.server";
 
 // Hard-coded to the owner of this hub. Serve Team Leaders Hub is scoped
 // to a single staff account.
@@ -25,8 +26,19 @@ export const listServeLeaders = createServerFn({ method: "POST" })
       field_ids: [],
       bypass_cache: data.refresh === true,
     });
-    return { people };
+    // Enrich each person with the groups they lead in PCO Groups.
+    // Runs in parallel; failures for individual people don't block the list.
+    const enriched = await Promise.all(
+      people.map(async (p) => {
+        const leader_groups = await listLeaderGroupsForPerson(p.id, {
+          bypass_cache: data.refresh === true,
+        }).catch(() => [] as string[]);
+        return { ...p, leader_groups };
+      }),
+    );
+    return { people: enriched };
   });
+
 
 export const pingServeLeadersPco = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
