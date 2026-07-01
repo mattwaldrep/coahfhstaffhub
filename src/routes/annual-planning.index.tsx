@@ -28,11 +28,11 @@ const TILES = [
     icon: Wallet,
     disabled: true,
   },
-] as const;
+] as Array<{ to: string; label: string; desc: string; icon: typeof Wallet; disabled?: boolean }>;
 
 function AnnualPlanningHub() {
   return (
-    <AppShell title="Annual Planning">
+    <AppShell>
       <div className="max-w-4xl mx-auto p-6 space-y-4">
         <p className="text-sm text-muted-foreground">
           Three annual submissions from every ministry area. Calendar submissions
