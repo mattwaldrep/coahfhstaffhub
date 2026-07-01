@@ -284,7 +284,11 @@ function HeaderStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
 function PurposeStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
   return (
     <div className="space-y-2">
-      <Label>How does your ministry area reflect our mission and vision?</Label>
+      <h3 className="font-medium">I. Purpose of Your Ministry Area</h3>
+      <p className="text-xs text-muted-foreground">
+        State how your ministry area / responsibilities reflect the vision of our
+        church: connect people to God, others, ministry, and the world.
+      </p>
       <Textarea
         rows={10}
         value={plan.purpose}
