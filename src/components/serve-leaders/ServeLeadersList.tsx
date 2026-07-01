@@ -29,7 +29,17 @@ type Person = {
   id: string;
   name: string;
   phone?: string | null;
+  leader_groups?: string[];
 };
+
+function formatLeaderTitle(groups: string[] | undefined): string | null {
+  if (!groups || groups.length === 0) return null;
+  const suffix = (g: string) => (/leader|team|ministry/i.test(g) ? g : `${g} Team Leader`);
+  if (groups.length === 1) return suffix(groups[0]);
+  if (groups.length === 2) return `${suffix(groups[0])} · ${suffix(groups[1])}`;
+  return `${suffix(groups[0])} +${groups.length - 1} more`;
+}
+
 
 type Meta = { last: string | null; count: number };
 
