@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { logTouchpoint } from "@/lib/pastoral-care.functions";
+import { logTouchpoint as defaultLogTouchpoint } from "@/lib/pastoral-care.functions";
 
 function toLocalInputValue(d: Date) {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -17,12 +17,14 @@ export function LogReplyDialog({
   personId,
   personName,
   onLogged,
+  logTouchpoint = defaultLogTouchpoint,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   personId: string;
   personName: string;
   onLogged?: () => void;
+  logTouchpoint?: typeof defaultLogTouchpoint;
 }) {
   const [body, setBody] = useState("");
   const [useCustomTime, setUseCustomTime] = useState(false);

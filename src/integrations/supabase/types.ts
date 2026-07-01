@@ -2541,6 +2541,42 @@ export type Database = {
         }
         Relationships: []
       }
+      serve_leader_touchpoints: {
+        Row: {
+          created_at: string
+          direction: string | null
+          id: string
+          kind: string
+          note: string | null
+          pco_person_id: string
+          person_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          direction?: string | null
+          id?: string
+          kind: string
+          note?: string | null
+          pco_person_id: string
+          person_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          direction?: string | null
+          id?: string
+          kind?: string
+          note?: string | null
+          pco_person_id?: string
+          person_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       sunday_review_nudges: {
         Row: {
           active: boolean

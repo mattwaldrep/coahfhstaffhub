@@ -36,6 +36,7 @@ import {
   ListChecks,
   ChevronRight,
   UsersRound,
+  HandHeart,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
@@ -61,7 +62,7 @@ const CG_ITEMS: NavItem[] = [
 ];
 
 export function AppSidebar() {
-  const { hasRole, hasElderHubAccess, isDeaconOnly, isCgCoach } = useAuth();
+  const { hasRole, hasElderHubAccess, isDeaconOnly, isCgCoach, hasServeLeadersHubAccess } = useAuth();
   const isCore = hasRole("core");
   const elderItems = isDeaconOnly
     ? ELDER_ITEMS.filter((i) => i.to === "/elder/meetings")
@@ -185,6 +186,16 @@ export function AppSidebar() {
           <SidebarGroup>
             {!collapsed && <SidebarGroupLabel>CG Coaching</SidebarGroupLabel>}
             <SidebarGroupContent>{renderTree(CG_ITEMS)}</SidebarGroupContent>
+          </SidebarGroup>
+        )}
+        {hasServeLeadersHubAccess && (
+          <SidebarGroup>
+            {!collapsed && <SidebarGroupLabel>Serve Team Leaders</SidebarGroupLabel>}
+            <SidebarGroupContent>
+              {renderTree([
+                { to: "/serve-leaders", label: "Leaders", icon: HandHeart, exact: true },
+              ])}
+            </SidebarGroupContent>
           </SidebarGroup>
         )}
         <SidebarGroup>
