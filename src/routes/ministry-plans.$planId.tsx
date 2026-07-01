@@ -277,7 +277,6 @@ function PurposeStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
 }
 
 function ProgramsStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
-  const update = (next: ProgramEntry[]) => patch("programs", next, { debounce: 500 });
   const flushNow = (next: ProgramEntry[]) => patch("programs", next, { debounce: 0 });
   return (
     <div className="space-y-3">
