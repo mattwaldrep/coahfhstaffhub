@@ -54,11 +54,11 @@ export const Route = createFileRoute("/ministry-plans/$planId")({
 
 const STEPS = [
   { key: "header", label: "Header" },
-  { key: "purpose", label: "Purpose" },
-  { key: "programs", label: "Programs" },
-  { key: "structure", label: "Structure" },
-  { key: "swot", label: "SWOT" },
-  { key: "goals", label: "Goals" },
+  { key: "purpose", label: "I. Purpose" },
+  { key: "programs", label: "II. Programs" },
+  { key: "structure", label: "III. Structure" },
+  { key: "swot", label: "IV. SWOT" },
+  { key: "goals", label: "V–VII. Goals" },
   { key: "review", label: "Review" },
 ];
 
