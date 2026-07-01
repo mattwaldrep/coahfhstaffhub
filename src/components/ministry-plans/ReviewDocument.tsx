@@ -150,7 +150,10 @@ export function ReviewDocument({
         </div>
       </Section>
 
-      <Section title="Goals" onEdit={onEditStep ? () => onEditStep(5) : undefined}>
+      <Section
+        title="V. Goals for the Year · VI. Targeted Completion & Significant Others · VII. Communication and Execution Plan"
+        onEdit={onEditStep ? () => onEditStep(5) : undefined}
+      >
         {plan.goals.filter((g) => g.goal_statement).length === 0 ? (
           <p className="text-sm italic text-muted-foreground">No goals set.</p>
         ) : (
