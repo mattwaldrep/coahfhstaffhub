@@ -172,6 +172,13 @@ function WorkflowDetail() {
   const listCommentsFn = useServerFn(listOnboardingComments);
   const addCommentFn = useServerFn(addOnboardingComment);
   const deleteCommentFn = useServerFn(deleteOnboardingComment);
+  const listSectionsFn = useServerFn(listWorkflowSections);
+  const reorderSectionFn = useServerFn(reorderWorkflowSection);
+  const renameSectionFn = useServerFn(renameWorkflowSection);
+  const listDocsFn = useServerFn(listWorkflowDocuments);
+  const recordDocFn = useServerFn(recordWorkflowDocument);
+  const getDocUrlFn = useServerFn(getWorkflowDocumentUrl);
+  const deleteDocFn = useServerFn(deleteWorkflowDocument);
   const { user } = useAuth();
 
   const { data: assignableUsers = [] } = useQuery<UserOption[]>({
@@ -191,6 +198,16 @@ function WorkflowDetail() {
     queryFn: () => listCommentsFn({ data: { workflowId } }),
   });
 
+  const { data: sectionRows = [] } = useQuery<{ section_name: string; sort_order: number }[]>({
+    queryKey: ["onboarding-sections", workflowId],
+    queryFn: () => listSectionsFn({ data: { workflowId } }),
+  });
+
+  const { data: documents = [] } = useQuery<any[]>({
+    queryKey: ["onboarding-docs", workflowId],
+    queryFn: () => listDocsFn({ data: { workflowId } }),
+  });
+
   const commentsByTask = useMemo(() => {
     const m = new Map<string, OnboardingComment[]>();
     for (const c of comments) {
@@ -205,24 +222,32 @@ function WorkflowDetail() {
     qc.invalidateQueries({ queryKey: ["onboarding-workflow", workflowId] });
   const invalidateComments = () =>
     qc.invalidateQueries({ queryKey: ["onboarding-comments", workflowId] });
+  const invalidateSections = () =>
+    qc.invalidateQueries({ queryKey: ["onboarding-sections", workflowId] });
+  const invalidateDocs = () =>
+    qc.invalidateQueries({ queryKey: ["onboarding-docs", workflowId] });
 
   const tree = useMemo(() => buildTree(data?.tasks ?? []), [data?.tasks]);
   const sectionOrder = useMemo(() => {
-    const firstSeen = new Map<string, string>(); // section -> earliest created_at
+    // Union of server-stored sections and any sections present only in tasks
+    // (defensive — server auto-seeds, but this keeps UI resilient)
+    const fromServer = sectionRows.map((r) => r.section_name);
+    const inTasks = new Set<string>();
     (data?.tasks ?? []).forEach((t: any) => {
-      if (t.parent_task_id) return;
-      const prev = firstSeen.get(t.section_name);
-      if (!prev || t.created_at < prev) firstSeen.set(t.section_name, t.created_at);
+      if (!t.parent_task_id) inTasks.add(t.section_name);
     });
-    return Array.from(firstSeen.entries())
-      .sort((a, b) => (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0))
-      .map(([s]) => s);
-  }, [data?.tasks]);
-
+    const extra: string[] = [];
+    inTasks.forEach((s) => {
+      if (!fromServer.includes(s)) extra.push(s);
+    });
+    return [...fromServer, ...extra];
+  }, [sectionRows, data?.tasks]);
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const toggle = (id: string) => setCollapsed((c) => ({ ...c, [id]: !c[id] }));
   const [showAllComments, setShowAllComments] = useState(false);
+  const [renameDialog, setRenameDialog] = useState<{ old: string; next: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   if (isLoading) return <div className="p-6 text-muted-foreground">Loading…</div>;
   if (!data) return null;
