@@ -59,14 +59,32 @@ export function ReviewDocument({
           <h1 className="text-2xl font-display font-bold">
             {plan.ministry_area ?? "Untitled area"} — {plan.calendar_year}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Prepared by {plan.leader_name || authorName || "—"}
-          </p>
+          <dl className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">
+            <div>
+              <dt className="inline text-muted-foreground">Name: </dt>
+              <dd className="inline">{plan.leader_name || authorName || "—"}</dd>
+            </div>
+            <div>
+              <dt className="inline text-muted-foreground">Campus: </dt>
+              <dd className="inline">{plan.campus || "—"}</dd>
+            </div>
+            <div>
+              <dt className="inline text-muted-foreground">Department: </dt>
+              <dd className="inline">{plan.department || "—"}</dd>
+            </div>
+            <div>
+              <dt className="inline text-muted-foreground">Calendar Year: </dt>
+              <dd className="inline">{plan.calendar_year}</dd>
+            </div>
+          </dl>
         </div>
         <StatusBadge status={plan.status} />
       </div>
 
-      <Section title="Purpose" onEdit={onEditStep ? () => onEditStep(1) : undefined}>
+      <Section
+        title="I. Purpose of Your Ministry Area"
+        onEdit={onEditStep ? () => onEditStep(1) : undefined}
+      >
         {plan.purpose ? (
           <p className="whitespace-pre-wrap text-sm leading-relaxed">{plan.purpose}</p>
         ) : (
@@ -74,7 +92,10 @@ export function ReviewDocument({
         )}
       </Section>
 
-      <Section title="Programs" onEdit={onEditStep ? () => onEditStep(2) : undefined}>
+      <Section
+        title="II. Process and Programs"
+        onEdit={onEditStep ? () => onEditStep(2) : undefined}
+      >
         {plan.programs.length === 0 ? (
           <p className="text-sm italic text-muted-foreground">None listed.</p>
         ) : (
@@ -105,7 +126,7 @@ export function ReviewDocument({
       </Section>
 
       <Section
-        title="Organizational Structure"
+        title="III. Organizational Structure"
         onEdit={onEditStep ? () => onEditStep(3) : undefined}
       >
         {plan.org_structure ? (
@@ -117,12 +138,15 @@ export function ReviewDocument({
         )}
       </Section>
 
-      <Section title="SWOT Analysis" onEdit={onEditStep ? () => onEditStep(4) : undefined}>
+      <Section
+        title="IV. SWOT Analysis"
+        onEdit={onEditStep ? () => onEditStep(4) : undefined}
+      >
         <div className="grid gap-4 md:grid-cols-2">
-          <SwotBlock label="Strengths" items={plan.strengths} />
-          <SwotBlock label="Weaknesses" items={plan.weaknesses} />
-          <SwotBlock label="Opportunities" items={plan.opportunities} />
-          <SwotBlock label="Threats" items={plan.threats} />
+          <SwotBlock label="Strengths within the ministry" items={plan.strengths} />
+          <SwotBlock label="Weaknesses within the ministry" items={plan.weaknesses} />
+          <SwotBlock label="Opportunities for the future" items={plan.opportunities} />
+          <SwotBlock label="Threats to the health of the ministry" items={plan.threats} />
         </div>
       </Section>
 
