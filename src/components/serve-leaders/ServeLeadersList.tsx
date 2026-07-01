@@ -287,6 +287,11 @@ export function ServeLeadersList() {
                   <StatusDot state={state} days={d} />
                   <div className="min-w-0">
                     <div className="text-sm font-medium truncate">{p.name}</div>
+                    {formatLeaderTitle(p.leader_groups) && (
+                      <div className="text-[11px] text-[oklch(0.55_0.15_280)] truncate">
+                        {formatLeaderTitle(p.leader_groups)}
+                      </div>
+                    )}
                     <div className="text-xs text-muted-foreground truncate">
                       {last
                         ? `Last contact ${formatDistanceToNow(new Date(last), { addSuffix: true })}`
@@ -294,6 +299,7 @@ export function ServeLeadersList() {
                       {count ? ` · ${count} touchpoint${count === 1 ? "" : "s"}` : ""}
                     </div>
                   </div>
+
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusBadge state={state} days={d} />
