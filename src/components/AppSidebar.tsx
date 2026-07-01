@@ -188,6 +188,16 @@ export function AppSidebar() {
             <SidebarGroupContent>{renderTree(CG_ITEMS)}</SidebarGroupContent>
           </SidebarGroup>
         )}
+        {hasServeLeadersHubAccess && (
+          <SidebarGroup>
+            {!collapsed && <SidebarGroupLabel>Serve Team Leaders</SidebarGroupLabel>}
+            <SidebarGroupContent>
+              {renderTree([
+                { to: "/serve-leaders", label: "Leaders", icon: HandHeart, exact: true },
+              ])}
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
         <SidebarGroup>
           {!collapsed && <SidebarGroupLabel>More</SidebarGroupLabel>}
           <SidebarGroupContent>{renderTree(SECONDARY)}</SidebarGroupContent>
