@@ -146,14 +146,18 @@ export async function listLeaderGroupsForPerson(
     return cached.data;
   }
   const names: string[] = [];
+  let totalMemberships = 0;
+  let leaderMemberships = 0;
   try {
     let next: string | null = `${PCO_GROUPS_BASE}/people/${encodeURIComponent(personId)}/memberships?include=group&per_page=100`;
     while (next) {
       const json: any = await pcoFetch(next);
       const included: any[] = json.included ?? [];
       for (const m of json.data ?? []) {
+        totalMemberships++;
         const role = String(m.attributes?.role ?? "").toLowerCase();
         if (role !== "leader") continue;
+        leaderMemberships++;
         const groupRel = m.relationships?.group?.data;
         if (!groupRel) continue;
         const g = included.find((i) => i.type === "Group" && i.id === groupRel.id);
@@ -164,8 +168,9 @@ export async function listLeaderGroupsForPerson(
       }
       next = json.links?.next ?? null;
     }
-  } catch {
-    // ignore, return what we have
+    console.log(`[pco-groups] person=${personId} memberships=${totalMemberships} leader=${leaderMemberships} groups=${JSON.stringify(names)}`);
+  } catch (e: any) {
+    console.error(`[pco-groups] person=${personId} error:`, e?.message ?? e);
   }
   // De-dupe preserving order
   const seen = new Set<string>();
@@ -173,4 +178,5 @@ export async function listLeaderGroupsForPerson(
   personLeaderGroupsCache.set(personId, { at: Date.now(), data: out });
   return out;
 }
+
 
