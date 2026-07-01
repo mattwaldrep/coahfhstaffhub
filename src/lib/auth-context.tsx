@@ -20,7 +20,10 @@ interface AuthContextValue {
   isChairOfDeacons: boolean;
   isDeaconOnly: boolean;
   hasElderHubAccess: boolean;
+  hasServeLeadersHubAccess: boolean;
 }
+
+export const SERVE_LEADERS_HUB_OWNER_ID = "3a7c1973-5fc6-4f2f-a129-31713fd24587";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
