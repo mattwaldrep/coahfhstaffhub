@@ -26,6 +26,7 @@ export function TextComposerDialog({
   personName,
   phone,
   onSent,
+  logTouchpoint = defaultLogTouchpoint,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -33,6 +34,7 @@ export function TextComposerDialog({
   personName: string;
   phone: string;
   onSent?: () => void;
+  logTouchpoint?: typeof defaultLogTouchpoint;
 }) {
   const firstName = personName.split(/\s+/)[0] ?? "";
   const [body, setBody] = useState(`Hey ${firstName}, `);
