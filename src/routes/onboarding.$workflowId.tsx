@@ -43,6 +43,7 @@ import {
 import {
   listWorkflowSections,
   reorderWorkflowSection,
+  setWorkflowSectionOrder,
   renameWorkflowSection,
   listWorkflowDocuments,
   recordWorkflowDocument,
