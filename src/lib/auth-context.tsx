@@ -68,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthContextValue = {
     session,
     user: session?.user ?? null,
+    hasServeLeadersHubAccess: session?.user?.id === SERVE_LEADERS_HUB_OWNER_ID,
     roles,
     loading,
     signOut: async () => {
