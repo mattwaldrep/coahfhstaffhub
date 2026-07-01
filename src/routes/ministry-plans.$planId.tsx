@@ -305,9 +305,11 @@ function ProgramsStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-medium">Programs</h3>
+          <h3 className="font-medium">II. Process and Programs</h3>
           <p className="text-xs text-muted-foreground">
-            How each program moves people through our discipleship process.
+            Outline the weekly programs within your ministry area you are
+            responsible to lead and how these programs move people through our
+            discipleship process.
           </p>
         </div>
         <Button
