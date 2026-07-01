@@ -34,6 +34,7 @@ import { Route as ElderIndexRouteImport } from './routes/elder.index'
 import { Route as CgCoachingIndexRouteImport } from './routes/cg-coaching.index'
 import { Route as OnboardingTemplatesRouteImport } from './routes/onboarding.templates'
 import { Route as OnboardingWorkflowIdRouteImport } from './routes/onboarding.$workflowId'
+import { Route as MinistryPlansPlanIdRouteImport } from './routes/ministry-plans.$planId'
 import { Route as InquiryTokenRouteImport } from './routes/inquiry.$token'
 import { Route as ElderSettingsRouteImport } from './routes/elder.settings'
 import { Route as ElderPastoralCareRouteImport } from './routes/elder.pastoral-care'
@@ -184,6 +185,11 @@ const OnboardingTemplatesRoute = OnboardingTemplatesRouteImport.update({
 const OnboardingWorkflowIdRoute = OnboardingWorkflowIdRouteImport.update({
   id: '/onboarding/$workflowId',
   path: '/onboarding/$workflowId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MinistryPlansPlanIdRoute = MinistryPlansPlanIdRouteImport.update({
+  id: '/ministry-plans/$planId',
+  path: '/ministry-plans/$planId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InquiryTokenRoute = InquiryTokenRouteImport.update({
@@ -357,6 +363,7 @@ export interface FileRoutesByFullPath {
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/inquiry/$token': typeof InquiryTokenRoute
+  '/ministry-plans/$planId': typeof MinistryPlansPlanIdRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/cg-coaching/': typeof CgCoachingIndexRoute
@@ -406,6 +413,7 @@ export interface FileRoutesByTo {
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/inquiry/$token': typeof InquiryTokenRoute
+  '/ministry-plans/$planId': typeof MinistryPlansPlanIdRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/cg-coaching': typeof CgCoachingIndexRoute
@@ -460,6 +468,7 @@ export interface FileRoutesById {
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/inquiry/$token': typeof InquiryTokenRoute
+  '/ministry-plans/$planId': typeof MinistryPlansPlanIdRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/cg-coaching/': typeof CgCoachingIndexRoute
@@ -515,6 +524,7 @@ export interface FileRouteTypes {
     | '/elder/pastoral-care'
     | '/elder/settings'
     | '/inquiry/$token'
+    | '/ministry-plans/$planId'
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
     | '/cg-coaching/'
@@ -564,6 +574,7 @@ export interface FileRouteTypes {
     | '/elder/pastoral-care'
     | '/elder/settings'
     | '/inquiry/$token'
+    | '/ministry-plans/$planId'
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
     | '/cg-coaching'
@@ -617,6 +628,7 @@ export interface FileRouteTypes {
     | '/elder/pastoral-care'
     | '/elder/settings'
     | '/inquiry/$token'
+    | '/ministry-plans/$planId'
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
     | '/cg-coaching/'
@@ -665,6 +677,7 @@ export interface RootRouteChildren {
   CalendarPlanningRoute: typeof CalendarPlanningRouteWithChildren
   CalendarPublicRoute: typeof CalendarPublicRoute
   InquiryTokenRoute: typeof InquiryTokenRoute
+  MinistryPlansPlanIdRoute: typeof MinistryPlansPlanIdRoute
   OnboardingWorkflowIdRoute: typeof OnboardingWorkflowIdRoute
   OnboardingTemplatesRoute: typeof OnboardingTemplatesRoute
   MinistryPlansIndexRoute: typeof MinistryPlansIndexRoute
@@ -856,6 +869,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding/$workflowId'
       fullPath: '/onboarding/$workflowId'
       preLoaderRoute: typeof OnboardingWorkflowIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ministry-plans/$planId': {
+      id: '/ministry-plans/$planId'
+      path: '/ministry-plans/$planId'
+      fullPath: '/ministry-plans/$planId'
+      preLoaderRoute: typeof MinistryPlansPlanIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inquiry/$token': {
@@ -1142,6 +1162,7 @@ const rootRouteChildren: RootRouteChildren = {
   CalendarPlanningRoute: CalendarPlanningRouteWithChildren,
   CalendarPublicRoute: CalendarPublicRoute,
   InquiryTokenRoute: InquiryTokenRoute,
+  MinistryPlansPlanIdRoute: MinistryPlansPlanIdRoute,
   OnboardingWorkflowIdRoute: OnboardingWorkflowIdRoute,
   OnboardingTemplatesRoute: OnboardingTemplatesRoute,
   MinistryPlansIndexRoute: MinistryPlansIndexRoute,
