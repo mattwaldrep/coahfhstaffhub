@@ -1,7 +1,7 @@
 import { format, formatDistanceToNow } from "date-fns";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { deleteTouchpoint } from "@/lib/pastoral-care.functions";
+import { deleteTouchpoint as defaultDeleteTouchpoint } from "@/lib/pastoral-care.functions";
 
 export type TextTouchpoint = {
   id: string;
