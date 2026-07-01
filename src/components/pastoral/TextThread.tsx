@@ -18,10 +18,12 @@ export function TextThread({
   personName,
   touchpoints,
   onChanged,
+  deleteTouchpoint = defaultDeleteTouchpoint,
 }: {
   personName: string;
   touchpoints: TextTouchpoint[];
   onChanged?: () => void;
+  deleteTouchpoint?: typeof defaultDeleteTouchpoint;
 }) {
   if (touchpoints.length === 0) return null;
 
