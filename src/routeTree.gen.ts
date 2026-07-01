@@ -32,6 +32,7 @@ import { Route as OnboardingIndexRouteImport } from './routes/onboarding.index'
 import { Route as MinistryPlansIndexRouteImport } from './routes/ministry-plans.index'
 import { Route as ElderIndexRouteImport } from './routes/elder.index'
 import { Route as CgCoachingIndexRouteImport } from './routes/cg-coaching.index'
+import { Route as AnnualPlanningIndexRouteImport } from './routes/annual-planning.index'
 import { Route as OnboardingTemplatesRouteImport } from './routes/onboarding.templates'
 import { Route as OnboardingWorkflowIdRouteImport } from './routes/onboarding.$workflowId'
 import { Route as MinistryPlansAdminRouteImport } from './routes/ministry-plans.admin'
@@ -46,6 +47,7 @@ import { Route as CgCoachingSettingsRouteImport } from './routes/cg-coaching.set
 import { Route as CalendarPublicRouteImport } from './routes/calendar_.public'
 import { Route as CalendarPlanningRouteImport } from './routes/calendar_.planning'
 import { Route as CalendarClassesRouteImport } from './routes/calendar_.classes'
+import { Route as AnnualPlanningBudgetRouteImport } from './routes/annual-planning.budget'
 import { Route as ElderMotionsIndexRouteImport } from './routes/elder.motions.index'
 import { Route as ElderMeetingsIndexRouteImport } from './routes/elder.meetings.index'
 import { Route as MinistryPlansPlanIdReviewRouteImport } from './routes/ministry-plans.$planId.review'
@@ -179,6 +181,11 @@ const CgCoachingIndexRoute = CgCoachingIndexRouteImport.update({
   path: '/',
   getParentRoute: () => CgCoachingRoute,
 } as any)
+const AnnualPlanningIndexRoute = AnnualPlanningIndexRouteImport.update({
+  id: '/annual-planning/',
+  path: '/annual-planning/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingTemplatesRoute = OnboardingTemplatesRouteImport.update({
   id: '/onboarding/templates',
   path: '/onboarding/templates',
@@ -247,6 +254,11 @@ const CalendarPlanningRoute = CalendarPlanningRouteImport.update({
 const CalendarClassesRoute = CalendarClassesRouteImport.update({
   id: '/calendar_/classes',
   path: '/calendar/classes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnnualPlanningBudgetRoute = AnnualPlanningBudgetRouteImport.update({
+  id: '/annual-planning/budget',
+  path: '/annual-planning/budget',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ElderMotionsIndexRoute = ElderMotionsIndexRouteImport.update({
@@ -366,6 +378,7 @@ export interface FileRoutesByFullPath {
   '/sunday-review': typeof SundayReviewRoute
   '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
+  '/annual-planning/budget': typeof AnnualPlanningBudgetRoute
   '/calendar/classes': typeof CalendarClassesRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
@@ -380,6 +393,7 @@ export interface FileRoutesByFullPath {
   '/ministry-plans/admin': typeof MinistryPlansAdminRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
+  '/annual-planning/': typeof AnnualPlanningIndexRoute
   '/cg-coaching/': typeof CgCoachingIndexRoute
   '/elder/': typeof ElderIndexRoute
   '/ministry-plans/': typeof MinistryPlansIndexRoute
@@ -420,6 +434,7 @@ export interface FileRoutesByTo {
   '/sunday-review': typeof SundayReviewRoute
   '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
+  '/annual-planning/budget': typeof AnnualPlanningBudgetRoute
   '/calendar/classes': typeof CalendarClassesRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
@@ -432,6 +447,7 @@ export interface FileRoutesByTo {
   '/ministry-plans/admin': typeof MinistryPlansAdminRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
+  '/annual-planning': typeof AnnualPlanningIndexRoute
   '/cg-coaching': typeof CgCoachingIndexRoute
   '/elder': typeof ElderIndexRoute
   '/ministry-plans': typeof MinistryPlansIndexRoute
@@ -475,6 +491,7 @@ export interface FileRoutesById {
   '/sunday-review': typeof SundayReviewRoute
   '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
+  '/annual-planning/budget': typeof AnnualPlanningBudgetRoute
   '/calendar_/classes': typeof CalendarClassesRoute
   '/calendar_/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar_/public': typeof CalendarPublicRoute
@@ -489,6 +506,7 @@ export interface FileRoutesById {
   '/ministry-plans/admin': typeof MinistryPlansAdminRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
+  '/annual-planning/': typeof AnnualPlanningIndexRoute
   '/cg-coaching/': typeof CgCoachingIndexRoute
   '/elder/': typeof ElderIndexRoute
   '/ministry-plans/': typeof MinistryPlansIndexRoute
@@ -533,6 +551,7 @@ export interface FileRouteTypes {
     | '/sunday-review'
     | '/trends'
     | '/users'
+    | '/annual-planning/budget'
     | '/calendar/classes'
     | '/calendar/planning'
     | '/calendar/public'
@@ -547,6 +566,7 @@ export interface FileRouteTypes {
     | '/ministry-plans/admin'
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
+    | '/annual-planning/'
     | '/cg-coaching/'
     | '/elder/'
     | '/ministry-plans/'
@@ -587,6 +607,7 @@ export interface FileRouteTypes {
     | '/sunday-review'
     | '/trends'
     | '/users'
+    | '/annual-planning/budget'
     | '/calendar/classes'
     | '/calendar/planning'
     | '/calendar/public'
@@ -599,6 +620,7 @@ export interface FileRouteTypes {
     | '/ministry-plans/admin'
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
+    | '/annual-planning'
     | '/cg-coaching'
     | '/elder'
     | '/ministry-plans'
@@ -641,6 +663,7 @@ export interface FileRouteTypes {
     | '/sunday-review'
     | '/trends'
     | '/users'
+    | '/annual-planning/budget'
     | '/calendar_/classes'
     | '/calendar_/planning'
     | '/calendar_/public'
@@ -655,6 +678,7 @@ export interface FileRouteTypes {
     | '/ministry-plans/admin'
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
+    | '/annual-planning/'
     | '/cg-coaching/'
     | '/elder/'
     | '/ministry-plans/'
@@ -698,6 +722,7 @@ export interface RootRouteChildren {
   SundayReviewRoute: typeof SundayReviewRoute
   TrendsRoute: typeof TrendsRoute
   UsersRoute: typeof UsersRoute
+  AnnualPlanningBudgetRoute: typeof AnnualPlanningBudgetRoute
   CalendarClassesRoute: typeof CalendarClassesRoute
   CalendarPlanningRoute: typeof CalendarPlanningRouteWithChildren
   CalendarPublicRoute: typeof CalendarPublicRoute
@@ -706,6 +731,7 @@ export interface RootRouteChildren {
   MinistryPlansAdminRoute: typeof MinistryPlansAdminRoute
   OnboardingWorkflowIdRoute: typeof OnboardingWorkflowIdRoute
   OnboardingTemplatesRoute: typeof OnboardingTemplatesRoute
+  AnnualPlanningIndexRoute: typeof AnnualPlanningIndexRoute
   MinistryPlansIndexRoute: typeof MinistryPlansIndexRoute
   OnboardingIndexRoute: typeof OnboardingIndexRoute
   ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
@@ -883,6 +909,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CgCoachingIndexRouteImport
       parentRoute: typeof CgCoachingRoute
     }
+    '/annual-planning/': {
+      id: '/annual-planning/'
+      path: '/annual-planning'
+      fullPath: '/annual-planning/'
+      preLoaderRoute: typeof AnnualPlanningIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding/templates': {
       id: '/onboarding/templates'
       path: '/onboarding/templates'
@@ -979,6 +1012,13 @@ declare module '@tanstack/react-router' {
       path: '/calendar/classes'
       fullPath: '/calendar/classes'
       preLoaderRoute: typeof CalendarClassesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/annual-planning/budget': {
+      id: '/annual-planning/budget'
+      path: '/annual-planning/budget'
+      fullPath: '/annual-planning/budget'
+      preLoaderRoute: typeof AnnualPlanningBudgetRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/elder/motions/': {
@@ -1209,6 +1249,7 @@ const rootRouteChildren: RootRouteChildren = {
   SundayReviewRoute: SundayReviewRoute,
   TrendsRoute: TrendsRoute,
   UsersRoute: UsersRoute,
+  AnnualPlanningBudgetRoute: AnnualPlanningBudgetRoute,
   CalendarClassesRoute: CalendarClassesRoute,
   CalendarPlanningRoute: CalendarPlanningRouteWithChildren,
   CalendarPublicRoute: CalendarPublicRoute,
@@ -1217,6 +1258,7 @@ const rootRouteChildren: RootRouteChildren = {
   MinistryPlansAdminRoute: MinistryPlansAdminRoute,
   OnboardingWorkflowIdRoute: OnboardingWorkflowIdRoute,
   OnboardingTemplatesRoute: OnboardingTemplatesRoute,
+  AnnualPlanningIndexRoute: AnnualPlanningIndexRoute,
   MinistryPlansIndexRoute: MinistryPlansIndexRoute,
   OnboardingIndexRoute: OnboardingIndexRoute,
   ApiGoogleOauthCallbackRoute: ApiGoogleOauthCallbackRoute,

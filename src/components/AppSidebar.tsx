@@ -84,16 +84,26 @@ export function AppSidebar() {
       icon: CalendarDays,
       exact: true,
       children: [
-        { to: "/calendar/planning", label: "Annual Planning", icon: CalendarClock },
         ...(isCore ? [{ to: "/calendar/classes", label: "Classes", icon: GraduationCap }] : []),
         ...(isCore ? [{ to: "/rooms", label: "Rooms", icon: DoorOpen }] : []),
         ...(isCore ? [{ to: "/checklists", label: "Checklists", icon: ListChecks }] : []),
         ...(isCore ? [{ to: "/comms-channels", label: "Comms Channels", icon: Megaphone }] : []),
       ],
     },
+    {
+      to: "/annual-planning",
+      label: "Annual Planning",
+      icon: CalendarClock,
+      exact: true,
+      children: [
+        { to: "/calendar/planning", label: "Calendar Submission", icon: CalendarClock },
+        { to: "/ministry-plans", label: "Plan Submission", icon: ClipboardCheck },
+        { to: "/annual-planning/budget", label: "Budget Submission", icon: Wallet },
+      ],
+    },
     { to: "/decisions", label: "Decisions", icon: Gavel },
-    { to: "/ministry-plans", label: "Ministry Plans", icon: ClipboardCheck },
     { to: "/trends", label: "Trends", icon: TrendingUp },
+
   ];
 
   const SECONDARY: NavItem[] = [
