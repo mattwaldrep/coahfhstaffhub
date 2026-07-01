@@ -442,9 +442,11 @@ function GoalsStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-medium">Goals</h3>
+          <h3 className="font-medium">V. Goals for the Year</h3>
           <p className="text-xs text-muted-foreground">
-            Add as many goals as needed. Click a goal to expand it.
+            State significant new goals for your area (aim for up to seven).
+            Each goal captures VI. completion date & significant others and
+            VII. communication / execution steps.
           </p>
         </div>
         <Button
