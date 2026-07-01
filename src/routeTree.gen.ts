@@ -34,6 +34,7 @@ import { Route as ElderIndexRouteImport } from './routes/elder.index'
 import { Route as CgCoachingIndexRouteImport } from './routes/cg-coaching.index'
 import { Route as OnboardingTemplatesRouteImport } from './routes/onboarding.templates'
 import { Route as OnboardingWorkflowIdRouteImport } from './routes/onboarding.$workflowId'
+import { Route as MinistryPlansAdminRouteImport } from './routes/ministry-plans.admin'
 import { Route as MinistryPlansPlanIdRouteImport } from './routes/ministry-plans.$planId'
 import { Route as InquiryTokenRouteImport } from './routes/inquiry.$token'
 import { Route as ElderSettingsRouteImport } from './routes/elder.settings'
@@ -47,6 +48,7 @@ import { Route as CalendarPlanningRouteImport } from './routes/calendar_.plannin
 import { Route as CalendarClassesRouteImport } from './routes/calendar_.classes'
 import { Route as ElderMotionsIndexRouteImport } from './routes/elder.motions.index'
 import { Route as ElderMeetingsIndexRouteImport } from './routes/elder.meetings.index'
+import { Route as MinistryPlansPlanIdReviewRouteImport } from './routes/ministry-plans.$planId.review'
 import { Route as ElderMotionsMotionIdRouteImport } from './routes/elder.motions.$motionId'
 import { Route as ElderMeetingsMeetingIdRouteImport } from './routes/elder.meetings.$meetingId'
 import { Route as CalendarPlanningReviewRouteImport } from './routes/calendar_.planning.review'
@@ -187,6 +189,11 @@ const OnboardingWorkflowIdRoute = OnboardingWorkflowIdRouteImport.update({
   path: '/onboarding/$workflowId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MinistryPlansAdminRoute = MinistryPlansAdminRouteImport.update({
+  id: '/ministry-plans/admin',
+  path: '/ministry-plans/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MinistryPlansPlanIdRoute = MinistryPlansPlanIdRouteImport.update({
   id: '/ministry-plans/$planId',
   path: '/ministry-plans/$planId',
@@ -252,6 +259,12 @@ const ElderMeetingsIndexRoute = ElderMeetingsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ElderMeetingsRoute,
 } as any)
+const MinistryPlansPlanIdReviewRoute =
+  MinistryPlansPlanIdReviewRouteImport.update({
+    id: '/review',
+    path: '/review',
+    getParentRoute: () => MinistryPlansPlanIdRoute,
+  } as any)
 const ElderMotionsMotionIdRoute = ElderMotionsMotionIdRouteImport.update({
   id: '/$motionId',
   path: '/$motionId',
@@ -363,7 +376,8 @@ export interface FileRoutesByFullPath {
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/inquiry/$token': typeof InquiryTokenRoute
-  '/ministry-plans/$planId': typeof MinistryPlansPlanIdRoute
+  '/ministry-plans/$planId': typeof MinistryPlansPlanIdRouteWithChildren
+  '/ministry-plans/admin': typeof MinistryPlansAdminRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/cg-coaching/': typeof CgCoachingIndexRoute
@@ -375,6 +389,7 @@ export interface FileRoutesByFullPath {
   '/calendar/planning/review': typeof CalendarPlanningReviewRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/motions/$motionId': typeof ElderMotionsMotionIdRoute
+  '/ministry-plans/$planId/review': typeof MinistryPlansPlanIdReviewRoute
   '/elder/meetings/': typeof ElderMeetingsIndexRoute
   '/elder/motions/': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
@@ -413,7 +428,8 @@ export interface FileRoutesByTo {
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/inquiry/$token': typeof InquiryTokenRoute
-  '/ministry-plans/$planId': typeof MinistryPlansPlanIdRoute
+  '/ministry-plans/$planId': typeof MinistryPlansPlanIdRouteWithChildren
+  '/ministry-plans/admin': typeof MinistryPlansAdminRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/cg-coaching': typeof CgCoachingIndexRoute
@@ -425,6 +441,7 @@ export interface FileRoutesByTo {
   '/calendar/planning/review': typeof CalendarPlanningReviewRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/motions/$motionId': typeof ElderMotionsMotionIdRoute
+  '/ministry-plans/$planId/review': typeof MinistryPlansPlanIdReviewRoute
   '/elder/meetings': typeof ElderMeetingsIndexRoute
   '/elder/motions': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
@@ -468,7 +485,8 @@ export interface FileRoutesById {
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
   '/elder/settings': typeof ElderSettingsRoute
   '/inquiry/$token': typeof InquiryTokenRoute
-  '/ministry-plans/$planId': typeof MinistryPlansPlanIdRoute
+  '/ministry-plans/$planId': typeof MinistryPlansPlanIdRouteWithChildren
+  '/ministry-plans/admin': typeof MinistryPlansAdminRoute
   '/onboarding/$workflowId': typeof OnboardingWorkflowIdRoute
   '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/cg-coaching/': typeof CgCoachingIndexRoute
@@ -480,6 +498,7 @@ export interface FileRoutesById {
   '/calendar_/planning/review': typeof CalendarPlanningReviewRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/motions/$motionId': typeof ElderMotionsMotionIdRoute
+  '/ministry-plans/$planId/review': typeof MinistryPlansPlanIdReviewRoute
   '/elder/meetings/': typeof ElderMeetingsIndexRoute
   '/elder/motions/': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
@@ -525,6 +544,7 @@ export interface FileRouteTypes {
     | '/elder/settings'
     | '/inquiry/$token'
     | '/ministry-plans/$planId'
+    | '/ministry-plans/admin'
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
     | '/cg-coaching/'
@@ -536,6 +556,7 @@ export interface FileRouteTypes {
     | '/calendar/planning/review'
     | '/elder/meetings/$meetingId'
     | '/elder/motions/$motionId'
+    | '/ministry-plans/$planId/review'
     | '/elder/meetings/'
     | '/elder/motions/'
     | '/api/public/hooks/action-items-digest'
@@ -575,6 +596,7 @@ export interface FileRouteTypes {
     | '/elder/settings'
     | '/inquiry/$token'
     | '/ministry-plans/$planId'
+    | '/ministry-plans/admin'
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
     | '/cg-coaching'
@@ -586,6 +608,7 @@ export interface FileRouteTypes {
     | '/calendar/planning/review'
     | '/elder/meetings/$meetingId'
     | '/elder/motions/$motionId'
+    | '/ministry-plans/$planId/review'
     | '/elder/meetings'
     | '/elder/motions'
     | '/api/public/hooks/action-items-digest'
@@ -629,6 +652,7 @@ export interface FileRouteTypes {
     | '/elder/settings'
     | '/inquiry/$token'
     | '/ministry-plans/$planId'
+    | '/ministry-plans/admin'
     | '/onboarding/$workflowId'
     | '/onboarding/templates'
     | '/cg-coaching/'
@@ -640,6 +664,7 @@ export interface FileRouteTypes {
     | '/calendar_/planning/review'
     | '/elder/meetings/$meetingId'
     | '/elder/motions/$motionId'
+    | '/ministry-plans/$planId/review'
     | '/elder/meetings/'
     | '/elder/motions/'
     | '/api/public/hooks/action-items-digest'
@@ -677,7 +702,8 @@ export interface RootRouteChildren {
   CalendarPlanningRoute: typeof CalendarPlanningRouteWithChildren
   CalendarPublicRoute: typeof CalendarPublicRoute
   InquiryTokenRoute: typeof InquiryTokenRoute
-  MinistryPlansPlanIdRoute: typeof MinistryPlansPlanIdRoute
+  MinistryPlansPlanIdRoute: typeof MinistryPlansPlanIdRouteWithChildren
+  MinistryPlansAdminRoute: typeof MinistryPlansAdminRoute
   OnboardingWorkflowIdRoute: typeof OnboardingWorkflowIdRoute
   OnboardingTemplatesRoute: typeof OnboardingTemplatesRoute
   MinistryPlansIndexRoute: typeof MinistryPlansIndexRoute
@@ -871,6 +897,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingWorkflowIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ministry-plans/admin': {
+      id: '/ministry-plans/admin'
+      path: '/ministry-plans/admin'
+      fullPath: '/ministry-plans/admin'
+      preLoaderRoute: typeof MinistryPlansAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ministry-plans/$planId': {
       id: '/ministry-plans/$planId'
       path: '/ministry-plans/$planId'
@@ -961,6 +994,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/elder/meetings/'
       preLoaderRoute: typeof ElderMeetingsIndexRouteImport
       parentRoute: typeof ElderMeetingsRoute
+    }
+    '/ministry-plans/$planId/review': {
+      id: '/ministry-plans/$planId/review'
+      path: '/review'
+      fullPath: '/ministry-plans/$planId/review'
+      preLoaderRoute: typeof MinistryPlansPlanIdReviewRouteImport
+      parentRoute: typeof MinistryPlansPlanIdRoute
     }
     '/elder/motions/$motionId': {
       id: '/elder/motions/$motionId'
@@ -1138,6 +1178,17 @@ const CalendarPlanningRouteChildren: CalendarPlanningRouteChildren = {
 const CalendarPlanningRouteWithChildren =
   CalendarPlanningRoute._addFileChildren(CalendarPlanningRouteChildren)
 
+interface MinistryPlansPlanIdRouteChildren {
+  MinistryPlansPlanIdReviewRoute: typeof MinistryPlansPlanIdReviewRoute
+}
+
+const MinistryPlansPlanIdRouteChildren: MinistryPlansPlanIdRouteChildren = {
+  MinistryPlansPlanIdReviewRoute: MinistryPlansPlanIdReviewRoute,
+}
+
+const MinistryPlansPlanIdRouteWithChildren =
+  MinistryPlansPlanIdRoute._addFileChildren(MinistryPlansPlanIdRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CalendarRoute: CalendarRoute,
@@ -1162,7 +1213,8 @@ const rootRouteChildren: RootRouteChildren = {
   CalendarPlanningRoute: CalendarPlanningRouteWithChildren,
   CalendarPublicRoute: CalendarPublicRoute,
   InquiryTokenRoute: InquiryTokenRoute,
-  MinistryPlansPlanIdRoute: MinistryPlansPlanIdRoute,
+  MinistryPlansPlanIdRoute: MinistryPlansPlanIdRouteWithChildren,
+  MinistryPlansAdminRoute: MinistryPlansAdminRoute,
   OnboardingWorkflowIdRoute: OnboardingWorkflowIdRoute,
   OnboardingTemplatesRoute: OnboardingTemplatesRoute,
   MinistryPlansIndexRoute: MinistryPlansIndexRoute,
