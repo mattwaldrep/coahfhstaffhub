@@ -110,6 +110,27 @@ export const listServeLeaderTouchpoints = createServerFn({ method: "POST" })
     return (rows ?? []).map((r: any) => ({ ...r, user_name: userName }));
   });
 
+export const resetServeLeaderMonthlyCheckIn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ pco_person_id: z.string().min(1).max(50) }).parse(d))
+  .handler(async ({ data, context }) => {
+    assertOwner(context.userId);
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    const { data: rows, error } = await supabaseAdmin
+      .from("serve_leader_touchpoints")
+      .delete()
+      .eq("user_id", context.userId)
+      .eq("pco_person_id", data.pco_person_id)
+      .eq("kind", "text")
+      .eq("direction", "outbound")
+      .gte("created_at", monthStart.toISOString())
+      .select("id");
+    if (error) throw new Error(error.message);
+    return { deleted: rows?.length ?? 0 };
+  });
+
 export const deleteServeLeaderTouchpoint = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
