@@ -34,7 +34,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Plus, Trash2, ClipboardList, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/ministry-plans/")({
+export const Route = createFileRoute("/ministry-plans/")({
   head: () => ({ meta: [{ title: "Ministry Plans" }] }),
   component: MinistryPlansIndex,
 });

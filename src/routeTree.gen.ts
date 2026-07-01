@@ -29,6 +29,7 @@ import { Route as CgCoachingRouteImport } from './routes/cg-coaching'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OnboardingIndexRouteImport } from './routes/onboarding.index'
+import { Route as MinistryPlansIndexRouteImport } from './routes/ministry-plans.index'
 import { Route as ElderIndexRouteImport } from './routes/elder.index'
 import { Route as CgCoachingIndexRouteImport } from './routes/cg-coaching.index'
 import { Route as OnboardingTemplatesRouteImport } from './routes/onboarding.templates'
@@ -45,7 +46,6 @@ import { Route as CalendarPlanningRouteImport } from './routes/calendar_.plannin
 import { Route as CalendarClassesRouteImport } from './routes/calendar_.classes'
 import { Route as ElderMotionsIndexRouteImport } from './routes/elder.motions.index'
 import { Route as ElderMeetingsIndexRouteImport } from './routes/elder.meetings.index'
-import { Route as AuthenticatedMinistryPlansIndexRouteImport } from './routes/_authenticated/ministry-plans.index'
 import { Route as ElderMotionsMotionIdRouteImport } from './routes/elder.motions.$motionId'
 import { Route as ElderMeetingsMeetingIdRouteImport } from './routes/elder.meetings.$meetingId'
 import { Route as CalendarPlanningReviewRouteImport } from './routes/calendar_.planning.review'
@@ -161,6 +161,11 @@ const OnboardingIndexRoute = OnboardingIndexRouteImport.update({
   path: '/onboarding/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MinistryPlansIndexRoute = MinistryPlansIndexRouteImport.update({
+  id: '/ministry-plans/',
+  path: '/ministry-plans/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ElderIndexRoute = ElderIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -241,12 +246,6 @@ const ElderMeetingsIndexRoute = ElderMeetingsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ElderMeetingsRoute,
 } as any)
-const AuthenticatedMinistryPlansIndexRoute =
-  AuthenticatedMinistryPlansIndexRouteImport.update({
-    id: '/_authenticated/ministry-plans/',
-    path: '/ministry-plans/',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ElderMotionsMotionIdRoute = ElderMotionsMotionIdRouteImport.update({
   id: '/$motionId',
   path: '/$motionId',
@@ -362,13 +361,13 @@ export interface FileRoutesByFullPath {
   '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/cg-coaching/': typeof CgCoachingIndexRoute
   '/elder/': typeof ElderIndexRoute
+  '/ministry-plans/': typeof MinistryPlansIndexRoute
   '/onboarding/': typeof OnboardingIndexRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/calendar/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
   '/calendar/planning/review': typeof CalendarPlanningReviewRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/motions/$motionId': typeof ElderMotionsMotionIdRoute
-  '/ministry-plans/': typeof AuthenticatedMinistryPlansIndexRoute
   '/elder/meetings/': typeof ElderMeetingsIndexRoute
   '/elder/motions/': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
@@ -411,13 +410,13 @@ export interface FileRoutesByTo {
   '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/cg-coaching': typeof CgCoachingIndexRoute
   '/elder': typeof ElderIndexRoute
+  '/ministry-plans': typeof MinistryPlansIndexRoute
   '/onboarding': typeof OnboardingIndexRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/calendar/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
   '/calendar/planning/review': typeof CalendarPlanningReviewRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/motions/$motionId': typeof ElderMotionsMotionIdRoute
-  '/ministry-plans': typeof AuthenticatedMinistryPlansIndexRoute
   '/elder/meetings': typeof ElderMeetingsIndexRoute
   '/elder/motions': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
@@ -465,13 +464,13 @@ export interface FileRoutesById {
   '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/cg-coaching/': typeof CgCoachingIndexRoute
   '/elder/': typeof ElderIndexRoute
+  '/ministry-plans/': typeof MinistryPlansIndexRoute
   '/onboarding/': typeof OnboardingIndexRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/calendar_/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
   '/calendar_/planning/review': typeof CalendarPlanningReviewRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/motions/$motionId': typeof ElderMotionsMotionIdRoute
-  '/_authenticated/ministry-plans/': typeof AuthenticatedMinistryPlansIndexRoute
   '/elder/meetings/': typeof ElderMeetingsIndexRoute
   '/elder/motions/': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
@@ -520,13 +519,13 @@ export interface FileRouteTypes {
     | '/onboarding/templates'
     | '/cg-coaching/'
     | '/elder/'
+    | '/ministry-plans/'
     | '/onboarding/'
     | '/api/google/oauth-callback'
     | '/calendar/planning/$submissionId'
     | '/calendar/planning/review'
     | '/elder/meetings/$meetingId'
     | '/elder/motions/$motionId'
-    | '/ministry-plans/'
     | '/elder/meetings/'
     | '/elder/motions/'
     | '/api/public/hooks/action-items-digest'
@@ -569,13 +568,13 @@ export interface FileRouteTypes {
     | '/onboarding/templates'
     | '/cg-coaching'
     | '/elder'
+    | '/ministry-plans'
     | '/onboarding'
     | '/api/google/oauth-callback'
     | '/calendar/planning/$submissionId'
     | '/calendar/planning/review'
     | '/elder/meetings/$meetingId'
     | '/elder/motions/$motionId'
-    | '/ministry-plans'
     | '/elder/meetings'
     | '/elder/motions'
     | '/api/public/hooks/action-items-digest'
@@ -622,13 +621,13 @@ export interface FileRouteTypes {
     | '/onboarding/templates'
     | '/cg-coaching/'
     | '/elder/'
+    | '/ministry-plans/'
     | '/onboarding/'
     | '/api/google/oauth-callback'
     | '/calendar_/planning/$submissionId'
     | '/calendar_/planning/review'
     | '/elder/meetings/$meetingId'
     | '/elder/motions/$motionId'
-    | '/_authenticated/ministry-plans/'
     | '/elder/meetings/'
     | '/elder/motions/'
     | '/api/public/hooks/action-items-digest'
@@ -668,9 +667,9 @@ export interface RootRouteChildren {
   InquiryTokenRoute: typeof InquiryTokenRoute
   OnboardingWorkflowIdRoute: typeof OnboardingWorkflowIdRoute
   OnboardingTemplatesRoute: typeof OnboardingTemplatesRoute
+  MinistryPlansIndexRoute: typeof MinistryPlansIndexRoute
   OnboardingIndexRoute: typeof OnboardingIndexRoute
   ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
-  AuthenticatedMinistryPlansIndexRoute: typeof AuthenticatedMinistryPlansIndexRoute
   ApiPublicHooksActionItemsDigestRoute: typeof ApiPublicHooksActionItemsDigestRoute
   ApiPublicHooksAutoFinalizeMeetingRoute: typeof ApiPublicHooksAutoFinalizeMeetingRoute
   ApiPublicHooksElderTouchpointDigestRoute: typeof ApiPublicHooksElderTouchpointDigestRoute
@@ -824,6 +823,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ministry-plans/': {
+      id: '/ministry-plans/'
+      path: '/ministry-plans'
+      fullPath: '/ministry-plans/'
+      preLoaderRoute: typeof MinistryPlansIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/elder/': {
       id: '/elder/'
       path: '/'
@@ -935,13 +941,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/elder/meetings/'
       preLoaderRoute: typeof ElderMeetingsIndexRouteImport
       parentRoute: typeof ElderMeetingsRoute
-    }
-    '/_authenticated/ministry-plans/': {
-      id: '/_authenticated/ministry-plans/'
-      path: '/ministry-plans'
-      fullPath: '/ministry-plans/'
-      preLoaderRoute: typeof AuthenticatedMinistryPlansIndexRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/elder/motions/$motionId': {
       id: '/elder/motions/$motionId'
@@ -1145,9 +1144,9 @@ const rootRouteChildren: RootRouteChildren = {
   InquiryTokenRoute: InquiryTokenRoute,
   OnboardingWorkflowIdRoute: OnboardingWorkflowIdRoute,
   OnboardingTemplatesRoute: OnboardingTemplatesRoute,
+  MinistryPlansIndexRoute: MinistryPlansIndexRoute,
   OnboardingIndexRoute: OnboardingIndexRoute,
   ApiGoogleOauthCallbackRoute: ApiGoogleOauthCallbackRoute,
-  AuthenticatedMinistryPlansIndexRoute: AuthenticatedMinistryPlansIndexRoute,
   ApiPublicHooksActionItemsDigestRoute: ApiPublicHooksActionItemsDigestRoute,
   ApiPublicHooksAutoFinalizeMeetingRoute:
     ApiPublicHooksAutoFinalizeMeetingRoute,
