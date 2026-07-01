@@ -10,8 +10,9 @@ import {
 } from "@/components/ui/dialog";
 import {
   MessageSquare, RefreshCw, Search, Trash2, Link as LinkIcon, ArrowUpDown,
-  History, Clock, HandHeart,
+  History, Clock, HandHeart, CalendarClock,
 } from "lucide-react";
+import { MonthlyCheckInDialog } from "./MonthlyCheckInDialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -48,6 +49,7 @@ export function ServeLeadersList() {
   const [statusFilter, setStatusFilter] = useState<"any" | "due" | "recent">("any");
   const [meta, setMeta] = useState<Record<string, Meta>>({});
   const [logOpen, setLogOpen] = useState(false);
+  const [monthlyOpen, setMonthlyOpen] = useState(false);
 
   const load = useCallback(async (refresh = false) => {
     refresh ? setRefreshing(true) : setLoading(true);
@@ -157,6 +159,15 @@ export function ServeLeadersList() {
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
+  const monthlyPending = people.filter((p) => {
+    const last = meta[p.id]?.last;
+    if (!last) return true;
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    return new Date(last).getTime() < monthStart.getTime();
+  });
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 flex-wrap">
@@ -169,6 +180,38 @@ export function ServeLeadersList() {
           {dueCount} of {people.length} due for check-in
         </span>
       </div>
+
+      <div
+        className={`flex items-center justify-between gap-3 rounded-2xl border p-3 ${
+          monthlyPending.length > 0
+            ? "border-[oklch(0.55_0.15_280)]/30 bg-[oklch(0.55_0.15_280)]/10"
+            : "border-success/30 bg-success/10"
+        }`}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <CalendarClock className="w-4 h-4 text-[oklch(0.55_0.15_280)] shrink-0" />
+          <div className="min-w-0">
+            <div className="text-sm font-medium">
+              {format(new Date(), "MMMM")} check-in queue
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {monthlyPending.length === 0
+                ? "All leaders texted this month 🎉"
+                : `${monthlyPending.length} of ${people.length} still need a text this month`}
+            </div>
+          </div>
+        </div>
+        <Button
+          size="sm"
+          onClick={() => setMonthlyOpen(true)}
+          disabled={monthlyPending.length === 0}
+          className="shrink-0"
+        >
+          <MessageSquare className="w-3.5 h-3.5 mr-1" />
+          {monthlyPending.length === 0 ? "Done" : "Start check-ins"}
+        </Button>
+      </div>
+
 
       <div className="flex flex-col md:flex-row md:items-center gap-2">
         <div className="relative w-full md:w-56">
@@ -255,6 +298,13 @@ export function ServeLeadersList() {
       </div>
 
       <TouchpointLogDialog open={logOpen} onOpenChange={setLogOpen} people={people} onChanged={refreshMeta} />
+      <MonthlyCheckInDialog
+        open={monthlyOpen}
+        onOpenChange={setMonthlyOpen}
+        people={people}
+        meta={meta}
+        onChanged={refreshMeta}
+      />
     </div>
   );
 }
