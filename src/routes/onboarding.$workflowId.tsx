@@ -249,6 +249,27 @@ function WorkflowDetail() {
   const [showAllComments, setShowAllComments] = useState(false);
   const [renameDialog, setRenameDialog] = useState<{ old: string; next: string } | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [dragSection, setDragSection] = useState<string | null>(null);
+  const [dragOverSection, setDragOverSection] = useState<string | null>(null);
+
+  const handleSectionDrop = async (target: string) => {
+    const src = dragSection;
+    setDragSection(null);
+    setDragOverSection(null);
+    if (!src || src === target) return;
+    const next = sectionOrder.filter((s) => s !== src);
+    const idx = next.indexOf(target);
+    if (idx === -1) return;
+    next.splice(idx, 0, src);
+    try {
+      await setSectionOrderFn({
+        data: { workflow_id: workflowId, section_names: next },
+      });
+      invalidateSections();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to reorder");
+    }
+  };
 
   if (isLoading) return <div className="p-6 text-muted-foreground">Loading…</div>;
   if (!data) return null;
