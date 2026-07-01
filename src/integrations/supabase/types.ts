@@ -2364,6 +2364,79 @@ export type Database = {
           },
         ]
       }
+      onboarding_workflow_documents: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+          mime_type: string | null
+          size_bytes: number | null
+          uploaded_by: string | null
+          workflow_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          uploaded_by?: string | null
+          workflow_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          uploaded_by?: string | null
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_workflow_documents_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_workflow_sections: {
+        Row: {
+          created_at: string
+          id: string
+          section_name: string
+          sort_order: number
+          workflow_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          section_name: string
+          sort_order?: number
+          workflow_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          section_name?: string
+          sort_order?: number
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_workflow_sections_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_workflows: {
         Row: {
           created_at: string

@@ -41,6 +41,24 @@ import {
   type OnboardingComment,
 } from "@/lib/onboarding-comments.functions";
 import {
+  listWorkflowSections,
+  reorderWorkflowSection,
+  renameWorkflowSection,
+  listWorkflowDocuments,
+  recordWorkflowDocument,
+  getWorkflowDocumentUrl,
+  deleteWorkflowDocument,
+} from "@/lib/onboarding-extras.functions";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -64,6 +82,12 @@ import {
   CheckCircle2,
   MessageSquare,
   Send,
+  ArrowUp,
+  ArrowDown,
+  Paperclip,
+  Download,
+  FileText,
+  Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppShell } from "@/components/AppShell";
@@ -148,6 +172,13 @@ function WorkflowDetail() {
   const listCommentsFn = useServerFn(listOnboardingComments);
   const addCommentFn = useServerFn(addOnboardingComment);
   const deleteCommentFn = useServerFn(deleteOnboardingComment);
+  const listSectionsFn = useServerFn(listWorkflowSections);
+  const reorderSectionFn = useServerFn(reorderWorkflowSection);
+  const renameSectionFn = useServerFn(renameWorkflowSection);
+  const listDocsFn = useServerFn(listWorkflowDocuments);
+  const recordDocFn = useServerFn(recordWorkflowDocument);
+  const getDocUrlFn = useServerFn(getWorkflowDocumentUrl);
+  const deleteDocFn = useServerFn(deleteWorkflowDocument);
   const { user } = useAuth();
 
   const { data: assignableUsers = [] } = useQuery<UserOption[]>({
@@ -167,6 +198,16 @@ function WorkflowDetail() {
     queryFn: () => listCommentsFn({ data: { workflowId } }),
   });
 
+  const { data: sectionRows = [] } = useQuery<{ section_name: string; sort_order: number }[]>({
+    queryKey: ["onboarding-sections", workflowId],
+    queryFn: () => listSectionsFn({ data: { workflowId } }),
+  });
+
+  const { data: documents = [] } = useQuery<any[]>({
+    queryKey: ["onboarding-docs", workflowId],
+    queryFn: () => listDocsFn({ data: { workflowId } }),
+  });
+
   const commentsByTask = useMemo(() => {
     const m = new Map<string, OnboardingComment[]>();
     for (const c of comments) {
@@ -181,24 +222,32 @@ function WorkflowDetail() {
     qc.invalidateQueries({ queryKey: ["onboarding-workflow", workflowId] });
   const invalidateComments = () =>
     qc.invalidateQueries({ queryKey: ["onboarding-comments", workflowId] });
+  const invalidateSections = () =>
+    qc.invalidateQueries({ queryKey: ["onboarding-sections", workflowId] });
+  const invalidateDocs = () =>
+    qc.invalidateQueries({ queryKey: ["onboarding-docs", workflowId] });
 
   const tree = useMemo(() => buildTree(data?.tasks ?? []), [data?.tasks]);
   const sectionOrder = useMemo(() => {
-    const firstSeen = new Map<string, string>(); // section -> earliest created_at
+    // Union of server-stored sections and any sections present only in tasks
+    // (defensive — server auto-seeds, but this keeps UI resilient)
+    const fromServer = sectionRows.map((r) => r.section_name);
+    const inTasks = new Set<string>();
     (data?.tasks ?? []).forEach((t: any) => {
-      if (t.parent_task_id) return;
-      const prev = firstSeen.get(t.section_name);
-      if (!prev || t.created_at < prev) firstSeen.set(t.section_name, t.created_at);
+      if (!t.parent_task_id) inTasks.add(t.section_name);
     });
-    return Array.from(firstSeen.entries())
-      .sort((a, b) => (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0))
-      .map(([s]) => s);
-  }, [data?.tasks]);
-
+    const extra: string[] = [];
+    inTasks.forEach((s) => {
+      if (!fromServer.includes(s)) extra.push(s);
+    });
+    return [...fromServer, ...extra];
+  }, [sectionRows, data?.tasks]);
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const toggle = (id: string) => setCollapsed((c) => ({ ...c, [id]: !c[id] }));
   const [showAllComments, setShowAllComments] = useState(false);
+  const [renameDialog, setRenameDialog] = useState<{ old: string; next: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   if (isLoading) return <div className="p-6 text-muted-foreground">Loading…</div>;
   if (!data) return null;
@@ -352,6 +401,66 @@ function WorkflowDetail() {
                   )}
                   <span className="flex-1">{section}</span>
                   {isCore && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center gap-1 mr-1"
+                    >
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        title="Move section up"
+                        onClick={async () => {
+                          try {
+                            await reorderSectionFn({
+                              data: {
+                                workflow_id: workflowId,
+                                section_name: section,
+                                direction: "up",
+                              },
+                            });
+                            invalidateSections();
+                          } catch (e: any) {
+                            toast.error(e?.message ?? "Failed to reorder");
+                          }
+                        }}
+                      >
+                        <ArrowUp className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        title="Move section down"
+                        onClick={async () => {
+                          try {
+                            await reorderSectionFn({
+                              data: {
+                                workflow_id: workflowId,
+                                section_name: section,
+                                direction: "down",
+                              },
+                            });
+                            invalidateSections();
+                          } catch (e: any) {
+                            toast.error(e?.message ?? "Failed to reorder");
+                          }
+                        }}
+                      >
+                        <ArrowDown className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        title="Rename section"
+                        onClick={() => setRenameDialog({ old: section, next: section })}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                  {isCore && (
                     <div onClick={(e) => e.stopPropagation()}>
                       <Select
                         value=""
@@ -504,7 +613,194 @@ function WorkflowDetail() {
           );
         })}
       </div>
+
+      <Card>
+        <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Paperclip className="w-4 h-4" />
+            Documents
+            <span className="text-xs text-muted-foreground font-normal">
+              ({documents.length})
+            </span>
+          </CardTitle>
+          {isCore && (
+            <label className="inline-flex">
+              <input
+                type="file"
+                className="hidden"
+                multiple
+                disabled={uploading}
+                onChange={async (e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  e.target.value = "";
+                  if (files.length === 0) return;
+                  setUploading(true);
+                  try {
+                    for (const file of files) {
+                      const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+                      const path = `${workflowId}/${Date.now()}-${safeName}`;
+                      const { error: upErr } = await supabase.storage
+                        .from("onboarding-documents")
+                        .upload(path, file, { upsert: false });
+                      if (upErr) throw upErr;
+                      await recordDocFn({
+                        data: {
+                          workflow_id: workflowId,
+                          file_path: path,
+                          file_name: file.name,
+                          mime_type: file.type || null,
+                          size_bytes: file.size,
+                        },
+                      });
+                    }
+                    toast.success(
+                      `Uploaded ${files.length} document${files.length === 1 ? "" : "s"}`,
+                    );
+                    invalidateDocs();
+                  } catch (err: any) {
+                    toast.error(err?.message ?? "Upload failed");
+                  } finally {
+                    setUploading(false);
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={uploading}
+                asChild
+              >
+                <span className="cursor-pointer">
+                  <Upload className="w-3.5 h-3.5 mr-1" />
+                  {uploading ? "Uploading…" : "Upload"}
+                </span>
+              </Button>
+            </label>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-1">
+          {documents.length === 0 && (
+            <div className="text-xs text-muted-foreground italic px-1 py-2">
+              No documents attached yet.
+            </div>
+          )}
+          {documents.map((d: any) => (
+            <div
+              key={d.id}
+              className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/50 group text-sm"
+            >
+              <FileText className="w-4 h-4 shrink-0 text-muted-foreground" />
+              <button
+                type="button"
+                className="flex-1 min-w-0 text-left truncate hover:underline"
+                onClick={async () => {
+                  try {
+                    const { url } = await getDocUrlFn({ data: { id: d.id } });
+                    window.open(url, "_blank", "noopener,noreferrer");
+                  } catch (err: any) {
+                    toast.error(err?.message ?? "Failed to open document");
+                  }
+                }}
+                title={d.file_name}
+              >
+                {d.file_name}
+              </button>
+              <span className="text-[11px] text-muted-foreground shrink-0">
+                {d.size_bytes ? `${Math.max(1, Math.round(d.size_bytes / 1024))} KB` : ""}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0"
+                title="Download"
+                onClick={async () => {
+                  try {
+                    const { url } = await getDocUrlFn({ data: { id: d.id } });
+                    window.open(url, "_blank", "noopener,noreferrer");
+                  } catch (err: any) {
+                    toast.error(err?.message ?? "Failed");
+                  }
+                }}
+              >
+                <Download className="w-3.5 h-3.5" />
+              </Button>
+              {isCore && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                  title="Delete"
+                  onClick={async () => {
+                    if (!confirm(`Delete ${d.file_name}?`)) return;
+                    try {
+                      await deleteDocFn({ data: { id: d.id } });
+                      toast.success("Deleted");
+                      invalidateDocs();
+                    } catch (err: any) {
+                      toast.error(err?.message ?? "Failed");
+                    }
+                  }}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              )}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     </div>
+
+    <Dialog open={!!renameDialog} onOpenChange={(o) => !o && setRenameDialog(null)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Rename section</DialogTitle>
+        </DialogHeader>
+        {renameDialog && (
+          <div className="space-y-2">
+            <Label>Section name</Label>
+            <Input
+              value={renameDialog.next}
+              onChange={(e) => setRenameDialog({ ...renameDialog, next: e.target.value })}
+              autoFocus
+            />
+            <p className="text-xs text-muted-foreground">
+              This renames the section for this new hire only. All tasks currently
+              under "{renameDialog.old}" will be moved to the new label.
+            </p>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setRenameDialog(null)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={async () => {
+              if (!renameDialog) return;
+              const next = renameDialog.next.trim();
+              if (!next) return;
+              try {
+                await renameSectionFn({
+                  data: {
+                    workflow_id: workflowId,
+                    old_name: renameDialog.old,
+                    new_name: next,
+                  },
+                });
+                toast.success("Renamed");
+                setRenameDialog(null);
+                invalidateSections();
+                invalidate();
+              } catch (e: any) {
+                toast.error(e?.message ?? "Failed to rename");
+              }
+            }}
+          >
+            Save
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </AppShell>
   );
 }
