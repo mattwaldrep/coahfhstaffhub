@@ -213,15 +213,34 @@ type PatchFn = <K extends keyof MinistryPlan>(
 function HeaderStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
   return (
     <div className="space-y-4">
-      <div className="space-y-1.5">
-        <Label>Leader name</Label>
-        <Input
-          value={plan.leader_name}
-          onChange={(e) => patch("leader_name", e.target.value, { debounce: 800 })}
-          onBlur={(e) => patch("leader_name", e.target.value, { debounce: 0 })}
-        />
-      </div>
+      <p className="text-xs text-muted-foreground">
+        Based on the Christ Fellowship Ministry Action Plan template.
+      </p>
       <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label>Name</Label>
+          <Input
+            value={plan.leader_name}
+            onChange={(e) => patch("leader_name", e.target.value, { debounce: 800 })}
+            onBlur={(e) => patch("leader_name", e.target.value, { debounce: 0 })}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Campus</Label>
+          <Input
+            value={plan.campus}
+            onChange={(e) => patch("campus", e.target.value, { debounce: 800 })}
+            onBlur={(e) => patch("campus", e.target.value, { debounce: 0 })}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Department</Label>
+          <Input
+            value={plan.department}
+            onChange={(e) => patch("department", e.target.value, { debounce: 800 })}
+            onBlur={(e) => patch("department", e.target.value, { debounce: 0 })}
+          />
+        </div>
         <div className="space-y-1.5">
           <Label>Ministry area</Label>
           <Select
