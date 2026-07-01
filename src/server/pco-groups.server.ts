@@ -135,25 +135,36 @@ export async function listGroupLeaders(groupId: string, opts?: { bypass_cache?: 
 
 // ---- Leader groups for a given person ----
 const personLeaderGroupsCache = new Map<string, { at: number; data: string[] }>();
-const groupNameCache = new Map<string, { at: number; name: string | null }>();
+const groupNameCache = new Map<string, { at: number; name: string | null; groupType: string | null }>();
 const PERSON_LEADER_CACHE_MS = 5 * 60_000;
 const GROUP_NAME_CACHE_MS = 30 * 60_000;
 
-async function getGroupName(groupId: string): Promise<string | null> {
+const SERVE_TEAMS_TYPE = "serve teams";
+
+async function getGroupInfo(groupId: string): Promise<{ name: string | null; groupType: string | null }> {
   const cached = groupNameCache.get(groupId);
-  if (cached && Date.now() - cached.at < GROUP_NAME_CACHE_MS) return cached.name;
+  if (cached && Date.now() - cached.at < GROUP_NAME_CACHE_MS) {
+    return { name: cached.name, groupType: cached.groupType };
+  }
   try {
-    const json: any = await pcoFetch(`${PCO_GROUPS_BASE}/groups/${encodeURIComponent(groupId)}`);
+    const json: any = await pcoFetch(
+      `${PCO_GROUPS_BASE}/groups/${encodeURIComponent(groupId)}?include=group_type`,
+    );
     if (json?.data?.attributes?.archived_at) {
-      groupNameCache.set(groupId, { at: Date.now(), name: null });
-      return null;
+      const entry = { at: Date.now(), name: null, groupType: null };
+      groupNameCache.set(groupId, entry);
+      return { name: null, groupType: null };
     }
     const name = json?.data?.attributes?.name ?? null;
-    groupNameCache.set(groupId, { at: Date.now(), name });
-    return name;
+    const gtId = json?.data?.relationships?.group_type?.data?.id;
+    const included: any[] = json.included ?? [];
+    const gt = gtId ? included.find((i) => i.type === "GroupType" && i.id === gtId) : null;
+    const groupType = gt?.attributes?.name ?? null;
+    groupNameCache.set(groupId, { at: Date.now(), name, groupType });
+    return { name, groupType };
   } catch {
-    groupNameCache.set(groupId, { at: Date.now(), name: null });
-    return null;
+    groupNameCache.set(groupId, { at: Date.now(), name: null, groupType: null });
+    return { name: null, groupType: null };
   }
 }
 
@@ -183,15 +194,17 @@ export async function listLeaderGroupsForPerson(
   }
   const names: string[] = [];
   for (const gid of groupIds) {
-    const name = await getGroupName(gid);
-    if (name) names.push(name);
+    const info = await getGroupInfo(gid);
+    if (!info.name) continue;
+    if ((info.groupType ?? "").toLowerCase() !== SERVE_TEAMS_TYPE) continue;
+    names.push(info.name);
   }
-  // De-dupe preserving order
   const seen = new Set<string>();
   const out = names.filter((n) => (seen.has(n) ? false : (seen.add(n), true)));
   personLeaderGroupsCache.set(personId, { at: Date.now(), data: out });
   return out;
 }
+
 
 
 
