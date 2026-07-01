@@ -36,6 +36,7 @@ import {
   ListChecks,
   ChevronRight,
   UsersRound,
+  HandHeart,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
