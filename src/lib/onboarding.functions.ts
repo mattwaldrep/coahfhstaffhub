@@ -299,6 +299,42 @@ export const setTaskCompleted = createServerFn({ method: "POST" })
       })
       .eq("id", data.task_id);
     if (error) throw new Error(error.message);
+
+    // Also push status to Google Tasks so the nightly sync doesn't flip it back.
+    const { data: task } = await supabaseAdmin
+      .from("onboarding_tasks")
+      .select("action_item_id")
+      .eq("id", data.task_id)
+      .maybeSingle();
+    if (task?.action_item_id) {
+      const { data: ai } = await supabaseAdmin
+        .from("action_items")
+        .select("assignee_id, google_task_id")
+        .eq("id", task.action_item_id)
+        .maybeSingle();
+      if (ai?.google_task_id && ai.assignee_id) {
+        try {
+          const { ensureAccessTokenForUser } = await import("@/server/google-tasks.server");
+          const accessToken = await ensureAccessTokenForUser(ai.assignee_id);
+          await fetch(
+            `https://tasks.googleapis.com/tasks/v1/lists/@default/tasks/${ai.google_task_id}`,
+            {
+              method: "PATCH",
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                status: data.completed ? "completed" : "needsAction",
+                ...(data.completed ? {} : { completed: null }),
+              }),
+            },
+          );
+        } catch {
+          // best-effort
+        }
+      }
+    }
     return { ok: true };
   });
 
