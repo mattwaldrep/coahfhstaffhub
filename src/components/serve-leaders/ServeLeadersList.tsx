@@ -10,8 +10,9 @@ import {
 } from "@/components/ui/dialog";
 import {
   MessageSquare, RefreshCw, Search, Trash2, Link as LinkIcon, ArrowUpDown,
-  History, Clock, HandHeart,
+  History, Clock, HandHeart, CalendarClock,
 } from "lucide-react";
+import { MonthlyCheckInDialog, useMonthlyQueue } from "./MonthlyCheckInDialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
