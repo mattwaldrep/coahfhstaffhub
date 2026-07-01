@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { logTouchpoint } from "@/lib/pastoral-care.functions";
+import { logTouchpoint as defaultLogTouchpoint } from "@/lib/pastoral-care.functions";
 
 const TEMPLATES: { label: string; build: (firstName: string) => string }[] = [
   { label: "Checking in", build: (n) => `Hey ${n}, just wanted to check in and see how you're doing this week. ` },
