@@ -54,11 +54,11 @@ export const Route = createFileRoute("/ministry-plans/$planId")({
 
 const STEPS = [
   { key: "header", label: "Header" },
-  { key: "purpose", label: "Purpose" },
-  { key: "programs", label: "Programs" },
-  { key: "structure", label: "Structure" },
-  { key: "swot", label: "SWOT" },
-  { key: "goals", label: "Goals" },
+  { key: "purpose", label: "I. Purpose" },
+  { key: "programs", label: "II. Programs" },
+  { key: "structure", label: "III. Structure" },
+  { key: "swot", label: "IV. SWOT" },
+  { key: "goals", label: "V–VII. Goals" },
   { key: "review", label: "Review" },
 ];
 
@@ -213,15 +213,34 @@ type PatchFn = <K extends keyof MinistryPlan>(
 function HeaderStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
   return (
     <div className="space-y-4">
-      <div className="space-y-1.5">
-        <Label>Leader name</Label>
-        <Input
-          value={plan.leader_name}
-          onChange={(e) => patch("leader_name", e.target.value, { debounce: 800 })}
-          onBlur={(e) => patch("leader_name", e.target.value, { debounce: 0 })}
-        />
-      </div>
+      <p className="text-xs text-muted-foreground">
+        Based on the Christ Fellowship Ministry Action Plan template.
+      </p>
       <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label>Name</Label>
+          <Input
+            value={plan.leader_name}
+            onChange={(e) => patch("leader_name", e.target.value, { debounce: 800 })}
+            onBlur={(e) => patch("leader_name", e.target.value, { debounce: 0 })}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Campus</Label>
+          <Input
+            value={plan.campus}
+            onChange={(e) => patch("campus", e.target.value, { debounce: 800 })}
+            onBlur={(e) => patch("campus", e.target.value, { debounce: 0 })}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Department</Label>
+          <Input
+            value={plan.department}
+            onChange={(e) => patch("department", e.target.value, { debounce: 800 })}
+            onBlur={(e) => patch("department", e.target.value, { debounce: 0 })}
+          />
+        </div>
         <div className="space-y-1.5">
           <Label>Ministry area</Label>
           <Select
@@ -265,7 +284,11 @@ function HeaderStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
 function PurposeStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
   return (
     <div className="space-y-2">
-      <Label>How does your ministry area reflect our mission and vision?</Label>
+      <h3 className="font-medium">I. Purpose of Your Ministry Area</h3>
+      <p className="text-xs text-muted-foreground">
+        State how your ministry area / responsibilities reflect the vision of our
+        church: connect people to God, others, ministry, and the world.
+      </p>
       <Textarea
         rows={10}
         value={plan.purpose}
@@ -282,9 +305,11 @@ function ProgramsStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-medium">Programs</h3>
+          <h3 className="font-medium">II. Process and Programs</h3>
           <p className="text-xs text-muted-foreground">
-            How each program moves people through our discipleship process.
+            Outline the weekly programs within your ministry area you are
+            responsible to lead and how these programs move people through our
+            discipleship process.
           </p>
         </div>
         <Button
@@ -362,9 +387,10 @@ function ProgramsStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
 function StructureStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
   return (
     <div className="space-y-2">
-      <Label>Organizational structure</Label>
+      <h3 className="font-medium">III. Organizational Structure</h3>
       <p className="text-xs text-muted-foreground">
-        Describe your structure including coaches / leads and volunteers.
+        Outline the organizational structure of your ministry including coaches
+        and volunteers.
       </p>
       <Textarea
         rows={10}
@@ -378,25 +404,34 @@ function StructureStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) 
 
 function SwotStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {(
-        [
-          ["strengths", "Strengths"],
-          ["weaknesses", "Weaknesses"],
-          ["opportunities", "Opportunities"],
-          ["threats", "Threats"],
-        ] as const
-      ).map(([key, label]) => (
-        <div key={key} className="rounded-md border p-3 space-y-2">
-          <Label>{label}</Label>
-          <BulletList
-            items={plan[key] as string[]}
-            onChange={(next) => patch(key, next as any, { debounce: 0 })}
-            placeholder={`Add ${label.toLowerCase()}…`}
-            editable
-          />
-        </div>
-      ))}
+    <div className="space-y-3">
+      <div>
+        <h3 className="font-medium">IV. SWOT Analysis</h3>
+        <p className="text-xs text-muted-foreground">
+          Evaluate the conditions of your ministry area. The SWOT profile should
+          help you plan goals for the new ministry year.
+        </p>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        {(
+          [
+            ["strengths", "Strengths within the ministry"],
+            ["weaknesses", "Weaknesses within the ministry"],
+            ["opportunities", "Opportunities for the future"],
+            ["threats", "Threats to the health of the ministry"],
+          ] as const
+        ).map(([key, label]) => (
+          <div key={key} className="rounded-md border p-3 space-y-2">
+            <Label>{label}</Label>
+            <BulletList
+              items={plan[key] as string[]}
+              onChange={(next) => patch(key, next as any, { debounce: 0 })}
+              placeholder="Add item…"
+              editable
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -407,9 +442,11 @@ function GoalsStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-medium">Goals</h3>
+          <h3 className="font-medium">V. Goals for the Year</h3>
           <p className="text-xs text-muted-foreground">
-            Add as many goals as needed. Click a goal to expand it.
+            State significant new goals for your area (aim for up to seven).
+            Each goal captures VI. completion date & significant others and
+            VII. communication / execution steps.
           </p>
         </div>
         <Button

@@ -2039,7 +2039,9 @@ export type Database = {
       ministry_action_plans: {
         Row: {
           calendar_year: number
+          campus: string
           created_at: string
+          department: string
           goals: Json
           id: string
           leader_name: string
@@ -2060,7 +2062,9 @@ export type Database = {
         }
         Insert: {
           calendar_year?: number
+          campus?: string
           created_at?: string
+          department?: string
           goals?: Json
           id?: string
           leader_name?: string
@@ -2081,7 +2085,9 @@ export type Database = {
         }
         Update: {
           calendar_year?: number
+          campus?: string
           created_at?: string
+          department?: string
           goals?: Json
           id?: string
           leader_name?: string

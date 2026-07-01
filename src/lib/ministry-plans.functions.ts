@@ -34,6 +34,8 @@ export type MinistryPlan = {
   id: string;
   user_id: string;
   leader_name: string;
+  campus: string;
+  department: string;
   ministry_area: MinistryArea | null;
   calendar_year: number;
   purpose: string;
@@ -169,6 +171,8 @@ export const createPlan = createServerFn({ method: "POST" })
 const patchSchema = z
   .object({
     leader_name: z.string().optional(),
+    campus: z.string().optional(),
+    department: z.string().optional(),
     ministry_area: z.enum(MINISTRY_AREAS).optional(),
     calendar_year: z.number().int().optional(),
     purpose: z.string().optional(),
