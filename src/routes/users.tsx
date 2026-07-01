@@ -25,7 +25,7 @@ export const Route = createFileRoute("/users")({
 });
 
 const ROLE_OPTIONS = [
-  { value: "core", label: "Core", desc: "Full admin: manage everything + invite users" },
+  { value: "core", label: "Staff Pastor", desc: "Full admin: manage everything + invite users" },
   { value: "meeting", label: "Meeting", desc: "Staff meeting + Sunday Review access" },
   { value: "extended", label: "Extended", desc: "Read-only across most modules" },
 ] as const;
