@@ -298,6 +298,13 @@ export function ServeLeadersList() {
       </div>
 
       <TouchpointLogDialog open={logOpen} onOpenChange={setLogOpen} people={people} onChanged={refreshMeta} />
+      <MonthlyCheckInDialog
+        open={monthlyOpen}
+        onOpenChange={setMonthlyOpen}
+        people={people}
+        meta={meta}
+        onChanged={refreshMeta}
+      />
     </div>
   );
 }
