@@ -174,6 +174,7 @@ function WorkflowDetail() {
   const deleteCommentFn = useServerFn(deleteOnboardingComment);
   const listSectionsFn = useServerFn(listWorkflowSections);
   const reorderSectionFn = useServerFn(reorderWorkflowSection);
+  const setSectionOrderFn = useServerFn(setWorkflowSectionOrder);
   const renameSectionFn = useServerFn(renameWorkflowSection);
   const listDocsFn = useServerFn(listWorkflowDocuments);
   const recordDocFn = useServerFn(recordWorkflowDocument);
