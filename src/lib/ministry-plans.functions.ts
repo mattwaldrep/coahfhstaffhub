@@ -34,6 +34,8 @@ export type MinistryPlan = {
   id: string;
   user_id: string;
   leader_name: string;
+  campus: string;
+  department: string;
   ministry_area: MinistryArea | null;
   calendar_year: number;
   purpose: string;
