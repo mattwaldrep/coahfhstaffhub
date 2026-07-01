@@ -1674,146 +1674,177 @@ function CalendarBody() {
   return (
     <>
       <PlanningBanner />
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div>
-          <h1 className="text-3xl font-display font-bold">Calendar</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+        <div className="space-y-1">
+          <h1 className="text-3xl md:text-4xl font-display font-extrabold tracking-tight">Calendar</h1>
+          <p className="text-muted-foreground text-sm font-medium">
             Layered church calendar across all sub-calendars.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <label className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Switch checked={hidePast} onCheckedChange={setHidePast} />
-            Hide past
-          </label>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs"
-            onClick={() => {
-              if (!prefsKey) { toast.error("Sign in to save preferences"); return; }
-              try {
-                window.localStorage.setItem(
-                  prefsKey,
-                  JSON.stringify({ view, hidePast, filters, categoryFilter, flagFilter }),
-                );
-                toast.success("Saved as your default calendar view");
-              } catch {
-                toast.error("Could not save preferences");
-              }
-            }}
-          >
-            Save as default
-          </Button>
 
-          <div className="flex rounded-full border border-border overflow-hidden">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-3 bg-card border border-border px-3 py-1.5 rounded-xl shadow-sm">
+            <label className="flex items-center gap-2 pr-3 border-r border-border/60 cursor-pointer">
+              <Switch checked={hidePast} onCheckedChange={setHidePast} />
+              <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Hide past</span>
+            </label>
+            <button
+              type="button"
+              className="text-sm font-semibold text-foreground hover:text-primary transition-colors px-1"
+              onClick={() => {
+                if (!prefsKey) { toast.error("Sign in to save preferences"); return; }
+                try {
+                  window.localStorage.setItem(
+                    prefsKey,
+                    JSON.stringify({ view, hidePast, filters, categoryFilter, flagFilter }),
+                  );
+                  toast.success("Saved as your default calendar view");
+                } catch {
+                  toast.error("Could not save preferences");
+                }
+              }}
+            >
+              Save as default
+            </button>
+          </div>
+
+          <div className="flex bg-card border border-border p-1 rounded-xl shadow-sm">
             {(["month", "week", "list"] as const).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
-                className={`px-3 py-1.5 text-xs capitalize transition ${
-                  view === v ? "bg-surface" : "bg-transparent text-muted-foreground"
+                className={`px-4 py-1.5 text-sm capitalize transition-colors rounded-lg ${
+                  view === v
+                    ? "bg-foreground text-background font-semibold"
+                    : "text-muted-foreground hover:text-foreground font-medium"
                 }`}
               >
                 {v}
               </button>
             ))}
           </div>
+
           {canEdit && (
-            <Button onClick={() => openNew()} size="sm">
+            <Button onClick={() => openNew()} className="rounded-xl font-bold shadow-sm">
               <Plus className="w-4 h-4 mr-1.5" /> New
             </Button>
           )}
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon"
-            onClick={() => setCursor(view === "week" ? addWeeks(cursor, -1) : addMonths(cursor, -1))}>
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <div className="font-display text-lg min-w-[10rem] text-center">
-            {format(cursor, view === "week" ? "MMM d, yyyy" : "MMMM yyyy")}
+      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden mb-4">
+        <div className="px-5 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-border/60">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" className="rounded-lg"
+                onClick={() => setCursor(view === "week" ? addWeeks(cursor, -1) : addMonths(cursor, -1))}>
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <div className="font-display text-lg font-bold min-w-[10rem] text-center">
+                {format(cursor, view === "week" ? "MMM d, yyyy" : "MMMM yyyy")}
+              </div>
+              <Button variant="ghost" size="icon" className="rounded-lg"
+                onClick={() => setCursor(view === "week" ? addWeeks(cursor, 1) : addMonths(cursor, 1))}>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCursor(new Date())}
+              className="px-4 py-1.5 text-sm font-semibold text-foreground bg-muted/60 border border-border rounded-lg hover:bg-muted transition-colors"
+            >
+              Today
+            </button>
           </div>
-          <Button variant="ghost" size="icon"
-            onClick={() => setCursor(view === "week" ? addWeeks(cursor, 1) : addMonths(cursor, 1))}>
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setCursor(new Date())}>Today</Button>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search events…"
-              className="h-8 w-[14rem] pl-7 text-xs"
-            />
-            {searchQuery && (
+          <div className="flex flex-wrap items-center gap-2 flex-1 md:justify-end min-w-[280px]">
+            <div className="relative flex-1 min-w-[200px] max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search events…"
+                className="h-9 w-full pl-9 pr-8 text-sm bg-muted/40 border-border rounded-xl"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="Clear search"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="h-9 w-[10rem] text-sm bg-muted/40 rounded-xl"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All categories</SelectItem>
+                {categories.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={flagFilter} onValueChange={(v) => setFlagFilter(v as typeof flagFilter)}>
+              <SelectTrigger className="h-9 w-[10rem] text-sm bg-muted/40 rounded-xl"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All events</SelectItem>
+                <SelectItem value="pco">Needs PCO Registrations</SelectItem>
+                <SelectItem value="missions">Missions team needed</SelectItem>
+              </SelectContent>
+            </Select>
+            {canEdit && (
               <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                aria-label="Clear search"
+                type="button"
+                onClick={() => setManageCatOpen(true)}
+                className="text-sm font-bold text-foreground hover:underline decoration-2 underline-offset-4 px-2"
               >
-                <X className="w-3.5 h-3.5" />
+                Manage
               </button>
             )}
           </div>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="h-8 w-[10rem] text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
-              {categories.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+        </div>
+
+        <div className="bg-muted/30 px-5 py-3.5 flex items-center gap-6 overflow-x-auto">
           {canEdit && (
-            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setManageCatOpen(true)}>
-              Manage
-            </Button>
-          )}
-          <Select value={flagFilter} onValueChange={(v) => setFlagFilter(v as typeof flagFilter)}>
-            <SelectTrigger className="h-8 w-[10rem] text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All events</SelectItem>
-              <SelectItem value="pco">Needs PCO Registrations</SelectItem>
-              <SelectItem value="missions">Missions team needed</SelectItem>
-            </SelectContent>
-          </Select>
-          {canEdit && (
-            <Button
-              variant={selectMode ? "default" : "ghost"}
-              size="sm"
-              className="h-8 text-xs"
+            <button
+              type="button"
               onClick={() => {
                 const next = !selectMode;
                 setSelectMode(next);
                 setSelectedIds(new Set());
                 if (next) setView("list");
               }}
+              className="flex items-center gap-2 pr-6 border-r border-border shrink-0"
             >
-              <CheckSquare className="w-3.5 h-3.5 mr-1.5" />
-              {selectMode ? "Done" : "Select"}
-            </Button>
-          )}
-          {SUB_CALS.map((s) => (
-            <button
-              key={s.value}
-              onClick={() => setFilters({ ...filters, [s.value]: !filters[s.value] })}
-              className={`text-xs px-3 py-1.5 rounded-full border transition ${
-                filters[s.value]
-                  ? "bg-surface border-border"
-                  : "bg-transparent border-border/50 text-muted-foreground"
-              }`}
-            >
-              <span className="inline-block w-2 h-2 rounded-full mr-2" style={{ background: s.color }} />
-              {s.label}
+              <span className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-colors ${
+                selectMode ? "bg-foreground border-foreground text-background" : "bg-card border-border"
+              }`}>
+                {selectMode && <CheckSquare className="w-3.5 h-3.5" />}
+              </span>
+              <span className="text-sm font-bold tracking-tight">{selectMode ? "Done" : "Select"}</span>
             </button>
-          ))}
+          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            {SUB_CALS.map((s) => {
+              const active = filters[s.value];
+              return (
+                <button
+                  key={s.value}
+                  onClick={() => setFilters({ ...filters, [s.value]: !filters[s.value] })}
+                  className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-sm font-semibold transition-colors shrink-0 ${
+                    active
+                      ? "bg-card border-border text-foreground shadow-sm"
+                      : "bg-transparent border-border/50 text-muted-foreground hover:border-border"
+                  }`}
+                >
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: s.color }} />
+                  {s.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
+
 
       {selectMode && canEdit && (
         <BulkEditBar
