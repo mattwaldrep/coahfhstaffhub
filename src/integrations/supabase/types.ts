@@ -2036,6 +2036,72 @@ export type Database = {
         }
         Relationships: []
       }
+      ministry_action_plans: {
+        Row: {
+          calendar_year: number
+          created_at: string
+          goals: Json
+          id: string
+          leader_name: string
+          ministry_area: Database["public"]["Enums"]["ministry_area"] | null
+          opportunities: Json
+          org_structure: string
+          programs: Json
+          purpose: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["ministry_plan_status"]
+          strengths: Json
+          submitted_at: string | null
+          threats: Json
+          updated_at: string
+          user_id: string
+          weaknesses: Json
+        }
+        Insert: {
+          calendar_year?: number
+          created_at?: string
+          goals?: Json
+          id?: string
+          leader_name?: string
+          ministry_area?: Database["public"]["Enums"]["ministry_area"] | null
+          opportunities?: Json
+          org_structure?: string
+          programs?: Json
+          purpose?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["ministry_plan_status"]
+          strengths?: Json
+          submitted_at?: string | null
+          threats?: Json
+          updated_at?: string
+          user_id: string
+          weaknesses?: Json
+        }
+        Update: {
+          calendar_year?: number
+          created_at?: string
+          goals?: Json
+          id?: string
+          leader_name?: string
+          ministry_area?: Database["public"]["Enums"]["ministry_area"] | null
+          opportunities?: Json
+          org_structure?: string
+          programs?: Json
+          purpose?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["ministry_plan_status"]
+          strengths?: Json
+          submitted_at?: string | null
+          threats?: Json
+          updated_at?: string
+          user_id?: string
+          weaknesses?: Json
+        }
+        Relationships: []
+      }
       mission_trips: {
         Row: {
           adults_count: number | null
@@ -2832,6 +2898,20 @@ export type Database = {
         | "chair_of_deacons"
       elder_motion_choice: "yes" | "no" | "abstain"
       elder_motion_outcome: "open" | "passed" | "failed" | "tied"
+      ministry_area:
+        | "Worship"
+        | "AV"
+        | "Prayer"
+        | "Hospitality"
+        | "Set Up"
+        | "Creative"
+        | "Men's"
+        | "Women's"
+        | "Kids"
+        | "Youth"
+        | "Connect"
+        | "Other"
+      ministry_plan_status: "draft" | "submitted" | "under_review" | "approved"
       plan_submission_status:
         | "draft"
         | "submitted"
@@ -2989,6 +3069,21 @@ export const Constants = {
       ],
       elder_motion_choice: ["yes", "no", "abstain"],
       elder_motion_outcome: ["open", "passed", "failed", "tied"],
+      ministry_area: [
+        "Worship",
+        "AV",
+        "Prayer",
+        "Hospitality",
+        "Set Up",
+        "Creative",
+        "Men's",
+        "Women's",
+        "Kids",
+        "Youth",
+        "Connect",
+        "Other",
+      ],
+      ministry_plan_status: ["draft", "submitted", "under_review", "approved"],
       plan_submission_status: [
         "draft",
         "submitted",

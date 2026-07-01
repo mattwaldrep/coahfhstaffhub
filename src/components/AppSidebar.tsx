@@ -92,6 +92,7 @@ export function AppSidebar() {
       ],
     },
     { to: "/decisions", label: "Decisions", icon: Gavel },
+    { to: "/ministry-plans", label: "Ministry Plans", icon: ClipboardCheck },
     { to: "/trends", label: "Trends", icon: TrendingUp },
   ];
 
