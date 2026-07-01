@@ -106,11 +106,10 @@ function PlanReview() {
           authorName={(plan as any).author_name}
           onEditStep={
             isOwner && plan.status === "draft"
-              ? (s) =>
+              ? () =>
                   navigate({
                     to: "/ministry-plans/$planId",
                     params: { planId },
-                    search: { step: s } as any,
                   })
               : undefined
           }
