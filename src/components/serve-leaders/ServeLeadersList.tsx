@@ -213,12 +213,12 @@ export function ServeLeadersList() {
         </div>
         <Button
           size="sm"
+          variant={monthlyPending.length === 0 ? "outline" : "default"}
           onClick={() => setMonthlyOpen(true)}
-          disabled={monthlyPending.length === 0}
           className="shrink-0"
         >
           <MessageSquare className="w-3.5 h-3.5 mr-1" />
-          {monthlyPending.length === 0 ? "Done" : "Start check-ins"}
+          {monthlyPending.length === 0 ? "Manage / Reset" : "Start check-ins"}
         </Button>
       </div>
 
