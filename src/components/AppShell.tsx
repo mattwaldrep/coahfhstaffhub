@@ -186,6 +186,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           </header>
 
           <main className="flex-1 px-6 py-8 overflow-x-hidden">{children}</main>
+          <OnboardingProfileDialog />
+
         </SidebarInset>
 
         {/* AI Assistant FAB — smaller on mobile to avoid overlapping content */}
