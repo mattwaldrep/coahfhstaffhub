@@ -1,68 +1,117 @@
 
-## Ministry Action Plan
+# Annual Budget Workflow
 
-A new top-level "Ministry Plans" section any signed-in staff hub user can use to author an annual plan for a ministry area. Staff Pastors (renamed from `core`) get an admin listing to review and approve.
+Fiscal year: July 1 – June 30. This adds a **Budget** track to Annual Planning that runs alongside the existing Calendar and MAP tracks, plus a lightweight "10k-ft plan" that later hydrates the full MAP.
 
-### Navigation & access
-- Add "Ministry Plans" to the app sidebar for all authenticated users.
-- Anyone signed in can create/edit their own plans.
-- Only Staff Pastors see the admin listing and can move plans through `under_review` / `approved`.
-- Rename the `core` role label everywhere it's user-facing to "Staff Pastor" (DB enum value stays `core` to avoid a destructive migration; UI labels + any copy update).
+## Timeline
 
-### Data model
-New table `ministry_action_plans`:
-- `id`, `user_id` (auth.users), `leader_name`, `ministry_area` (enum: Worship, AV, Prayer, Hospitality, Set Up, Creative, Men's, Women's, Kids, Youth, Connect, Other), `calendar_year` (int)
-- `purpose` (text)
-- `programs` (jsonb array: `{name, cadence, description}`)
-- `org_structure` (text)
-- `strengths`, `weaknesses`, `opportunities`, `threats` (jsonb text arrays)
-- `goals` (jsonb array: `{goal_statement, completion_date, significant_others, execution_steps: string[]}`)
-- `status` ('draft' | 'submitted' | 'under_review' | 'approved'), `submitted_at`, `reviewed_by`, timestamps
-- Unique constraint on `(user_id, ministry_area, calendar_year)`
+```text
+Mar 1 ─ Core (you) prompted: upload 12-mo spending report (Feb–Feb) per ministry
+        │
+        ├─▶ Each leader notified: rough budget request + 10k-ft plan due Mar 31
+        │
+Mar 31 ─ Rough request + 10k-ft plan submitted
+        │
+Apr 1  ─ Core prompted: paste Google Sheet link per leader
+        │
+        ├─▶ Leader notified with sheet link, works in Sheets, clicks "Submitted"
+        │
+        ├─▶ Core notified: review, add feedback in app, submit feedback
+        │
+        └─▶ Leader notified with feedback, can revise → re-submit
+        
+Later  ─ Leader starts full MAP → 10k-ft answers pre-fill MAP fields as editable drafts
+```
 
-RLS/GRANTs:
-- Owners: full CRUD on their rows while `status = 'draft'`; read always; can transition draft → submitted.
-- Staff Pastors (`has_role(uid, 'core')`): SELECT all + UPDATE `status`/`reviewed_by`.
-- No anon access.
+## Data Model
 
-### Routes
-- `/ministry-plans` — user's own plans list + "New plan" button (pick area + year, enforces uniqueness).
-- `/ministry-plans/$planId` — multi-step editor (default view for owner while draft).
-- `/ministry-plans/$planId/review` — read-only formatted document view (owner sees before submitting; Staff Pastors see always).
-- `/ministry-plans/admin` — Staff-Pastor-only listing with filters (ministry_area, status), opens any plan's review view.
+New tables (all RLS-gated: owner + core; core-only for admin fields):
 
-All under `_authenticated/`.
+- **`budget_cycles`** — one per fiscal year: `fiscal_year`, `status` (setup / rough_planning / sheet_submission / feedback / complete), key dates.
+- **`ministry_budget_submissions`** — one per (cycle, leader/ministry area):
+  - `user_id`, `ministry_area`, `cycle_id`
+  - `spending_report_uploaded_at`, `spending_report_path` (Storage: new `budget-reports` bucket)
+  - `rough_status` (not_started / in_progress / submitted), `rough_submitted_at`
+  - `sheet_url` (core pastes), `sheet_status` (awaiting_link / in_progress / submitted / feedback_provided / revised), `sheet_submitted_at`
+  - `feedback_body` (rich text), `feedback_submitted_at`, `reviewed_by`
+- **`ministry_rough_budget_lines`** — line items on the rough request: `submission_id`, `category_id` (nullable), `category_name`, `amount_annual`, `note`, `sort_order`. Category list seeded from `budget_categories` for the FY.
+- **`ministry_high_level_plans`** — the "10k-ft" plan tied to a submission: `purpose`, `top_goals` (jsonb array of `{ statement, why }`), `swot_seeds` (jsonb: strengths/weaknesses/opportunities/threats string arrays), `notes`. `carried_to_map_id` (nullable FK to `ministry_action_plans`) tracks the hydration.
 
-### Multi-step editor UX
-Steps (progress indicator across the top, clickable to jump; validates but doesn't block navigation between steps while in draft):
-1. Header — leader name, ministry area (dropdown), calendar year.
-2. Purpose — long-form textarea.
-3. Programs — repeatable cards (add/remove); name, cadence, description.
-4. Organizational Structure — long-form textarea.
-5. SWOT — 2x2 grid on desktop / stacked on mobile, each quadrant is an add/remove bullet list.
-6. Goals — accordion list, default 3 empty collapsible cards; each card has statement, completion date (shadcn date picker), significant others, and a repeatable execution_steps list. Add/remove goals; no cap.
-7. Review — clean formatted document (headings, prose, definition-list style for header fields, bullets for SWOT/execution steps, cards for programs/goals). "Edit" link per section jumps back to that step. Final "Submit for Review" button flips status to `submitted`.
+Notifications reuse the existing app-email transactional pipeline plus in-app dashboard tasks (same pattern as onboarding/MAP prompts). All emails: pre-rendered React Email templates.
 
-Autosave:
-- Every field autosaves on blur (text/textarea) or on change (selects, dates, add/remove). Debounced server function call `updateMinistryPlan` patches the specific field/array.
-- Small "Saved" / "Saving…" indicator near the progress bar. No manual save button.
-- Status stays `draft` until Submit for Review.
+## Ministry / Leader Resolution
 
-### Admin view
-- `/ministry-plans/admin` — table: leader, ministry area, year, status, submitted date. Filter dropdowns for `ministry_area` and `status`. Row click → review page.
-- On the review page, Staff Pastors see status controls: "Mark under review", "Approve", "Send back to draft".
+We need a canonical "who is a ministry leader" list. Reuse `MINISTRY_AREAS` from `ministry-plans.functions.ts` and a new `ministry_leader_assignments` table (`user_id`, `ministry_area`, `active`) — core-managed in a small admin panel inside Annual Planning. Cycle kickoff creates one `ministry_budget_submissions` row per active assignment.
 
-### Technical details
-- Server functions in `src/lib/ministry-plans.functions.ts` (all `.middleware([requireSupabaseAuth])`): `listMyPlans`, `listAllPlans` (staff-pastor gated via `has_role`), `getPlan`, `createPlan`, `updateMinistryPlan(planId, patch)`, `submitPlan`, `setPlanStatus` (staff-pastor gated).
-- Uniqueness handled by DB constraint; `createPlan` catches conflict and returns existing plan id.
-- Autosave uses a shared `useAutosave` hook wrapping `useMutation` with debounce (500ms).
-- Review view is a single presentational component reused by owner preview and admin view.
-- Sidebar entry added to `AppSidebar.tsx`; icon: `ClipboardList` from lucide.
-- No changes to existing role gating helpers beyond adding a UI label constant; `has_role(uid, 'core')` continues to power Staff Pastor checks.
+## Routes / UI
 
-### Files touched
-- Migration: new table, enum, RLS, GRANTs, unique constraint, updated_at trigger.
-- `src/lib/ministry-plans.functions.ts` (new).
-- `src/routes/ministry-plans.index.tsx`, `ministry-plans.$planId.tsx`, `ministry-plans.$planId.review.tsx`, `ministry-plans.admin.tsx` (new).
-- `src/components/ministry-plans/` — `StepHeader`, `StepPurpose`, `StepPrograms`, `StepOrgStructure`, `StepSwot`, `StepGoals`, `ReviewDocument`, `ProgressBar`, `useAutosave` hook.
-- `src/components/AppSidebar.tsx` — add "Ministry Plans" entry; rename any "Core" user-facing label to "Staff Pastor".
+New under `/annual-planning`:
+
+- `/annual-planning/budget` — overview:
+  - **Core view**: cycle status, matrix of ministries × (report / rough / sheet / feedback). Actions: "Upload 12-mo report", "Paste sheet link", "Review submission", "Send feedback".
+  - **Leader view**: their submission card with the 4 stages, clear CTAs.
+- `/annual-planning/budget/$submissionId` — leader detail page:
+  - **Stage 1**: 12-mo report viewer (PDF/CSV inline).
+  - **Stage 2**: Rough budget line-item table (category dropdown + annual amount + note). Prior-year actuals shown side-by-side pulled from `budget_actuals`.
+  - **Stage 3**: 10k-ft plan editor (purpose textarea, top-3 goals repeater, SWOT seed lists).
+  - **Stage 4**: Sheet link + "Mark submitted" button + feedback view.
+- `/annual-planning/budget/admin` — core-only cycle management (open cycle, upload reports, paste sheet links, review submissions, send feedback).
+
+Replace the "coming soon" placeholder at `src/routes/annual-planning.budget.tsx` with the overview above.
+
+## Automation (pg_cron → server routes)
+
+Under `src/routes/api/public/hooks/`:
+
+- `budget-cycle-mar1.ts` — on Mar 1: create/ensure cycle, create submissions for every active leader assignment, notify **core** (dashboard task + email) to upload reports.
+- `budget-cycle-apr1.ts` — on Apr 1: advance cycle to `sheet_submission`, notify core to paste sheet links, notify leaders their rough phase is closed.
+- `budget-rough-due-nudge.ts` — daily during March: nudge leaders with `rough_status != 'submitted'` (3 days before + on due date).
+
+`pg_cron` jobs installed via `supabase--insert`, calling stable published URL with anon key.
+
+## Notifications
+
+React Email templates in `src/lib/email-templates/`:
+
+- `budget-report-ready` → leader (report uploaded, rough phase open)
+- `budget-rough-nudge` → leader (X days remaining)
+- `budget-sheet-ready` → leader (sheet link posted)
+- `budget-sheet-submitted` → core (leader clicked submit)
+- `budget-feedback-ready` → leader (feedback available)
+- `budget-report-upload-needed` → core (Mar 1 kickoff)
+
+In-app dashboard cards: extend the existing "action items" surface with cycle-driven items (source: `annual_budget`) so they show on the home page.
+
+## 10k-ft → MAP Hydration
+
+When a leader opens a new MAP for the same `calendar_year` (or same FY window), the MAP editor checks for a `ministry_high_level_plans` row with matching `user_id` + `ministry_area` where `carried_to_map_id IS NULL`. If found:
+
+- Pre-fill `purpose` from 10k-ft purpose.
+- Pre-fill `goals` with the top goals as editable draft `GoalEntry` items (empty execution_steps, no completion date).
+- Pre-fill `strengths / weaknesses / opportunities / threats` as editable seed bullets.
+- Show a small banner: "Seeded from your March 10k-ft plan — feel free to edit or delete."
+- On first save, set `carried_to_map_id` so the seeding only happens once.
+
+The 10k-ft plan itself remains viewable read-only from the MAP header ("View original 10k-ft plan").
+
+## Storage
+
+New private bucket `budget-reports`. Path convention: `budget-reports/{fiscal_year}/{user_id}/12mo-report.{ext}`. Signed URLs for viewing.
+
+## Security / Access
+
+- Leaders: read/write only their own submission and 10k-ft plan.
+- Core: full read/write across cycle, submissions, feedback, admin panel.
+- All server logic gated with `requireSupabaseAuth` + role checks; storage bucket policies mirror table RLS.
+
+## Technical Notes
+
+- New files: `src/lib/annual-budget.functions.ts`, `src/lib/annual-budget-cycle.server.ts`, budget routes, 6 email templates, 3 hook routes, one migration for tables + RLS + GRANTs + storage bucket policies.
+- Reuses: `RichTextEditor`, `DueDatePicker`, `useAutosave`, existing PDF viewer, `budget_categories` / `budget_actuals` for prior-year context, transactional email queue.
+- No changes to Calendar or existing MAP flow other than the hydration banner in the MAP editor.
+
+## Out of scope (for now)
+
+- Auto-generating per-leader Google Sheets from a template (you paste links manually — as chosen).
+- Multi-round feedback threading (single feedback + optional leader revision only).
+- Board/finance-committee approval workflow after your feedback — can layer on later.
