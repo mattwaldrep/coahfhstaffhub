@@ -62,8 +62,16 @@ import { Route as ApiPublicHooksWeeklyDigestMondayRouteImport } from './routes/a
 import { Route as ApiPublicHooksSyncGoogleTasksRouteImport } from './routes/api/public/hooks/sync-google-tasks'
 import { Route as ApiPublicHooksSundayReviewNudgeRouteImport } from './routes/api/public/hooks.sunday-review-nudge'
 import { Route as ApiPublicHooksSendWeeklyDigestRouteImport } from './routes/api/public/hooks/send-weekly-digest'
+import { Route as ApiPublicHooksPlanCycleSubmissionsDueRouteImport } from './routes/api/public/hooks/plan-cycle-submissions-due'
+import { Route as ApiPublicHooksPlanCycleNudgeRouteImport } from './routes/api/public/hooks/plan-cycle-nudge'
+import { Route as ApiPublicHooksPlanCycleMay1RouteImport } from './routes/api/public/hooks/plan-cycle-may1'
+import { Route as ApiPublicHooksPlanCycleJun30RouteImport } from './routes/api/public/hooks/plan-cycle-jun30'
 import { Route as ApiPublicHooksElderTouchpointThresholdRouteImport } from './routes/api/public/hooks.elder-touchpoint-threshold'
 import { Route as ApiPublicHooksElderTouchpointDigestRouteImport } from './routes/api/public/hooks.elder-touchpoint-digest'
+import { Route as ApiPublicHooksCalendarCycleSubmissionsDueRouteImport } from './routes/api/public/hooks/calendar-cycle-submissions-due'
+import { Route as ApiPublicHooksCalendarCycleNudgeRouteImport } from './routes/api/public/hooks/calendar-cycle-nudge'
+import { Route as ApiPublicHooksCalendarCycleMay1RouteImport } from './routes/api/public/hooks/calendar-cycle-may1'
+import { Route as ApiPublicHooksCalendarCycleJun30RouteImport } from './routes/api/public/hooks/calendar-cycle-jun30'
 import { Route as ApiPublicHooksBudgetCycleMar1RouteImport } from './routes/api/public/hooks/budget-cycle-mar1'
 import { Route as ApiPublicHooksBudgetCycleApr1RouteImport } from './routes/api/public/hooks/budget-cycle-apr1'
 import { Route as ApiPublicHooksAutoFinalizeMeetingRouteImport } from './routes/api/public/hooks.auto-finalize-meeting'
@@ -343,6 +351,30 @@ const ApiPublicHooksSendWeeklyDigestRoute =
     path: '/api/public/hooks/send-weekly-digest',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksPlanCycleSubmissionsDueRoute =
+  ApiPublicHooksPlanCycleSubmissionsDueRouteImport.update({
+    id: '/api/public/hooks/plan-cycle-submissions-due',
+    path: '/api/public/hooks/plan-cycle-submissions-due',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksPlanCycleNudgeRoute =
+  ApiPublicHooksPlanCycleNudgeRouteImport.update({
+    id: '/api/public/hooks/plan-cycle-nudge',
+    path: '/api/public/hooks/plan-cycle-nudge',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksPlanCycleMay1Route =
+  ApiPublicHooksPlanCycleMay1RouteImport.update({
+    id: '/api/public/hooks/plan-cycle-may1',
+    path: '/api/public/hooks/plan-cycle-may1',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksPlanCycleJun30Route =
+  ApiPublicHooksPlanCycleJun30RouteImport.update({
+    id: '/api/public/hooks/plan-cycle-jun30',
+    path: '/api/public/hooks/plan-cycle-jun30',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksElderTouchpointThresholdRoute =
   ApiPublicHooksElderTouchpointThresholdRouteImport.update({
     id: '/api/public/hooks/elder-touchpoint-threshold',
@@ -353,6 +385,30 @@ const ApiPublicHooksElderTouchpointDigestRoute =
   ApiPublicHooksElderTouchpointDigestRouteImport.update({
     id: '/api/public/hooks/elder-touchpoint-digest',
     path: '/api/public/hooks/elder-touchpoint-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksCalendarCycleSubmissionsDueRoute =
+  ApiPublicHooksCalendarCycleSubmissionsDueRouteImport.update({
+    id: '/api/public/hooks/calendar-cycle-submissions-due',
+    path: '/api/public/hooks/calendar-cycle-submissions-due',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksCalendarCycleNudgeRoute =
+  ApiPublicHooksCalendarCycleNudgeRouteImport.update({
+    id: '/api/public/hooks/calendar-cycle-nudge',
+    path: '/api/public/hooks/calendar-cycle-nudge',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksCalendarCycleMay1Route =
+  ApiPublicHooksCalendarCycleMay1RouteImport.update({
+    id: '/api/public/hooks/calendar-cycle-may1',
+    path: '/api/public/hooks/calendar-cycle-may1',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksCalendarCycleJun30Route =
+  ApiPublicHooksCalendarCycleJun30RouteImport.update({
+    id: '/api/public/hooks/calendar-cycle-jun30',
+    path: '/api/public/hooks/calendar-cycle-jun30',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksBudgetCycleMar1Route =
@@ -440,8 +496,16 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/auto-finalize-meeting': typeof ApiPublicHooksAutoFinalizeMeetingRoute
   '/api/public/hooks/budget-cycle-apr1': typeof ApiPublicHooksBudgetCycleApr1Route
   '/api/public/hooks/budget-cycle-mar1': typeof ApiPublicHooksBudgetCycleMar1Route
+  '/api/public/hooks/calendar-cycle-jun30': typeof ApiPublicHooksCalendarCycleJun30Route
+  '/api/public/hooks/calendar-cycle-may1': typeof ApiPublicHooksCalendarCycleMay1Route
+  '/api/public/hooks/calendar-cycle-nudge': typeof ApiPublicHooksCalendarCycleNudgeRoute
+  '/api/public/hooks/calendar-cycle-submissions-due': typeof ApiPublicHooksCalendarCycleSubmissionsDueRoute
   '/api/public/hooks/elder-touchpoint-digest': typeof ApiPublicHooksElderTouchpointDigestRoute
   '/api/public/hooks/elder-touchpoint-threshold': typeof ApiPublicHooksElderTouchpointThresholdRoute
+  '/api/public/hooks/plan-cycle-jun30': typeof ApiPublicHooksPlanCycleJun30Route
+  '/api/public/hooks/plan-cycle-may1': typeof ApiPublicHooksPlanCycleMay1Route
+  '/api/public/hooks/plan-cycle-nudge': typeof ApiPublicHooksPlanCycleNudgeRoute
+  '/api/public/hooks/plan-cycle-submissions-due': typeof ApiPublicHooksPlanCycleSubmissionsDueRoute
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
   '/api/public/hooks/sync-google-tasks': typeof ApiPublicHooksSyncGoogleTasksRoute
@@ -498,8 +562,16 @@ export interface FileRoutesByTo {
   '/api/public/hooks/auto-finalize-meeting': typeof ApiPublicHooksAutoFinalizeMeetingRoute
   '/api/public/hooks/budget-cycle-apr1': typeof ApiPublicHooksBudgetCycleApr1Route
   '/api/public/hooks/budget-cycle-mar1': typeof ApiPublicHooksBudgetCycleMar1Route
+  '/api/public/hooks/calendar-cycle-jun30': typeof ApiPublicHooksCalendarCycleJun30Route
+  '/api/public/hooks/calendar-cycle-may1': typeof ApiPublicHooksCalendarCycleMay1Route
+  '/api/public/hooks/calendar-cycle-nudge': typeof ApiPublicHooksCalendarCycleNudgeRoute
+  '/api/public/hooks/calendar-cycle-submissions-due': typeof ApiPublicHooksCalendarCycleSubmissionsDueRoute
   '/api/public/hooks/elder-touchpoint-digest': typeof ApiPublicHooksElderTouchpointDigestRoute
   '/api/public/hooks/elder-touchpoint-threshold': typeof ApiPublicHooksElderTouchpointThresholdRoute
+  '/api/public/hooks/plan-cycle-jun30': typeof ApiPublicHooksPlanCycleJun30Route
+  '/api/public/hooks/plan-cycle-may1': typeof ApiPublicHooksPlanCycleMay1Route
+  '/api/public/hooks/plan-cycle-nudge': typeof ApiPublicHooksPlanCycleNudgeRoute
+  '/api/public/hooks/plan-cycle-submissions-due': typeof ApiPublicHooksPlanCycleSubmissionsDueRoute
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
   '/api/public/hooks/sync-google-tasks': typeof ApiPublicHooksSyncGoogleTasksRoute
@@ -561,8 +633,16 @@ export interface FileRoutesById {
   '/api/public/hooks/auto-finalize-meeting': typeof ApiPublicHooksAutoFinalizeMeetingRoute
   '/api/public/hooks/budget-cycle-apr1': typeof ApiPublicHooksBudgetCycleApr1Route
   '/api/public/hooks/budget-cycle-mar1': typeof ApiPublicHooksBudgetCycleMar1Route
+  '/api/public/hooks/calendar-cycle-jun30': typeof ApiPublicHooksCalendarCycleJun30Route
+  '/api/public/hooks/calendar-cycle-may1': typeof ApiPublicHooksCalendarCycleMay1Route
+  '/api/public/hooks/calendar-cycle-nudge': typeof ApiPublicHooksCalendarCycleNudgeRoute
+  '/api/public/hooks/calendar-cycle-submissions-due': typeof ApiPublicHooksCalendarCycleSubmissionsDueRoute
   '/api/public/hooks/elder-touchpoint-digest': typeof ApiPublicHooksElderTouchpointDigestRoute
   '/api/public/hooks/elder-touchpoint-threshold': typeof ApiPublicHooksElderTouchpointThresholdRoute
+  '/api/public/hooks/plan-cycle-jun30': typeof ApiPublicHooksPlanCycleJun30Route
+  '/api/public/hooks/plan-cycle-may1': typeof ApiPublicHooksPlanCycleMay1Route
+  '/api/public/hooks/plan-cycle-nudge': typeof ApiPublicHooksPlanCycleNudgeRoute
+  '/api/public/hooks/plan-cycle-submissions-due': typeof ApiPublicHooksPlanCycleSubmissionsDueRoute
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
   '/api/public/hooks/sync-google-tasks': typeof ApiPublicHooksSyncGoogleTasksRoute
@@ -625,8 +705,16 @@ export interface FileRouteTypes {
     | '/api/public/hooks/auto-finalize-meeting'
     | '/api/public/hooks/budget-cycle-apr1'
     | '/api/public/hooks/budget-cycle-mar1'
+    | '/api/public/hooks/calendar-cycle-jun30'
+    | '/api/public/hooks/calendar-cycle-may1'
+    | '/api/public/hooks/calendar-cycle-nudge'
+    | '/api/public/hooks/calendar-cycle-submissions-due'
     | '/api/public/hooks/elder-touchpoint-digest'
     | '/api/public/hooks/elder-touchpoint-threshold'
+    | '/api/public/hooks/plan-cycle-jun30'
+    | '/api/public/hooks/plan-cycle-may1'
+    | '/api/public/hooks/plan-cycle-nudge'
+    | '/api/public/hooks/plan-cycle-submissions-due'
     | '/api/public/hooks/send-weekly-digest'
     | '/api/public/hooks/sunday-review-nudge'
     | '/api/public/hooks/sync-google-tasks'
@@ -683,8 +771,16 @@ export interface FileRouteTypes {
     | '/api/public/hooks/auto-finalize-meeting'
     | '/api/public/hooks/budget-cycle-apr1'
     | '/api/public/hooks/budget-cycle-mar1'
+    | '/api/public/hooks/calendar-cycle-jun30'
+    | '/api/public/hooks/calendar-cycle-may1'
+    | '/api/public/hooks/calendar-cycle-nudge'
+    | '/api/public/hooks/calendar-cycle-submissions-due'
     | '/api/public/hooks/elder-touchpoint-digest'
     | '/api/public/hooks/elder-touchpoint-threshold'
+    | '/api/public/hooks/plan-cycle-jun30'
+    | '/api/public/hooks/plan-cycle-may1'
+    | '/api/public/hooks/plan-cycle-nudge'
+    | '/api/public/hooks/plan-cycle-submissions-due'
     | '/api/public/hooks/send-weekly-digest'
     | '/api/public/hooks/sunday-review-nudge'
     | '/api/public/hooks/sync-google-tasks'
@@ -745,8 +841,16 @@ export interface FileRouteTypes {
     | '/api/public/hooks/auto-finalize-meeting'
     | '/api/public/hooks/budget-cycle-apr1'
     | '/api/public/hooks/budget-cycle-mar1'
+    | '/api/public/hooks/calendar-cycle-jun30'
+    | '/api/public/hooks/calendar-cycle-may1'
+    | '/api/public/hooks/calendar-cycle-nudge'
+    | '/api/public/hooks/calendar-cycle-submissions-due'
     | '/api/public/hooks/elder-touchpoint-digest'
     | '/api/public/hooks/elder-touchpoint-threshold'
+    | '/api/public/hooks/plan-cycle-jun30'
+    | '/api/public/hooks/plan-cycle-may1'
+    | '/api/public/hooks/plan-cycle-nudge'
+    | '/api/public/hooks/plan-cycle-submissions-due'
     | '/api/public/hooks/send-weekly-digest'
     | '/api/public/hooks/sunday-review-nudge'
     | '/api/public/hooks/sync-google-tasks'
@@ -791,8 +895,16 @@ export interface RootRouteChildren {
   ApiPublicHooksAutoFinalizeMeetingRoute: typeof ApiPublicHooksAutoFinalizeMeetingRoute
   ApiPublicHooksBudgetCycleApr1Route: typeof ApiPublicHooksBudgetCycleApr1Route
   ApiPublicHooksBudgetCycleMar1Route: typeof ApiPublicHooksBudgetCycleMar1Route
+  ApiPublicHooksCalendarCycleJun30Route: typeof ApiPublicHooksCalendarCycleJun30Route
+  ApiPublicHooksCalendarCycleMay1Route: typeof ApiPublicHooksCalendarCycleMay1Route
+  ApiPublicHooksCalendarCycleNudgeRoute: typeof ApiPublicHooksCalendarCycleNudgeRoute
+  ApiPublicHooksCalendarCycleSubmissionsDueRoute: typeof ApiPublicHooksCalendarCycleSubmissionsDueRoute
   ApiPublicHooksElderTouchpointDigestRoute: typeof ApiPublicHooksElderTouchpointDigestRoute
   ApiPublicHooksElderTouchpointThresholdRoute: typeof ApiPublicHooksElderTouchpointThresholdRoute
+  ApiPublicHooksPlanCycleJun30Route: typeof ApiPublicHooksPlanCycleJun30Route
+  ApiPublicHooksPlanCycleMay1Route: typeof ApiPublicHooksPlanCycleMay1Route
+  ApiPublicHooksPlanCycleNudgeRoute: typeof ApiPublicHooksPlanCycleNudgeRoute
+  ApiPublicHooksPlanCycleSubmissionsDueRoute: typeof ApiPublicHooksPlanCycleSubmissionsDueRoute
   ApiPublicHooksSendWeeklyDigestRoute: typeof ApiPublicHooksSendWeeklyDigestRoute
   ApiPublicHooksSundayReviewNudgeRoute: typeof ApiPublicHooksSundayReviewNudgeRoute
   ApiPublicHooksSyncGoogleTasksRoute: typeof ApiPublicHooksSyncGoogleTasksRoute
@@ -1173,6 +1285,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSendWeeklyDigestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/plan-cycle-submissions-due': {
+      id: '/api/public/hooks/plan-cycle-submissions-due'
+      path: '/api/public/hooks/plan-cycle-submissions-due'
+      fullPath: '/api/public/hooks/plan-cycle-submissions-due'
+      preLoaderRoute: typeof ApiPublicHooksPlanCycleSubmissionsDueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/plan-cycle-nudge': {
+      id: '/api/public/hooks/plan-cycle-nudge'
+      path: '/api/public/hooks/plan-cycle-nudge'
+      fullPath: '/api/public/hooks/plan-cycle-nudge'
+      preLoaderRoute: typeof ApiPublicHooksPlanCycleNudgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/plan-cycle-may1': {
+      id: '/api/public/hooks/plan-cycle-may1'
+      path: '/api/public/hooks/plan-cycle-may1'
+      fullPath: '/api/public/hooks/plan-cycle-may1'
+      preLoaderRoute: typeof ApiPublicHooksPlanCycleMay1RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/plan-cycle-jun30': {
+      id: '/api/public/hooks/plan-cycle-jun30'
+      path: '/api/public/hooks/plan-cycle-jun30'
+      fullPath: '/api/public/hooks/plan-cycle-jun30'
+      preLoaderRoute: typeof ApiPublicHooksPlanCycleJun30RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/elder-touchpoint-threshold': {
       id: '/api/public/hooks/elder-touchpoint-threshold'
       path: '/api/public/hooks/elder-touchpoint-threshold'
@@ -1185,6 +1325,34 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/elder-touchpoint-digest'
       fullPath: '/api/public/hooks/elder-touchpoint-digest'
       preLoaderRoute: typeof ApiPublicHooksElderTouchpointDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/calendar-cycle-submissions-due': {
+      id: '/api/public/hooks/calendar-cycle-submissions-due'
+      path: '/api/public/hooks/calendar-cycle-submissions-due'
+      fullPath: '/api/public/hooks/calendar-cycle-submissions-due'
+      preLoaderRoute: typeof ApiPublicHooksCalendarCycleSubmissionsDueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/calendar-cycle-nudge': {
+      id: '/api/public/hooks/calendar-cycle-nudge'
+      path: '/api/public/hooks/calendar-cycle-nudge'
+      fullPath: '/api/public/hooks/calendar-cycle-nudge'
+      preLoaderRoute: typeof ApiPublicHooksCalendarCycleNudgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/calendar-cycle-may1': {
+      id: '/api/public/hooks/calendar-cycle-may1'
+      path: '/api/public/hooks/calendar-cycle-may1'
+      fullPath: '/api/public/hooks/calendar-cycle-may1'
+      preLoaderRoute: typeof ApiPublicHooksCalendarCycleMay1RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/calendar-cycle-jun30': {
+      id: '/api/public/hooks/calendar-cycle-jun30'
+      path: '/api/public/hooks/calendar-cycle-jun30'
+      fullPath: '/api/public/hooks/calendar-cycle-jun30'
+      preLoaderRoute: typeof ApiPublicHooksCalendarCycleJun30RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/budget-cycle-mar1': {
@@ -1362,10 +1530,20 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicHooksAutoFinalizeMeetingRoute,
   ApiPublicHooksBudgetCycleApr1Route: ApiPublicHooksBudgetCycleApr1Route,
   ApiPublicHooksBudgetCycleMar1Route: ApiPublicHooksBudgetCycleMar1Route,
+  ApiPublicHooksCalendarCycleJun30Route: ApiPublicHooksCalendarCycleJun30Route,
+  ApiPublicHooksCalendarCycleMay1Route: ApiPublicHooksCalendarCycleMay1Route,
+  ApiPublicHooksCalendarCycleNudgeRoute: ApiPublicHooksCalendarCycleNudgeRoute,
+  ApiPublicHooksCalendarCycleSubmissionsDueRoute:
+    ApiPublicHooksCalendarCycleSubmissionsDueRoute,
   ApiPublicHooksElderTouchpointDigestRoute:
     ApiPublicHooksElderTouchpointDigestRoute,
   ApiPublicHooksElderTouchpointThresholdRoute:
     ApiPublicHooksElderTouchpointThresholdRoute,
+  ApiPublicHooksPlanCycleJun30Route: ApiPublicHooksPlanCycleJun30Route,
+  ApiPublicHooksPlanCycleMay1Route: ApiPublicHooksPlanCycleMay1Route,
+  ApiPublicHooksPlanCycleNudgeRoute: ApiPublicHooksPlanCycleNudgeRoute,
+  ApiPublicHooksPlanCycleSubmissionsDueRoute:
+    ApiPublicHooksPlanCycleSubmissionsDueRoute,
   ApiPublicHooksSendWeeklyDigestRoute: ApiPublicHooksSendWeeklyDigestRoute,
   ApiPublicHooksSundayReviewNudgeRoute: ApiPublicHooksSundayReviewNudgeRoute,
   ApiPublicHooksSyncGoogleTasksRoute: ApiPublicHooksSyncGoogleTasksRoute,

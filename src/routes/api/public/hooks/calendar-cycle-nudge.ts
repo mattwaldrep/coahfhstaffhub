@@ -34,7 +34,7 @@ export const Route = createFileRoute("/api/public/hooks/calendar-cycle-nudge")({
           .from("calendar_plan_submissions")
           .select("leader_id")
           .eq("cycle_id", cycle.id)
-          .in("status", target);
+          .in("status", target as any);
         const ids = Array.from(new Set((subs ?? []).map((s: any) => s.leader_id)));
         if (ids.length === 0) return Response.json({ phase, nudged: 0 });
 

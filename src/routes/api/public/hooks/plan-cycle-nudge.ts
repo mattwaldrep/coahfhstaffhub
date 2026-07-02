@@ -36,7 +36,7 @@ export const Route = createFileRoute("/api/public/hooks/plan-cycle-nudge")({
           .from("ministry_action_plans")
           .select("user_id, status")
           .eq("cycle_id", cycle.id)
-          .in("status", targetStatuses);
+          .in("status", targetStatuses as any);
 
         const leaderIds = Array.from(new Set((pending ?? []).map((p: any) => p.user_id)));
         if (leaderIds.length === 0) return Response.json({ nudged: 0, phase });
