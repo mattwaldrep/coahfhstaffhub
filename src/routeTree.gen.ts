@@ -31,6 +31,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as OnboardingIndexRouteImport } from './routes/onboarding.index'
 import { Route as MinistryPlansIndexRouteImport } from './routes/ministry-plans.index'
 import { Route as ElderIndexRouteImport } from './routes/elder.index'
+import { Route as DocumentsIndexRouteImport } from './routes/documents.index'
 import { Route as CgCoachingIndexRouteImport } from './routes/cg-coaching.index'
 import { Route as AnnualPlanningIndexRouteImport } from './routes/annual-planning.index'
 import { Route as OnboardingTemplatesRouteImport } from './routes/onboarding.templates'
@@ -187,6 +188,11 @@ const ElderIndexRoute = ElderIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ElderRoute,
+} as any)
+const DocumentsIndexRoute = DocumentsIndexRouteImport.update({
+  id: '/documents/',
+  path: '/documents/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CgCoachingIndexRoute = CgCoachingIndexRouteImport.update({
   id: '/',
@@ -479,6 +485,7 @@ export interface FileRoutesByFullPath {
   '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/annual-planning/': typeof AnnualPlanningIndexRoute
   '/cg-coaching/': typeof CgCoachingIndexRoute
+  '/documents/': typeof DocumentsIndexRoute
   '/elder/': typeof ElderIndexRoute
   '/ministry-plans/': typeof MinistryPlansIndexRoute
   '/onboarding/': typeof OnboardingIndexRoute
@@ -545,6 +552,7 @@ export interface FileRoutesByTo {
   '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/annual-planning': typeof AnnualPlanningIndexRoute
   '/cg-coaching': typeof CgCoachingIndexRoute
+  '/documents': typeof DocumentsIndexRoute
   '/elder': typeof ElderIndexRoute
   '/ministry-plans': typeof MinistryPlansIndexRoute
   '/onboarding': typeof OnboardingIndexRoute
@@ -616,6 +624,7 @@ export interface FileRoutesById {
   '/onboarding/templates': typeof OnboardingTemplatesRoute
   '/annual-planning/': typeof AnnualPlanningIndexRoute
   '/cg-coaching/': typeof CgCoachingIndexRoute
+  '/documents/': typeof DocumentsIndexRoute
   '/elder/': typeof ElderIndexRoute
   '/ministry-plans/': typeof MinistryPlansIndexRoute
   '/onboarding/': typeof OnboardingIndexRoute
@@ -688,6 +697,7 @@ export interface FileRouteTypes {
     | '/onboarding/templates'
     | '/annual-planning/'
     | '/cg-coaching/'
+    | '/documents/'
     | '/elder/'
     | '/ministry-plans/'
     | '/onboarding/'
@@ -754,6 +764,7 @@ export interface FileRouteTypes {
     | '/onboarding/templates'
     | '/annual-planning'
     | '/cg-coaching'
+    | '/documents'
     | '/elder'
     | '/ministry-plans'
     | '/onboarding'
@@ -824,6 +835,7 @@ export interface FileRouteTypes {
     | '/onboarding/templates'
     | '/annual-planning/'
     | '/cg-coaching/'
+    | '/documents/'
     | '/elder/'
     | '/ministry-plans/'
     | '/onboarding/'
@@ -888,6 +900,7 @@ export interface RootRouteChildren {
   OnboardingWorkflowIdRoute: typeof OnboardingWorkflowIdRoute
   OnboardingTemplatesRoute: typeof OnboardingTemplatesRoute
   AnnualPlanningIndexRoute: typeof AnnualPlanningIndexRoute
+  DocumentsIndexRoute: typeof DocumentsIndexRoute
   MinistryPlansIndexRoute: typeof MinistryPlansIndexRoute
   OnboardingIndexRoute: typeof OnboardingIndexRoute
   ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
@@ -1067,6 +1080,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/elder/'
       preLoaderRoute: typeof ElderIndexRouteImport
       parentRoute: typeof ElderRoute
+    }
+    '/documents/': {
+      id: '/documents/'
+      path: '/documents'
+      fullPath: '/documents/'
+      preLoaderRoute: typeof DocumentsIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/cg-coaching/': {
       id: '/cg-coaching/'
@@ -1522,6 +1542,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingWorkflowIdRoute: OnboardingWorkflowIdRoute,
   OnboardingTemplatesRoute: OnboardingTemplatesRoute,
   AnnualPlanningIndexRoute: AnnualPlanningIndexRoute,
+  DocumentsIndexRoute: DocumentsIndexRoute,
   MinistryPlansIndexRoute: MinistryPlansIndexRoute,
   OnboardingIndexRoute: OnboardingIndexRoute,
   ApiGoogleOauthCallbackRoute: ApiGoogleOauthCallbackRoute,
