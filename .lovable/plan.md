@@ -1,117 +1,113 @@
 
-# Annual Budget Workflow
+# Annual Plan + Annual Calendar Kickoff Automation
 
-Fiscal year: July 1 – June 30. This adds a **Budget** track to Annual Planning that runs alongside the existing Calendar and MAP tracks, plus a lightweight "10k-ft plan" that later hydrates the full MAP.
+Extend the same cycle/hook/notification pattern used for the budget workflow to the two remaining annual tracks. Both open **May 1** and finalize **June 30** of each fiscal year, with a mid-May nudge to preserve time for feedback and approval.
 
-## Timeline
+## Timeline (shared by both tracks)
 
 ```text
-Mar 1 ─ Core (you) prompted: upload 12-mo spending report (Feb–Feb) per ministry
-        │
-        ├─▶ Each leader notified: rough budget request + 10k-ft plan due Mar 31
-        │
-Mar 31 ─ Rough request + 10k-ft plan submitted
-        │
-Apr 1  ─ Core prompted: paste Google Sheet link per leader
-        │
-        ├─▶ Leader notified with sheet link, works in Sheets, clicks "Submitted"
-        │
-        ├─▶ Core notified: review, add feedback in app, submit feedback
-        │
-        └─▶ Leader notified with feedback, can revise → re-submit
-        
-Later  ─ Leader starts full MAP → 10k-ft answers pre-fill MAP fields as editable drafts
+May 1  ─ Auto: open cycle, seed a submission row per active ministry leader,
+         email leaders + create dashboard tasks (draft due May 31)
+May 15 ─ Nudge #1: leaders still in draft / not started
+May 31 ─ Leader submission deadline (drafts flip to "submitted";
+         late submissions flagged and core notified)
+Jun 1–15 Core review window: core marks each submission "under_review",
+         adds feedback in-app; leader is notified per submission to revise
+Jun 16–25 Revision window: leaders address feedback and resubmit
+Jun 20 ─ Nudge #2: any submission still awaiting revision or approval
+Jun 30 ─ Auto: close cycle, mark any not-yet-approved items "late",
+         email core with final outstanding list
 ```
 
-## Data Model
+Hook routes will accept a `?phase=` query param so a single daily cron entry can dispatch the right phase, and every hook is idempotent.
 
-New tables (all RLS-gated: owner + core; core-only for admin fields):
+## Annual Plan (MAP) automation
 
-- **`budget_cycles`** — one per fiscal year: `fiscal_year`, `status` (setup / rough_planning / sheet_submission / feedback / complete), key dates.
-- **`ministry_budget_submissions`** — one per (cycle, leader/ministry area):
-  - `user_id`, `ministry_area`, `cycle_id`
-  - `spending_report_uploaded_at`, `spending_report_path` (Storage: new `budget-reports` bucket)
-  - `rough_status` (not_started / in_progress / submitted), `rough_submitted_at`
-  - `sheet_url` (core pastes), `sheet_status` (awaiting_link / in_progress / submitted / feedback_provided / revised), `sheet_submitted_at`
-  - `feedback_body` (rich text), `feedback_submitted_at`, `reviewed_by`
-- **`ministry_rough_budget_lines`** — line items on the rough request: `submission_id`, `category_id` (nullable), `category_name`, `amount_annual`, `note`, `sort_order`. Category list seeded from `budget_categories` for the FY.
-- **`ministry_high_level_plans`** — the "10k-ft" plan tied to a submission: `purpose`, `top_goals` (jsonb array of `{ statement, why }`), `swot_seeds` (jsonb: strengths/weaknesses/opportunities/threats string arrays), `notes`. `carried_to_map_id` (nullable FK to `ministry_action_plans`) tracks the hydration.
+Reuses existing `ministry_action_plans` + `ministry_high_level_plans`.
 
-Notifications reuse the existing app-email transactional pipeline plus in-app dashboard tasks (same pattern as onboarding/MAP prompts). All emails: pre-rendered React Email templates.
+- New table **`ministry_plan_cycles`** (`fiscal_year`, `status` [setup / open / review / revision / complete], `opens_at`, `submissions_due_at`, `feedback_due_at`, `closes_at`, `created_by`). One row per FY.
+- `createPlan` already hydrates from the most recent un-carried 10k-ft plan — the May 1 kickoff simply ensures each leader has an active MAP row for the new FY.
+- Add `cycle_id` (nullable FK) + `fiscal_year` to `ministry_action_plans` so cycle progress is queryable. Backfill nulls; new rows get populated by the kickoff hook and by `createPlan` while a cycle is open.
+- Kickoff hook creates one draft MAP per active `ministry_leader_assignments` row, tagging it with `cycle_id`.
+- Statuses use the existing `draft → submitted → under_review → approved` flow, plus a new `revision_requested` value so the feedback loop is explicit. Cycle status auto-advances when all submissions are `approved` or on Jun 30.
+- Admin page gains a "Plan cycle" panel alongside the existing budget-cycle admin.
 
-## Ministry / Leader Resolution
+## Annual Calendar automation
 
-We need a canonical "who is a ministry leader" list. Reuse `MINISTRY_AREAS` from `ministry-plans.functions.ts` and a new `ministry_leader_assignments` table (`user_id`, `ministry_area`, `active`) — core-managed in a small admin panel inside Annual Planning. Cycle kickoff creates one `ministry_budget_submissions` row per active assignment.
+Reuses existing `calendar_planning_cycles` + `calendar_plan_submissions` + `calendar_proposed_events`. No new schema for the cycle itself.
 
-## Routes / UI
+- Kickoff hook: if no cycle exists for the new FY's `plan_year`, insert one with `status = 'open'`, `opens_at = May 1`, `closes_at = Jun 30`. Then for each active ministry leader, insert one draft `calendar_plan_submissions` row per relevant `sub_calendar`. Notify leaders + create dashboard tasks.
+- Add a `revision_requested` submission status (mirrors the plan track) so core feedback + leader revision is a real state, not an ad-hoc note.
+- May 15 nudge: email leaders with `status IN ('draft')`.
+- May 31 hook: auto-flip drafts to `submitted` where the leader clicked "ready" or flag as `late`; notify core of the review queue.
+- Jun 1–15 review window: existing per-submission review UX at `/calendar/planning/review` drives feedback + `revision_requested` transitions.
+- Jun 20 nudge: submissions still in `revision_requested` or awaiting approval.
+- Jun 30 finalize hook: cycle → `review`/`closed` per remaining state, email core with outstanding list.
 
-New under `/annual-planning`:
+## New hook routes (`src/routes/api/public/hooks/`)
 
-- `/annual-planning/budget` — overview:
-  - **Core view**: cycle status, matrix of ministries × (report / rough / sheet / feedback). Actions: "Upload 12-mo report", "Paste sheet link", "Review submission", "Send feedback".
-  - **Leader view**: their submission card with the 4 stages, clear CTAs.
-- `/annual-planning/budget/$submissionId` — leader detail page:
-  - **Stage 1**: 12-mo report viewer (PDF/CSV inline).
-  - **Stage 2**: Rough budget line-item table (category dropdown + annual amount + note). Prior-year actuals shown side-by-side pulled from `budget_actuals`.
-  - **Stage 3**: 10k-ft plan editor (purpose textarea, top-3 goals repeater, SWOT seed lists).
-  - **Stage 4**: Sheet link + "Mark submitted" button + feedback view.
-- `/annual-planning/budget/admin` — core-only cycle management (open cycle, upload reports, paste sheet links, review submissions, send feedback).
+```text
+plan-cycle-may1.ts            Plan track kickoff        (May 1)
+plan-cycle-nudge.ts           Plan track nudges         (May 15, Jun 20)
+plan-cycle-submissions-due.ts Plan submission deadline  (May 31)
+plan-cycle-jun30.ts           Plan track finalize       (Jun 30)
+calendar-cycle-may1.ts        Calendar kickoff          (May 1)
+calendar-cycle-nudge.ts       Calendar nudges           (May 15, Jun 20)
+calendar-cycle-submissions-due.ts Calendar deadline     (May 31)
+calendar-cycle-jun30.ts       Calendar finalize         (Jun 30)
+```
 
-Replace the "coming soon" placeholder at `src/routes/annual-planning.budget.tsx` with the overview above.
+All are `/api/public/*`, called by `pg_cron` with the anon `apikey` header. Each is idempotent — safe if pg_cron double-fires or if core kicks off manually from the admin UI.
 
-## Automation (pg_cron → server routes)
+## Emails (React Email templates)
 
-Under `src/routes/api/public/hooks/`:
+Reusing the existing transactional queue and the budget templates' style:
 
-- `budget-cycle-mar1.ts` — on Mar 1: create/ensure cycle, create submissions for every active leader assignment, notify **core** (dashboard task + email) to upload reports.
-- `budget-cycle-apr1.ts` — on Apr 1: advance cycle to `sheet_submission`, notify core to paste sheet links, notify leaders their rough phase is closed.
-- `budget-rough-due-nudge.ts` — daily during March: nudge leaders with `rough_status != 'submitted'` (3 days before + on due date).
+- `plan-cycle-open`, `plan-cycle-nudge`, `plan-cycle-submissions-due` (core summary), `plan-cycle-feedback-ready` (leader), `plan-cycle-finalize` (core)
+- `calendar-cycle-open`, `calendar-cycle-nudge`, `calendar-cycle-submissions-due`, `calendar-cycle-feedback-ready`, `calendar-cycle-finalize`
+- Existing `notifyCycleOpen` / `notifySubmissionReady` continue to fire; new templates only cover the new automated transitions.
 
-`pg_cron` jobs installed via `supabase--insert`, calling stable published URL with anon key.
+Dashboard tasks are created via the existing action-items surface with `source = 'annual_plan'` / `source = 'annual_calendar'` so they show on the home page.
 
-## Notifications
+## Admin UI
 
-React Email templates in `src/lib/email-templates/`:
+Extend the annual-planning admin surface to cover all three tracks (Budget / Plan / Calendar tabs). Core can:
+- View current cycle status + phase per track
+- Manually open / advance / close a cycle (off-schedule kickoff)
+- See a leader × status grid
+- Drop into the existing per-submission review pages for feedback
 
-- `budget-report-ready` → leader (report uploaded, rough phase open)
-- `budget-rough-nudge` → leader (X days remaining)
-- `budget-sheet-ready` → leader (sheet link posted)
-- `budget-sheet-submitted` → core (leader clicked submit)
-- `budget-feedback-ready` → leader (feedback available)
-- `budget-report-upload-needed` → core (Mar 1 kickoff)
+The existing `/ministry-plans/admin` and `/calendar/planning/review` pages keep their per-submission review UX; the admin page only manages cycle lifecycle.
 
-In-app dashboard cards: extend the existing "action items" surface with cycle-driven items (source: `annual_budget`) so they show on the home page.
+## Overview page
 
-## 10k-ft → MAP Hydration
+Update `annual-planning.index.tsx` and its sibling tiles so each shows the current cycle's phase + a "Your submission" CTA when a leader has an open assignment.
 
-When a leader opens a new MAP for the same `calendar_year` (or same FY window), the MAP editor checks for a `ministry_high_level_plans` row with matching `user_id` + `ministry_area` where `carried_to_map_id IS NULL`. If found:
+## pg_cron
 
-- Pre-fill `purpose` from 10k-ft purpose.
-- Pre-fill `goals` with the top goals as editable draft `GoalEntry` items (empty execution_steps, no completion date).
-- Pre-fill `strengths / weaknesses / opportunities / threats` as editable seed bullets.
-- Show a small banner: "Seeded from your March 10k-ft plan — feel free to edit or delete."
-- On first save, set `carried_to_map_id` so the seeding only happens once.
+One-time SQL via `supabase--insert` after routes deploy:
 
-The 10k-ft plan itself remains viewable read-only from the MAP header ("View original 10k-ft plan").
+```text
+plan-cycle-may1                0 12 1 5 *
+plan-cycle-nudge               0 13 15 5 *
+plan-cycle-nudge (jun)         0 13 20 6 *
+plan-cycle-submissions-due     0 12 31 5 *
+plan-cycle-jun30               0 12 30 6 *
+calendar-cycle-may1            0 12 1 5 *
+calendar-cycle-nudge           0 13 15 5 *
+calendar-cycle-nudge (jun)     0 13 20 6 *
+calendar-cycle-submissions-due 0 12 31 5 *
+calendar-cycle-jun30           0 12 30 6 *
+```
 
-## Storage
+## Security / access
 
-New private bucket `budget-reports`. Path convention: `budget-reports/{fiscal_year}/{user_id}/12mo-report.{ext}`. Signed URLs for viewing.
+- Hooks: anon `apikey` header only; no PII in responses; all writes via `supabaseAdmin` inside the handler.
+- New `ministry_plan_cycles` table: RLS with leader-read (their own cycle rows via join) + core-write, plus GRANTs to `authenticated` + `service_role`.
+- MAP schema change: adding nullable `cycle_id` + `fiscal_year` doesn't affect existing RLS. Adding `revision_requested` to the status enum only widens the allowed set.
 
-## Security / Access
+## Out of scope
 
-- Leaders: read/write only their own submission and 10k-ft plan.
-- Core: full read/write across cycle, submissions, feedback, admin panel.
-- All server logic gated with `requireSupabaseAuth` + role checks; storage bucket policies mirror table RLS.
-
-## Technical Notes
-
-- New files: `src/lib/annual-budget.functions.ts`, `src/lib/annual-budget-cycle.server.ts`, budget routes, 6 email templates, 3 hook routes, one migration for tables + RLS + GRANTs + storage bucket policies.
-- Reuses: `RichTextEditor`, `DueDatePicker`, `useAutosave`, existing PDF viewer, `budget_categories` / `budget_actuals` for prior-year context, transactional email queue.
-- No changes to Calendar or existing MAP flow other than the hydration banner in the MAP editor.
-
-## Out of scope (for now)
-
-- Auto-generating per-leader Google Sheets from a template (you paste links manually — as chosen).
-- Multi-round feedback threading (single feedback + optional leader revision only).
-- Board/finance-committee approval workflow after your feedback — can layer on later.
+- Board/finance approval steps after core approval (can layer later).
+- Auto-emailing every calendar-approval decision (existing per-submission notifications still fire).
+- Rewriting the existing MAP or Calendar submission UIs — automation only wraps them.
