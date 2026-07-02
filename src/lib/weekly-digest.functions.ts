@@ -120,11 +120,15 @@ export const getThisWeekDigest = createServerFn({ method: "GET" })
 
       const { data: motions } = await supabase
         .from("elder_motions")
-        .select("title, status")
-        .in("status", ["proposed", "discussion", "voting"])
+        .select("title, deadline_at, outcome, closed_at")
+        .is("closed_at", null)
         .limit(5);
       if (motions && motions.length) {
-        facts.push(`Open elder motions: ${motions.map((m: any) => `${m.title} (${m.status})`).join("; ")}.`);
+        facts.push(
+          `Open elder motions: ${motions
+            .map((m: any) => `${m.title} (${m.outcome ?? "open"})`)
+            .join("; ")}.`,
+        );
       }
     }
 
