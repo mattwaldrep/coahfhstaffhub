@@ -1881,6 +1881,94 @@ export type Database = {
           },
         ]
       }
+      governing_document_versions: {
+        Row: {
+          created_at: string
+          document_id: string
+          file_name: string
+          file_path: string
+          id: string
+          mime_type: string | null
+          notes: string | null
+          size_bytes: number | null
+          uploaded_by: string | null
+          version_label: string
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          file_name: string
+          file_path: string
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          size_bytes?: number | null
+          uploaded_by?: string | null
+          version_label: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          size_bytes?: number | null
+          uploaded_by?: string | null
+          version_label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governing_document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "governing_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governing_documents: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          current_version_id: string | null
+          description: string | null
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          current_version_id?: string | null
+          description?: string | null
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          current_version_id?: string | null
+          description?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governing_documents_current_version_fk"
+            columns: ["current_version_id"]
+            isOneToOne: false
+            referencedRelation: "governing_document_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_event_notes: {
         Row: {
           created_at: string
@@ -2724,47 +2812,6 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "onboarding_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      onboarding_workflow_documents: {
-        Row: {
-          created_at: string
-          file_name: string
-          file_path: string
-          id: string
-          mime_type: string | null
-          size_bytes: number | null
-          uploaded_by: string | null
-          workflow_id: string
-        }
-        Insert: {
-          created_at?: string
-          file_name: string
-          file_path: string
-          id?: string
-          mime_type?: string | null
-          size_bytes?: number | null
-          uploaded_by?: string | null
-          workflow_id: string
-        }
-        Update: {
-          created_at?: string
-          file_name?: string
-          file_path?: string
-          id?: string
-          mime_type?: string | null
-          size_bytes?: number | null
-          uploaded_by?: string | null
-          workflow_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "onboarding_workflow_documents_workflow_id_fkey"
-            columns: ["workflow_id"]
-            isOneToOne: false
-            referencedRelation: "onboarding_workflows"
             referencedColumns: ["id"]
           },
         ]

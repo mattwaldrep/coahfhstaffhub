@@ -108,6 +108,7 @@ export function AppSidebar() {
 
   const SECONDARY: NavItem[] = [
     { to: "/missions", label: "Missions", icon: Users },
+    { to: "/documents", label: "Documents", icon: ScrollText },
     ...(isCore
       ? [
           {

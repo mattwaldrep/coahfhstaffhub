@@ -45,10 +45,6 @@ import {
   reorderWorkflowSection,
   setWorkflowSectionOrder,
   renameWorkflowSection,
-  listWorkflowDocuments,
-  recordWorkflowDocument,
-  getWorkflowDocumentUrl,
-  deleteWorkflowDocument,
 } from "@/lib/onboarding-extras.functions";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -176,10 +172,6 @@ function WorkflowDetail() {
   const reorderSectionFn = useServerFn(reorderWorkflowSection);
   const setSectionOrderFn = useServerFn(setWorkflowSectionOrder);
   const renameSectionFn = useServerFn(renameWorkflowSection);
-  const listDocsFn = useServerFn(listWorkflowDocuments);
-  const recordDocFn = useServerFn(recordWorkflowDocument);
-  const getDocUrlFn = useServerFn(getWorkflowDocumentUrl);
-  const deleteDocFn = useServerFn(deleteWorkflowDocument);
   const { user } = useAuth();
 
   const { data: assignableUsers = [] } = useQuery<UserOption[]>({
@@ -204,10 +196,6 @@ function WorkflowDetail() {
     queryFn: () => listSectionsFn({ data: { workflowId } }),
   });
 
-  const { data: documents = [] } = useQuery<any[]>({
-    queryKey: ["onboarding-docs", workflowId],
-    queryFn: () => listDocsFn({ data: { workflowId } }),
-  });
 
   const commentsByTask = useMemo(() => {
     const m = new Map<string, OnboardingComment[]>();
@@ -637,140 +625,26 @@ function WorkflowDetail() {
       </div>
 
       <Card>
-        <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2">
+        <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Paperclip className="w-4 h-4" />
-            Documents
-            <span className="text-xs text-muted-foreground font-normal">
-              ({documents.length})
-            </span>
+            Governing documents
           </CardTitle>
-          {isCore && (
-            <label className="inline-flex">
-              <input
-                type="file"
-                className="hidden"
-                multiple
-                disabled={uploading}
-                onChange={async (e) => {
-                  const files = Array.from(e.target.files ?? []);
-                  e.target.value = "";
-                  if (files.length === 0) return;
-                  setUploading(true);
-                  try {
-                    for (const file of files) {
-                      const safeName = file.name.replace(/[^\w.\-]+/g, "_");
-                      const path = `${workflowId}/${Date.now()}-${safeName}`;
-                      const { error: upErr } = await supabase.storage
-                        .from("onboarding-documents")
-                        .upload(path, file, { upsert: false });
-                      if (upErr) throw upErr;
-                      await recordDocFn({
-                        data: {
-                          workflow_id: workflowId,
-                          file_path: path,
-                          file_name: file.name,
-                          mime_type: file.type || null,
-                          size_bytes: file.size,
-                        },
-                      });
-                    }
-                    toast.success(
-                      `Uploaded ${files.length} document${files.length === 1 ? "" : "s"}`,
-                    );
-                    invalidateDocs();
-                  } catch (err: any) {
-                    toast.error(err?.message ?? "Upload failed");
-                  } finally {
-                    setUploading(false);
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={uploading}
-                asChild
-              >
-                <span className="cursor-pointer">
-                  <Upload className="w-3.5 h-3.5 mr-1" />
-                  {uploading ? "Uploading…" : "Upload"}
-                </span>
-              </Button>
-            </label>
-          )}
         </CardHeader>
-        <CardContent className="space-y-1">
-          {documents.length === 0 && (
-            <div className="text-xs text-muted-foreground italic px-1 py-2">
-              No documents attached yet.
-            </div>
-          )}
-          {documents.map((d: any) => (
-            <div
-              key={d.id}
-              className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/50 group text-sm"
-            >
-              <FileText className="w-4 h-4 shrink-0 text-muted-foreground" />
-              <button
-                type="button"
-                className="flex-1 min-w-0 text-left truncate hover:underline"
-                onClick={async () => {
-                  try {
-                    const { url } = await getDocUrlFn({ data: { id: d.id } });
-                    window.open(url, "_blank", "noopener,noreferrer");
-                  } catch (err: any) {
-                    toast.error(err?.message ?? "Failed to open document");
-                  }
-                }}
-                title={d.file_name}
-              >
-                {d.file_name}
-              </button>
-              <span className="text-[11px] text-muted-foreground shrink-0">
-                {d.size_bytes ? `${Math.max(1, Math.round(d.size_bytes / 1024))} KB` : ""}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0"
-                title="Download"
-                onClick={async () => {
-                  try {
-                    const { url } = await getDocUrlFn({ data: { id: d.id } });
-                    window.open(url, "_blank", "noopener,noreferrer");
-                  } catch (err: any) {
-                    toast.error(err?.message ?? "Failed");
-                  }
-                }}
-              >
-                <Download className="w-3.5 h-3.5" />
-              </Button>
-              {isCore && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
-                  title="Delete"
-                  onClick={async () => {
-                    if (!confirm(`Delete ${d.file_name}?`)) return;
-                    try {
-                      await deleteDocFn({ data: { id: d.id } });
-                      toast.success("Deleted");
-                      invalidateDocs();
-                    } catch (err: any) {
-                      toast.error(err?.message ?? "Failed");
-                    }
-                  }}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
-              )}
-            </div>
-          ))}
+        <CardContent>
+          <div className="text-sm text-muted-foreground">
+            Official church &amp; staff documents (employee handbook, policies, etc.)
+            now live in a single church-wide repository.
+          </div>
+          <Button asChild size="sm" variant="outline" className="mt-3">
+            <Link to="/documents">
+              <FileText className="w-3.5 h-3.5 mr-1" />
+              Open Documents
+            </Link>
+          </Button>
         </CardContent>
       </Card>
+
     </div>
 
     <Dialog open={!!renameDialog} onOpenChange={(o) => !o && setRenameDialog(null)}>
