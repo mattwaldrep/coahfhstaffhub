@@ -172,10 +172,6 @@ function WorkflowDetail() {
   const reorderSectionFn = useServerFn(reorderWorkflowSection);
   const setSectionOrderFn = useServerFn(setWorkflowSectionOrder);
   const renameSectionFn = useServerFn(renameWorkflowSection);
-  const listDocsFn = useServerFn(listWorkflowDocuments);
-  const recordDocFn = useServerFn(recordWorkflowDocument);
-  const getDocUrlFn = useServerFn(getWorkflowDocumentUrl);
-  const deleteDocFn = useServerFn(deleteWorkflowDocument);
   const { user } = useAuth();
 
   const { data: assignableUsers = [] } = useQuery<UserOption[]>({
