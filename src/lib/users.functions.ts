@@ -6,7 +6,6 @@ import { assertCore, supabaseAdmin } from "@/server/users.server";
 const ROLES = ["core", "meeting", "extended", "elder", "elder_candidate"] as const;
 type Role = (typeof ROLES)[number];
 
-
 export const listUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
