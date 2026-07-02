@@ -56,6 +56,7 @@ import { Route as ElderMeetingsMeetingIdRouteImport } from './routes/elder.meeti
 import { Route as CalendarPlanningReviewRouteImport } from './routes/calendar_.planning.review'
 import { Route as CalendarPlanningSubmissionIdRouteImport } from './routes/calendar_.planning.$submissionId'
 import { Route as ApiGoogleOauthCallbackRouteImport } from './routes/api/google.oauth-callback'
+import { Route as AnnualPlanningBudgetAdminRouteImport } from './routes/annual-planning.budget.admin'
 import { Route as AnnualPlanningBudgetSubmissionIdRouteImport } from './routes/annual-planning.budget.$submissionId'
 import { Route as ApiPublicHooksWeeklyDigestMondayRouteImport } from './routes/api/public/hooks.weekly-digest-monday'
 import { Route as ApiPublicHooksSyncGoogleTasksRouteImport } from './routes/api/public/hooks/sync-google-tasks'
@@ -306,6 +307,12 @@ const ApiGoogleOauthCallbackRoute = ApiGoogleOauthCallbackRouteImport.update({
   path: '/api/google/oauth-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnnualPlanningBudgetAdminRoute =
+  AnnualPlanningBudgetAdminRouteImport.update({
+    id: '/admin',
+    path: '/admin',
+    getParentRoute: () => AnnualPlanningBudgetRoute,
+  } as any)
 const AnnualPlanningBudgetSubmissionIdRoute =
   AnnualPlanningBudgetSubmissionIdRouteImport.update({
     id: '/$submissionId',
@@ -420,6 +427,7 @@ export interface FileRoutesByFullPath {
   '/ministry-plans/': typeof MinistryPlansIndexRoute
   '/onboarding/': typeof OnboardingIndexRoute
   '/annual-planning/budget/$submissionId': typeof AnnualPlanningBudgetSubmissionIdRoute
+  '/annual-planning/budget/admin': typeof AnnualPlanningBudgetAdminRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/calendar/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
   '/calendar/planning/review': typeof CalendarPlanningReviewRoute
@@ -477,6 +485,7 @@ export interface FileRoutesByTo {
   '/ministry-plans': typeof MinistryPlansIndexRoute
   '/onboarding': typeof OnboardingIndexRoute
   '/annual-planning/budget/$submissionId': typeof AnnualPlanningBudgetSubmissionIdRoute
+  '/annual-planning/budget/admin': typeof AnnualPlanningBudgetAdminRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/calendar/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
   '/calendar/planning/review': typeof CalendarPlanningReviewRoute
@@ -539,6 +548,7 @@ export interface FileRoutesById {
   '/ministry-plans/': typeof MinistryPlansIndexRoute
   '/onboarding/': typeof OnboardingIndexRoute
   '/annual-planning/budget/$submissionId': typeof AnnualPlanningBudgetSubmissionIdRoute
+  '/annual-planning/budget/admin': typeof AnnualPlanningBudgetAdminRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/calendar_/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
   '/calendar_/planning/review': typeof CalendarPlanningReviewRoute
@@ -602,6 +612,7 @@ export interface FileRouteTypes {
     | '/ministry-plans/'
     | '/onboarding/'
     | '/annual-planning/budget/$submissionId'
+    | '/annual-planning/budget/admin'
     | '/api/google/oauth-callback'
     | '/calendar/planning/$submissionId'
     | '/calendar/planning/review'
@@ -659,6 +670,7 @@ export interface FileRouteTypes {
     | '/ministry-plans'
     | '/onboarding'
     | '/annual-planning/budget/$submissionId'
+    | '/annual-planning/budget/admin'
     | '/api/google/oauth-callback'
     | '/calendar/planning/$submissionId'
     | '/calendar/planning/review'
@@ -720,6 +732,7 @@ export interface FileRouteTypes {
     | '/ministry-plans/'
     | '/onboarding/'
     | '/annual-planning/budget/$submissionId'
+    | '/annual-planning/budget/admin'
     | '/api/google/oauth-callback'
     | '/calendar_/planning/$submissionId'
     | '/calendar_/planning/review'
@@ -1118,6 +1131,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGoogleOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/annual-planning/budget/admin': {
+      id: '/annual-planning/budget/admin'
+      path: '/admin'
+      fullPath: '/annual-planning/budget/admin'
+      preLoaderRoute: typeof AnnualPlanningBudgetAdminRouteImport
+      parentRoute: typeof AnnualPlanningBudgetRoute
+    }
     '/annual-planning/budget/$submissionId': {
       id: '/annual-planning/budget/$submissionId'
       path: '/$submissionId'
@@ -1269,10 +1289,12 @@ const ElderRouteWithChildren = ElderRoute._addFileChildren(ElderRouteChildren)
 
 interface AnnualPlanningBudgetRouteChildren {
   AnnualPlanningBudgetSubmissionIdRoute: typeof AnnualPlanningBudgetSubmissionIdRoute
+  AnnualPlanningBudgetAdminRoute: typeof AnnualPlanningBudgetAdminRoute
 }
 
 const AnnualPlanningBudgetRouteChildren: AnnualPlanningBudgetRouteChildren = {
   AnnualPlanningBudgetSubmissionIdRoute: AnnualPlanningBudgetSubmissionIdRoute,
+  AnnualPlanningBudgetAdminRoute: AnnualPlanningBudgetAdminRoute,
 }
 
 const AnnualPlanningBudgetRouteWithChildren =
