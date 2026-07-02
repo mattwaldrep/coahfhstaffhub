@@ -196,10 +196,6 @@ function WorkflowDetail() {
     queryFn: () => listSectionsFn({ data: { workflowId } }),
   });
 
-  const { data: documents = [] } = useQuery<any[]>({
-    queryKey: ["onboarding-docs", workflowId],
-    queryFn: () => listDocsFn({ data: { workflowId } }),
-  });
 
   const commentsByTask = useMemo(() => {
     const m = new Map<string, OnboardingComment[]>();
