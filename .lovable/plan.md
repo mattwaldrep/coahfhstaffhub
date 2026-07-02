@@ -1,113 +1,83 @@
 
-# Annual Plan + Annual Calendar Kickoff Automation
+## Goal
+Untangle "who can do what" so the Users page is scannable, role assignment is centralized, and hub access stops depending on hardcoded user IDs.
 
-Extend the same cycle/hook/notification pattern used for the budget workflow to the two remaining annual tracks. Both open **May 1** and finalize **June 30** of each fiscal year, with a mid-May nudge to preserve time for feedback and approval.
+## 1. Role model (keep the split — staff tier + hub flags)
 
-## Timeline (shared by both tracks)
+Roles stay in `user_roles` (already the pattern). One staff tier per user + independent hub flags.
 
-```text
-May 1  ─ Auto: open cycle, seed a submission row per active ministry leader,
-         email leaders + create dashboard tasks (draft due May 31)
-May 15 ─ Nudge #1: leaders still in draft / not started
-May 31 ─ Leader submission deadline (drafts flip to "submitted";
-         late submissions flagged and core notified)
-Jun 1–15 Core review window: core marks each submission "under_review",
-         adds feedback in-app; leader is notified per submission to revise
-Jun 16–25 Revision window: leaders address feedback and resubmit
-Jun 20 ─ Nudge #2: any submission still awaiting revision or approval
-Jun 30 ─ Auto: close cycle, mark any not-yet-approved items "late",
-         email core with final outstanding list
+- **Staff tier (mutually exclusive, exactly one):** `core`, `meeting`, `extended`
+- **Elder track (mutually exclusive, 0–1):** `elder`, `elder_candidate`
+- **Deacon track (mutually exclusive, 0–1):** `deacon`, `chair_of_deacons`
+- **Independent flags (0+):** `cg_coach`, `serve_leader_admin` *(new)*
+
+### DB changes
+- Add `serve_leader_admin` to the `app_role` enum.
+- Seed the current owner (id `3a7c1973-...`) as `serve_leader_admin` so nothing breaks.
+- Add helper `public.is_serve_leader_admin(uuid)` (security definer) mirroring `is_cg_coach`.
+- Audit RLS policies that reference the hardcoded id (if any) and switch to the helper.
+
+### App changes
+- `auth-context.tsx`: replace `SERVE_LEADERS_HUB_OWNER_ID` + id check with `hasServeLeadersHubAccess = roles.includes("serve_leader_admin")`.
+- `serve-leaders.tsx` gate: uses the new flag.
+- Add `setUserServeLeaderAdmin` server fn (mirrors `setUserCgCoach`).
+
+## 2. Users page redesign (one row + edit drawer)
+
+Replace the wide 13-column grid with a compact list + a right-side drawer.
+
+**Row (compact):**
 ```
-
-Hook routes will accept a `?phase=` query param so a single daily cron entry can dispatch the right phase, and every hook is idempotent.
-
-## Annual Plan (MAP) automation
-
-Reuses existing `ministry_action_plans` + `ministry_high_level_plans`.
-
-- New table **`ministry_plan_cycles`** (`fiscal_year`, `status` [setup / open / review / revision / complete], `opens_at`, `submissions_due_at`, `feedback_due_at`, `closes_at`, `created_by`). One row per FY.
-- `createPlan` already hydrates from the most recent un-carried 10k-ft plan — the May 1 kickoff simply ensures each leader has an active MAP row for the new FY.
-- Add `cycle_id` (nullable FK) + `fiscal_year` to `ministry_action_plans` so cycle progress is queryable. Backfill nulls; new rows get populated by the kickoff hook and by `createPlan` while a cycle is open.
-- Kickoff hook creates one draft MAP per active `ministry_leader_assignments` row, tagging it with `cycle_id`.
-- Statuses use the existing `draft → submitted → under_review → approved` flow, plus a new `revision_requested` value so the feedback loop is explicit. Cycle status auto-advances when all submissions are `approved` or on Jun 30.
-- Admin page gains a "Plan cycle" panel alongside the existing budget-cycle admin.
-
-## Annual Calendar automation
-
-Reuses existing `calendar_planning_cycles` + `calendar_plan_submissions` + `calendar_proposed_events`. No new schema for the cycle itself.
-
-- Kickoff hook: if no cycle exists for the new FY's `plan_year`, insert one with `status = 'open'`, `opens_at = May 1`, `closes_at = Jun 30`. Then for each active ministry leader, insert one draft `calendar_plan_submissions` row per relevant `sub_calendar`. Notify leaders + create dashboard tasks.
-- Add a `revision_requested` submission status (mirrors the plan track) so core feedback + leader revision is a real state, not an ad-hoc note.
-- May 15 nudge: email leaders with `status IN ('draft')`.
-- May 31 hook: auto-flip drafts to `submitted` where the leader clicked "ready" or flag as `late`; notify core of the review queue.
-- Jun 1–15 review window: existing per-submission review UX at `/calendar/planning/review` drives feedback + `revision_requested` transitions.
-- Jun 20 nudge: submissions still in `revision_requested` or awaiting approval.
-- Jun 30 finalize hook: cycle → `review`/`closed` per remaining state, email core with outstanding list.
-
-## New hook routes (`src/routes/api/public/hooks/`)
-
-```text
-plan-cycle-may1.ts            Plan track kickoff        (May 1)
-plan-cycle-nudge.ts           Plan track nudges         (May 15, Jun 20)
-plan-cycle-submissions-due.ts Plan submission deadline  (May 31)
-plan-cycle-jun30.ts           Plan track finalize       (Jun 30)
-calendar-cycle-may1.ts        Calendar kickoff          (May 1)
-calendar-cycle-nudge.ts       Calendar nudges           (May 15, Jun 20)
-calendar-cycle-submissions-due.ts Calendar deadline     (May 31)
-calendar-cycle-jun30.ts       Calendar finalize         (Jun 30)
+[avatar]  Full name                         Last login
+          email                             Joined
+          [Core] [Elder] [Chair-Deacon] [CG Coach] [Serve Leaders]   [Edit] [·]
 ```
+Chips are colored, only shown when the user has that access. Row is clickable → drawer.
 
-All are `/api/public/*`, called by `pg_cron` with the anon `apikey` header. Each is idempotent — safe if pg_cron double-fires or if core kicks off manually from the admin UI.
+**Top bar:** search input, filter chips (All / Staff / Elders / Deacons / CG Coaches / Serve Leaders / No access), Bulk invite, Invite user.
 
-## Emails (React Email templates)
+**Edit drawer** (Sheet) — grouped, with helper text:
+- **Staff tier** — radio (Staff Pastor / Meeting / Extended) + one-line explanation of what each unlocks
+- **Elder track** — radio (None / Candidate / Full Elder)
+- **Deacon track** — radio (None / Deacon / Chair of Deacons)
+- **Additional hubs** — switches: CG Coach, Serve Team Leaders admin
+- **Danger zone** — Remove user
 
-Reusing the existing transactional queue and the budget templates' style:
+Save is per-section (auto-save on change like today) with a small "Saved" indicator. Legend cards at the bottom of the current page get replaced by inline helper text in the drawer + a single "What each tier can do" collapsible reference at the top.
 
-- `plan-cycle-open`, `plan-cycle-nudge`, `plan-cycle-submissions-due` (core summary), `plan-cycle-feedback-ready` (leader), `plan-cycle-finalize` (core)
-- `calendar-cycle-open`, `calendar-cycle-nudge`, `calendar-cycle-submissions-due`, `calendar-cycle-feedback-ready`, `calendar-cycle-finalize`
-- Existing `notifyCycleOpen` / `notifySubmissionReady` continue to fire; new templates only cover the new automated transitions.
+**Remove:** the "3 role cards" strip below the table, the horizontal scrolling grid, and the confirm-via-`window.confirm` for delete (replace with AlertDialog).
 
-Dashboard tasks are created via the existing action-items surface with `source = 'annual_plan'` / `source = 'annual_calendar'` so they show on the home page.
+## 3. First-login profile prompt
 
-## Admin UI
+- Add `profiles.onboarded_at` (nullable timestamp).
+- On first visit anywhere in the app, if `onboarded_at IS NULL`, show a modal: confirm full name + upload avatar (uses existing `profiles.avatar_url`). Save sets `onboarded_at = now()`.
+- Dismiss = "Later" (still marks onboarded to avoid nagging), but name is required if blank.
 
-Extend the annual-planning admin surface to cover all three tracks (Budget / Plan / Calendar tabs). Core can:
-- View current cycle status + phase per track
-- Manually open / advance / close a cycle (off-schedule kickoff)
-- See a leader × status grid
-- Drop into the existing per-submission review pages for feedback
+## 4. Consistency pass on access checks
 
-The existing `/ministry-plans/admin` and `/calendar/planning/review` pages keep their per-submission review UX; the admin page only manages cycle lifecycle.
+Audit the codebase for these anti-patterns and fix:
+- Any remaining checks against `SERVE_LEADERS_HUB_OWNER_ID` → use `hasServeLeadersHubAccess`.
+- Sidebar / AppShell links: show a hub link iff the user has access; today Serve Leaders relies on id match.
+- Confirm `useAuth` exposes a single canonical helper per hub (`hasElderHubAccess`, `hasServeLeadersHubAccess`, `isCgCoach`, `hasStaffAccess`) and that route guards use those (not ad-hoc `roles.includes(...)`).
 
-## Overview page
+## 5. Out of scope (intentionally)
 
-Update `annual-planning.index.tsx` and its sibling tiles so each shows the current cycle's phase + a "Your submission" CTA when a leader has an open assignment.
+- No new hub_memberships table — you chose the flag model.
+- No Google/Tour prompts on first login — only profile completion.
+- No changes to what each staff tier can *do* inside modules; this is purely about assignment, discoverability, and gates.
 
-## pg_cron
+## Technical notes
+- Enum extension: `ALTER TYPE app_role ADD VALUE 'serve_leader_admin'` (own migration; enum values can't be added inside the same tx as their use).
+- Seed the current owner via a second migration or the `insert` tool after the enum is live.
+- `listUsers` already returns roles; no server change needed for the redesigned table beyond the new `setUserServeLeaderAdmin` fn.
+- Onboarding modal lives in `AppShell` so it fires once regardless of landing route.
 
-One-time SQL via `supabase--insert` after routes deploy:
-
-```text
-plan-cycle-may1                0 12 1 5 *
-plan-cycle-nudge               0 13 15 5 *
-plan-cycle-nudge (jun)         0 13 20 6 *
-plan-cycle-submissions-due     0 12 31 5 *
-plan-cycle-jun30               0 12 30 6 *
-calendar-cycle-may1            0 12 1 5 *
-calendar-cycle-nudge           0 13 15 5 *
-calendar-cycle-nudge (jun)     0 13 20 6 *
-calendar-cycle-submissions-due 0 12 31 5 *
-calendar-cycle-jun30           0 12 30 6 *
-```
-
-## Security / access
-
-- Hooks: anon `apikey` header only; no PII in responses; all writes via `supabaseAdmin` inside the handler.
-- New `ministry_plan_cycles` table: RLS with leader-read (their own cycle rows via join) + core-write, plus GRANTs to `authenticated` + `service_role`.
-- MAP schema change: adding nullable `cycle_id` + `fiscal_year` doesn't affect existing RLS. Adding `revision_requested` to the status enum only widens the allowed set.
-
-## Out of scope
-
-- Board/finance approval steps after core approval (can layer later).
-- Auto-emailing every calendar-approval decision (existing per-submission notifications still fire).
-- Rewriting the existing MAP or Calendar submission UIs — automation only wraps them.
+## Files touched (approx.)
+- `src/routes/users.tsx` — rewrite as list + drawer
+- `src/components/users/UserEditDrawer.tsx` — new
+- `src/components/users/OnboardingProfileDialog.tsx` — new, mounted in `AppShell`
+- `src/lib/users.functions.ts` — add `setUserServeLeaderAdmin`, `completeProfileOnboarding`
+- `src/lib/auth-context.tsx` — drop hardcoded id, add serve-leader flag helper
+- `src/routes/serve-leaders.tsx` — use new flag
+- `src/components/AppSidebar.tsx` — show Serve Leaders link based on flag
+- Migrations: enum value, `profiles.onboarded_at`, helper fn, seed owner
