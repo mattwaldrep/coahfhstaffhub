@@ -2077,7 +2077,9 @@ export type Database = {
           calendar_year: number
           campus: string
           created_at: string
+          cycle_id: string | null
           department: string
+          fiscal_year: number | null
           goals: Json
           id: string
           leader_name: string
@@ -2100,7 +2102,9 @@ export type Database = {
           calendar_year?: number
           campus?: string
           created_at?: string
+          cycle_id?: string | null
           department?: string
+          fiscal_year?: number | null
           goals?: Json
           id?: string
           leader_name?: string
@@ -2123,7 +2127,9 @@ export type Database = {
           calendar_year?: number
           campus?: string
           created_at?: string
+          cycle_id?: string | null
           department?: string
+          fiscal_year?: number | null
           goals?: Json
           id?: string
           leader_name?: string
@@ -2142,7 +2148,15 @@ export type Database = {
           user_id?: string
           weaknesses?: Json
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ministry_action_plans_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "ministry_plan_cycles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ministry_budget_submissions: {
         Row: {
@@ -2293,6 +2307,45 @@ export type Database = {
           ministry_area?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      ministry_plan_cycles: {
+        Row: {
+          closes_at: string | null
+          created_at: string
+          created_by: string | null
+          feedback_due_at: string | null
+          fiscal_year: number
+          id: string
+          opens_at: string | null
+          status: string
+          submissions_due_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          closes_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          feedback_due_at?: string | null
+          fiscal_year: number
+          id?: string
+          opens_at?: string | null
+          status?: string
+          submissions_due_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          closes_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          feedback_due_at?: string | null
+          fiscal_year?: number
+          id?: string
+          opens_at?: string | null
+          status?: string
+          submissions_due_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -3156,7 +3209,12 @@ export type Database = {
         | "Youth"
         | "Connect"
         | "Other"
-      ministry_plan_status: "draft" | "submitted" | "under_review" | "approved"
+      ministry_plan_status:
+        | "draft"
+        | "submitted"
+        | "under_review"
+        | "approved"
+        | "revision_requested"
       plan_submission_status:
         | "draft"
         | "submitted"
@@ -3164,6 +3222,7 @@ export type Database = {
         | "approved"
         | "partially_approved"
         | "rejected"
+        | "revision_requested"
       planning_cycle_status: "open" | "review" | "closed"
       proposed_event_status: "pending" | "approved" | "rejected"
       readiness: "green" | "yellow" | "red"
@@ -3328,7 +3387,13 @@ export const Constants = {
         "Connect",
         "Other",
       ],
-      ministry_plan_status: ["draft", "submitted", "under_review", "approved"],
+      ministry_plan_status: [
+        "draft",
+        "submitted",
+        "under_review",
+        "approved",
+        "revision_requested",
+      ],
       plan_submission_status: [
         "draft",
         "submitted",
@@ -3336,6 +3401,7 @@ export const Constants = {
         "approved",
         "partially_approved",
         "rejected",
+        "revision_requested",
       ],
       planning_cycle_status: ["open", "review", "closed"],
       proposed_event_status: ["pending", "approved", "rejected"],
