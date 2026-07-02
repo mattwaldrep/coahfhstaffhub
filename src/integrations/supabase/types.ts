@@ -2928,6 +2928,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          onboarded_at: string | null
           updated_at: string
         }
         Insert: {
@@ -2936,6 +2937,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          onboarded_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -2944,6 +2946,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          onboarded_at?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -3194,6 +3197,7 @@ export type Database = {
         | "cg_coach"
         | "deacon"
         | "chair_of_deacons"
+        | "serve_leader_admin"
       elder_motion_choice: "yes" | "no" | "abstain"
       elder_motion_outcome: "open" | "passed" | "failed" | "tied"
       ministry_area:
@@ -3370,6 +3374,7 @@ export const Constants = {
         "cg_coach",
         "deacon",
         "chair_of_deacons",
+        "serve_leader_admin",
       ],
       elder_motion_choice: ["yes", "no", "abstain"],
       elder_motion_outcome: ["open", "passed", "failed", "tied"],
