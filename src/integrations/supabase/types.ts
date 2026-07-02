@@ -3186,6 +3186,7 @@ export type Database = {
       is_cg_coach: { Args: { _user_id: string }; Returns: boolean }
       is_chair_of_deacons: { Args: { _user_id: string }; Returns: boolean }
       is_full_elder: { Args: { _user_id: string }; Returns: boolean }
+      is_serve_leader_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role:
