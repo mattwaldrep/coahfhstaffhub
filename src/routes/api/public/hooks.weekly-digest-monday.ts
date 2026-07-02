@@ -68,18 +68,28 @@ export const Route = createFileRoute("/api/public/hooks/weekly-digest-monday")({
             t.status === "pre_trip" && t.start_date && t.start_date > todayStr && t.start_date <= in14Str,
         );
 
-        // Elder-only: pastoral attention counts
-        const sixtyAgo = new Date(Date.now() - 60 * 86400000).toISOString();
-        const fortyFiveAgo = new Date(Date.now() - 45 * 86400000).toISOString();
-        const { count: redCount } = await supabaseAdmin
-          .from("pco_touchpoints")
-          .select("pco_person_id", { count: "exact", head: true })
-          .lt("created_at", sixtyAgo);
-        const { count: amberCount } = await supabaseAdmin
-          .from("pco_touchpoints")
-          .select("pco_person_id", { count: "exact", head: true })
-          .lt("created_at", fortyFiveAgo)
-          .gte("created_at", sixtyAgo);
+        // Elder-only: pastoral attention counts — per-person latest contact
+        // across pco_touchpoints and pco_pastoral_notes (matches dashboard).
+        const [{ data: tpsAll }, { data: notesAll }] = await Promise.all([
+          supabaseAdmin.from("pco_touchpoints").select("pco_person_id, created_at"),
+          supabaseAdmin.from("pco_pastoral_notes").select("pco_person_id, created_at"),
+        ]);
+        const lastByPerson: Record<string, number> = {};
+        for (const r of [...(tpsAll ?? []), ...(notesAll ?? [])] as any[]) {
+          const t = new Date(r.created_at).getTime();
+          if (!lastByPerson[r.pco_person_id] || t > lastByPerson[r.pco_person_id]) {
+            lastByPerson[r.pco_person_id] = t;
+          }
+        }
+        const nowMs = Date.now();
+        let redCount = 0;
+        let amberCount = 0;
+        for (const t of Object.values(lastByPerson)) {
+          const days = Math.floor((nowMs - t) / 86400000);
+          if (days >= 60) redCount++;
+          else if (days >= 45) amberCount++;
+        }
+
 
         const eventsHtml = !events?.length
           ? `<p style="color:#a8a29e;font-style:italic;">No scheduled events.</p>`
