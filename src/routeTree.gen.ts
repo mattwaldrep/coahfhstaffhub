@@ -64,6 +64,7 @@ import { Route as ApiPublicHooksSendWeeklyDigestRouteImport } from './routes/api
 import { Route as ApiPublicHooksElderTouchpointThresholdRouteImport } from './routes/api/public/hooks.elder-touchpoint-threshold'
 import { Route as ApiPublicHooksElderTouchpointDigestRouteImport } from './routes/api/public/hooks.elder-touchpoint-digest'
 import { Route as ApiPublicHooksBudgetCycleMar1RouteImport } from './routes/api/public/hooks/budget-cycle-mar1'
+import { Route as ApiPublicHooksBudgetCycleApr1RouteImport } from './routes/api/public/hooks/budget-cycle-apr1'
 import { Route as ApiPublicHooksAutoFinalizeMeetingRouteImport } from './routes/api/public/hooks.auto-finalize-meeting'
 import { Route as ApiPublicHooksActionItemsDigestRouteImport } from './routes/api/public/hooks.action-items-digest'
 import { Route as ApiPublicMissionsInquiryTokenRouteImport } from './routes/api/public/missions/inquiry.$token'
@@ -353,6 +354,12 @@ const ApiPublicHooksBudgetCycleMar1Route =
     path: '/api/public/hooks/budget-cycle-mar1',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksBudgetCycleApr1Route =
+  ApiPublicHooksBudgetCycleApr1RouteImport.update({
+    id: '/api/public/hooks/budget-cycle-apr1',
+    path: '/api/public/hooks/budget-cycle-apr1',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksAutoFinalizeMeetingRoute =
   ApiPublicHooksAutoFinalizeMeetingRouteImport.update({
     id: '/api/public/hooks/auto-finalize-meeting',
@@ -423,6 +430,7 @@ export interface FileRoutesByFullPath {
   '/elder/motions/': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
   '/api/public/hooks/auto-finalize-meeting': typeof ApiPublicHooksAutoFinalizeMeetingRoute
+  '/api/public/hooks/budget-cycle-apr1': typeof ApiPublicHooksBudgetCycleApr1Route
   '/api/public/hooks/budget-cycle-mar1': typeof ApiPublicHooksBudgetCycleMar1Route
   '/api/public/hooks/elder-touchpoint-digest': typeof ApiPublicHooksElderTouchpointDigestRoute
   '/api/public/hooks/elder-touchpoint-threshold': typeof ApiPublicHooksElderTouchpointThresholdRoute
@@ -479,6 +487,7 @@ export interface FileRoutesByTo {
   '/elder/motions': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
   '/api/public/hooks/auto-finalize-meeting': typeof ApiPublicHooksAutoFinalizeMeetingRoute
+  '/api/public/hooks/budget-cycle-apr1': typeof ApiPublicHooksBudgetCycleApr1Route
   '/api/public/hooks/budget-cycle-mar1': typeof ApiPublicHooksBudgetCycleMar1Route
   '/api/public/hooks/elder-touchpoint-digest': typeof ApiPublicHooksElderTouchpointDigestRoute
   '/api/public/hooks/elder-touchpoint-threshold': typeof ApiPublicHooksElderTouchpointThresholdRoute
@@ -540,6 +549,7 @@ export interface FileRoutesById {
   '/elder/motions/': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
   '/api/public/hooks/auto-finalize-meeting': typeof ApiPublicHooksAutoFinalizeMeetingRoute
+  '/api/public/hooks/budget-cycle-apr1': typeof ApiPublicHooksBudgetCycleApr1Route
   '/api/public/hooks/budget-cycle-mar1': typeof ApiPublicHooksBudgetCycleMar1Route
   '/api/public/hooks/elder-touchpoint-digest': typeof ApiPublicHooksElderTouchpointDigestRoute
   '/api/public/hooks/elder-touchpoint-threshold': typeof ApiPublicHooksElderTouchpointThresholdRoute
@@ -602,6 +612,7 @@ export interface FileRouteTypes {
     | '/elder/motions/'
     | '/api/public/hooks/action-items-digest'
     | '/api/public/hooks/auto-finalize-meeting'
+    | '/api/public/hooks/budget-cycle-apr1'
     | '/api/public/hooks/budget-cycle-mar1'
     | '/api/public/hooks/elder-touchpoint-digest'
     | '/api/public/hooks/elder-touchpoint-threshold'
@@ -658,6 +669,7 @@ export interface FileRouteTypes {
     | '/elder/motions'
     | '/api/public/hooks/action-items-digest'
     | '/api/public/hooks/auto-finalize-meeting'
+    | '/api/public/hooks/budget-cycle-apr1'
     | '/api/public/hooks/budget-cycle-mar1'
     | '/api/public/hooks/elder-touchpoint-digest'
     | '/api/public/hooks/elder-touchpoint-threshold'
@@ -718,6 +730,7 @@ export interface FileRouteTypes {
     | '/elder/motions/'
     | '/api/public/hooks/action-items-digest'
     | '/api/public/hooks/auto-finalize-meeting'
+    | '/api/public/hooks/budget-cycle-apr1'
     | '/api/public/hooks/budget-cycle-mar1'
     | '/api/public/hooks/elder-touchpoint-digest'
     | '/api/public/hooks/elder-touchpoint-threshold'
@@ -763,6 +776,7 @@ export interface RootRouteChildren {
   ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
   ApiPublicHooksActionItemsDigestRoute: typeof ApiPublicHooksActionItemsDigestRoute
   ApiPublicHooksAutoFinalizeMeetingRoute: typeof ApiPublicHooksAutoFinalizeMeetingRoute
+  ApiPublicHooksBudgetCycleApr1Route: typeof ApiPublicHooksBudgetCycleApr1Route
   ApiPublicHooksBudgetCycleMar1Route: typeof ApiPublicHooksBudgetCycleMar1Route
   ApiPublicHooksElderTouchpointDigestRoute: typeof ApiPublicHooksElderTouchpointDigestRoute
   ApiPublicHooksElderTouchpointThresholdRoute: typeof ApiPublicHooksElderTouchpointThresholdRoute
@@ -1160,6 +1174,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBudgetCycleMar1RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/budget-cycle-apr1': {
+      id: '/api/public/hooks/budget-cycle-apr1'
+      path: '/api/public/hooks/budget-cycle-apr1'
+      fullPath: '/api/public/hooks/budget-cycle-apr1'
+      preLoaderRoute: typeof ApiPublicHooksBudgetCycleApr1RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/auto-finalize-meeting': {
       id: '/api/public/hooks/auto-finalize-meeting'
       path: '/api/public/hooks/auto-finalize-meeting'
@@ -1317,6 +1338,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksActionItemsDigestRoute: ApiPublicHooksActionItemsDigestRoute,
   ApiPublicHooksAutoFinalizeMeetingRoute:
     ApiPublicHooksAutoFinalizeMeetingRoute,
+  ApiPublicHooksBudgetCycleApr1Route: ApiPublicHooksBudgetCycleApr1Route,
   ApiPublicHooksBudgetCycleMar1Route: ApiPublicHooksBudgetCycleMar1Route,
   ApiPublicHooksElderTouchpointDigestRoute:
     ApiPublicHooksElderTouchpointDigestRoute,
