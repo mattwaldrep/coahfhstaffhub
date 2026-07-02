@@ -56,12 +56,16 @@ import { Route as ElderMeetingsMeetingIdRouteImport } from './routes/elder.meeti
 import { Route as CalendarPlanningReviewRouteImport } from './routes/calendar_.planning.review'
 import { Route as CalendarPlanningSubmissionIdRouteImport } from './routes/calendar_.planning.$submissionId'
 import { Route as ApiGoogleOauthCallbackRouteImport } from './routes/api/google.oauth-callback'
+import { Route as AnnualPlanningBudgetAdminRouteImport } from './routes/annual-planning.budget.admin'
+import { Route as AnnualPlanningBudgetSubmissionIdRouteImport } from './routes/annual-planning.budget.$submissionId'
 import { Route as ApiPublicHooksWeeklyDigestMondayRouteImport } from './routes/api/public/hooks.weekly-digest-monday'
 import { Route as ApiPublicHooksSyncGoogleTasksRouteImport } from './routes/api/public/hooks/sync-google-tasks'
 import { Route as ApiPublicHooksSundayReviewNudgeRouteImport } from './routes/api/public/hooks.sunday-review-nudge'
 import { Route as ApiPublicHooksSendWeeklyDigestRouteImport } from './routes/api/public/hooks/send-weekly-digest'
 import { Route as ApiPublicHooksElderTouchpointThresholdRouteImport } from './routes/api/public/hooks.elder-touchpoint-threshold'
 import { Route as ApiPublicHooksElderTouchpointDigestRouteImport } from './routes/api/public/hooks.elder-touchpoint-digest'
+import { Route as ApiPublicHooksBudgetCycleMar1RouteImport } from './routes/api/public/hooks/budget-cycle-mar1'
+import { Route as ApiPublicHooksBudgetCycleApr1RouteImport } from './routes/api/public/hooks/budget-cycle-apr1'
 import { Route as ApiPublicHooksAutoFinalizeMeetingRouteImport } from './routes/api/public/hooks.auto-finalize-meeting'
 import { Route as ApiPublicHooksActionItemsDigestRouteImport } from './routes/api/public/hooks.action-items-digest'
 import { Route as ApiPublicMissionsInquiryTokenRouteImport } from './routes/api/public/missions/inquiry.$token'
@@ -303,6 +307,18 @@ const ApiGoogleOauthCallbackRoute = ApiGoogleOauthCallbackRouteImport.update({
   path: '/api/google/oauth-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnnualPlanningBudgetAdminRoute =
+  AnnualPlanningBudgetAdminRouteImport.update({
+    id: '/admin',
+    path: '/admin',
+    getParentRoute: () => AnnualPlanningBudgetRoute,
+  } as any)
+const AnnualPlanningBudgetSubmissionIdRoute =
+  AnnualPlanningBudgetSubmissionIdRouteImport.update({
+    id: '/$submissionId',
+    path: '/$submissionId',
+    getParentRoute: () => AnnualPlanningBudgetRoute,
+  } as any)
 const ApiPublicHooksWeeklyDigestMondayRoute =
   ApiPublicHooksWeeklyDigestMondayRouteImport.update({
     id: '/api/public/hooks/weekly-digest-monday',
@@ -337,6 +353,18 @@ const ApiPublicHooksElderTouchpointDigestRoute =
   ApiPublicHooksElderTouchpointDigestRouteImport.update({
     id: '/api/public/hooks/elder-touchpoint-digest',
     path: '/api/public/hooks/elder-touchpoint-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksBudgetCycleMar1Route =
+  ApiPublicHooksBudgetCycleMar1RouteImport.update({
+    id: '/api/public/hooks/budget-cycle-mar1',
+    path: '/api/public/hooks/budget-cycle-mar1',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksBudgetCycleApr1Route =
+  ApiPublicHooksBudgetCycleApr1RouteImport.update({
+    id: '/api/public/hooks/budget-cycle-apr1',
+    path: '/api/public/hooks/budget-cycle-apr1',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksAutoFinalizeMeetingRoute =
@@ -378,7 +406,7 @@ export interface FileRoutesByFullPath {
   '/sunday-review': typeof SundayReviewRoute
   '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
-  '/annual-planning/budget': typeof AnnualPlanningBudgetRoute
+  '/annual-planning/budget': typeof AnnualPlanningBudgetRouteWithChildren
   '/calendar/classes': typeof CalendarClassesRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
@@ -398,6 +426,8 @@ export interface FileRoutesByFullPath {
   '/elder/': typeof ElderIndexRoute
   '/ministry-plans/': typeof MinistryPlansIndexRoute
   '/onboarding/': typeof OnboardingIndexRoute
+  '/annual-planning/budget/$submissionId': typeof AnnualPlanningBudgetSubmissionIdRoute
+  '/annual-planning/budget/admin': typeof AnnualPlanningBudgetAdminRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/calendar/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
   '/calendar/planning/review': typeof CalendarPlanningReviewRoute
@@ -408,6 +438,8 @@ export interface FileRoutesByFullPath {
   '/elder/motions/': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
   '/api/public/hooks/auto-finalize-meeting': typeof ApiPublicHooksAutoFinalizeMeetingRoute
+  '/api/public/hooks/budget-cycle-apr1': typeof ApiPublicHooksBudgetCycleApr1Route
+  '/api/public/hooks/budget-cycle-mar1': typeof ApiPublicHooksBudgetCycleMar1Route
   '/api/public/hooks/elder-touchpoint-digest': typeof ApiPublicHooksElderTouchpointDigestRoute
   '/api/public/hooks/elder-touchpoint-threshold': typeof ApiPublicHooksElderTouchpointThresholdRoute
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
@@ -434,7 +466,7 @@ export interface FileRoutesByTo {
   '/sunday-review': typeof SundayReviewRoute
   '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
-  '/annual-planning/budget': typeof AnnualPlanningBudgetRoute
+  '/annual-planning/budget': typeof AnnualPlanningBudgetRouteWithChildren
   '/calendar/classes': typeof CalendarClassesRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
@@ -452,6 +484,8 @@ export interface FileRoutesByTo {
   '/elder': typeof ElderIndexRoute
   '/ministry-plans': typeof MinistryPlansIndexRoute
   '/onboarding': typeof OnboardingIndexRoute
+  '/annual-planning/budget/$submissionId': typeof AnnualPlanningBudgetSubmissionIdRoute
+  '/annual-planning/budget/admin': typeof AnnualPlanningBudgetAdminRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/calendar/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
   '/calendar/planning/review': typeof CalendarPlanningReviewRoute
@@ -462,6 +496,8 @@ export interface FileRoutesByTo {
   '/elder/motions': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
   '/api/public/hooks/auto-finalize-meeting': typeof ApiPublicHooksAutoFinalizeMeetingRoute
+  '/api/public/hooks/budget-cycle-apr1': typeof ApiPublicHooksBudgetCycleApr1Route
+  '/api/public/hooks/budget-cycle-mar1': typeof ApiPublicHooksBudgetCycleMar1Route
   '/api/public/hooks/elder-touchpoint-digest': typeof ApiPublicHooksElderTouchpointDigestRoute
   '/api/public/hooks/elder-touchpoint-threshold': typeof ApiPublicHooksElderTouchpointThresholdRoute
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
@@ -491,7 +527,7 @@ export interface FileRoutesById {
   '/sunday-review': typeof SundayReviewRoute
   '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
-  '/annual-planning/budget': typeof AnnualPlanningBudgetRoute
+  '/annual-planning/budget': typeof AnnualPlanningBudgetRouteWithChildren
   '/calendar_/classes': typeof CalendarClassesRoute
   '/calendar_/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar_/public': typeof CalendarPublicRoute
@@ -511,6 +547,8 @@ export interface FileRoutesById {
   '/elder/': typeof ElderIndexRoute
   '/ministry-plans/': typeof MinistryPlansIndexRoute
   '/onboarding/': typeof OnboardingIndexRoute
+  '/annual-planning/budget/$submissionId': typeof AnnualPlanningBudgetSubmissionIdRoute
+  '/annual-planning/budget/admin': typeof AnnualPlanningBudgetAdminRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/calendar_/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
   '/calendar_/planning/review': typeof CalendarPlanningReviewRoute
@@ -521,6 +559,8 @@ export interface FileRoutesById {
   '/elder/motions/': typeof ElderMotionsIndexRoute
   '/api/public/hooks/action-items-digest': typeof ApiPublicHooksActionItemsDigestRoute
   '/api/public/hooks/auto-finalize-meeting': typeof ApiPublicHooksAutoFinalizeMeetingRoute
+  '/api/public/hooks/budget-cycle-apr1': typeof ApiPublicHooksBudgetCycleApr1Route
+  '/api/public/hooks/budget-cycle-mar1': typeof ApiPublicHooksBudgetCycleMar1Route
   '/api/public/hooks/elder-touchpoint-digest': typeof ApiPublicHooksElderTouchpointDigestRoute
   '/api/public/hooks/elder-touchpoint-threshold': typeof ApiPublicHooksElderTouchpointThresholdRoute
   '/api/public/hooks/send-weekly-digest': typeof ApiPublicHooksSendWeeklyDigestRoute
@@ -571,6 +611,8 @@ export interface FileRouteTypes {
     | '/elder/'
     | '/ministry-plans/'
     | '/onboarding/'
+    | '/annual-planning/budget/$submissionId'
+    | '/annual-planning/budget/admin'
     | '/api/google/oauth-callback'
     | '/calendar/planning/$submissionId'
     | '/calendar/planning/review'
@@ -581,6 +623,8 @@ export interface FileRouteTypes {
     | '/elder/motions/'
     | '/api/public/hooks/action-items-digest'
     | '/api/public/hooks/auto-finalize-meeting'
+    | '/api/public/hooks/budget-cycle-apr1'
+    | '/api/public/hooks/budget-cycle-mar1'
     | '/api/public/hooks/elder-touchpoint-digest'
     | '/api/public/hooks/elder-touchpoint-threshold'
     | '/api/public/hooks/send-weekly-digest'
@@ -625,6 +669,8 @@ export interface FileRouteTypes {
     | '/elder'
     | '/ministry-plans'
     | '/onboarding'
+    | '/annual-planning/budget/$submissionId'
+    | '/annual-planning/budget/admin'
     | '/api/google/oauth-callback'
     | '/calendar/planning/$submissionId'
     | '/calendar/planning/review'
@@ -635,6 +681,8 @@ export interface FileRouteTypes {
     | '/elder/motions'
     | '/api/public/hooks/action-items-digest'
     | '/api/public/hooks/auto-finalize-meeting'
+    | '/api/public/hooks/budget-cycle-apr1'
+    | '/api/public/hooks/budget-cycle-mar1'
     | '/api/public/hooks/elder-touchpoint-digest'
     | '/api/public/hooks/elder-touchpoint-threshold'
     | '/api/public/hooks/send-weekly-digest'
@@ -683,6 +731,8 @@ export interface FileRouteTypes {
     | '/elder/'
     | '/ministry-plans/'
     | '/onboarding/'
+    | '/annual-planning/budget/$submissionId'
+    | '/annual-planning/budget/admin'
     | '/api/google/oauth-callback'
     | '/calendar_/planning/$submissionId'
     | '/calendar_/planning/review'
@@ -693,6 +743,8 @@ export interface FileRouteTypes {
     | '/elder/motions/'
     | '/api/public/hooks/action-items-digest'
     | '/api/public/hooks/auto-finalize-meeting'
+    | '/api/public/hooks/budget-cycle-apr1'
+    | '/api/public/hooks/budget-cycle-mar1'
     | '/api/public/hooks/elder-touchpoint-digest'
     | '/api/public/hooks/elder-touchpoint-threshold'
     | '/api/public/hooks/send-weekly-digest'
@@ -722,7 +774,7 @@ export interface RootRouteChildren {
   SundayReviewRoute: typeof SundayReviewRoute
   TrendsRoute: typeof TrendsRoute
   UsersRoute: typeof UsersRoute
-  AnnualPlanningBudgetRoute: typeof AnnualPlanningBudgetRoute
+  AnnualPlanningBudgetRoute: typeof AnnualPlanningBudgetRouteWithChildren
   CalendarClassesRoute: typeof CalendarClassesRoute
   CalendarPlanningRoute: typeof CalendarPlanningRouteWithChildren
   CalendarPublicRoute: typeof CalendarPublicRoute
@@ -737,6 +789,8 @@ export interface RootRouteChildren {
   ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
   ApiPublicHooksActionItemsDigestRoute: typeof ApiPublicHooksActionItemsDigestRoute
   ApiPublicHooksAutoFinalizeMeetingRoute: typeof ApiPublicHooksAutoFinalizeMeetingRoute
+  ApiPublicHooksBudgetCycleApr1Route: typeof ApiPublicHooksBudgetCycleApr1Route
+  ApiPublicHooksBudgetCycleMar1Route: typeof ApiPublicHooksBudgetCycleMar1Route
   ApiPublicHooksElderTouchpointDigestRoute: typeof ApiPublicHooksElderTouchpointDigestRoute
   ApiPublicHooksElderTouchpointThresholdRoute: typeof ApiPublicHooksElderTouchpointThresholdRoute
   ApiPublicHooksSendWeeklyDigestRoute: typeof ApiPublicHooksSendWeeklyDigestRoute
@@ -1077,6 +1131,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGoogleOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/annual-planning/budget/admin': {
+      id: '/annual-planning/budget/admin'
+      path: '/admin'
+      fullPath: '/annual-planning/budget/admin'
+      preLoaderRoute: typeof AnnualPlanningBudgetAdminRouteImport
+      parentRoute: typeof AnnualPlanningBudgetRoute
+    }
+    '/annual-planning/budget/$submissionId': {
+      id: '/annual-planning/budget/$submissionId'
+      path: '/$submissionId'
+      fullPath: '/annual-planning/budget/$submissionId'
+      preLoaderRoute: typeof AnnualPlanningBudgetSubmissionIdRouteImport
+      parentRoute: typeof AnnualPlanningBudgetRoute
+    }
     '/api/public/hooks/weekly-digest-monday': {
       id: '/api/public/hooks/weekly-digest-monday'
       path: '/api/public/hooks/weekly-digest-monday'
@@ -1117,6 +1185,20 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/elder-touchpoint-digest'
       fullPath: '/api/public/hooks/elder-touchpoint-digest'
       preLoaderRoute: typeof ApiPublicHooksElderTouchpointDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/budget-cycle-mar1': {
+      id: '/api/public/hooks/budget-cycle-mar1'
+      path: '/api/public/hooks/budget-cycle-mar1'
+      fullPath: '/api/public/hooks/budget-cycle-mar1'
+      preLoaderRoute: typeof ApiPublicHooksBudgetCycleMar1RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/budget-cycle-apr1': {
+      id: '/api/public/hooks/budget-cycle-apr1'
+      path: '/api/public/hooks/budget-cycle-apr1'
+      fullPath: '/api/public/hooks/budget-cycle-apr1'
+      preLoaderRoute: typeof ApiPublicHooksBudgetCycleApr1RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/auto-finalize-meeting': {
@@ -1205,6 +1287,19 @@ const ElderRouteChildren: ElderRouteChildren = {
 
 const ElderRouteWithChildren = ElderRoute._addFileChildren(ElderRouteChildren)
 
+interface AnnualPlanningBudgetRouteChildren {
+  AnnualPlanningBudgetSubmissionIdRoute: typeof AnnualPlanningBudgetSubmissionIdRoute
+  AnnualPlanningBudgetAdminRoute: typeof AnnualPlanningBudgetAdminRoute
+}
+
+const AnnualPlanningBudgetRouteChildren: AnnualPlanningBudgetRouteChildren = {
+  AnnualPlanningBudgetSubmissionIdRoute: AnnualPlanningBudgetSubmissionIdRoute,
+  AnnualPlanningBudgetAdminRoute: AnnualPlanningBudgetAdminRoute,
+}
+
+const AnnualPlanningBudgetRouteWithChildren =
+  AnnualPlanningBudgetRoute._addFileChildren(AnnualPlanningBudgetRouteChildren)
+
 interface CalendarPlanningRouteChildren {
   CalendarPlanningSubmissionIdRoute: typeof CalendarPlanningSubmissionIdRoute
   CalendarPlanningReviewRoute: typeof CalendarPlanningReviewRoute
@@ -1249,7 +1344,7 @@ const rootRouteChildren: RootRouteChildren = {
   SundayReviewRoute: SundayReviewRoute,
   TrendsRoute: TrendsRoute,
   UsersRoute: UsersRoute,
-  AnnualPlanningBudgetRoute: AnnualPlanningBudgetRoute,
+  AnnualPlanningBudgetRoute: AnnualPlanningBudgetRouteWithChildren,
   CalendarClassesRoute: CalendarClassesRoute,
   CalendarPlanningRoute: CalendarPlanningRouteWithChildren,
   CalendarPublicRoute: CalendarPublicRoute,
@@ -1265,6 +1360,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksActionItemsDigestRoute: ApiPublicHooksActionItemsDigestRoute,
   ApiPublicHooksAutoFinalizeMeetingRoute:
     ApiPublicHooksAutoFinalizeMeetingRoute,
+  ApiPublicHooksBudgetCycleApr1Route: ApiPublicHooksBudgetCycleApr1Route,
+  ApiPublicHooksBudgetCycleMar1Route: ApiPublicHooksBudgetCycleMar1Route,
   ApiPublicHooksElderTouchpointDigestRoute:
     ApiPublicHooksElderTouchpointDigestRoute,
   ApiPublicHooksElderTouchpointThresholdRoute:
@@ -1278,13 +1375,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

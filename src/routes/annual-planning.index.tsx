@@ -24,9 +24,8 @@ const TILES = [
   {
     to: "/annual-planning/budget",
     label: "Annual Budget Submission",
-    desc: "Submit your ministry's annual budget request. (Coming soon)",
+    desc: "12-month spending report, rough budget request, 10k-ft plan, and Google Sheet feedback loop.",
     icon: Wallet,
-    disabled: true,
   },
 ] as Array<{ to: string; label: string; desc: string; icon: typeof Wallet; disabled?: boolean }>;
 
