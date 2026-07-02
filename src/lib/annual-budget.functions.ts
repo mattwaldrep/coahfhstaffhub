@@ -181,7 +181,7 @@ export const advanceCycleStatus = createServerFn({ method: "POST" })
     if (data.status === "complete") patch.closed_at = new Date().toISOString();
     const { error } = await supabaseAdmin
       .from("budget_cycles")
-      .update(patch)
+      .update(patch as any)
       .eq("id", data.cycleId);
     if (error) throw error;
     return { ok: true };
@@ -369,7 +369,7 @@ export const updateSubmission = createServerFn({ method: "POST" })
     }
     const { error } = await supabaseAdmin
       .from("ministry_budget_submissions")
-      .update(patch)
+      .update(patch as any)
       .eq("id", data.submissionId);
     if (error) throw error;
     return { ok: true };
@@ -442,7 +442,7 @@ export const markSheetSubmitted = createServerFn({ method: "POST" })
         .maybeSingle();
       const name = leader?.full_name || leader?.email || "A ministry leader";
       if (to.length > 0) {
-        const body = emailLayout(
+        const body = emailLayout("Budget request submitted",
           `<h2>Budget request submitted</h2>
            <p>${escapeHtml(name)} just submitted their Google Sheet budget for
            <strong>${escapeHtml(row.ministry_area)}</strong>.</p>
@@ -500,7 +500,7 @@ export const submitFeedback = createServerFn({ method: "POST" })
         .eq("id", row.user_id)
         .maybeSingle();
       if (leader?.email) {
-        const html = emailLayout(
+        const html = emailLayout("Feedback on your budget",
           `<h2>Feedback on your ${escapeHtml(row.ministry_area)} budget</h2>
            <p>Hi ${escapeHtml(leader.full_name || "there")},</p>
            <p>Feedback is ready on your budget request:</p>
@@ -816,7 +816,7 @@ export const finalizeReportUpload = createServerFn({ method: "POST" })
         .eq("id", sub.user_id)
         .maybeSingle();
       if (leader?.email) {
-        const html = emailLayout(
+        const html = emailLayout("Your spending report is ready",
           `<h2>Your 12-month spending report is ready</h2>
            <p>Hi ${escapeHtml(leader.full_name || "there")},</p>
            <p>Your Feb–Feb spending report for <strong>${escapeHtml(sub.ministry_area)}</strong>
@@ -868,7 +868,7 @@ export const postSheetLink = createServerFn({ method: "POST" })
         .eq("id", sub.user_id)
         .maybeSingle();
       if (leader?.email) {
-        const html = emailLayout(
+        const html = emailLayout("Your budget sheet is ready",
           `<h2>Your budget sheet is ready</h2>
            <p>Hi ${escapeHtml(leader.full_name || "there")},</p>
            <p>Your Google Sheet for the ${escapeHtml(sub.ministry_area)} budget is posted:</p>
@@ -965,7 +965,7 @@ export const consumeHighLevelSeedForPlan = createServerFn({ method: "POST" })
     if (seed.swot_seeds.threats.length) patch.threats = seed.swot_seeds.threats;
 
     if (Object.keys(patch).length > 0) {
-      await supabaseAdmin.from("ministry_action_plans").update(patch).eq("id", data.planId);
+      await supabaseAdmin.from("ministry_action_plans").update(patch as any).eq("id", data.planId);
     }
     await supabaseAdmin
       .from("ministry_high_level_plans")
