@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { OnboardingProfileDialog } from "@/components/users/OnboardingProfileDialog";
 import { Button } from "@/components/ui/button";
 import { Sparkles, X, Send, Loader2, RotateCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -186,6 +187,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           </header>
 
           <main className="flex-1 px-6 py-8 overflow-x-hidden">{children}</main>
+          <OnboardingProfileDialog />
+
         </SidebarInset>
 
         {/* AI Assistant FAB — smaller on mobile to avoid overlapping content */}

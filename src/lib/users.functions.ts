@@ -6,7 +6,6 @@ import { assertCore, supabaseAdmin } from "@/server/users.server";
 const ROLES = ["core", "meeting", "extended", "elder", "elder_candidate"] as const;
 type Role = (typeof ROLES)[number];
 
-
 export const listUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -144,6 +143,66 @@ export const setUserCgCoach = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+export const setUserServeLeaderAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ userId: z.string().uuid(), enabled: z.boolean() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCore(context.supabase, context.userId);
+    await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("user_id", data.userId)
+      .eq("role", "serve_leader_admin");
+    if (data.enabled) {
+      const { error } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: data.userId, role: "serve_leader_admin" });
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+export const completeProfileOnboarding = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        fullName: z.string().min(1).max(120).optional(),
+        avatarUrl: z.string().url().max(500).optional().or(z.literal("")),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const patch: {
+      onboarded_at: string;
+      full_name?: string;
+      avatar_url?: string | null;
+    } = { onboarded_at: new Date().toISOString() };
+    if (data.fullName) patch.full_name = data.fullName;
+    if (data.avatarUrl !== undefined) patch.avatar_url = data.avatarUrl || null;
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update(patch)
+      .eq("id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const getMyProfile = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .select("id, full_name, email, avatar_url, onboarded_at")
+      .eq("id", context.userId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data;
+  });
+
 
 export const inviteUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
