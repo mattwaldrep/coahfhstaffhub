@@ -101,22 +101,30 @@ export const getThisWeekDigest = createServerFn({ method: "GET" })
 
     // Elder-only facts
     if (isElder) {
-      const sixtyAgo = new Date(Date.now() - 60 * 86400000).toISOString();
-      const fortyFiveAgo = new Date(Date.now() - 45 * 86400000).toISOString();
-      const { count: redCount } = await supabase
-        .from("pco_touchpoints")
-        .select("pco_person_id", { count: "exact", head: true })
-        .lt("created_at", sixtyAgo);
-      const { count: amberCount } = await supabase
-        .from("pco_touchpoints")
-        .select("pco_person_id", { count: "exact", head: true })
-        .lt("created_at", fortyFiveAgo)
-        .gte("created_at", sixtyAgo);
-      if ((redCount ?? 0) > 0 || (amberCount ?? 0) > 0) {
+      // Compute per-person latest contact across touchpoints + pastoral notes
+      const [{ data: tps }, { data: notes }] = await Promise.all([
+        supabase.from("pco_touchpoints").select("pco_person_id, created_at"),
+        supabase.from("pco_pastoral_notes").select("pco_person_id, created_at"),
+      ]);
+      const last: Record<string, number> = {};
+      for (const r of [...(tps ?? []), ...(notes ?? [])] as any[]) {
+        const t = new Date(r.created_at).getTime();
+        if (!last[r.pco_person_id] || t > last[r.pco_person_id]) last[r.pco_person_id] = t;
+      }
+      const now = Date.now();
+      let redCount = 0;
+      let amberCount = 0;
+      for (const t of Object.values(last)) {
+        const days = Math.floor((now - t) / 86400000);
+        if (days >= 60) redCount++;
+        else if (days >= 45) amberCount++;
+      }
+      if (redCount > 0 || amberCount > 0) {
         facts.push(
-          `Pastoral attention: ${redCount ?? 0} touchpoints overdue 60+ days, ${amberCount ?? 0} in the 45-60 day window.`,
+          `Pastoral attention: ${redCount} people overdue 60+ days, ${amberCount} in the 45-60 day window.`,
         );
       }
+
 
       const { data: motions } = await supabase
         .from("elder_motions")
