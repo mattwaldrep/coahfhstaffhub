@@ -45,10 +45,6 @@ import {
   reorderWorkflowSection,
   setWorkflowSectionOrder,
   renameWorkflowSection,
-  listWorkflowDocuments,
-  recordWorkflowDocument,
-  getWorkflowDocumentUrl,
-  deleteWorkflowDocument,
 } from "@/lib/onboarding-extras.functions";
 import { supabase } from "@/integrations/supabase/client";
 import {
