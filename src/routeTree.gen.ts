@@ -56,6 +56,7 @@ import { Route as ElderMeetingsMeetingIdRouteImport } from './routes/elder.meeti
 import { Route as CalendarPlanningReviewRouteImport } from './routes/calendar_.planning.review'
 import { Route as CalendarPlanningSubmissionIdRouteImport } from './routes/calendar_.planning.$submissionId'
 import { Route as ApiGoogleOauthCallbackRouteImport } from './routes/api/google.oauth-callback'
+import { Route as AnnualPlanningBudgetSubmissionIdRouteImport } from './routes/annual-planning.budget.$submissionId'
 import { Route as ApiPublicHooksWeeklyDigestMondayRouteImport } from './routes/api/public/hooks.weekly-digest-monday'
 import { Route as ApiPublicHooksSyncGoogleTasksRouteImport } from './routes/api/public/hooks/sync-google-tasks'
 import { Route as ApiPublicHooksSundayReviewNudgeRouteImport } from './routes/api/public/hooks.sunday-review-nudge'
@@ -303,6 +304,12 @@ const ApiGoogleOauthCallbackRoute = ApiGoogleOauthCallbackRouteImport.update({
   path: '/api/google/oauth-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnnualPlanningBudgetSubmissionIdRoute =
+  AnnualPlanningBudgetSubmissionIdRouteImport.update({
+    id: '/$submissionId',
+    path: '/$submissionId',
+    getParentRoute: () => AnnualPlanningBudgetRoute,
+  } as any)
 const ApiPublicHooksWeeklyDigestMondayRoute =
   ApiPublicHooksWeeklyDigestMondayRouteImport.update({
     id: '/api/public/hooks/weekly-digest-monday',
@@ -378,7 +385,7 @@ export interface FileRoutesByFullPath {
   '/sunday-review': typeof SundayReviewRoute
   '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
-  '/annual-planning/budget': typeof AnnualPlanningBudgetRoute
+  '/annual-planning/budget': typeof AnnualPlanningBudgetRouteWithChildren
   '/calendar/classes': typeof CalendarClassesRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
@@ -398,6 +405,7 @@ export interface FileRoutesByFullPath {
   '/elder/': typeof ElderIndexRoute
   '/ministry-plans/': typeof MinistryPlansIndexRoute
   '/onboarding/': typeof OnboardingIndexRoute
+  '/annual-planning/budget/$submissionId': typeof AnnualPlanningBudgetSubmissionIdRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/calendar/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
   '/calendar/planning/review': typeof CalendarPlanningReviewRoute
@@ -434,7 +442,7 @@ export interface FileRoutesByTo {
   '/sunday-review': typeof SundayReviewRoute
   '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
-  '/annual-planning/budget': typeof AnnualPlanningBudgetRoute
+  '/annual-planning/budget': typeof AnnualPlanningBudgetRouteWithChildren
   '/calendar/classes': typeof CalendarClassesRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
@@ -452,6 +460,7 @@ export interface FileRoutesByTo {
   '/elder': typeof ElderIndexRoute
   '/ministry-plans': typeof MinistryPlansIndexRoute
   '/onboarding': typeof OnboardingIndexRoute
+  '/annual-planning/budget/$submissionId': typeof AnnualPlanningBudgetSubmissionIdRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/calendar/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
   '/calendar/planning/review': typeof CalendarPlanningReviewRoute
@@ -491,7 +500,7 @@ export interface FileRoutesById {
   '/sunday-review': typeof SundayReviewRoute
   '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
-  '/annual-planning/budget': typeof AnnualPlanningBudgetRoute
+  '/annual-planning/budget': typeof AnnualPlanningBudgetRouteWithChildren
   '/calendar_/classes': typeof CalendarClassesRoute
   '/calendar_/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar_/public': typeof CalendarPublicRoute
@@ -511,6 +520,7 @@ export interface FileRoutesById {
   '/elder/': typeof ElderIndexRoute
   '/ministry-plans/': typeof MinistryPlansIndexRoute
   '/onboarding/': typeof OnboardingIndexRoute
+  '/annual-planning/budget/$submissionId': typeof AnnualPlanningBudgetSubmissionIdRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
   '/calendar_/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
   '/calendar_/planning/review': typeof CalendarPlanningReviewRoute
@@ -571,6 +581,7 @@ export interface FileRouteTypes {
     | '/elder/'
     | '/ministry-plans/'
     | '/onboarding/'
+    | '/annual-planning/budget/$submissionId'
     | '/api/google/oauth-callback'
     | '/calendar/planning/$submissionId'
     | '/calendar/planning/review'
@@ -625,6 +636,7 @@ export interface FileRouteTypes {
     | '/elder'
     | '/ministry-plans'
     | '/onboarding'
+    | '/annual-planning/budget/$submissionId'
     | '/api/google/oauth-callback'
     | '/calendar/planning/$submissionId'
     | '/calendar/planning/review'
@@ -683,6 +695,7 @@ export interface FileRouteTypes {
     | '/elder/'
     | '/ministry-plans/'
     | '/onboarding/'
+    | '/annual-planning/budget/$submissionId'
     | '/api/google/oauth-callback'
     | '/calendar_/planning/$submissionId'
     | '/calendar_/planning/review'
@@ -722,7 +735,7 @@ export interface RootRouteChildren {
   SundayReviewRoute: typeof SundayReviewRoute
   TrendsRoute: typeof TrendsRoute
   UsersRoute: typeof UsersRoute
-  AnnualPlanningBudgetRoute: typeof AnnualPlanningBudgetRoute
+  AnnualPlanningBudgetRoute: typeof AnnualPlanningBudgetRouteWithChildren
   CalendarClassesRoute: typeof CalendarClassesRoute
   CalendarPlanningRoute: typeof CalendarPlanningRouteWithChildren
   CalendarPublicRoute: typeof CalendarPublicRoute
@@ -1077,6 +1090,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGoogleOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/annual-planning/budget/$submissionId': {
+      id: '/annual-planning/budget/$submissionId'
+      path: '/$submissionId'
+      fullPath: '/annual-planning/budget/$submissionId'
+      preLoaderRoute: typeof AnnualPlanningBudgetSubmissionIdRouteImport
+      parentRoute: typeof AnnualPlanningBudgetRoute
+    }
     '/api/public/hooks/weekly-digest-monday': {
       id: '/api/public/hooks/weekly-digest-monday'
       path: '/api/public/hooks/weekly-digest-monday'
@@ -1205,6 +1225,17 @@ const ElderRouteChildren: ElderRouteChildren = {
 
 const ElderRouteWithChildren = ElderRoute._addFileChildren(ElderRouteChildren)
 
+interface AnnualPlanningBudgetRouteChildren {
+  AnnualPlanningBudgetSubmissionIdRoute: typeof AnnualPlanningBudgetSubmissionIdRoute
+}
+
+const AnnualPlanningBudgetRouteChildren: AnnualPlanningBudgetRouteChildren = {
+  AnnualPlanningBudgetSubmissionIdRoute: AnnualPlanningBudgetSubmissionIdRoute,
+}
+
+const AnnualPlanningBudgetRouteWithChildren =
+  AnnualPlanningBudgetRoute._addFileChildren(AnnualPlanningBudgetRouteChildren)
+
 interface CalendarPlanningRouteChildren {
   CalendarPlanningSubmissionIdRoute: typeof CalendarPlanningSubmissionIdRoute
   CalendarPlanningReviewRoute: typeof CalendarPlanningReviewRoute
@@ -1249,7 +1280,7 @@ const rootRouteChildren: RootRouteChildren = {
   SundayReviewRoute: SundayReviewRoute,
   TrendsRoute: TrendsRoute,
   UsersRoute: UsersRoute,
-  AnnualPlanningBudgetRoute: AnnualPlanningBudgetRoute,
+  AnnualPlanningBudgetRoute: AnnualPlanningBudgetRouteWithChildren,
   CalendarClassesRoute: CalendarClassesRoute,
   CalendarPlanningRoute: CalendarPlanningRouteWithChildren,
   CalendarPublicRoute: CalendarPublicRoute,
