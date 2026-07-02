@@ -176,7 +176,11 @@ export const completeProfileOnboarding = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const patch: Record<string, unknown> = { onboarded_at: new Date().toISOString() };
+    const patch: {
+      onboarded_at: string;
+      full_name?: string;
+      avatar_url?: string | null;
+    } = { onboarded_at: new Date().toISOString() };
     if (data.fullName) patch.full_name = data.fullName;
     if (data.avatarUrl !== undefined) patch.avatar_url = data.avatarUrl || null;
     const { error } = await supabaseAdmin
