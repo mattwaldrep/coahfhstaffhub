@@ -230,6 +230,42 @@ export type Database = {
         }
         Relationships: []
       }
+      budget_cycles: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          fiscal_year: number
+          id: string
+          opened_at: string | null
+          rough_due_date: string | null
+          sheet_link_target_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          fiscal_year: number
+          id?: string
+          opened_at?: string | null
+          rough_due_date?: string | null
+          sheet_link_target_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          fiscal_year?: number
+          id?: string
+          opened_at?: string | null
+          rough_due_date?: string | null
+          sheet_link_target_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       calendar_event_categories: {
         Row: {
           created_at: string
@@ -2107,6 +2143,209 @@ export type Database = {
           weaknesses?: Json
         }
         Relationships: []
+      }
+      ministry_budget_submissions: {
+        Row: {
+          created_at: string
+          cycle_id: string
+          feedback_body: string | null
+          feedback_submitted_at: string | null
+          id: string
+          ministry_area: string
+          reviewed_by: string | null
+          rough_status: string
+          rough_submitted_at: string | null
+          sheet_status: string
+          sheet_submitted_at: string | null
+          sheet_url: string | null
+          spending_report_path: string | null
+          spending_report_uploaded_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          cycle_id: string
+          feedback_body?: string | null
+          feedback_submitted_at?: string | null
+          id?: string
+          ministry_area: string
+          reviewed_by?: string | null
+          rough_status?: string
+          rough_submitted_at?: string | null
+          sheet_status?: string
+          sheet_submitted_at?: string | null
+          sheet_url?: string | null
+          spending_report_path?: string | null
+          spending_report_uploaded_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          cycle_id?: string
+          feedback_body?: string | null
+          feedback_submitted_at?: string | null
+          id?: string
+          ministry_area?: string
+          reviewed_by?: string | null
+          rough_status?: string
+          rough_submitted_at?: string | null
+          sheet_status?: string
+          sheet_submitted_at?: string | null
+          sheet_url?: string | null
+          spending_report_path?: string | null
+          spending_report_uploaded_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ministry_budget_submissions_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "budget_cycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ministry_high_level_plans: {
+        Row: {
+          carried_to_map_id: string | null
+          created_at: string
+          fiscal_year: number
+          id: string
+          ministry_area: string
+          notes: string
+          purpose: string
+          submission_id: string
+          swot_seeds: Json
+          top_goals: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          carried_to_map_id?: string | null
+          created_at?: string
+          fiscal_year: number
+          id?: string
+          ministry_area: string
+          notes?: string
+          purpose?: string
+          submission_id: string
+          swot_seeds?: Json
+          top_goals?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          carried_to_map_id?: string | null
+          created_at?: string
+          fiscal_year?: number
+          id?: string
+          ministry_area?: string
+          notes?: string
+          purpose?: string
+          submission_id?: string
+          swot_seeds?: Json
+          top_goals?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ministry_high_level_plans_carried_to_map_id_fkey"
+            columns: ["carried_to_map_id"]
+            isOneToOne: false
+            referencedRelation: "ministry_action_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ministry_high_level_plans_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "ministry_budget_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ministry_leader_assignments: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          ministry_area: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          ministry_area: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          ministry_area?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ministry_rough_budget_lines: {
+        Row: {
+          amount_annual: number
+          category_id: string | null
+          category_name: string
+          created_at: string
+          id: string
+          note: string | null
+          sort_order: number
+          submission_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount_annual?: number
+          category_id?: string | null
+          category_name: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          sort_order?: number
+          submission_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount_annual?: number
+          category_id?: string | null
+          category_name?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          sort_order?: number
+          submission_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ministry_rough_budget_lines_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "budget_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ministry_rough_budget_lines_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "ministry_budget_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mission_trips: {
         Row: {
