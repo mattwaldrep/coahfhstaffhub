@@ -108,6 +108,7 @@ export function AppSidebar() {
 
   const SECONDARY: NavItem[] = [
     { to: "/missions", label: "Missions", icon: Users },
+    { to: "/documents", label: "Documents", icon: ScrollText },
     ...(isCore
       ? [
           {
@@ -115,7 +116,6 @@ export function AppSidebar() {
             icon: UsersRound,
             children: [
               { to: "/onboarding", label: "Onboarding", icon: GraduationCap },
-              { to: "/documents", label: "Documents", icon: ScrollText },
               { to: "/users", label: "Users", icon: UserCog },
             ],
           } as NavItem,
