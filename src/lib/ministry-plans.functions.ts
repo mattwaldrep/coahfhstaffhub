@@ -165,6 +165,46 @@ export const createPlan = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw error;
+
+    // Hydrate from most recent un-carried 10k-ft plan for this leader + ministry
+    try {
+      const { data: hlp } = await supabaseAdmin
+        .from("ministry_high_level_plans")
+        .select("*")
+        .eq("user_id", context.userId)
+        .eq("ministry_area", data.ministry_area)
+        .is("carried_to_map_id", null)
+        .order("fiscal_year", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (hlp) {
+        const swot = (hlp.swot_seeds ?? {}) as any;
+        const patch: Record<string, unknown> = {};
+        if (hlp.purpose) patch.purpose = hlp.purpose;
+        if (Array.isArray(hlp.top_goals) && hlp.top_goals.length) {
+          patch.goals = (hlp.top_goals as any[]).map((g) => ({
+            id: crypto.randomUUID(),
+            goal_statement: g.statement ?? "",
+            completion_date: null,
+            significant_others: g.why ?? "",
+            execution_steps: [],
+          }));
+        }
+        if (Array.isArray(swot.strengths) && swot.strengths.length) patch.strengths = swot.strengths;
+        if (Array.isArray(swot.weaknesses) && swot.weaknesses.length) patch.weaknesses = swot.weaknesses;
+        if (Array.isArray(swot.opportunities) && swot.opportunities.length) patch.opportunities = swot.opportunities;
+        if (Array.isArray(swot.threats) && swot.threats.length) patch.threats = swot.threats;
+        if (Object.keys(patch).length > 0) {
+          await supabaseAdmin.from("ministry_action_plans").update(patch as any).eq("id", row.id);
+        }
+        await supabaseAdmin
+          .from("ministry_high_level_plans")
+          .update({ carried_to_map_id: row.id })
+          .eq("id", hlp.id);
+      }
+    } catch (e) {
+      console.error("MAP hydrate from HLP failed:", e);
+    }
     return { id: row.id, existed: false };
   });
 
