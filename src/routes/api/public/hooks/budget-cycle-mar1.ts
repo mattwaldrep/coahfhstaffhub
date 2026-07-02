@@ -93,27 +93,25 @@ export const Route = createFileRoute("/api/public/hooks/budget-cycle-mar1")({
             .in("id", coreIds);
           const emails = (profs ?? []).map((p: any) => p.email).filter(Boolean);
 
-          // Dashboard tasks (one per core user)
+          // Dashboard tasks (one per core user); dedupe by title.
+          const taskTitle = `Upload 12-month spending reports (FY ${fy})`;
           const dueDate = `${fy - 1}-03-07`;
           const existingTasks = await supabaseAdmin
             .from("action_items")
             .select("id, assignee_id")
-            .eq("source_kind", "budget_report_upload" as any)
-            .eq("source_key", String(fy));
+            .eq("title", taskTitle);
           const alreadyHas = new Set(
             (existingTasks.data ?? []).map((r: any) => r.assignee_id),
           );
           const taskRows = coreIds
             .filter((id) => !alreadyHas.has(id))
             .map((id) => ({
-              title: `Upload 12-month spending reports (FY ${fy})`,
+              title: taskTitle,
               notes:
                 "March 1 kickoff: post each ministry's Feb–Feb spending report in Annual Planning → Budget.",
               assignee_id: id,
               due_date: dueDate,
               created_by: id,
-              source_kind: "budget_report_upload",
-              source_key: String(fy),
             }));
           if (taskRows.length > 0) {
             await supabaseAdmin.from("action_items").insert(taskRows as any);
