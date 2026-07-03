@@ -96,14 +96,26 @@ async function isCore(userId: string) {
 export const getCurrentCycle = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
-    const fy = currentFiscalYear();
-    // Return the cycle for THIS fiscal year (created on/around March 1)
-    const { data } = await supabaseAdmin
+    // The "current" cycle is the latest non-closed cycle. During the
+    // March–June planning window the cycle being worked on is for the
+    // upcoming FY (e.g. FY 2026 opened in March 2025), so filtering by
+    // today's calendar fiscal year would miss it. Pick the newest open
+    // cycle, falling back to the most recent cycle overall.
+    const { data: open } = await supabaseAdmin
       .from("budget_cycles")
       .select("*")
-      .eq("fiscal_year", fy)
+      .neq("status", "closed")
+      .order("fiscal_year", { ascending: false })
+      .limit(1)
       .maybeSingle();
-    return (data as BudgetCycle) ?? null;
+    if (open) return open as BudgetCycle;
+    const { data: latest } = await supabaseAdmin
+      .from("budget_cycles")
+      .select("*")
+      .order("fiscal_year", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return (latest as BudgetCycle) ?? null;
   });
 
 export const listCycles = createServerFn({ method: "GET" })
