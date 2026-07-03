@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { MINISTRY_AREAS, type MinistryArea } from "@/lib/ministry-plans.functions";
-import { fiscalYearOf, currentFiscalYear } from "@/lib/fiscal-year";
+import { fiscalYearOf } from "@/lib/fiscal-year";
 
 export type CycleStatus =
   | "setup"
