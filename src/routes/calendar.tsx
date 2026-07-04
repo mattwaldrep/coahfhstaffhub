@@ -3191,6 +3191,7 @@ function ListView({
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
 }) {
+  const SUB_CALS = useSubCals();
   if (occurrences.length === 0) {
     return (
       <div className="bg-surface border border-border rounded-2xl p-2">
