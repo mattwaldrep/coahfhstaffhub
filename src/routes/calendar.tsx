@@ -497,9 +497,31 @@ function SundaySlotPicker({
 
 
 function CalendarPage() {
+  const [subCals, setSubCals] = useState<SubCalOption[]>(DEFAULT_SUB_CALS);
+  const fetchSubCals = useServerFn(listSubCalendars);
+  useEffect(() => {
+    let alive = true;
+    fetchSubCals()
+      .then((rows: SubCalendarRow[]) => {
+        if (!alive) return;
+        const mapped = (rows ?? [])
+          .filter((r) => r.is_active)
+          .map((r) => ({
+            value: r.key,
+            label: r.name,
+            color: r.color_token,
+            ownerUserId: r.owner_user_id,
+          }));
+        if (mapped.length) setSubCals(mapped);
+      })
+      .catch((e) => console.error("listSubCalendars", e));
+    return () => { alive = false; };
+  }, []);
   return (
     <AppShell>
-      <CalendarBody />
+      <SubCalsContext.Provider value={subCals}>
+        <CalendarBody />
+      </SubCalsContext.Provider>
     </AppShell>
   );
 }
