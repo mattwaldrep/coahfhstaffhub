@@ -451,7 +451,22 @@ function Body() {
       .from("mission_trips")
       .select("*")
       .order("start_date", { ascending: true, nullsFirst: false });
-    setTrips((data ?? []) as Trip[]);
+    const rows = (data ?? []) as Trip[];
+    // Auto-advance: any in_field trip whose end_date has passed should move to post_trip.
+    const today = startOfDay(new Date());
+    const toPromote = rows.filter(
+      (t) => t.status === "in_field" && t.end_date && startOfDay(new Date(t.end_date)) < today,
+    );
+    if (toPromote.length > 0) {
+      await supabase
+        .from("mission_trips")
+        .update({ status: "post_trip" })
+        .in("id", toPromote.map((t) => t.id));
+      for (const t of rows) {
+        if (toPromote.find((p) => p.id === t.id)) t.status = "post_trip" as Status;
+      }
+    }
+    setTrips(rows);
   }
 
   function openNew() {
