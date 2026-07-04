@@ -18,8 +18,8 @@ async function assertCore(supabase: any, userId: string) {
   if (!(await isCore(supabase, userId))) throw new Error("Forbidden: core role required");
 }
 
-const SUB_CALS = ["forest_hills_main", "coah_lm", "youth", "general"] as const;
-const subCalSchema = z.enum(SUB_CALS);
+// sub_calendar is now dynamic; validated by the calendar_sub_calendars table.
+const subCalSchema = z.string().min(1).max(64);
 
 const proposedEventSchema = z.object({
   title: z.string().min(1).max(255),
