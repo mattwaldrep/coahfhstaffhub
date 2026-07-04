@@ -3132,8 +3132,10 @@ function WeekStrip({
   onPickEvent: (o: Occurrence) => void;
   canEdit: boolean;
 }) {
+  const SUB_CALS = useSubCals();
   const start = startOfWeek(cursor, { weekStartsOn: 0 });
   const days = Array.from({ length: 7 }, (_, i) => new Date(start.getTime() + i * 86400000));
+
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
