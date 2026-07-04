@@ -25,6 +25,7 @@ import {
   approveSubCalendarSuggestion,
   dismissSubCalendarSuggestion,
   listStaffProfiles,
+  syncServeTeamSubCalendars,
   type SubCalendarRow,
 } from "@/lib/sub-calendars.functions";
 
@@ -36,12 +37,35 @@ export const Route = createFileRoute("/calendar_/settings")({
   ),
 });
 
-const COLOR_TOKENS = [
+// Broad palette — themed CSS tokens plus a spectrum of hexes. Users can also
+// pick any custom color via the color input.
+const PRESET_COLORS: { value: string; label: string }[] = [
   { value: "var(--cal-main)", label: "Blue (General)" },
   { value: "var(--cal-lm)", label: "COAH:LM" },
   { value: "var(--cal-youth)", label: "Youth" },
   { value: "var(--cal-missions)", label: "Missions" },
   { value: "var(--cal-general)", label: "Neutral" },
+  { value: "#ef4444", label: "Red" },
+  { value: "#f97316", label: "Orange" },
+  { value: "#f59e0b", label: "Amber" },
+  { value: "#eab308", label: "Yellow" },
+  { value: "#84cc16", label: "Lime" },
+  { value: "#22c55e", label: "Green" },
+  { value: "#10b981", label: "Emerald" },
+  { value: "#14b8a6", label: "Teal" },
+  { value: "#06b6d4", label: "Cyan" },
+  { value: "#0ea5e9", label: "Sky" },
+  { value: "#3b82f6", label: "Blue" },
+  { value: "#6366f1", label: "Indigo" },
+  { value: "#8b5cf6", label: "Violet" },
+  { value: "#a855f7", label: "Purple" },
+  { value: "#d946ef", label: "Fuchsia" },
+  { value: "#ec4899", label: "Pink" },
+  { value: "#f43f5e", label: "Rose" },
+  { value: "#78716c", label: "Stone" },
+  { value: "#64748b", label: "Slate" },
+  { value: "#0f766e", label: "Dark teal" },
+  { value: "#7c2d12", label: "Rust" },
 ];
 
 function ColorSwatch({ token }: { token: string }) {
@@ -52,6 +76,45 @@ function ColorSwatch({ token }: { token: string }) {
     />
   );
 }
+
+function ColorPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  // Two-part control: swatch grid + custom hex input.
+  return (
+    <div className="space-y-2">
+      <div className="grid grid-cols-8 gap-1.5">
+        {PRESET_COLORS.map((c) => {
+          const selected = c.value === value;
+          return (
+            <button
+              key={c.value}
+              type="button"
+              title={c.label}
+              onClick={() => onChange(c.value)}
+              className={`h-7 w-7 rounded-md border transition ${selected ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : "hover:scale-110"}`}
+              style={{ background: c.value, borderColor: "var(--border)" }}
+            />
+          );
+        })}
+      </div>
+      <div className="flex items-center gap-2">
+        <Label className="text-xs text-muted-foreground">Custom:</Label>
+        <input
+          type="color"
+          value={value.startsWith("#") ? value : "#3b82f6"}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-7 w-10 rounded border border-border bg-transparent cursor-pointer"
+        />
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-7 text-xs font-mono flex-1"
+          placeholder="#3b82f6 or var(--cal-main)"
+        />
+      </div>
+    </div>
+  );
+}
+
 
 function SettingsPage() {
   const { hasRole } = useAuth();
