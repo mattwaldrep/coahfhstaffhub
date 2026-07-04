@@ -98,13 +98,16 @@ export const Route = createFileRoute("/calendar")({
   component: CalendarPage,
 });
 
-const SUB_CALS = [
-  { value: "forest_hills_main", label: "Forest Hills Main", color: "var(--cal-main)" },
-  { value: "coah_lm", label: "COAH:LM", color: "var(--cal-lm)" },
-  { value: "youth", label: "Youth", color: "var(--cal-youth)" },
-  { value: "general", label: "General", color: "var(--cal-general)" },
-  { value: "missions_teams", label: "Missions Teams", color: "var(--cal-missions)" },
+type SubCalOption = { value: string; label: string; color: string; ownerUserId: string | null };
+const DEFAULT_SUB_CALS: SubCalOption[] = [
+  { value: "general", label: "General", color: "var(--cal-main)", ownerUserId: null },
+  { value: "coah_lm", label: "COAH:LM", color: "var(--cal-lm)", ownerUserId: null },
+  { value: "youth", label: "Youth", color: "var(--cal-youth)", ownerUserId: null },
+  { value: "missions_teams", label: "Missions Teams", color: "var(--cal-missions)", ownerUserId: null },
 ];
+const SubCalsContext = createContext<SubCalOption[]>(DEFAULT_SUB_CALS);
+function useSubCals(): SubCalOption[] { return useContext(SubCalsContext); }
+
 
 const DEFAULT_CATEGORIES = [
   "Holiday", "Leadership", "Women", "Men", "Class", "Social",
