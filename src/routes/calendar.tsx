@@ -1848,45 +1848,63 @@ function CalendarBody() {
           </div>
         </div>
 
-        <div className="bg-muted/30 px-5 py-3.5 flex items-center gap-6 overflow-x-auto">
-          {canEdit && (
+        <div className="bg-muted/30 px-5 py-2.5">
+          <div className="flex items-center gap-6">
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !selectMode;
+                  setSelectMode(next);
+                  setSelectedIds(new Set());
+                  if (next) setView("list");
+                }}
+                className="flex items-center gap-2 pr-6 border-r border-border shrink-0"
+              >
+                <span className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-colors ${
+                  selectMode ? "bg-foreground border-foreground text-background" : "bg-card border-border"
+                }`}>
+                  {selectMode && <CheckSquare className="w-3.5 h-3.5" />}
+                </span>
+                <span className="text-sm font-bold tracking-tight">{selectMode ? "Done" : "Select"}</span>
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => {
-                const next = !selectMode;
-                setSelectMode(next);
-                setSelectedIds(new Set());
-                if (next) setView("list");
-              }}
-              className="flex items-center gap-2 pr-6 border-r border-border shrink-0"
+              onClick={() => setSubCalsExpanded((v) => !v)}
+              className="flex items-center gap-1.5 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+              aria-expanded={subCalsExpanded}
             >
-              <span className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-colors ${
-                selectMode ? "bg-foreground border-foreground text-background" : "bg-card border-border"
-              }`}>
-                {selectMode && <CheckSquare className="w-3.5 h-3.5" />}
+              <ChevronDown
+                className={`w-4 h-4 transition-transform ${subCalsExpanded ? "rotate-0" : "-rotate-90"}`}
+              />
+              Sub-calendars
+              <span className="text-xs text-muted-foreground font-normal">
+                ({SUB_CALS.filter((s) => filters[s.value]).length}/{SUB_CALS.length} on)
               </span>
-              <span className="text-sm font-bold tracking-tight">{selectMode ? "Done" : "Select"}</span>
             </button>
-          )}
-          <div className="flex items-center gap-2 flex-wrap">
-            {SUB_CALS.map((s) => {
-              const active = filters[s.value];
-              return (
-                <button
-                  key={s.value}
-                  onClick={() => setFilters({ ...filters, [s.value]: !filters[s.value] })}
-                  className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-sm font-semibold transition-colors shrink-0 ${
-                    active
-                      ? "bg-card border-border text-foreground shadow-sm"
-                      : "bg-transparent border-border/50 text-muted-foreground hover:border-border"
-                  }`}
-                >
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: s.color }} />
-                  {s.label}
-                </button>
-              );
-            })}
           </div>
+          {subCalsExpanded && (
+            <div className="flex items-center gap-2 flex-wrap mt-3 pt-3 border-t border-border/50">
+              {SUB_CALS.map((s) => {
+                const active = filters[s.value];
+                return (
+                  <button
+                    key={s.value}
+                    onClick={() => setFilters({ ...filters, [s.value]: !filters[s.value] })}
+                    className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-sm font-semibold transition-colors shrink-0 ${
+                      active
+                        ? "bg-card border-border text-foreground shadow-sm"
+                        : "bg-transparent border-border/50 text-muted-foreground hover:border-border"
+                    }`}
+                  >
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: s.color }} />
+                    {s.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
