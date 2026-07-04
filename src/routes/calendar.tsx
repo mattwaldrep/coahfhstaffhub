@@ -554,11 +554,20 @@ function CalendarBody() {
   const [hidePast, setHidePast] = useState<boolean>(loadedPrefs?.hidePast ?? false);
   const [cursor, setCursor] = useState(new Date());
   const [events, setEvents] = useState<EventRow[]>([]);
-  const [filters, setFilters] = useState<Record<string, boolean>>(
-    loadedPrefs?.filters ?? {
-      forest_hills_main: true, coah_lm: true, youth: true, general: true, missions_teams: true,
-    },
-  );
+  const [filters, setFilters] = useState<Record<string, boolean>>(loadedPrefs?.filters ?? {});
+  // Ensure every known sub-calendar has a default filter entry (true) once loaded.
+  useEffect(() => {
+    setFilters((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const s of SUB_CALS) {
+        if (!(s.value in next)) { next[s.value] = true; changed = true; }
+      }
+      // legacy cleanup
+      if ("forest_hills_main" in next) { delete next.forest_hills_main; changed = true; }
+      return changed ? next : prev;
+    });
+  }, [SUB_CALS]);
   const [categoryFilter, setCategoryFilter] = useState<string>(loadedPrefs?.categoryFilter ?? "all");
   const [flagFilter, setFlagFilter] = useState<"all" | "pco" | "missions">(loadedPrefs?.flagFilter ?? "all");
   const [searchQuery, setSearchQuery] = useState("");
