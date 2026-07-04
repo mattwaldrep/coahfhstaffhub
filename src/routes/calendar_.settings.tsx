@@ -359,17 +359,9 @@ function NewSubCalDialog({
           </div>
           <div>
             <Label>Color</Label>
-            <Select value={color} onValueChange={setColor}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {COLOR_TOKENS.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>
-                    <span className="flex items-center gap-2"><ColorSwatch token={c.value} /> {c.label}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ColorPicker value={color} onChange={setColor} />
           </div>
+
           <div>
             <Label>Owner</Label>
             <Select value={owner} onValueChange={setOwner}>
