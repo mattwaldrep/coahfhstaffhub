@@ -327,7 +327,7 @@ export type Database = {
           rrule: string | null
           social_ads: boolean
           start_at: string
-          sub_calendar: Database["public"]["Enums"]["sub_calendar"]
+          sub_calendar: string
           title: string
           updated_at: string
         }
@@ -364,7 +364,7 @@ export type Database = {
           rrule?: string | null
           social_ads?: boolean
           start_at: string
-          sub_calendar?: Database["public"]["Enums"]["sub_calendar"]
+          sub_calendar?: string
           title: string
           updated_at?: string
         }
@@ -401,7 +401,7 @@ export type Database = {
           rrule?: string | null
           social_ads?: boolean
           start_at?: string
-          sub_calendar?: Database["public"]["Enums"]["sub_calendar"]
+          sub_calendar?: string
           title?: string
           updated_at?: string
         }
@@ -446,7 +446,7 @@ export type Database = {
           reviewer_id: string | null
           reviewer_note: string | null
           status: Database["public"]["Enums"]["plan_submission_status"]
-          sub_calendar: Database["public"]["Enums"]["sub_calendar"]
+          sub_calendar: string
           submitted_at: string | null
           title: string | null
           updated_at: string
@@ -460,7 +460,7 @@ export type Database = {
           reviewer_id?: string | null
           reviewer_note?: string | null
           status?: Database["public"]["Enums"]["plan_submission_status"]
-          sub_calendar: Database["public"]["Enums"]["sub_calendar"]
+          sub_calendar: string
           submitted_at?: string | null
           title?: string | null
           updated_at?: string
@@ -474,7 +474,7 @@ export type Database = {
           reviewer_id?: string | null
           reviewer_note?: string | null
           status?: Database["public"]["Enums"]["plan_submission_status"]
-          sub_calendar?: Database["public"]["Enums"]["sub_calendar"]
+          sub_calendar?: string
           submitted_at?: string | null
           title?: string | null
           updated_at?: string
@@ -570,7 +570,7 @@ export type Database = {
           social_ads: boolean
           start_at: string
           status: Database["public"]["Enums"]["proposed_event_status"]
-          sub_calendar: Database["public"]["Enums"]["sub_calendar"]
+          sub_calendar: string
           submission_id: string
           title: string
           updated_at: string
@@ -597,7 +597,7 @@ export type Database = {
           social_ads?: boolean
           start_at: string
           status?: Database["public"]["Enums"]["proposed_event_status"]
-          sub_calendar: Database["public"]["Enums"]["sub_calendar"]
+          sub_calendar?: string
           submission_id: string
           title: string
           updated_at?: string
@@ -624,7 +624,7 @@ export type Database = {
           social_ads?: boolean
           start_at?: string
           status?: Database["public"]["Enums"]["proposed_event_status"]
-          sub_calendar?: Database["public"]["Enums"]["sub_calendar"]
+          sub_calendar?: string
           submission_id?: string
           title?: string
           updated_at?: string
@@ -642,6 +642,89 @@ export type Database = {
             columns: ["submission_id"]
             isOneToOne: false
             referencedRelation: "calendar_plan_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_sub_calendar_suggestions: {
+        Row: {
+          created_at: string
+          dismissed: boolean
+          first_seen_at: string
+          group_name: string
+          id: string
+          last_seen_at: string
+          pco_group_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dismissed?: boolean
+          first_seen_at?: string
+          group_name: string
+          id?: string
+          last_seen_at?: string
+          pco_group_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dismissed?: boolean
+          first_seen_at?: string
+          group_name?: string
+          id?: string
+          last_seen_at?: string
+          pco_group_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      calendar_sub_calendars: {
+        Row: {
+          color_token: string
+          created_at: string
+          id: string
+          is_active: boolean
+          key: string
+          name: string
+          owner_user_id: string | null
+          pco_group_id: string | null
+          sort_order: number
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          color_token?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key: string
+          name: string
+          owner_user_id?: string | null
+          pco_group_id?: string | null
+          sort_order?: number
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          color_token?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key?: string
+          name?: string
+          owner_user_id?: string | null
+          pco_group_id?: string | null
+          sort_order?: number
+          source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_sub_calendars_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3213,6 +3296,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_edit_sub_calendar: {
+        Args: { _key: string; _user_id: string }
+        Returns: boolean
+      }
       extract_finance_account_code: { Args: { _name: string }; Returns: string }
       has_any_elder_access: { Args: { _user_id: string }; Returns: boolean }
       has_any_role: {
@@ -3278,7 +3365,6 @@ export type Database = {
       planning_cycle_status: "open" | "review" | "closed"
       proposed_event_status: "pending" | "approved" | "rejected"
       readiness: "green" | "yellow" | "red"
-      sub_calendar: "forest_hills_main" | "coah_lm" | "youth" | "general"
       trip_status:
         | "not_started"
         | "tbc"
@@ -3459,7 +3545,6 @@ export const Constants = {
       planning_cycle_status: ["open", "review", "closed"],
       proposed_event_status: ["pending", "approved", "rejected"],
       readiness: ["green", "yellow", "red"],
-      sub_calendar: ["forest_hills_main", "coah_lm", "youth", "general"],
       trip_status: [
         "not_started",
         "tbc",

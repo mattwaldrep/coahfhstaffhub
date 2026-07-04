@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { listSubCalendars, type SubCalendarRow } from "@/lib/sub-calendars.functions";
 import {
   addDays,
   addMonths,
@@ -97,13 +98,16 @@ export const Route = createFileRoute("/calendar")({
   component: CalendarPage,
 });
 
-const SUB_CALS = [
-  { value: "forest_hills_main", label: "Forest Hills Main", color: "var(--cal-main)" },
-  { value: "coah_lm", label: "COAH:LM", color: "var(--cal-lm)" },
-  { value: "youth", label: "Youth", color: "var(--cal-youth)" },
-  { value: "general", label: "General", color: "var(--cal-general)" },
-  { value: "missions_teams", label: "Missions Teams", color: "var(--cal-missions)" },
+type SubCalOption = { value: string; label: string; color: string; ownerUserId: string | null };
+const DEFAULT_SUB_CALS: SubCalOption[] = [
+  { value: "general", label: "General", color: "var(--cal-main)", ownerUserId: null },
+  { value: "coah_lm", label: "COAH:LM", color: "var(--cal-lm)", ownerUserId: null },
+  { value: "youth", label: "Youth", color: "var(--cal-youth)", ownerUserId: null },
+  { value: "missions_teams", label: "Missions Teams", color: "var(--cal-missions)", ownerUserId: null },
 ];
+const SubCalsContext = createContext<SubCalOption[]>(DEFAULT_SUB_CALS);
+function useSubCals(): SubCalOption[] { return useContext(SubCalsContext); }
+
 
 const DEFAULT_CATEGORIES = [
   "Holiday", "Leadership", "Women", "Men", "Class", "Social",
@@ -493,16 +497,46 @@ function SundaySlotPicker({
 
 
 function CalendarPage() {
+  const [subCals, setSubCals] = useState<SubCalOption[]>(DEFAULT_SUB_CALS);
+  const fetchSubCals = useServerFn(listSubCalendars);
+  useEffect(() => {
+    let alive = true;
+    fetchSubCals()
+      .then((rows: SubCalendarRow[]) => {
+        if (!alive) return;
+        const mapped = (rows ?? [])
+          .filter((r) => r.is_active)
+          .map((r) => ({
+            value: r.key,
+            label: r.name,
+            color: r.color_token,
+            ownerUserId: r.owner_user_id,
+          }));
+        if (mapped.length) setSubCals(mapped);
+      })
+      .catch((e) => console.error("listSubCalendars", e));
+    return () => { alive = false; };
+  }, []);
   return (
     <AppShell>
-      <CalendarBody />
+      <SubCalsContext.Provider value={subCals}>
+        <CalendarBody />
+      </SubCalsContext.Provider>
     </AppShell>
   );
 }
 
 function CalendarBody() {
   const { hasRole, user } = useAuth();
-  const canEdit = hasRole("core");
+  const SUB_CALS = useSubCals();
+  const isCore = hasRole("core");
+  const canEditKey = (key: string | null | undefined): boolean => {
+    if (isCore) return true;
+    if (!key || !user?.id) return false;
+    const sc = SUB_CALS.find((s) => s.value === key);
+    return !!sc && sc.ownerUserId === user.id;
+  };
+  const canEdit = isCore || SUB_CALS.some((s) => s.ownerUserId === user?.id);
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const handledEventRef = useRef<string | null>(null);
@@ -520,11 +554,20 @@ function CalendarBody() {
   const [hidePast, setHidePast] = useState<boolean>(loadedPrefs?.hidePast ?? false);
   const [cursor, setCursor] = useState(new Date());
   const [events, setEvents] = useState<EventRow[]>([]);
-  const [filters, setFilters] = useState<Record<string, boolean>>(
-    loadedPrefs?.filters ?? {
-      forest_hills_main: true, coah_lm: true, youth: true, general: true, missions_teams: true,
-    },
-  );
+  const [filters, setFilters] = useState<Record<string, boolean>>(loadedPrefs?.filters ?? {});
+  // Ensure every known sub-calendar has a default filter entry (true) once loaded.
+  useEffect(() => {
+    setFilters((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const s of SUB_CALS) {
+        if (!(s.value in next)) { next[s.value] = true; changed = true; }
+      }
+      // legacy cleanup
+      if ("forest_hills_main" in next) { delete next.forest_hills_main; changed = true; }
+      return changed ? next : prev;
+    });
+  }, [SUB_CALS]);
   const [categoryFilter, setCategoryFilter] = useState<string>(loadedPrefs?.categoryFilter ?? "all");
   const [flagFilter, setFlagFilter] = useState<"all" | "pco" | "missions">(loadedPrefs?.flagFilter ?? "all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -918,7 +961,7 @@ function CalendarBody() {
   }
 
   function openEdit(occ: Occurrence) {
-    if (!canEdit) return;
+    if (!canEditKey(occ.sub_calendar)) return;
     if (occ.id.startsWith("mission:")) {
       navigate({ to: "/missions" });
       return;
@@ -2996,7 +3039,8 @@ function EventChip({ occ, compact, conflicts, readiness }: {
   conflicts?: Conflict[];
   readiness: SplitReadiness;
 }) {
-  const cal = SUB_CALS.find((s) => s.value === occ.sub_calendar)!;
+  const SUB_CALS = useSubCals();
+  const cal = SUB_CALS.find((s) => s.value === occ.sub_calendar) ?? SUB_CALS[0] ?? DEFAULT_SUB_CALS[0];
   const gaps = classGaps(occ);
   const planDot = readiness.planning.level === "ready" ? "bg-emerald-500" : readiness.planning.level === "warning" ? "bg-amber-500" : "bg-destructive";
   const commsDot = readiness.comms.level === "ready" ? "bg-emerald-500" : readiness.comms.level === "warning" ? "bg-amber-500" : "bg-destructive";
@@ -3097,8 +3141,10 @@ function WeekStrip({
   onPickEvent: (o: Occurrence) => void;
   canEdit: boolean;
 }) {
+  const SUB_CALS = useSubCals();
   const start = startOfWeek(cursor, { weekStartsOn: 0 });
   const days = Array.from({ length: 7 }, (_, i) => new Date(start.getTime() + i * 86400000));
+
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
@@ -3112,7 +3158,7 @@ function WeekStrip({
             </button>
             <div className="space-y-1">
               {dayEvents.map((o, i) => {
-                const cal = SUB_CALS.find((s) => s.value === o.sub_calendar)!;
+                const cal = SUB_CALS.find((s) => s.value === o.sub_calendar) ?? SUB_CALS[0] ?? DEFAULT_SUB_CALS[0];
                 return (
                   <button
                     key={`${o.id}-${i}`}
@@ -3154,6 +3200,7 @@ function ListView({
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
 }) {
+  const SUB_CALS = useSubCals();
   if (occurrences.length === 0) {
     return (
       <div className="bg-surface border border-border rounded-2xl p-2">
@@ -3165,7 +3212,7 @@ function ListView({
   return (
     <div className="bg-surface border border-border rounded-2xl divide-y divide-border">
       {occurrences.map((o, i) => {
-        const cal = SUB_CALS.find((s) => s.value === o.sub_calendar)!;
+        const cal = SUB_CALS.find((s) => s.value === o.sub_calendar) ?? SUB_CALS[0] ?? DEFAULT_SUB_CALS[0];
         const isSelected = selectedIds?.has(o.id) ?? false;
         return (
           <div
@@ -3284,6 +3331,7 @@ function BulkEditBar({
   onApply: (patch: Record<string, unknown>) => Promise<void>;
   onDelete: () => Promise<void>;
 }) {
+  const SUB_CALS = useSubCals();
   const count = selectedIds.size;
   return (
     <div className="bg-surface border border-border rounded-2xl p-3 mb-4 flex flex-wrap items-center gap-2">

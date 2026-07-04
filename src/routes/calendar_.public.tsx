@@ -44,10 +44,10 @@ export const Route = createFileRoute("/calendar_/public")({
 });
 
 const SUB_CALS = [
-  { value: "forest_hills_main", label: "Forest Hills Main", color: "var(--cal-main)" },
+  { value: "general", label: "General", color: "var(--cal-main)" },
   { value: "coah_lm", label: "COAH:LM", color: "var(--cal-lm)" },
   { value: "youth", label: "Youth", color: "var(--cal-youth)" },
-  { value: "general", label: "General", color: "var(--cal-general)" },
+  { value: "missions_teams", label: "Missions Teams", color: "var(--cal-missions)" },
 ];
 
 type PubOccurrence = Occurrence<PublicEventRow & {
@@ -61,10 +61,10 @@ function PublicCalendarPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Record<string, boolean>>({
-    forest_hills_main: true,
+    general: true,
     coah_lm: true,
     youth: true,
-    general: true,
+    missions_teams: true,
   });
   const [selected, setSelected] = useState<PubOccurrence | null>(null);
 

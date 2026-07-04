@@ -84,6 +84,7 @@ export function AppSidebar() {
       icon: CalendarDays,
       exact: true,
       children: [
+        ...(isCore ? [{ to: "/calendar/settings", label: "Sub-calendars", icon: SettingsIcon }] : []),
         ...(isCore ? [{ to: "/calendar/classes", label: "Classes", icon: GraduationCap }] : []),
         ...(isCore ? [{ to: "/rooms", label: "Rooms", icon: DoorOpen }] : []),
         ...(isCore ? [{ to: "/checklists", label: "Checklists", icon: ListChecks }] : []),
