@@ -3030,7 +3030,8 @@ function EventChip({ occ, compact, conflicts, readiness }: {
   conflicts?: Conflict[];
   readiness: SplitReadiness;
 }) {
-  const cal = SUB_CALS.find((s) => s.value === occ.sub_calendar)!;
+  const SUB_CALS = useSubCals();
+  const cal = SUB_CALS.find((s) => s.value === occ.sub_calendar) ?? SUB_CALS[0] ?? DEFAULT_SUB_CALS[0];
   const gaps = classGaps(occ);
   const planDot = readiness.planning.level === "ready" ? "bg-emerald-500" : readiness.planning.level === "warning" ? "bg-amber-500" : "bg-destructive";
   const commsDot = readiness.comms.level === "ready" ? "bg-emerald-500" : readiness.comms.level === "warning" ? "bg-amber-500" : "bg-destructive";
