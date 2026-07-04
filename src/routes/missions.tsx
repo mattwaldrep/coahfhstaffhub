@@ -705,7 +705,7 @@ function Body() {
 
   const byStatus = useMemo(() => {
     const m: Record<Status, Trip[]> = {
-      not_started: [], tbc: [], pre_trip: [], in_field: [], complete: [], cancelled: [],
+      not_started: [], tbc: [], pre_trip: [], in_field: [], post_trip: [], complete: [], cancelled: [],
     };
     for (const t of filteredTrips) m[t.status]?.push(t);
     return m;
