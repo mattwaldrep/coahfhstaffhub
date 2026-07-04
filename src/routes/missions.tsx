@@ -37,13 +37,14 @@ const VIEW_STORAGE_KEY = "missions:view";
 
 const STATUS_LABEL: Record<string, string> = {
   not_started: "Not started", tbc: "TBC", pre_trip: "Pre-Trip",
-  in_field: "In Field", complete: "Complete", cancelled: "Cancelled",
+  in_field: "In Field", post_trip: "Post-Trip Follow-Up", complete: "Complete", cancelled: "Cancelled",
 };
 const STATUS_TONE: Record<string, string> = {
   not_started: "oklch(0.7 0.02 270)",
   tbc: "oklch(0.75 0.12 75)",
   pre_trip: "oklch(0.7 0.15 230)",
   in_field: "oklch(0.7 0.18 145)",
+  post_trip: "oklch(0.68 0.14 190)",
   complete: "oklch(0.6 0.06 160)",
   cancelled: "oklch(0.6 0.04 25)",
 };
