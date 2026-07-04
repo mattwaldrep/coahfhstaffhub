@@ -205,6 +205,40 @@ export async function listLeaderGroupsForPerson(
   return out;
 }
 
+/** Same as listLeaderGroupsForPerson, but returns {id, name}[] restricted to Serve Teams. */
+export async function listLeaderServeTeamsForPerson(
+  personId: string,
+): Promise<{ id: string; name: string }[]> {
+  const groupIds: string[] = [];
+  try {
+    let next: string | null = `${PCO_GROUPS_BASE}/people/${encodeURIComponent(personId)}/memberships?per_page=100`;
+    while (next) {
+      const json: any = await pcoFetch(next);
+      for (const m of json.data ?? []) {
+        const role = String(m.attributes?.role ?? "").toLowerCase();
+        if (role !== "leader") continue;
+        const gid = m.relationships?.group?.data?.id;
+        if (gid) groupIds.push(String(gid));
+      }
+      next = json.links?.next ?? null;
+    }
+  } catch (e: any) {
+    console.error(`[pco-groups] person=${personId} memberships error:`, e?.message ?? e);
+  }
+  const out: { id: string; name: string }[] = [];
+  const seen = new Set<string>();
+  for (const gid of groupIds) {
+    if (seen.has(gid)) continue;
+    const info = await getGroupInfo(gid);
+    if (!info.name) continue;
+    if ((info.groupType ?? "").toLowerCase() !== SERVE_TEAMS_TYPE) continue;
+    seen.add(gid);
+    out.push({ id: gid, name: info.name });
+  }
+  return out;
+}
+
+
 
 
 
