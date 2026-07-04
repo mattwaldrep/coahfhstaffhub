@@ -45,6 +45,7 @@ import { Route as ElderMotionsRouteImport } from './routes/elder.motions'
 import { Route as ElderMeetingsRouteImport } from './routes/elder.meetings'
 import { Route as ElderArchiveRouteImport } from './routes/elder.archive'
 import { Route as CgCoachingSettingsRouteImport } from './routes/cg-coaching.settings'
+import { Route as CalendarSettingsRouteImport } from './routes/calendar_.settings'
 import { Route as CalendarPublicRouteImport } from './routes/calendar_.public'
 import { Route as CalendarPlanningRouteImport } from './routes/calendar_.planning'
 import { Route as CalendarClassesRouteImport } from './routes/calendar_.classes'
@@ -259,6 +260,11 @@ const CgCoachingSettingsRoute = CgCoachingSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => CgCoachingRoute,
 } as any)
+const CalendarSettingsRoute = CalendarSettingsRouteImport.update({
+  id: '/calendar_/settings',
+  path: '/calendar/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CalendarPublicRoute = CalendarPublicRouteImport.update({
   id: '/calendar_/public',
   path: '/calendar/public',
@@ -472,6 +478,7 @@ export interface FileRoutesByFullPath {
   '/calendar/classes': typeof CalendarClassesRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
+  '/calendar/settings': typeof CalendarSettingsRoute
   '/cg-coaching/settings': typeof CgCoachingSettingsRoute
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/meetings': typeof ElderMeetingsRouteWithChildren
@@ -541,6 +548,7 @@ export interface FileRoutesByTo {
   '/calendar/classes': typeof CalendarClassesRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
+  '/calendar/settings': typeof CalendarSettingsRoute
   '/cg-coaching/settings': typeof CgCoachingSettingsRoute
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/pastoral-care': typeof ElderPastoralCareRoute
@@ -611,6 +619,7 @@ export interface FileRoutesById {
   '/calendar_/classes': typeof CalendarClassesRoute
   '/calendar_/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar_/public': typeof CalendarPublicRoute
+  '/calendar_/settings': typeof CalendarSettingsRoute
   '/cg-coaching/settings': typeof CgCoachingSettingsRoute
   '/elder/archive': typeof ElderArchiveRoute
   '/elder/meetings': typeof ElderMeetingsRouteWithChildren
@@ -684,6 +693,7 @@ export interface FileRouteTypes {
     | '/calendar/classes'
     | '/calendar/planning'
     | '/calendar/public'
+    | '/calendar/settings'
     | '/cg-coaching/settings'
     | '/elder/archive'
     | '/elder/meetings'
@@ -753,6 +763,7 @@ export interface FileRouteTypes {
     | '/calendar/classes'
     | '/calendar/planning'
     | '/calendar/public'
+    | '/calendar/settings'
     | '/cg-coaching/settings'
     | '/elder/archive'
     | '/elder/pastoral-care'
@@ -822,6 +833,7 @@ export interface FileRouteTypes {
     | '/calendar_/classes'
     | '/calendar_/planning'
     | '/calendar_/public'
+    | '/calendar_/settings'
     | '/cg-coaching/settings'
     | '/elder/archive'
     | '/elder/meetings'
@@ -894,6 +906,7 @@ export interface RootRouteChildren {
   CalendarClassesRoute: typeof CalendarClassesRoute
   CalendarPlanningRoute: typeof CalendarPlanningRouteWithChildren
   CalendarPublicRoute: typeof CalendarPublicRoute
+  CalendarSettingsRoute: typeof CalendarSettingsRoute
   InquiryTokenRoute: typeof InquiryTokenRoute
   MinistryPlansPlanIdRoute: typeof MinistryPlansPlanIdRouteWithChildren
   MinistryPlansAdminRoute: typeof MinistryPlansAdminRoute
@@ -1178,6 +1191,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/cg-coaching/settings'
       preLoaderRoute: typeof CgCoachingSettingsRouteImport
       parentRoute: typeof CgCoachingRoute
+    }
+    '/calendar_/settings': {
+      id: '/calendar_/settings'
+      path: '/calendar/settings'
+      fullPath: '/calendar/settings'
+      preLoaderRoute: typeof CalendarSettingsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/calendar_/public': {
       id: '/calendar_/public'
@@ -1536,6 +1556,7 @@ const rootRouteChildren: RootRouteChildren = {
   CalendarClassesRoute: CalendarClassesRoute,
   CalendarPlanningRoute: CalendarPlanningRouteWithChildren,
   CalendarPublicRoute: CalendarPublicRoute,
+  CalendarSettingsRoute: CalendarSettingsRoute,
   InquiryTokenRoute: InquiryTokenRoute,
   MinistryPlansPlanIdRoute: MinistryPlansPlanIdRouteWithChildren,
   MinistryPlansAdminRoute: MinistryPlansAdminRoute,
