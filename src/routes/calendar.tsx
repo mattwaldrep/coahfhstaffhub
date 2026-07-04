@@ -3322,6 +3322,7 @@ function BulkEditBar({
   onApply: (patch: Record<string, unknown>) => Promise<void>;
   onDelete: () => Promise<void>;
 }) {
+  const SUB_CALS = useSubCals();
   const count = selectedIds.size;
   return (
     <div className="bg-surface border border-border rounded-2xl p-3 mb-4 flex flex-wrap items-center gap-2">
