@@ -97,6 +97,7 @@ const COLUMNS = [
   { value: "tbc", label: "TBC" },
   { value: "pre_trip", label: "Pre-Trip" },
   { value: "in_field", label: "In Field" },
+  { value: "post_trip", label: "Post-Trip Follow-Up" },
   { value: "complete", label: "Complete" },
   { value: "cancelled", label: "Cancelled" },
 ] as const;
