@@ -73,7 +73,7 @@ const PHASES: { key: string; label: string; stepKeys: string[] }[] = [
   { key: "planning", label: "Planning", stepKeys: ["planning_call"] },
   { key: "itinerary", label: "Itinerary", stepKeys: ["draft_schedule", "confirm_schedule", "place_supplies", "send_final_schedule"] },
   { key: "field", label: "In Field", stepKeys: ["orientation", "daily_check_in"] },
-  { key: "wrapup", label: "Wrap-up", stepKeys: ["thank_you", "debrief"] },
+  { key: "post_trip", label: "Post-Trip Follow-Up", stepKeys: ["thank_you", "debrief"] },
 ];
 
 const STEP_BLURBS: Record<string, string> = {
