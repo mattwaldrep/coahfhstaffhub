@@ -25,10 +25,10 @@ export const Route = createFileRoute("/calendar_/planning")({
 });
 
 const SUB_CALS = [
-  { value: "forest_hills_main", label: "Forest Hills Main" },
+  { value: "general", label: "General" },
   { value: "coah_lm", label: "COAH:LM" },
   { value: "youth", label: "Youth" },
-  { value: "general", label: "General" },
+  { value: "missions_teams", label: "Missions Teams" },
 ];
 
 const STATUS_LABEL: Record<string, string> = {
