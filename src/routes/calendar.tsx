@@ -528,7 +528,15 @@ function CalendarPage() {
 
 function CalendarBody() {
   const { hasRole, user } = useAuth();
-  const canEdit = hasRole("core");
+  const SUB_CALS = useSubCals();
+  const isCore = hasRole("core");
+  const canEditKey = (key: string | null | undefined): boolean => {
+    if (isCore) return true;
+    if (!key || !user?.id) return false;
+    const sc = SUB_CALS.find((s) => s.value === key);
+    return !!sc && sc.ownerUserId === user.id;
+  };
+  const canEdit = isCore || SUB_CALS.some((s) => s.ownerUserId === user?.id);
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const handledEventRef = useRef<string | null>(null);
