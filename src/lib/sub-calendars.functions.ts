@@ -250,3 +250,102 @@ export const listStaffProfiles = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return data ?? [];
   });
+
+// Palette of default colors auto-assigned to newly synced serve team sub-calendars.
+const AUTO_COLOR_PALETTE = [
+  "#3b82f6", "#8b5cf6", "#ec4899", "#f43f5e", "#ef4444",
+  "#f97316", "#f59e0b", "#eab308", "#84cc16", "#22c55e",
+  "#10b981", "#14b8a6", "#06b6d4", "#0ea5e9", "#6366f1",
+  "#a855f7", "#d946ef", "#78716c", "#64748b", "#0f766e",
+];
+
+/**
+ * Auto-create a sub-calendar for every Serve Team led by someone in the
+ * Serve Leaders list. Existing sub-calendars (by pco_group_id) are left
+ * untouched — this is additive.
+ */
+export const syncServeTeamSubCalendars = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertCore(context.supabase, context.userId);
+    const { fetchCareList } = await import("@/server/pco.server");
+    const { listLeaderServeTeamsForPerson } = await import("@/server/pco-groups.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Serve Leaders list — same list ID used by the Serve Leaders module.
+    const SERVE_LEADERS_LIST_ID = "4135471";
+    const people = await fetchCareList({
+      list_id: SERVE_LEADERS_LIST_ID,
+      field_ids: [],
+      bypass_cache: true,
+    });
+
+    // Collect unique { id, name } across all leaders.
+    const teams = new Map<string, string>();
+    for (const p of people) {
+      try {
+        const groups = await listLeaderServeTeamsForPerson(String(p.id));
+        for (const g of groups) {
+          if (!teams.has(g.id)) teams.set(g.id, g.name);
+        }
+      } catch (e) {
+        // Individual leader failures don't block the sync.
+        console.error("[sync-teams] person error", p.id, e);
+      }
+    }
+
+    if (teams.size === 0) {
+      return { ok: true, created: 0, skipped: 0, total: 0 };
+    }
+
+    // Find existing pco_team sub-calendars so we skip them.
+    const groupIds = Array.from(teams.keys());
+    const { data: existing } = await supabaseAdmin
+      .from("calendar_sub_calendars")
+      .select("pco_group_id")
+      .in("pco_group_id", groupIds);
+    const taken = new Set((existing ?? []).map((r: any) => r.pco_group_id).filter(Boolean));
+
+    const toInsert: any[] = [];
+    let colorIdx = 0;
+    // Seed color rotation from current count so new syncs don't all start blue.
+    const { count: currentCount } = await supabaseAdmin
+      .from("calendar_sub_calendars")
+      .select("id", { count: "exact", head: true });
+    colorIdx = (currentCount ?? 0) % AUTO_COLOR_PALETTE.length;
+
+    for (const [gid, name] of teams) {
+      if (taken.has(gid)) continue;
+      toInsert.push({
+        key: `pco_${gid}`,
+        name,
+        color_token: AUTO_COLOR_PALETTE[colorIdx % AUTO_COLOR_PALETTE.length],
+        source: "pco_team",
+        pco_group_id: gid,
+        sort_order: 200,
+        is_active: true,
+      });
+      colorIdx++;
+    }
+
+    if (toInsert.length > 0) {
+      const { error } = await supabaseAdmin
+        .from("calendar_sub_calendars")
+        .insert(toInsert);
+      if (error) throw new Error(error.message);
+    }
+
+    // Clean up any lingering suggestions for teams we just created (or already had).
+    await supabaseAdmin
+      .from("calendar_sub_calendar_suggestions")
+      .update({ dismissed: true })
+      .in("pco_group_id", groupIds);
+
+    return {
+      ok: true,
+      created: toInsert.length,
+      skipped: teams.size - toInsert.length,
+      total: teams.size,
+    };
+  });
+
