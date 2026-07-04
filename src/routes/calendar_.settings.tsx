@@ -127,11 +127,13 @@ function SettingsPage() {
   const deleteFn = useServerFn(deleteSubCalendar);
   const approveFn = useServerFn(approveSubCalendarSuggestion);
   const dismissFn = useServerFn(dismissSubCalendarSuggestion);
+  const syncFn = useServerFn(syncServeTeamSubCalendars);
 
   const [rows, setRows] = useState<SubCalendarRow[]>([]);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [newOpen, setNewOpen] = useState(false);
   const [approveTarget, setApproveTarget] = useState<any | null>(null);
 
@@ -154,6 +156,23 @@ function SettingsPage() {
   }
   useEffect(() => { reload(); }, []);
 
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      const res: any = await syncFn();
+      if (res?.created > 0) {
+        toast.success(`Created ${res.created} sub-calendar${res.created === 1 ? "" : "s"} from Serve Leaders teams.`);
+      } else {
+        toast.success("All Serve Leaders teams already have sub-calendars.");
+      }
+      await reload();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   if (!isCore) {
     return (
       <div className="p-6">
@@ -164,15 +183,21 @@ function SettingsPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-display font-bold">Sub-calendars</h1>
           <p className="text-sm text-muted-foreground">Rename, recolor, and assign an owner who can add/edit events on each sub-calendar. Core admins can always edit everything.</p>
         </div>
-        <Button onClick={() => setNewOpen(true)} className="gap-1">
-          <Plus className="w-4 h-4" /> New sub-calendar
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleSync} disabled={syncing} className="gap-1">
+            {syncing ? "Syncing…" : "Sync from Serve Leaders"}
+          </Button>
+          <Button onClick={() => setNewOpen(true)} className="gap-1">
+            <Plus className="w-4 h-4" /> New sub-calendar
+          </Button>
+        </div>
       </div>
+
 
       {suggestions.length > 0 && (
         <section className="bg-surface border border-border rounded-2xl p-4">
