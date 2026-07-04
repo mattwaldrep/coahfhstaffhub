@@ -3370,6 +3370,7 @@ export type Database = {
         | "tbc"
         | "pre_trip"
         | "in_field"
+        | "post_trip"
         | "complete"
         | "cancelled"
     }
@@ -3550,6 +3551,7 @@ export const Constants = {
         "tbc",
         "pre_trip",
         "in_field",
+        "post_trip",
         "complete",
         "cancelled",
       ],

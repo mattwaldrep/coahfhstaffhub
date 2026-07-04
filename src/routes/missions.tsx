@@ -37,13 +37,14 @@ const VIEW_STORAGE_KEY = "missions:view";
 
 const STATUS_LABEL: Record<string, string> = {
   not_started: "Not started", tbc: "TBC", pre_trip: "Pre-Trip",
-  in_field: "In Field", complete: "Complete", cancelled: "Cancelled",
+  in_field: "In Field", post_trip: "Post-Trip Follow-Up", complete: "Complete", cancelled: "Cancelled",
 };
 const STATUS_TONE: Record<string, string> = {
   not_started: "oklch(0.7 0.02 270)",
   tbc: "oklch(0.75 0.12 75)",
   pre_trip: "oklch(0.7 0.15 230)",
   in_field: "oklch(0.7 0.18 145)",
+  post_trip: "oklch(0.68 0.14 190)",
   complete: "oklch(0.6 0.06 160)",
   cancelled: "oklch(0.6 0.04 25)",
 };
@@ -72,7 +73,7 @@ const PHASES: { key: string; label: string; stepKeys: string[] }[] = [
   { key: "planning", label: "Planning", stepKeys: ["planning_call"] },
   { key: "itinerary", label: "Itinerary", stepKeys: ["draft_schedule", "confirm_schedule", "place_supplies", "send_final_schedule"] },
   { key: "field", label: "In Field", stepKeys: ["orientation", "daily_check_in"] },
-  { key: "wrapup", label: "Wrap-up", stepKeys: ["thank_you", "debrief"] },
+  { key: "post_trip", label: "Post-Trip Follow-Up", stepKeys: ["thank_you", "debrief"] },
 ];
 
 const STEP_BLURBS: Record<string, string> = {
@@ -96,6 +97,7 @@ const COLUMNS = [
   { value: "tbc", label: "TBC" },
   { value: "pre_trip", label: "Pre-Trip" },
   { value: "in_field", label: "In Field" },
+  { value: "post_trip", label: "Post-Trip Follow-Up" },
   { value: "complete", label: "Complete" },
   { value: "cancelled", label: "Cancelled" },
 ] as const;
@@ -703,7 +705,7 @@ function Body() {
 
   const byStatus = useMemo(() => {
     const m: Record<Status, Trip[]> = {
-      not_started: [], tbc: [], pre_trip: [], in_field: [], complete: [], cancelled: [],
+      not_started: [], tbc: [], pre_trip: [], in_field: [], post_trip: [], complete: [], cancelled: [],
     };
     for (const t of filteredTrips) m[t.status]?.push(t);
     return m;
