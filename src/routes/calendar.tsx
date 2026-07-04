@@ -952,7 +952,7 @@ function CalendarBody() {
   }
 
   function openEdit(occ: Occurrence) {
-    if (!canEdit) return;
+    if (!canEditKey(occ.sub_calendar)) return;
     if (occ.id.startsWith("mission:")) {
       navigate({ to: "/missions" });
       return;
