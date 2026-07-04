@@ -556,6 +556,7 @@ function CalendarBody() {
   const [cursor, setCursor] = useState(new Date());
   const [events, setEvents] = useState<EventRow[]>([]);
   const [filters, setFilters] = useState<Record<string, boolean>>(loadedPrefs?.filters ?? {});
+  const [subCalsExpanded, setSubCalsExpanded] = useState(false);
   // Ensure every known sub-calendar has a default filter entry (true) once loaded.
   useEffect(() => {
     setFilters((prev) => {
