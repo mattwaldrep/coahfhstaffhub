@@ -3203,7 +3203,7 @@ function ListView({
   return (
     <div className="bg-surface border border-border rounded-2xl divide-y divide-border">
       {occurrences.map((o, i) => {
-        const cal = SUB_CALS.find((s) => s.value === o.sub_calendar)!;
+        const cal = SUB_CALS.find((s) => s.value === o.sub_calendar) ?? SUB_CALS[0] ?? DEFAULT_SUB_CALS[0];
         const isSelected = selectedIds?.has(o.id) ?? false;
         return (
           <div
