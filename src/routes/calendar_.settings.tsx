@@ -295,16 +295,10 @@ function SubCalRow({
         <Input value={name} onChange={(e) => setName(e.target.value)} className="h-9" />
       </div>
       <div className="text-xs text-muted-foreground font-mono md:w-[9rem] truncate" title={row.key}>{row.key}</div>
-      <Select value={color} onValueChange={setColor}>
-        <SelectTrigger className="h-9 w-[10rem]"><SelectValue /></SelectTrigger>
-        <SelectContent>
-          {COLOR_TOKENS.map((c) => (
-            <SelectItem key={c.value} value={c.value}>
-              <span className="flex items-center gap-2"><ColorSwatch token={c.value} /> {c.label}</span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="w-full md:w-auto md:max-w-[18rem]">
+        <ColorPicker value={color} onChange={setColor} />
+      </div>
+
       <Select value={owner} onValueChange={setOwner}>
         <SelectTrigger className="h-9 flex-1 md:min-w-[14rem]"><SelectValue placeholder="No owner (core only)" /></SelectTrigger>
         <SelectContent>
