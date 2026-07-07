@@ -1601,12 +1601,24 @@ type AttentionAlert = {
 };
 
 export function ClassesNeedingAttentionSection() {
+  const { active: subCals } = useSubCals();
   const [alerts, setAlerts] = useState<AttentionAlert[]>([]);
   const [tick, setTick] = useState(0);
-  const [subFilters, setSubFilters] = useState<Record<string, boolean>>(
-    Object.fromEntries(ATTENTION_SUB_CALS.map((s) => [s.value, true])),
-  );
+  const [subFilters, setSubFilters] = useState<Record<string, boolean>>({});
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+
+  // Default every known sub-calendar to "on" as they load, without clobbering user toggles.
+  useEffect(() => {
+    if (subCals.length === 0) return;
+    setSubFilters((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const s of subCals) {
+        if (!(s.key in next)) { next[s.key] = true; changed = true; }
+      }
+      return changed ? next : prev;
+    });
+  }, [subCals]);
 
   useEffect(() => {
     const horizonEnd = new Date(Date.now() + 28 * 86400000);
@@ -1647,12 +1659,14 @@ export function ClassesNeedingAttentionSection() {
   const visible = useMemo(
     () =>
       alerts.filter((a) => {
-        if (!subFilters[a.sub_calendar]) return false;
+        // Unknown sub-cal keys default to visible so nothing silently disappears.
+        if (a.sub_calendar in subFilters && !subFilters[a.sub_calendar]) return false;
         if (categoryFilter !== "all" && a.category !== categoryFilter) return false;
         return true;
       }),
     [alerts, subFilters, categoryFilter],
   );
+
 
   return (
     <StandingSection
