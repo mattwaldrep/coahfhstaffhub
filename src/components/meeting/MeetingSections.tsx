@@ -459,12 +459,7 @@ function EventList({
     [events, rangeStart.getTime(), rangeEnd.getTime()],
   );
 
-  const SUB_CAL_LABELS: Record<string, string> = {
-    forest_hills_main: "Forest Hills Main",
-    coah_lm: "COAH LM",
-    youth: "Youth",
-  };
-  const labelFor = (s: string) => SUB_CAL_LABELS[s] ?? s;
+  const { labelFor } = useSubCals();
 
   const subCalendars = useMemo(() => {
     const s = new Set<string>();
