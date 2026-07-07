@@ -51,6 +51,7 @@ function HomePage() {
 
 function Dashboard() {
   const { user, hasElderAccess } = useAuth();
+  const { labelFor: subCalLabel, colorFor: subCalColor } = useSubCals();
   const metricsSession = useMetricsSession();
   const completeAction = useServerFn(setActionItemCompleted);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
