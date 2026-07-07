@@ -20,6 +20,7 @@ import { TaskSourceButton } from "@/components/tasks/TaskSourceButton";
 import { GoogleTasksCard } from "@/components/dashboard/GoogleTasksCard";
 import { useServerFn } from "@tanstack/react-start";
 import { setActionItemCompleted } from "@/lib/google-tasks.functions";
+import { useSubCals } from "@/lib/use-sub-cals";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -40,19 +41,6 @@ interface ActionItem {
   assignee_id: string | null;
 }
 
-const SUB_CAL_LABEL: Record<string, string> = {
-  forest_hills_main: "Forest Hills",
-  coah_lm: "COAH:LM",
-  youth: "Youth",
-  general: "General",
-};
-const SUB_CAL_VAR: Record<string, string> = {
-  forest_hills_main: "var(--cal-main)",
-  coah_lm: "var(--cal-lm)",
-  youth: "var(--cal-youth)",
-  general: "var(--cal-general)",
-};
-
 function HomePage() {
   return (
     <AppShell>
@@ -63,6 +51,7 @@ function HomePage() {
 
 function Dashboard() {
   const { user, hasElderAccess } = useAuth();
+  const { labelFor: subCalLabel, colorFor: subCalColor } = useSubCals();
   const metricsSession = useMetricsSession();
   const completeAction = useServerFn(setActionItemCompleted);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -248,11 +237,11 @@ function Dashboard() {
                       <div className="flex items-center gap-3 min-w-0">
                         <span
                           className="w-2 h-2 rounded-full shrink-0"
-                          style={{ background: SUB_CAL_VAR[e.sub_calendar] }}
+                          style={{ background: subCalColor(e.sub_calendar) }}
                         />
                         <span className="font-medium truncate">{e.title}</span>
                         <span className="text-xs text-muted-foreground shrink-0">
-                          · {SUB_CAL_LABEL[e.sub_calendar]}
+                          · {subCalLabel(e.sub_calendar)}
                         </span>
                         {e.readiness && <ReadinessDot r={e.readiness} />}
                       </div>

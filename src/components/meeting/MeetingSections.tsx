@@ -42,6 +42,7 @@ import { fetchWeeksInRange, summarizeWeeks, type WeeklyMetric, type MetricsHeadl
 import { useMetricsSession } from "@/integrations/metrics/use-session";
 import { cn } from "@/lib/utils";
 import { pushSundaySlotsToPco, type PushSlotResult } from "@/lib/pco-services.functions";
+import { useSubCals } from "@/lib/use-sub-cals";
 
 /* ---------- shared collapsible card ---------- */
 
@@ -459,12 +460,7 @@ function EventList({
     [events, rangeStart.getTime(), rangeEnd.getTime()],
   );
 
-  const SUB_CAL_LABELS: Record<string, string> = {
-    forest_hills_main: "Forest Hills Main",
-    coah_lm: "COAH LM",
-    youth: "Youth",
-  };
-  const labelFor = (s: string) => SUB_CAL_LABELS[s] ?? s;
+  const { labelFor } = useSubCals();
 
   const subCalendars = useMemo(() => {
     const s = new Set<string>();
@@ -1585,12 +1581,6 @@ export function SectionDivider({ label }: { label: string }) {
   );
 }
 
-const ATTENTION_SUB_CALS = [
-  { value: "forest_hills_main", label: "Forest Hills Main" },
-  { value: "coah_lm", label: "COAH:LM" },
-  { value: "youth", label: "Youth" },
-  { value: "general", label: "General" },
-];
 const ATTENTION_CATEGORIES = [
   "Holiday", "Leadership", "Women", "Men", "Class", "Social",
   "Kids/Youth", "Liturgical", "Meeting", "Church Plant",
@@ -1611,12 +1601,24 @@ type AttentionAlert = {
 };
 
 export function ClassesNeedingAttentionSection() {
+  const { active: subCals } = useSubCals();
   const [alerts, setAlerts] = useState<AttentionAlert[]>([]);
   const [tick, setTick] = useState(0);
-  const [subFilters, setSubFilters] = useState<Record<string, boolean>>(
-    Object.fromEntries(ATTENTION_SUB_CALS.map((s) => [s.value, true])),
-  );
+  const [subFilters, setSubFilters] = useState<Record<string, boolean>>({});
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+
+  // Default every known sub-calendar to "on" as they load, without clobbering user toggles.
+  useEffect(() => {
+    if (subCals.length === 0) return;
+    setSubFilters((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const s of subCals) {
+        if (!(s.key in next)) { next[s.key] = true; changed = true; }
+      }
+      return changed ? next : prev;
+    });
+  }, [subCals]);
 
   useEffect(() => {
     const horizonEnd = new Date(Date.now() + 28 * 86400000);
@@ -1657,12 +1659,14 @@ export function ClassesNeedingAttentionSection() {
   const visible = useMemo(
     () =>
       alerts.filter((a) => {
-        if (!subFilters[a.sub_calendar]) return false;
+        // Unknown sub-cal keys default to visible so nothing silently disappears.
+        if (a.sub_calendar in subFilters && !subFilters[a.sub_calendar]) return false;
         if (categoryFilter !== "all" && a.category !== categoryFilter) return false;
         return true;
       }),
     [alerts, subFilters, categoryFilter],
   );
+
 
   return (
     <StandingSection
@@ -1684,18 +1688,19 @@ export function ClassesNeedingAttentionSection() {
             {ATTENTION_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
           </SelectContent>
         </Select>
-        {ATTENTION_SUB_CALS.map((s) => (
+        {subCals.map((s) => (
           <button
-            key={s.value}
+            key={s.key}
             type="button"
-            onClick={() => setSubFilters({ ...subFilters, [s.value]: !subFilters[s.value] })}
-            className={`text-xs px-3 py-1.5 rounded-full border transition ${
-              subFilters[s.value]
+            onClick={() => setSubFilters({ ...subFilters, [s.key]: !(subFilters[s.key] ?? true) })}
+            className={`text-xs px-3 py-1.5 rounded-full border transition inline-flex items-center gap-1.5 ${
+              (subFilters[s.key] ?? true)
                 ? "bg-surface border-border"
                 : "bg-transparent border-border/50 text-muted-foreground"
             }`}
           >
-            {s.label}
+            <span className="w-2 h-2 rounded-full" style={{ background: s.color_token }} />
+            {s.name}
           </button>
         ))}
       </div>
