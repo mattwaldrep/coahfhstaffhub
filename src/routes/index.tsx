@@ -237,11 +237,11 @@ function Dashboard() {
                       <div className="flex items-center gap-3 min-w-0">
                         <span
                           className="w-2 h-2 rounded-full shrink-0"
-                          style={{ background: SUB_CAL_VAR[e.sub_calendar] }}
+                          style={{ background: subCalColor(e.sub_calendar) }}
                         />
                         <span className="font-medium truncate">{e.title}</span>
                         <span className="text-xs text-muted-foreground shrink-0">
-                          · {SUB_CAL_LABEL[e.sub_calendar]}
+                          · {subCalLabel(e.sub_calendar)}
                         </span>
                         {e.readiness && <ReadinessDot r={e.readiness} />}
                       </div>
