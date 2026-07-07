@@ -1688,18 +1688,19 @@ export function ClassesNeedingAttentionSection() {
             {ATTENTION_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
           </SelectContent>
         </Select>
-        {ATTENTION_SUB_CALS.map((s) => (
+        {subCals.map((s) => (
           <button
-            key={s.value}
+            key={s.key}
             type="button"
-            onClick={() => setSubFilters({ ...subFilters, [s.value]: !subFilters[s.value] })}
-            className={`text-xs px-3 py-1.5 rounded-full border transition ${
-              subFilters[s.value]
+            onClick={() => setSubFilters({ ...subFilters, [s.key]: !(subFilters[s.key] ?? true) })}
+            className={`text-xs px-3 py-1.5 rounded-full border transition inline-flex items-center gap-1.5 ${
+              (subFilters[s.key] ?? true)
                 ? "bg-surface border-border"
                 : "bg-transparent border-border/50 text-muted-foreground"
             }`}
           >
-            {s.label}
+            <span className="w-2 h-2 rounded-full" style={{ background: s.color_token }} />
+            {s.name}
           </button>
         ))}
       </div>
