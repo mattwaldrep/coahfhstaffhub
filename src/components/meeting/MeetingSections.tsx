@@ -1581,12 +1581,6 @@ export function SectionDivider({ label }: { label: string }) {
   );
 }
 
-const ATTENTION_SUB_CALS = [
-  { value: "forest_hills_main", label: "Forest Hills Main" },
-  { value: "coah_lm", label: "COAH:LM" },
-  { value: "youth", label: "Youth" },
-  { value: "general", label: "General" },
-];
 const ATTENTION_CATEGORIES = [
   "Holiday", "Leadership", "Women", "Men", "Class", "Social",
   "Kids/Youth", "Liturgical", "Meeting", "Church Plant",
