@@ -20,6 +20,7 @@ import { TaskSourceButton } from "@/components/tasks/TaskSourceButton";
 import { GoogleTasksCard } from "@/components/dashboard/GoogleTasksCard";
 import { useServerFn } from "@tanstack/react-start";
 import { setActionItemCompleted } from "@/lib/google-tasks.functions";
+import { useSubCals } from "@/lib/use-sub-cals";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -39,19 +40,6 @@ interface ActionItem {
   completed: boolean;
   assignee_id: string | null;
 }
-
-const SUB_CAL_LABEL: Record<string, string> = {
-  forest_hills_main: "Forest Hills",
-  coah_lm: "COAH:LM",
-  youth: "Youth",
-  general: "General",
-};
-const SUB_CAL_VAR: Record<string, string> = {
-  forest_hills_main: "var(--cal-main)",
-  coah_lm: "var(--cal-lm)",
-  youth: "var(--cal-youth)",
-  general: "var(--cal-general)",
-};
 
 function HomePage() {
   return (
