@@ -42,6 +42,7 @@ import { fetchWeeksInRange, summarizeWeeks, type WeeklyMetric, type MetricsHeadl
 import { useMetricsSession } from "@/integrations/metrics/use-session";
 import { cn } from "@/lib/utils";
 import { pushSundaySlotsToPco, type PushSlotResult } from "@/lib/pco-services.functions";
+import { useSubCals } from "@/lib/use-sub-cals";
 
 /* ---------- shared collapsible card ---------- */
 
