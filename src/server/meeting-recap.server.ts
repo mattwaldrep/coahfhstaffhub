@@ -62,14 +62,16 @@ export async function sendMeetingRecapInternal(meetingId: string): Promise<{ rec
   const openActionCount = (actions ?? []).filter((a: any) => !a.completed).length;
 
   let durationLabel = "";
-  if (meeting.started_at && meeting.completed_at) {
+  if (meeting.created_at && meeting.completed_at) {
     const mins = Math.max(
       1,
-      Math.round((new Date(meeting.completed_at).getTime() - new Date(meeting.started_at).getTime()) / 60000),
+      Math.round((new Date(meeting.completed_at).getTime() - new Date(meeting.created_at).getTime()) / 60000),
     );
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    durationLabel = h ? `${h}h ${m}m` : `${m}m`;
+    if (mins <= 8 * 60) {
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      durationLabel = h ? `${h}h ${m}m` : `${m}m`;
+    }
   }
 
   // ---- AI executive summary ----
