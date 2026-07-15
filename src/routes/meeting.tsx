@@ -134,6 +134,11 @@ function MeetingPage() {
       const open = (weekRows ?? []).find((r: any) => !r.recap_sent_at) ?? (weekRows ?? [])[0] ?? null;
       let m = open as Meeting | null;
       if (!m) {
+        if (!canManageMeeting) {
+          if (!mounted) return;
+          setMeeting(null);
+          return;
+        }
         const { data: created, error } = await supabase
           .from("meetings")
           .upsert(
