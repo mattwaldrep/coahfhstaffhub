@@ -82,7 +82,8 @@ function todayISO() {
 }
 
 function MeetingPage() {
-  const { user } = useAuth();
+  const { user, hasAnyRole } = useAuth();
+  const canManageMeeting = hasAnyRole(["core", "meeting"]);
   const fetchFirstStepSubmissions = useServerFn(listFirstStepSubmissions);
   const fetchNextStepSubmissions = useServerFn(listNextStepSubmissions);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
@@ -133,6 +134,11 @@ function MeetingPage() {
       const open = (weekRows ?? []).find((r: any) => !r.recap_sent_at) ?? (weekRows ?? [])[0] ?? null;
       let m = open as Meeting | null;
       if (!m) {
+        if (!canManageMeeting) {
+          if (!mounted) return;
+          setMeeting(null);
+          return;
+        }
         const { data: created, error } = await supabase
           .from("meetings")
           .upsert(
@@ -162,7 +168,7 @@ function MeetingPage() {
     return () => {
       mounted = false;
     };
-  }, [user]);
+  }, [user, canManageMeeting]);
 
   useEffect(() => {
     if (!meeting) return;
@@ -435,7 +441,11 @@ function MeetingPage() {
         </header>
 
         {!meeting ? (
-          <div className="text-sm text-muted-foreground">Loading meeting…</div>
+          <div className="text-sm text-muted-foreground">
+            {canManageMeeting
+              ? "Loading meeting…"
+              : "This week's staff meeting hasn't been started yet. Check back once a meeting host opens it."}
+          </div>
         ) : (
           <SortableMeetingBody
             meeting={meeting}
