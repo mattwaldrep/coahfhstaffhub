@@ -168,7 +168,7 @@ function MeetingPage() {
     return () => {
       mounted = false;
     };
-  }, [user]);
+  }, [user, canManageMeeting]);
 
   useEffect(() => {
     if (!meeting) return;
