@@ -441,7 +441,11 @@ function MeetingPage() {
         </header>
 
         {!meeting ? (
-          <div className="text-sm text-muted-foreground">Loading meeting…</div>
+          <div className="text-sm text-muted-foreground">
+            {canManageMeeting
+              ? "Loading meeting…"
+              : "This week's staff meeting hasn't been started yet. Check back once a meeting host opens it."}
+          </div>
         ) : (
           <SortableMeetingBody
             meeting={meeting}
