@@ -82,7 +82,8 @@ function todayISO() {
 }
 
 function MeetingPage() {
-  const { user } = useAuth();
+  const { user, hasAnyRole } = useAuth();
+  const canManageMeeting = hasAnyRole(["core", "meeting"]);
   const fetchFirstStepSubmissions = useServerFn(listFirstStepSubmissions);
   const fetchNextStepSubmissions = useServerFn(listNextStepSubmissions);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
