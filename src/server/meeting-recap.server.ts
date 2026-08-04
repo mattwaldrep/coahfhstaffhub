@@ -2,6 +2,36 @@ import { format, subDays, addDays } from "date-fns";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendEmail, emailLayout, escapeHtml } from "@/server/email.server";
 
+/** Convert rich-text HTML (from the in-app editor) into clean plain text. */
+function stripHtml(input: string | null | undefined): string {
+  if (!input) return "";
+  let s = String(input);
+  if (!/<[a-z/][\s\S]*>/i.test(s)) return s.trim();
+  s = s
+    .replace(/<\s*br\s*\/?\s*>/gi, "\n")
+    .replace(/<\s*li[^>]*>/gi, "\n• ")
+    .replace(/<\s*\/\s*(p|div|li|h[1-6]|tr)\s*>/gi, "\n")
+    .replace(/<[^>]+>/g, "");
+  s = s
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'");
+  return s
+    .split("\n")
+    .map((l) => l.replace(/[ \t]+/g, " ").trim())
+    .filter((l, i, arr) => l !== "" || (i > 0 && arr[i - 1] !== ""))
+    .join("\n")
+    .trim();
+}
+
+/** Escape rich-text HTML for email output as plain text. */
+function rt(input: string | null | undefined): string {
+  return escapeHtml(stripHtml(input));
+}
+
 /**
  * Build and send the staff meeting recap email, then stamp recap_sent_at.
  * Used by both the user-triggered server function and the auto-finalize cron hook.
