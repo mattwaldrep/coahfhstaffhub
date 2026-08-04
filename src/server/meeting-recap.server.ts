@@ -29,7 +29,7 @@ function stripHtml(input: string | null | undefined): string {
 
 /** Escape rich-text HTML for email output as plain text. */
 function rt(input: string | null | undefined): string {
-  return escapeHtml(stripHtml(input));
+  return escapeHtml(stripHtml(input)).replace(/\n/g, "<br>");
 }
 
 /**
