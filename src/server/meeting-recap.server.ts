@@ -116,18 +116,18 @@ export async function sendMeetingRecapInternal(meetingId: string): Promise<{ rec
   }
   if (actionCount) summaryFacts.push(`New action items: ${actionCount} (${openActionCount} open).`);
   for (const [k, label] of Object.entries(SECTION_LABELS)) {
-    const note = (sectionByKey.get(k) || "").toString().trim();
+    const note = stripHtml((sectionByKey.get(k) || "").toString());
     if (note) summaryFacts.push(`${label}: ${note.slice(0, 400)}`);
   }
   const eventDiscussion = (eventNotes ?? []).filter((e: any) => e.notes?.trim());
   if (eventDiscussion.length) {
     summaryFacts.push(
       `Events discussed: ${eventDiscussion
-        .map((e: any) => `${e.calendar_events?.title ?? "Event"} — ${(e.notes as string).slice(0, 200)}`)
+        .map((e: any) => `${e.calendar_events?.title ?? "Event"} — ${stripHtml(e.notes as string).slice(0, 200)}`)
         .join(" | ")}`,
     );
   }
-  if (meeting.notes?.trim()) summaryFacts.push(`General notes: ${meeting.notes.slice(0, 500)}`);
+  if (meeting.notes?.trim()) summaryFacts.push(`General notes: ${stripHtml(meeting.notes).slice(0, 500)}`);
 
   let aiSummary = "";
   const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
@@ -194,7 +194,7 @@ export async function sendMeetingRecapInternal(meetingId: string): Promise<{ rec
 
   const sectionsHtml = Object.entries(SECTION_LABELS)
     .filter(([k]) => (sectionByKey.get(k) || "").toString().trim())
-    .map(([k, label]) => `${sectionHeading(label)}<div style="white-space:pre-wrap;">${escapeHtml(sectionByKey.get(k) as string)}</div>`)
+    .map(([k, label]) => `${sectionHeading(label)}<div style="white-space:pre-wrap;">${rt(sectionByKey.get(k) as string)}</div>`)
     .join("");
 
   const latestReviewDate = reviews?.[0]?.service_date;
@@ -206,8 +206,8 @@ export async function sendMeetingRecapInternal(meetingId: string): Promise<{ rec
       <ul style="padding-left:18px;margin:6px 0;">
         ${sundayReview
           .flatMap((r: any) => [
-            r.wins?.trim() ? `<li><strong>Win:</strong> ${escapeHtml(r.wins)}</li>` : "",
-            r.opportunities?.trim() ? `<li><strong>Opportunity:</strong> ${escapeHtml(r.opportunities)}</li>` : "",
+            r.wins?.trim() ? `<li><strong>Win:</strong> ${rt(r.wins)}</li>` : "",
+            r.opportunities?.trim() ? `<li><strong>Opportunity:</strong> ${rt(r.opportunities)}</li>` : "",
           ])
           .filter(Boolean)
           .join("")}
@@ -220,7 +220,7 @@ export async function sendMeetingRecapInternal(meetingId: string): Promise<{ rec
       ${eventDiscussion
         .map(
           (e: any) =>
-            `<li><strong>${escapeHtml(e.calendar_events?.title ?? "Event")}</strong> (${escapeHtml(e.occurrence_date)}): ${escapeHtml(e.notes)}</li>`,
+            `<li><strong>${escapeHtml(e.calendar_events?.title ?? "Event")}</strong> (${escapeHtml(e.occurrence_date)}): ${rt(e.notes)}</li>`,
         )
         .join("")}
       </ul>`
@@ -240,8 +240,8 @@ export async function sendMeetingRecapInternal(meetingId: string): Promise<{ rec
               (d.vote_yes ?? 0) + (d.vote_no ?? 0) + (d.vote_abstain ?? 0) > 0
                 ? ` <span style="color:#78716c;">(${d.vote_yes ?? 0}–${d.vote_no ?? 0}${d.vote_abstain ? `–${d.vote_abstain}a` : ""})</span>`
                 : "";
-            return `<li><strong>${escapeHtml(d.title)}</strong> — <span style="color:${outcomeColor};text-transform:uppercase;font-size:11px;letter-spacing:0.08em;">${escapeHtml(d.outcome)}</span>${votes}${
-              d.motion_text ? `<div style="color:#57534e;margin-top:2px;">${escapeHtml(d.motion_text)}</div>` : ""
+            return `<li><strong>${rt(d.title)}</strong> — <span style="color:${outcomeColor};text-transform:uppercase;font-size:11px;letter-spacing:0.08em;">${escapeHtml(d.outcome)}</span>${votes}${
+              d.motion_text ? `<div style="color:#57534e;margin-top:2px;">${rt(d.motion_text)}</div>` : ""
             }</li>`;
           })
           .join("")}
@@ -254,8 +254,8 @@ export async function sendMeetingRecapInternal(meetingId: string): Promise<{ rec
         ${(agenda ?? [])
           .map(
             (a: any) =>
-              `<li>${a.status === "done" ? "✓ " : a.status === "carried_over" ? "→ " : ""}${escapeHtml(a.title)}${
-                a.notes ? ` — <em>${escapeHtml(a.notes)}</em>` : ""
+              `<li>${a.status === "done" ? "✓ " : a.status === "carried_over" ? "→ " : ""}${rt(a.title)}${
+                a.notes ? ` — <em>${rt(a.notes)}</em>` : ""
               }</li>`,
           )
           .join("")}
@@ -287,7 +287,7 @@ export async function sendMeetingRecapInternal(meetingId: string): Promise<{ rec
                   ? ` <span style="color:${dueColor};font-size:12px;">· due ${format(new Date(a.due_date + "T12:00"), "MMM d")}${overdue ? " (overdue)" : ""}</span>`
                   : "";
                 const done = a.completed ? "✓ " : "";
-                return `<li>${done}${escapeHtml(a.title)}${due}</li>`;
+                return `<li>${done}${rt(a.title)}${due}</li>`;
               })
               .join("")}
           </ul>
@@ -312,7 +312,7 @@ export async function sendMeetingRecapInternal(meetingId: string): Promise<{ rec
     : "";
 
   const meetingNotesHtml = meeting.notes?.trim()
-    ? `${sectionHeading("General Notes")}<div style="white-space:pre-wrap;">${escapeHtml(meeting.notes)}</div>`
+    ? `${sectionHeading("General Notes")}<div style="white-space:pre-wrap;">${rt(meeting.notes)}</div>`
     : "";
 
   const html = emailLayout(
