@@ -48,7 +48,7 @@ export function GoogleTasksCard() {
       ) : !connected ? (
         <p className="text-sm text-muted-foreground">
           Not connected.{" "}
-          <Link to="/settings" className="underline">
+          <Link to="/settings" search={{}} className="underline">
             Connect Google Tasks in Settings
           </Link>{" "}
           to see all your tasks here.
