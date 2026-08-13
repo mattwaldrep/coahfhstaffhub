@@ -45,7 +45,7 @@ const emptyEvent = () => ({
 });
 
 function Editor() {
-  const { submissionId } = useParams({ from: "/calendar/planning/$submissionId" });
+  const { submissionId } = useParams({ from: "/calendar_/planning/$submissionId" });
   const { user, hasRole } = useAuth();
   const isCore = hasRole("core");
   const fnGet = useServerFn(getSubmission);
