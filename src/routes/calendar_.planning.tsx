@@ -118,7 +118,7 @@ function PlanningHome() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link to="/calendar" search={{}}><Button variant="ghost" size="sm"><CalendarDays className="w-4 h-4 mr-1.5" /> Master calendar</Button></Link>
+          <Link to="/calendar" search={{ event: undefined }}><Button variant="ghost" size="sm"><CalendarDays className="w-4 h-4 mr-1.5" /> Master calendar</Button></Link>
           {isCore && (
             <>
               <Link to="/calendar/planning/review"><Button variant="secondary" size="sm">Review submissions</Button></Link>

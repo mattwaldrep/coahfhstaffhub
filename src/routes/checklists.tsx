@@ -213,7 +213,7 @@ function ChecklistsPage() {
 
         <div className="text-xs text-muted-foreground">
           Attach a template to an event from the{" "}
-          <Link to="/calendar" search={{}} className="underline">Calendar</Link>.
+          <Link to="/calendar" search={{ event: undefined }} className="underline">Calendar</Link>.
         </div>
       </div>
 
