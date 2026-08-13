@@ -1093,7 +1093,7 @@ function LiveTrendsCard({ meetingDate }: { meetingDate: string }) {
     return (
       <div className="text-xs text-muted-foreground italic bg-background/40 border border-dashed border-border rounded-xl p-4">
         Church Metrics is not connected.{" "}
-        <Link to="/settings" className="underline">Connect in Settings</Link> to pull live attendance, giving and engagement.
+        <Link to="/settings" search={{ google: undefined, msg: undefined }} className="underline">Connect in Settings</Link> to pull live attendance, giving and engagement.
       </div>
     );
   }

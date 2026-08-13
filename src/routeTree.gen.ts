@@ -9,160 +9,80 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as UsersRouteImport } from './routes/users'
-import { Route as TrendsRouteImport } from './routes/trends'
-import { Route as SundayReviewRouteImport } from './routes/sunday-review'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as ServeLeadersRouteImport } from './routes/serve-leaders'
-import { Route as RoomsRouteImport } from './routes/rooms'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as MissionsRouteImport } from './routes/missions'
-import { Route as MeetingRouteImport } from './routes/meeting'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as FinanceRouteImport } from './routes/finance'
-import { Route as ElderRouteImport } from './routes/elder'
-import { Route as DecisionsRouteImport } from './routes/decisions'
-import { Route as CommsChannelsRouteImport } from './routes/comms-channels'
-import { Route as ChecklistsRouteImport } from './routes/checklists'
-import { Route as CgCoachingRouteImport } from './routes/cg-coaching'
-import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as OnboardingIndexRouteImport } from './routes/onboarding.index'
-import { Route as MinistryPlansIndexRouteImport } from './routes/ministry-plans.index'
-import { Route as ElderIndexRouteImport } from './routes/elder.index'
-import { Route as DocumentsIndexRouteImport } from './routes/documents.index'
-import { Route as CgCoachingIndexRouteImport } from './routes/cg-coaching.index'
+import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as CgCoachingRouteImport } from './routes/cg-coaching'
+import { Route as ChecklistsRouteImport } from './routes/checklists'
+import { Route as CommsChannelsRouteImport } from './routes/comms-channels'
+import { Route as DecisionsRouteImport } from './routes/decisions'
+import { Route as ElderRouteImport } from './routes/elder'
+import { Route as FinanceRouteImport } from './routes/finance'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as MeetingRouteImport } from './routes/meeting'
+import { Route as MissionsRouteImport } from './routes/missions'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RoomsRouteImport } from './routes/rooms'
+import { Route as ServeLeadersRouteImport } from './routes/serve-leaders'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SundayReviewRouteImport } from './routes/sunday-review'
+import { Route as TrendsRouteImport } from './routes/trends'
+import { Route as UsersRouteImport } from './routes/users'
 import { Route as AnnualPlanningIndexRouteImport } from './routes/annual-planning.index'
-import { Route as OnboardingTemplatesRouteImport } from './routes/onboarding.templates'
-import { Route as OnboardingWorkflowIdRouteImport } from './routes/onboarding.$workflowId'
-import { Route as MinistryPlansAdminRouteImport } from './routes/ministry-plans.admin'
-import { Route as MinistryPlansPlanIdRouteImport } from './routes/ministry-plans.$planId'
-import { Route as InquiryTokenRouteImport } from './routes/inquiry.$token'
-import { Route as ElderSettingsRouteImport } from './routes/elder.settings'
-import { Route as ElderPastoralCareRouteImport } from './routes/elder.pastoral-care'
-import { Route as ElderMotionsRouteImport } from './routes/elder.motions'
-import { Route as ElderMeetingsRouteImport } from './routes/elder.meetings'
-import { Route as ElderArchiveRouteImport } from './routes/elder.archive'
-import { Route as CgCoachingSettingsRouteImport } from './routes/cg-coaching.settings'
-import { Route as CalendarSettingsRouteImport } from './routes/calendar_.settings'
-import { Route as CalendarPublicRouteImport } from './routes/calendar_.public'
-import { Route as CalendarPlanningRouteImport } from './routes/calendar_.planning'
-import { Route as CalendarClassesRouteImport } from './routes/calendar_.classes'
 import { Route as AnnualPlanningBudgetRouteImport } from './routes/annual-planning.budget'
-import { Route as ElderMotionsIndexRouteImport } from './routes/elder.motions.index'
-import { Route as ElderMeetingsIndexRouteImport } from './routes/elder.meetings.index'
-import { Route as MinistryPlansPlanIdReviewRouteImport } from './routes/ministry-plans.$planId.review'
-import { Route as ElderMotionsMotionIdRouteImport } from './routes/elder.motions.$motionId'
-import { Route as ElderMeetingsMeetingIdRouteImport } from './routes/elder.meetings.$meetingId'
-import { Route as CalendarPlanningReviewRouteImport } from './routes/calendar_.planning.review'
-import { Route as CalendarPlanningSubmissionIdRouteImport } from './routes/calendar_.planning.$submissionId'
-import { Route as ApiGoogleOauthCallbackRouteImport } from './routes/api/google.oauth-callback'
-import { Route as AnnualPlanningBudgetAdminRouteImport } from './routes/annual-planning.budget.admin'
+import { Route as CalendarClassesRouteImport } from './routes/calendar_.classes'
+import { Route as CalendarPlanningRouteImport } from './routes/calendar_.planning'
+import { Route as CalendarPublicRouteImport } from './routes/calendar_.public'
+import { Route as CalendarSettingsRouteImport } from './routes/calendar_.settings'
+import { Route as CgCoachingIndexRouteImport } from './routes/cg-coaching.index'
+import { Route as CgCoachingSettingsRouteImport } from './routes/cg-coaching.settings'
+import { Route as DocumentsIndexRouteImport } from './routes/documents.index'
+import { Route as ElderIndexRouteImport } from './routes/elder.index'
+import { Route as ElderArchiveRouteImport } from './routes/elder.archive'
+import { Route as ElderMeetingsRouteImport } from './routes/elder.meetings'
+import { Route as ElderMotionsRouteImport } from './routes/elder.motions'
+import { Route as ElderPastoralCareRouteImport } from './routes/elder.pastoral-care'
+import { Route as ElderSettingsRouteImport } from './routes/elder.settings'
+import { Route as InquiryTokenRouteImport } from './routes/inquiry.$token'
+import { Route as MinistryPlansIndexRouteImport } from './routes/ministry-plans.index'
+import { Route as MinistryPlansPlanIdRouteImport } from './routes/ministry-plans.$planId'
+import { Route as MinistryPlansAdminRouteImport } from './routes/ministry-plans.admin'
+import { Route as OnboardingIndexRouteImport } from './routes/onboarding.index'
+import { Route as OnboardingWorkflowIdRouteImport } from './routes/onboarding.$workflowId'
+import { Route as OnboardingTemplatesRouteImport } from './routes/onboarding.templates'
 import { Route as AnnualPlanningBudgetSubmissionIdRouteImport } from './routes/annual-planning.budget.$submissionId'
-import { Route as ApiPublicHooksWeeklyDigestMondayRouteImport } from './routes/api/public/hooks.weekly-digest-monday'
-import { Route as ApiPublicHooksSyncGoogleTasksRouteImport } from './routes/api/public/hooks/sync-google-tasks'
-import { Route as ApiPublicHooksSundayReviewNudgeRouteImport } from './routes/api/public/hooks.sunday-review-nudge'
-import { Route as ApiPublicHooksSendWeeklyDigestRouteImport } from './routes/api/public/hooks/send-weekly-digest'
-import { Route as ApiPublicHooksPlanCycleSubmissionsDueRouteImport } from './routes/api/public/hooks/plan-cycle-submissions-due'
-import { Route as ApiPublicHooksPlanCycleNudgeRouteImport } from './routes/api/public/hooks/plan-cycle-nudge'
-import { Route as ApiPublicHooksPlanCycleMay1RouteImport } from './routes/api/public/hooks/plan-cycle-may1'
-import { Route as ApiPublicHooksPlanCycleJun30RouteImport } from './routes/api/public/hooks/plan-cycle-jun30'
-import { Route as ApiPublicHooksElderTouchpointThresholdRouteImport } from './routes/api/public/hooks.elder-touchpoint-threshold'
-import { Route as ApiPublicHooksElderTouchpointDigestRouteImport } from './routes/api/public/hooks.elder-touchpoint-digest'
-import { Route as ApiPublicHooksCalendarCycleSubmissionsDueRouteImport } from './routes/api/public/hooks/calendar-cycle-submissions-due'
-import { Route as ApiPublicHooksCalendarCycleNudgeRouteImport } from './routes/api/public/hooks/calendar-cycle-nudge'
-import { Route as ApiPublicHooksCalendarCycleMay1RouteImport } from './routes/api/public/hooks/calendar-cycle-may1'
-import { Route as ApiPublicHooksCalendarCycleJun30RouteImport } from './routes/api/public/hooks/calendar-cycle-jun30'
-import { Route as ApiPublicHooksBudgetCycleMar1RouteImport } from './routes/api/public/hooks/budget-cycle-mar1'
-import { Route as ApiPublicHooksBudgetCycleApr1RouteImport } from './routes/api/public/hooks/budget-cycle-apr1'
-import { Route as ApiPublicHooksAutoFinalizeMeetingRouteImport } from './routes/api/public/hooks.auto-finalize-meeting'
+import { Route as AnnualPlanningBudgetAdminRouteImport } from './routes/annual-planning.budget.admin'
+import { Route as ApiGoogleOauthCallbackRouteImport } from './routes/api/google.oauth-callback'
+import { Route as CalendarPlanningSubmissionIdRouteImport } from './routes/calendar_.planning.$submissionId'
+import { Route as CalendarPlanningReviewRouteImport } from './routes/calendar_.planning.review'
+import { Route as ElderMeetingsIndexRouteImport } from './routes/elder.meetings.index'
+import { Route as ElderMeetingsMeetingIdRouteImport } from './routes/elder.meetings.$meetingId'
+import { Route as ElderMotionsIndexRouteImport } from './routes/elder.motions.index'
+import { Route as ElderMotionsMotionIdRouteImport } from './routes/elder.motions.$motionId'
+import { Route as MinistryPlansPlanIdReviewRouteImport } from './routes/ministry-plans.$planId.review'
 import { Route as ApiPublicHooksActionItemsDigestRouteImport } from './routes/api/public/hooks.action-items-digest'
+import { Route as ApiPublicHooksAutoFinalizeMeetingRouteImport } from './routes/api/public/hooks.auto-finalize-meeting'
+import { Route as ApiPublicHooksBudgetCycleApr1RouteImport } from './routes/api/public/hooks/budget-cycle-apr1'
+import { Route as ApiPublicHooksBudgetCycleMar1RouteImport } from './routes/api/public/hooks/budget-cycle-mar1'
+import { Route as ApiPublicHooksCalendarCycleJun30RouteImport } from './routes/api/public/hooks/calendar-cycle-jun30'
+import { Route as ApiPublicHooksCalendarCycleMay1RouteImport } from './routes/api/public/hooks/calendar-cycle-may1'
+import { Route as ApiPublicHooksCalendarCycleNudgeRouteImport } from './routes/api/public/hooks/calendar-cycle-nudge'
+import { Route as ApiPublicHooksCalendarCycleSubmissionsDueRouteImport } from './routes/api/public/hooks/calendar-cycle-submissions-due'
+import { Route as ApiPublicHooksElderTouchpointDigestRouteImport } from './routes/api/public/hooks.elder-touchpoint-digest'
+import { Route as ApiPublicHooksElderTouchpointThresholdRouteImport } from './routes/api/public/hooks.elder-touchpoint-threshold'
+import { Route as ApiPublicHooksPlanCycleJun30RouteImport } from './routes/api/public/hooks/plan-cycle-jun30'
+import { Route as ApiPublicHooksPlanCycleMay1RouteImport } from './routes/api/public/hooks/plan-cycle-may1'
+import { Route as ApiPublicHooksPlanCycleNudgeRouteImport } from './routes/api/public/hooks/plan-cycle-nudge'
+import { Route as ApiPublicHooksPlanCycleSubmissionsDueRouteImport } from './routes/api/public/hooks/plan-cycle-submissions-due'
+import { Route as ApiPublicHooksSendWeeklyDigestRouteImport } from './routes/api/public/hooks/send-weekly-digest'
+import { Route as ApiPublicHooksSundayReviewNudgeRouteImport } from './routes/api/public/hooks.sunday-review-nudge'
+import { Route as ApiPublicHooksSyncGoogleTasksRouteImport } from './routes/api/public/hooks/sync-google-tasks'
+import { Route as ApiPublicHooksWeeklyDigestMondayRouteImport } from './routes/api/public/hooks.weekly-digest-monday'
 import { Route as ApiPublicMissionsInquiryTokenRouteImport } from './routes/api/public/missions/inquiry.$token'
 
-const UsersRoute = UsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TrendsRoute = TrendsRouteImport.update({
-  id: '/trends',
-  path: '/trends',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SundayReviewRoute = SundayReviewRouteImport.update({
-  id: '/sunday-review',
-  path: '/sunday-review',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ServeLeadersRoute = ServeLeadersRouteImport.update({
-  id: '/serve-leaders',
-  path: '/serve-leaders',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RoomsRoute = RoomsRouteImport.update({
-  id: '/rooms',
-  path: '/rooms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MissionsRoute = MissionsRouteImport.update({
-  id: '/missions',
-  path: '/missions',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MeetingRoute = MeetingRouteImport.update({
-  id: '/meeting',
-  path: '/meeting',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FinanceRoute = FinanceRouteImport.update({
-  id: '/finance',
-  path: '/finance',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ElderRoute = ElderRouteImport.update({
-  id: '/elder',
-  path: '/elder',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DecisionsRoute = DecisionsRouteImport.update({
-  id: '/decisions',
-  path: '/decisions',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CommsChannelsRoute = CommsChannelsRouteImport.update({
-  id: '/comms-channels',
-  path: '/comms-channels',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChecklistsRoute = ChecklistsRouteImport.update({
-  id: '/checklists',
-  path: '/checklists',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CgCoachingRoute = CgCoachingRouteImport.update({
-  id: '/cg-coaching',
-  path: '/cg-coaching',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalendarRoute = CalendarRouteImport.update({
@@ -170,114 +90,94 @@ const CalendarRoute = CalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const CgCoachingRoute = CgCoachingRouteImport.update({
+  id: '/cg-coaching',
+  path: '/cg-coaching',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OnboardingIndexRoute = OnboardingIndexRouteImport.update({
-  id: '/onboarding/',
-  path: '/onboarding/',
+const ChecklistsRoute = ChecklistsRouteImport.update({
+  id: '/checklists',
+  path: '/checklists',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MinistryPlansIndexRoute = MinistryPlansIndexRouteImport.update({
-  id: '/ministry-plans/',
-  path: '/ministry-plans/',
+const CommsChannelsRoute = CommsChannelsRouteImport.update({
+  id: '/comms-channels',
+  path: '/comms-channels',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ElderIndexRoute = ElderIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ElderRoute,
-} as any)
-const DocumentsIndexRoute = DocumentsIndexRouteImport.update({
-  id: '/documents/',
-  path: '/documents/',
+const DecisionsRoute = DecisionsRouteImport.update({
+  id: '/decisions',
+  path: '/decisions',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CgCoachingIndexRoute = CgCoachingIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => CgCoachingRoute,
+const ElderRoute = ElderRouteImport.update({
+  id: '/elder',
+  path: '/elder',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FinanceRoute = FinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeetingRoute = MeetingRouteImport.update({
+  id: '/meeting',
+  path: '/meeting',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MissionsRoute = MissionsRouteImport.update({
+  id: '/missions',
+  path: '/missions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoomsRoute = RoomsRouteImport.update({
+  id: '/rooms',
+  path: '/rooms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServeLeadersRoute = ServeLeadersRouteImport.update({
+  id: '/serve-leaders',
+  path: '/serve-leaders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SundayReviewRoute = SundayReviewRouteImport.update({
+  id: '/sunday-review',
+  path: '/sunday-review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrendsRoute = TrendsRouteImport.update({
+  id: '/trends',
+  path: '/trends',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UsersRoute = UsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AnnualPlanningIndexRoute = AnnualPlanningIndexRouteImport.update({
   id: '/annual-planning/',
   path: '/annual-planning/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardingTemplatesRoute = OnboardingTemplatesRouteImport.update({
-  id: '/onboarding/templates',
-  path: '/onboarding/templates',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardingWorkflowIdRoute = OnboardingWorkflowIdRouteImport.update({
-  id: '/onboarding/$workflowId',
-  path: '/onboarding/$workflowId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MinistryPlansAdminRoute = MinistryPlansAdminRouteImport.update({
-  id: '/ministry-plans/admin',
-  path: '/ministry-plans/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MinistryPlansPlanIdRoute = MinistryPlansPlanIdRouteImport.update({
-  id: '/ministry-plans/$planId',
-  path: '/ministry-plans/$planId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InquiryTokenRoute = InquiryTokenRouteImport.update({
-  id: '/inquiry/$token',
-  path: '/inquiry/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ElderSettingsRoute = ElderSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => ElderRoute,
-} as any)
-const ElderPastoralCareRoute = ElderPastoralCareRouteImport.update({
-  id: '/pastoral-care',
-  path: '/pastoral-care',
-  getParentRoute: () => ElderRoute,
-} as any)
-const ElderMotionsRoute = ElderMotionsRouteImport.update({
-  id: '/motions',
-  path: '/motions',
-  getParentRoute: () => ElderRoute,
-} as any)
-const ElderMeetingsRoute = ElderMeetingsRouteImport.update({
-  id: '/meetings',
-  path: '/meetings',
-  getParentRoute: () => ElderRoute,
-} as any)
-const ElderArchiveRoute = ElderArchiveRouteImport.update({
-  id: '/archive',
-  path: '/archive',
-  getParentRoute: () => ElderRoute,
-} as any)
-const CgCoachingSettingsRoute = CgCoachingSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => CgCoachingRoute,
-} as any)
-const CalendarSettingsRoute = CalendarSettingsRouteImport.update({
-  id: '/calendar_/settings',
-  path: '/calendar/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CalendarPublicRoute = CalendarPublicRouteImport.update({
-  id: '/calendar_/public',
-  path: '/calendar/public',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CalendarPlanningRoute = CalendarPlanningRouteImport.update({
-  id: '/calendar_/planning',
-  path: '/calendar/planning',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CalendarClassesRoute = CalendarClassesRouteImport.update({
-  id: '/calendar_/classes',
-  path: '/calendar/classes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnnualPlanningBudgetRoute = AnnualPlanningBudgetRouteImport.update({
@@ -285,36 +185,122 @@ const AnnualPlanningBudgetRoute = AnnualPlanningBudgetRouteImport.update({
   path: '/annual-planning/budget',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ElderMotionsIndexRoute = ElderMotionsIndexRouteImport.update({
+const CalendarClassesRoute = CalendarClassesRouteImport.update({
+  id: '/calendar_/classes',
+  path: '/calendar/classes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarPlanningRoute = CalendarPlanningRouteImport.update({
+  id: '/calendar_/planning',
+  path: '/calendar/planning',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarPublicRoute = CalendarPublicRouteImport.update({
+  id: '/calendar_/public',
+  path: '/calendar/public',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarSettingsRoute = CalendarSettingsRouteImport.update({
+  id: '/calendar_/settings',
+  path: '/calendar/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CgCoachingIndexRoute = CgCoachingIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => ElderMotionsRoute,
+  getParentRoute: () => CgCoachingRoute,
 } as any)
-const ElderMeetingsIndexRoute = ElderMeetingsIndexRouteImport.update({
+const CgCoachingSettingsRoute = CgCoachingSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => CgCoachingRoute,
+} as any)
+const DocumentsIndexRoute = DocumentsIndexRouteImport.update({
+  id: '/documents/',
+  path: '/documents/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ElderIndexRoute = ElderIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => ElderMeetingsRoute,
+  getParentRoute: () => ElderRoute,
 } as any)
-const MinistryPlansPlanIdReviewRoute =
-  MinistryPlansPlanIdReviewRouteImport.update({
-    id: '/review',
-    path: '/review',
-    getParentRoute: () => MinistryPlansPlanIdRoute,
+const ElderArchiveRoute = ElderArchiveRouteImport.update({
+  id: '/archive',
+  path: '/archive',
+  getParentRoute: () => ElderRoute,
+} as any)
+const ElderMeetingsRoute = ElderMeetingsRouteImport.update({
+  id: '/meetings',
+  path: '/meetings',
+  getParentRoute: () => ElderRoute,
+} as any)
+const ElderMotionsRoute = ElderMotionsRouteImport.update({
+  id: '/motions',
+  path: '/motions',
+  getParentRoute: () => ElderRoute,
+} as any)
+const ElderPastoralCareRoute = ElderPastoralCareRouteImport.update({
+  id: '/pastoral-care',
+  path: '/pastoral-care',
+  getParentRoute: () => ElderRoute,
+} as any)
+const ElderSettingsRoute = ElderSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => ElderRoute,
+} as any)
+const InquiryTokenRoute = InquiryTokenRouteImport.update({
+  id: '/inquiry/$token',
+  path: '/inquiry/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MinistryPlansIndexRoute = MinistryPlansIndexRouteImport.update({
+  id: '/ministry-plans/',
+  path: '/ministry-plans/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MinistryPlansPlanIdRoute = MinistryPlansPlanIdRouteImport.update({
+  id: '/ministry-plans/$planId',
+  path: '/ministry-plans/$planId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MinistryPlansAdminRoute = MinistryPlansAdminRouteImport.update({
+  id: '/ministry-plans/admin',
+  path: '/ministry-plans/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingIndexRoute = OnboardingIndexRouteImport.update({
+  id: '/onboarding/',
+  path: '/onboarding/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingWorkflowIdRoute = OnboardingWorkflowIdRouteImport.update({
+  id: '/onboarding/$workflowId',
+  path: '/onboarding/$workflowId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingTemplatesRoute = OnboardingTemplatesRouteImport.update({
+  id: '/onboarding/templates',
+  path: '/onboarding/templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnnualPlanningBudgetSubmissionIdRoute =
+  AnnualPlanningBudgetSubmissionIdRouteImport.update({
+    id: '/$submissionId',
+    path: '/$submissionId',
+    getParentRoute: () => AnnualPlanningBudgetRoute,
   } as any)
-const ElderMotionsMotionIdRoute = ElderMotionsMotionIdRouteImport.update({
-  id: '/$motionId',
-  path: '/$motionId',
-  getParentRoute: () => ElderMotionsRoute,
-} as any)
-const ElderMeetingsMeetingIdRoute = ElderMeetingsMeetingIdRouteImport.update({
-  id: '/$meetingId',
-  path: '/$meetingId',
-  getParentRoute: () => ElderMeetingsRoute,
-} as any)
-const CalendarPlanningReviewRoute = CalendarPlanningReviewRouteImport.update({
-  id: '/review',
-  path: '/review',
-  getParentRoute: () => CalendarPlanningRoute,
+const AnnualPlanningBudgetAdminRoute =
+  AnnualPlanningBudgetAdminRouteImport.update({
+    id: '/admin',
+    path: '/admin',
+    getParentRoute: () => AnnualPlanningBudgetRoute,
+  } as any)
+const ApiGoogleOauthCallbackRoute = ApiGoogleOauthCallbackRouteImport.update({
+  id: '/api/google/oauth-callback',
+  path: '/api/google/oauth-callback',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CalendarPlanningSubmissionIdRoute =
   CalendarPlanningSubmissionIdRouteImport.update({
@@ -322,117 +308,41 @@ const CalendarPlanningSubmissionIdRoute =
     path: '/$submissionId',
     getParentRoute: () => CalendarPlanningRoute,
   } as any)
-const ApiGoogleOauthCallbackRoute = ApiGoogleOauthCallbackRouteImport.update({
-  id: '/api/google/oauth-callback',
-  path: '/api/google/oauth-callback',
-  getParentRoute: () => rootRouteImport,
+const CalendarPlanningReviewRoute = CalendarPlanningReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => CalendarPlanningRoute,
 } as any)
-const AnnualPlanningBudgetAdminRoute =
-  AnnualPlanningBudgetAdminRouteImport.update({
-    id: '/admin',
-    path: '/admin',
-    getParentRoute: () => AnnualPlanningBudgetRoute,
+const ElderMeetingsIndexRoute = ElderMeetingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ElderMeetingsRoute,
+} as any)
+const ElderMeetingsMeetingIdRoute = ElderMeetingsMeetingIdRouteImport.update({
+  id: '/$meetingId',
+  path: '/$meetingId',
+  getParentRoute: () => ElderMeetingsRoute,
+} as any)
+const ElderMotionsIndexRoute = ElderMotionsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ElderMotionsRoute,
+} as any)
+const ElderMotionsMotionIdRoute = ElderMotionsMotionIdRouteImport.update({
+  id: '/$motionId',
+  path: '/$motionId',
+  getParentRoute: () => ElderMotionsRoute,
+} as any)
+const MinistryPlansPlanIdReviewRoute =
+  MinistryPlansPlanIdReviewRouteImport.update({
+    id: '/review',
+    path: '/review',
+    getParentRoute: () => MinistryPlansPlanIdRoute,
   } as any)
-const AnnualPlanningBudgetSubmissionIdRoute =
-  AnnualPlanningBudgetSubmissionIdRouteImport.update({
-    id: '/$submissionId',
-    path: '/$submissionId',
-    getParentRoute: () => AnnualPlanningBudgetRoute,
-  } as any)
-const ApiPublicHooksWeeklyDigestMondayRoute =
-  ApiPublicHooksWeeklyDigestMondayRouteImport.update({
-    id: '/api/public/hooks/weekly-digest-monday',
-    path: '/api/public/hooks/weekly-digest-monday',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksSyncGoogleTasksRoute =
-  ApiPublicHooksSyncGoogleTasksRouteImport.update({
-    id: '/api/public/hooks/sync-google-tasks',
-    path: '/api/public/hooks/sync-google-tasks',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksSundayReviewNudgeRoute =
-  ApiPublicHooksSundayReviewNudgeRouteImport.update({
-    id: '/api/public/hooks/sunday-review-nudge',
-    path: '/api/public/hooks/sunday-review-nudge',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksSendWeeklyDigestRoute =
-  ApiPublicHooksSendWeeklyDigestRouteImport.update({
-    id: '/api/public/hooks/send-weekly-digest',
-    path: '/api/public/hooks/send-weekly-digest',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksPlanCycleSubmissionsDueRoute =
-  ApiPublicHooksPlanCycleSubmissionsDueRouteImport.update({
-    id: '/api/public/hooks/plan-cycle-submissions-due',
-    path: '/api/public/hooks/plan-cycle-submissions-due',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksPlanCycleNudgeRoute =
-  ApiPublicHooksPlanCycleNudgeRouteImport.update({
-    id: '/api/public/hooks/plan-cycle-nudge',
-    path: '/api/public/hooks/plan-cycle-nudge',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksPlanCycleMay1Route =
-  ApiPublicHooksPlanCycleMay1RouteImport.update({
-    id: '/api/public/hooks/plan-cycle-may1',
-    path: '/api/public/hooks/plan-cycle-may1',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksPlanCycleJun30Route =
-  ApiPublicHooksPlanCycleJun30RouteImport.update({
-    id: '/api/public/hooks/plan-cycle-jun30',
-    path: '/api/public/hooks/plan-cycle-jun30',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksElderTouchpointThresholdRoute =
-  ApiPublicHooksElderTouchpointThresholdRouteImport.update({
-    id: '/api/public/hooks/elder-touchpoint-threshold',
-    path: '/api/public/hooks/elder-touchpoint-threshold',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksElderTouchpointDigestRoute =
-  ApiPublicHooksElderTouchpointDigestRouteImport.update({
-    id: '/api/public/hooks/elder-touchpoint-digest',
-    path: '/api/public/hooks/elder-touchpoint-digest',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksCalendarCycleSubmissionsDueRoute =
-  ApiPublicHooksCalendarCycleSubmissionsDueRouteImport.update({
-    id: '/api/public/hooks/calendar-cycle-submissions-due',
-    path: '/api/public/hooks/calendar-cycle-submissions-due',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksCalendarCycleNudgeRoute =
-  ApiPublicHooksCalendarCycleNudgeRouteImport.update({
-    id: '/api/public/hooks/calendar-cycle-nudge',
-    path: '/api/public/hooks/calendar-cycle-nudge',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksCalendarCycleMay1Route =
-  ApiPublicHooksCalendarCycleMay1RouteImport.update({
-    id: '/api/public/hooks/calendar-cycle-may1',
-    path: '/api/public/hooks/calendar-cycle-may1',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksCalendarCycleJun30Route =
-  ApiPublicHooksCalendarCycleJun30RouteImport.update({
-    id: '/api/public/hooks/calendar-cycle-jun30',
-    path: '/api/public/hooks/calendar-cycle-jun30',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksBudgetCycleMar1Route =
-  ApiPublicHooksBudgetCycleMar1RouteImport.update({
-    id: '/api/public/hooks/budget-cycle-mar1',
-    path: '/api/public/hooks/budget-cycle-mar1',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksBudgetCycleApr1Route =
-  ApiPublicHooksBudgetCycleApr1RouteImport.update({
-    id: '/api/public/hooks/budget-cycle-apr1',
-    path: '/api/public/hooks/budget-cycle-apr1',
+const ApiPublicHooksActionItemsDigestRoute =
+  ApiPublicHooksActionItemsDigestRouteImport.update({
+    id: '/api/public/hooks/action-items-digest',
+    path: '/api/public/hooks/action-items-digest',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksAutoFinalizeMeetingRoute =
@@ -441,10 +351,100 @@ const ApiPublicHooksAutoFinalizeMeetingRoute =
     path: '/api/public/hooks/auto-finalize-meeting',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksActionItemsDigestRoute =
-  ApiPublicHooksActionItemsDigestRouteImport.update({
-    id: '/api/public/hooks/action-items-digest',
-    path: '/api/public/hooks/action-items-digest',
+const ApiPublicHooksBudgetCycleApr1Route =
+  ApiPublicHooksBudgetCycleApr1RouteImport.update({
+    id: '/api/public/hooks/budget-cycle-apr1',
+    path: '/api/public/hooks/budget-cycle-apr1',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksBudgetCycleMar1Route =
+  ApiPublicHooksBudgetCycleMar1RouteImport.update({
+    id: '/api/public/hooks/budget-cycle-mar1',
+    path: '/api/public/hooks/budget-cycle-mar1',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksCalendarCycleJun30Route =
+  ApiPublicHooksCalendarCycleJun30RouteImport.update({
+    id: '/api/public/hooks/calendar-cycle-jun30',
+    path: '/api/public/hooks/calendar-cycle-jun30',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksCalendarCycleMay1Route =
+  ApiPublicHooksCalendarCycleMay1RouteImport.update({
+    id: '/api/public/hooks/calendar-cycle-may1',
+    path: '/api/public/hooks/calendar-cycle-may1',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksCalendarCycleNudgeRoute =
+  ApiPublicHooksCalendarCycleNudgeRouteImport.update({
+    id: '/api/public/hooks/calendar-cycle-nudge',
+    path: '/api/public/hooks/calendar-cycle-nudge',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksCalendarCycleSubmissionsDueRoute =
+  ApiPublicHooksCalendarCycleSubmissionsDueRouteImport.update({
+    id: '/api/public/hooks/calendar-cycle-submissions-due',
+    path: '/api/public/hooks/calendar-cycle-submissions-due',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksElderTouchpointDigestRoute =
+  ApiPublicHooksElderTouchpointDigestRouteImport.update({
+    id: '/api/public/hooks/elder-touchpoint-digest',
+    path: '/api/public/hooks/elder-touchpoint-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksElderTouchpointThresholdRoute =
+  ApiPublicHooksElderTouchpointThresholdRouteImport.update({
+    id: '/api/public/hooks/elder-touchpoint-threshold',
+    path: '/api/public/hooks/elder-touchpoint-threshold',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksPlanCycleJun30Route =
+  ApiPublicHooksPlanCycleJun30RouteImport.update({
+    id: '/api/public/hooks/plan-cycle-jun30',
+    path: '/api/public/hooks/plan-cycle-jun30',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksPlanCycleMay1Route =
+  ApiPublicHooksPlanCycleMay1RouteImport.update({
+    id: '/api/public/hooks/plan-cycle-may1',
+    path: '/api/public/hooks/plan-cycle-may1',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksPlanCycleNudgeRoute =
+  ApiPublicHooksPlanCycleNudgeRouteImport.update({
+    id: '/api/public/hooks/plan-cycle-nudge',
+    path: '/api/public/hooks/plan-cycle-nudge',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksPlanCycleSubmissionsDueRoute =
+  ApiPublicHooksPlanCycleSubmissionsDueRouteImport.update({
+    id: '/api/public/hooks/plan-cycle-submissions-due',
+    path: '/api/public/hooks/plan-cycle-submissions-due',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksSendWeeklyDigestRoute =
+  ApiPublicHooksSendWeeklyDigestRouteImport.update({
+    id: '/api/public/hooks/send-weekly-digest',
+    path: '/api/public/hooks/send-weekly-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksSundayReviewNudgeRoute =
+  ApiPublicHooksSundayReviewNudgeRouteImport.update({
+    id: '/api/public/hooks/sunday-review-nudge',
+    path: '/api/public/hooks/sunday-review-nudge',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksSyncGoogleTasksRoute =
+  ApiPublicHooksSyncGoogleTasksRouteImport.update({
+    id: '/api/public/hooks/sync-google-tasks',
+    path: '/api/public/hooks/sync-google-tasks',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksWeeklyDigestMondayRoute =
+  ApiPublicHooksWeeklyDigestMondayRouteImport.update({
+    id: '/api/public/hooks/weekly-digest-monday',
+    path: '/api/public/hooks/weekly-digest-monday',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicMissionsInquiryTokenRoute =
@@ -940,123 +940,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/users': {
-      id: '/users'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof UsersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/trends': {
-      id: '/trends'
-      path: '/trends'
-      fullPath: '/trends'
-      preLoaderRoute: typeof TrendsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sunday-review': {
-      id: '/sunday-review'
-      path: '/sunday-review'
-      fullPath: '/sunday-review'
-      preLoaderRoute: typeof SundayReviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/serve-leaders': {
-      id: '/serve-leaders'
-      path: '/serve-leaders'
-      fullPath: '/serve-leaders'
-      preLoaderRoute: typeof ServeLeadersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/rooms': {
-      id: '/rooms'
-      path: '/rooms'
-      fullPath: '/rooms'
-      preLoaderRoute: typeof RoomsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/missions': {
-      id: '/missions'
-      path: '/missions'
-      fullPath: '/missions'
-      preLoaderRoute: typeof MissionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/meeting': {
-      id: '/meeting'
-      path: '/meeting'
-      fullPath: '/meeting'
-      preLoaderRoute: typeof MeetingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/forgot-password': {
-      id: '/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/finance': {
-      id: '/finance'
-      path: '/finance'
-      fullPath: '/finance'
-      preLoaderRoute: typeof FinanceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/elder': {
-      id: '/elder'
-      path: '/elder'
-      fullPath: '/elder'
-      preLoaderRoute: typeof ElderRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/decisions': {
-      id: '/decisions'
-      path: '/decisions'
-      fullPath: '/decisions'
-      preLoaderRoute: typeof DecisionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/comms-channels': {
-      id: '/comms-channels'
-      path: '/comms-channels'
-      fullPath: '/comms-channels'
-      preLoaderRoute: typeof CommsChannelsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/checklists': {
-      id: '/checklists'
-      path: '/checklists'
-      fullPath: '/checklists'
-      preLoaderRoute: typeof ChecklistsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/cg-coaching': {
-      id: '/cg-coaching'
-      path: '/cg-coaching'
-      fullPath: '/cg-coaching'
-      preLoaderRoute: typeof CgCoachingRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calendar': {
@@ -1066,158 +954,130 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CalendarRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/cg-coaching': {
+      id: '/cg-coaching'
+      path: '/cg-coaching'
+      fullPath: '/cg-coaching'
+      preLoaderRoute: typeof CgCoachingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/onboarding/': {
-      id: '/onboarding/'
-      path: '/onboarding'
-      fullPath: '/onboarding/'
-      preLoaderRoute: typeof OnboardingIndexRouteImport
+    '/checklists': {
+      id: '/checklists'
+      path: '/checklists'
+      fullPath: '/checklists'
+      preLoaderRoute: typeof ChecklistsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/ministry-plans/': {
-      id: '/ministry-plans/'
-      path: '/ministry-plans'
-      fullPath: '/ministry-plans/'
-      preLoaderRoute: typeof MinistryPlansIndexRouteImport
+    '/comms-channels': {
+      id: '/comms-channels'
+      path: '/comms-channels'
+      fullPath: '/comms-channels'
+      preLoaderRoute: typeof CommsChannelsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/elder/': {
-      id: '/elder/'
-      path: '/'
-      fullPath: '/elder/'
-      preLoaderRoute: typeof ElderIndexRouteImport
-      parentRoute: typeof ElderRoute
-    }
-    '/documents/': {
-      id: '/documents/'
-      path: '/documents'
-      fullPath: '/documents/'
-      preLoaderRoute: typeof DocumentsIndexRouteImport
+    '/decisions': {
+      id: '/decisions'
+      path: '/decisions'
+      fullPath: '/decisions'
+      preLoaderRoute: typeof DecisionsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/cg-coaching/': {
-      id: '/cg-coaching/'
-      path: '/'
-      fullPath: '/cg-coaching/'
-      preLoaderRoute: typeof CgCoachingIndexRouteImport
-      parentRoute: typeof CgCoachingRoute
+    '/elder': {
+      id: '/elder'
+      path: '/elder'
+      fullPath: '/elder'
+      preLoaderRoute: typeof ElderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/finance': {
+      id: '/finance'
+      path: '/finance'
+      fullPath: '/finance'
+      preLoaderRoute: typeof FinanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meeting': {
+      id: '/meeting'
+      path: '/meeting'
+      fullPath: '/meeting'
+      preLoaderRoute: typeof MeetingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/missions': {
+      id: '/missions'
+      path: '/missions'
+      fullPath: '/missions'
+      preLoaderRoute: typeof MissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rooms': {
+      id: '/rooms'
+      path: '/rooms'
+      fullPath: '/rooms'
+      preLoaderRoute: typeof RoomsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/serve-leaders': {
+      id: '/serve-leaders'
+      path: '/serve-leaders'
+      fullPath: '/serve-leaders'
+      preLoaderRoute: typeof ServeLeadersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sunday-review': {
+      id: '/sunday-review'
+      path: '/sunday-review'
+      fullPath: '/sunday-review'
+      preLoaderRoute: typeof SundayReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trends': {
+      id: '/trends'
+      path: '/trends'
+      fullPath: '/trends'
+      preLoaderRoute: typeof TrendsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/users': {
+      id: '/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof UsersRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/annual-planning/': {
       id: '/annual-planning/'
       path: '/annual-planning'
       fullPath: '/annual-planning/'
       preLoaderRoute: typeof AnnualPlanningIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding/templates': {
-      id: '/onboarding/templates'
-      path: '/onboarding/templates'
-      fullPath: '/onboarding/templates'
-      preLoaderRoute: typeof OnboardingTemplatesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding/$workflowId': {
-      id: '/onboarding/$workflowId'
-      path: '/onboarding/$workflowId'
-      fullPath: '/onboarding/$workflowId'
-      preLoaderRoute: typeof OnboardingWorkflowIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ministry-plans/admin': {
-      id: '/ministry-plans/admin'
-      path: '/ministry-plans/admin'
-      fullPath: '/ministry-plans/admin'
-      preLoaderRoute: typeof MinistryPlansAdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ministry-plans/$planId': {
-      id: '/ministry-plans/$planId'
-      path: '/ministry-plans/$planId'
-      fullPath: '/ministry-plans/$planId'
-      preLoaderRoute: typeof MinistryPlansPlanIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/inquiry/$token': {
-      id: '/inquiry/$token'
-      path: '/inquiry/$token'
-      fullPath: '/inquiry/$token'
-      preLoaderRoute: typeof InquiryTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/elder/settings': {
-      id: '/elder/settings'
-      path: '/settings'
-      fullPath: '/elder/settings'
-      preLoaderRoute: typeof ElderSettingsRouteImport
-      parentRoute: typeof ElderRoute
-    }
-    '/elder/pastoral-care': {
-      id: '/elder/pastoral-care'
-      path: '/pastoral-care'
-      fullPath: '/elder/pastoral-care'
-      preLoaderRoute: typeof ElderPastoralCareRouteImport
-      parentRoute: typeof ElderRoute
-    }
-    '/elder/motions': {
-      id: '/elder/motions'
-      path: '/motions'
-      fullPath: '/elder/motions'
-      preLoaderRoute: typeof ElderMotionsRouteImport
-      parentRoute: typeof ElderRoute
-    }
-    '/elder/meetings': {
-      id: '/elder/meetings'
-      path: '/meetings'
-      fullPath: '/elder/meetings'
-      preLoaderRoute: typeof ElderMeetingsRouteImport
-      parentRoute: typeof ElderRoute
-    }
-    '/elder/archive': {
-      id: '/elder/archive'
-      path: '/archive'
-      fullPath: '/elder/archive'
-      preLoaderRoute: typeof ElderArchiveRouteImport
-      parentRoute: typeof ElderRoute
-    }
-    '/cg-coaching/settings': {
-      id: '/cg-coaching/settings'
-      path: '/settings'
-      fullPath: '/cg-coaching/settings'
-      preLoaderRoute: typeof CgCoachingSettingsRouteImport
-      parentRoute: typeof CgCoachingRoute
-    }
-    '/calendar_/settings': {
-      id: '/calendar_/settings'
-      path: '/calendar/settings'
-      fullPath: '/calendar/settings'
-      preLoaderRoute: typeof CalendarSettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/calendar_/public': {
-      id: '/calendar_/public'
-      path: '/calendar/public'
-      fullPath: '/calendar/public'
-      preLoaderRoute: typeof CalendarPublicRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/calendar_/planning': {
-      id: '/calendar_/planning'
-      path: '/calendar/planning'
-      fullPath: '/calendar/planning'
-      preLoaderRoute: typeof CalendarPlanningRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/calendar_/classes': {
-      id: '/calendar_/classes'
-      path: '/calendar/classes'
-      fullPath: '/calendar/classes'
-      preLoaderRoute: typeof CalendarClassesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/annual-planning/budget': {
@@ -1227,68 +1087,145 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AnnualPlanningBudgetRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/elder/motions/': {
-      id: '/elder/motions/'
-      path: '/'
-      fullPath: '/elder/motions/'
-      preLoaderRoute: typeof ElderMotionsIndexRouteImport
-      parentRoute: typeof ElderMotionsRoute
-    }
-    '/elder/meetings/': {
-      id: '/elder/meetings/'
-      path: '/'
-      fullPath: '/elder/meetings/'
-      preLoaderRoute: typeof ElderMeetingsIndexRouteImport
-      parentRoute: typeof ElderMeetingsRoute
-    }
-    '/ministry-plans/$planId/review': {
-      id: '/ministry-plans/$planId/review'
-      path: '/review'
-      fullPath: '/ministry-plans/$planId/review'
-      preLoaderRoute: typeof MinistryPlansPlanIdReviewRouteImport
-      parentRoute: typeof MinistryPlansPlanIdRoute
-    }
-    '/elder/motions/$motionId': {
-      id: '/elder/motions/$motionId'
-      path: '/$motionId'
-      fullPath: '/elder/motions/$motionId'
-      preLoaderRoute: typeof ElderMotionsMotionIdRouteImport
-      parentRoute: typeof ElderMotionsRoute
-    }
-    '/elder/meetings/$meetingId': {
-      id: '/elder/meetings/$meetingId'
-      path: '/$meetingId'
-      fullPath: '/elder/meetings/$meetingId'
-      preLoaderRoute: typeof ElderMeetingsMeetingIdRouteImport
-      parentRoute: typeof ElderMeetingsRoute
-    }
-    '/calendar_/planning/review': {
-      id: '/calendar_/planning/review'
-      path: '/review'
-      fullPath: '/calendar/planning/review'
-      preLoaderRoute: typeof CalendarPlanningReviewRouteImport
-      parentRoute: typeof CalendarPlanningRoute
-    }
-    '/calendar_/planning/$submissionId': {
-      id: '/calendar_/planning/$submissionId'
-      path: '/$submissionId'
-      fullPath: '/calendar/planning/$submissionId'
-      preLoaderRoute: typeof CalendarPlanningSubmissionIdRouteImport
-      parentRoute: typeof CalendarPlanningRoute
-    }
-    '/api/google/oauth-callback': {
-      id: '/api/google/oauth-callback'
-      path: '/api/google/oauth-callback'
-      fullPath: '/api/google/oauth-callback'
-      preLoaderRoute: typeof ApiGoogleOauthCallbackRouteImport
+    '/calendar_/classes': {
+      id: '/calendar_/classes'
+      path: '/calendar/classes'
+      fullPath: '/calendar/classes'
+      preLoaderRoute: typeof CalendarClassesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/annual-planning/budget/admin': {
-      id: '/annual-planning/budget/admin'
-      path: '/admin'
-      fullPath: '/annual-planning/budget/admin'
-      preLoaderRoute: typeof AnnualPlanningBudgetAdminRouteImport
-      parentRoute: typeof AnnualPlanningBudgetRoute
+    '/calendar_/planning': {
+      id: '/calendar_/planning'
+      path: '/calendar/planning'
+      fullPath: '/calendar/planning'
+      preLoaderRoute: typeof CalendarPlanningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendar_/public': {
+      id: '/calendar_/public'
+      path: '/calendar/public'
+      fullPath: '/calendar/public'
+      preLoaderRoute: typeof CalendarPublicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendar_/settings': {
+      id: '/calendar_/settings'
+      path: '/calendar/settings'
+      fullPath: '/calendar/settings'
+      preLoaderRoute: typeof CalendarSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cg-coaching/': {
+      id: '/cg-coaching/'
+      path: '/'
+      fullPath: '/cg-coaching/'
+      preLoaderRoute: typeof CgCoachingIndexRouteImport
+      parentRoute: typeof CgCoachingRoute
+    }
+    '/cg-coaching/settings': {
+      id: '/cg-coaching/settings'
+      path: '/settings'
+      fullPath: '/cg-coaching/settings'
+      preLoaderRoute: typeof CgCoachingSettingsRouteImport
+      parentRoute: typeof CgCoachingRoute
+    }
+    '/documents/': {
+      id: '/documents/'
+      path: '/documents'
+      fullPath: '/documents/'
+      preLoaderRoute: typeof DocumentsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/elder/': {
+      id: '/elder/'
+      path: '/'
+      fullPath: '/elder/'
+      preLoaderRoute: typeof ElderIndexRouteImport
+      parentRoute: typeof ElderRoute
+    }
+    '/elder/archive': {
+      id: '/elder/archive'
+      path: '/archive'
+      fullPath: '/elder/archive'
+      preLoaderRoute: typeof ElderArchiveRouteImport
+      parentRoute: typeof ElderRoute
+    }
+    '/elder/meetings': {
+      id: '/elder/meetings'
+      path: '/meetings'
+      fullPath: '/elder/meetings'
+      preLoaderRoute: typeof ElderMeetingsRouteImport
+      parentRoute: typeof ElderRoute
+    }
+    '/elder/motions': {
+      id: '/elder/motions'
+      path: '/motions'
+      fullPath: '/elder/motions'
+      preLoaderRoute: typeof ElderMotionsRouteImport
+      parentRoute: typeof ElderRoute
+    }
+    '/elder/pastoral-care': {
+      id: '/elder/pastoral-care'
+      path: '/pastoral-care'
+      fullPath: '/elder/pastoral-care'
+      preLoaderRoute: typeof ElderPastoralCareRouteImport
+      parentRoute: typeof ElderRoute
+    }
+    '/elder/settings': {
+      id: '/elder/settings'
+      path: '/settings'
+      fullPath: '/elder/settings'
+      preLoaderRoute: typeof ElderSettingsRouteImport
+      parentRoute: typeof ElderRoute
+    }
+    '/inquiry/$token': {
+      id: '/inquiry/$token'
+      path: '/inquiry/$token'
+      fullPath: '/inquiry/$token'
+      preLoaderRoute: typeof InquiryTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ministry-plans/': {
+      id: '/ministry-plans/'
+      path: '/ministry-plans'
+      fullPath: '/ministry-plans/'
+      preLoaderRoute: typeof MinistryPlansIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ministry-plans/$planId': {
+      id: '/ministry-plans/$planId'
+      path: '/ministry-plans/$planId'
+      fullPath: '/ministry-plans/$planId'
+      preLoaderRoute: typeof MinistryPlansPlanIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ministry-plans/admin': {
+      id: '/ministry-plans/admin'
+      path: '/ministry-plans/admin'
+      fullPath: '/ministry-plans/admin'
+      preLoaderRoute: typeof MinistryPlansAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/': {
+      id: '/onboarding/'
+      path: '/onboarding'
+      fullPath: '/onboarding/'
+      preLoaderRoute: typeof OnboardingIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/$workflowId': {
+      id: '/onboarding/$workflowId'
+      path: '/onboarding/$workflowId'
+      fullPath: '/onboarding/$workflowId'
+      preLoaderRoute: typeof OnboardingWorkflowIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/templates': {
+      id: '/onboarding/templates'
+      path: '/onboarding/templates'
+      fullPath: '/onboarding/templates'
+      preLoaderRoute: typeof OnboardingTemplatesRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/annual-planning/budget/$submissionId': {
       id: '/annual-planning/budget/$submissionId'
@@ -1297,116 +1234,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AnnualPlanningBudgetSubmissionIdRouteImport
       parentRoute: typeof AnnualPlanningBudgetRoute
     }
-    '/api/public/hooks/weekly-digest-monday': {
-      id: '/api/public/hooks/weekly-digest-monday'
-      path: '/api/public/hooks/weekly-digest-monday'
-      fullPath: '/api/public/hooks/weekly-digest-monday'
-      preLoaderRoute: typeof ApiPublicHooksWeeklyDigestMondayRouteImport
+    '/annual-planning/budget/admin': {
+      id: '/annual-planning/budget/admin'
+      path: '/admin'
+      fullPath: '/annual-planning/budget/admin'
+      preLoaderRoute: typeof AnnualPlanningBudgetAdminRouteImport
+      parentRoute: typeof AnnualPlanningBudgetRoute
+    }
+    '/api/google/oauth-callback': {
+      id: '/api/google/oauth-callback'
+      path: '/api/google/oauth-callback'
+      fullPath: '/api/google/oauth-callback'
+      preLoaderRoute: typeof ApiGoogleOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/sync-google-tasks': {
-      id: '/api/public/hooks/sync-google-tasks'
-      path: '/api/public/hooks/sync-google-tasks'
-      fullPath: '/api/public/hooks/sync-google-tasks'
-      preLoaderRoute: typeof ApiPublicHooksSyncGoogleTasksRouteImport
-      parentRoute: typeof rootRouteImport
+    '/calendar_/planning/$submissionId': {
+      id: '/calendar_/planning/$submissionId'
+      path: '/$submissionId'
+      fullPath: '/calendar/planning/$submissionId'
+      preLoaderRoute: typeof CalendarPlanningSubmissionIdRouteImport
+      parentRoute: typeof CalendarPlanningRoute
     }
-    '/api/public/hooks/sunday-review-nudge': {
-      id: '/api/public/hooks/sunday-review-nudge'
-      path: '/api/public/hooks/sunday-review-nudge'
-      fullPath: '/api/public/hooks/sunday-review-nudge'
-      preLoaderRoute: typeof ApiPublicHooksSundayReviewNudgeRouteImport
-      parentRoute: typeof rootRouteImport
+    '/calendar_/planning/review': {
+      id: '/calendar_/planning/review'
+      path: '/review'
+      fullPath: '/calendar/planning/review'
+      preLoaderRoute: typeof CalendarPlanningReviewRouteImport
+      parentRoute: typeof CalendarPlanningRoute
     }
-    '/api/public/hooks/send-weekly-digest': {
-      id: '/api/public/hooks/send-weekly-digest'
-      path: '/api/public/hooks/send-weekly-digest'
-      fullPath: '/api/public/hooks/send-weekly-digest'
-      preLoaderRoute: typeof ApiPublicHooksSendWeeklyDigestRouteImport
-      parentRoute: typeof rootRouteImport
+    '/elder/meetings/': {
+      id: '/elder/meetings/'
+      path: '/'
+      fullPath: '/elder/meetings/'
+      preLoaderRoute: typeof ElderMeetingsIndexRouteImport
+      parentRoute: typeof ElderMeetingsRoute
     }
-    '/api/public/hooks/plan-cycle-submissions-due': {
-      id: '/api/public/hooks/plan-cycle-submissions-due'
-      path: '/api/public/hooks/plan-cycle-submissions-due'
-      fullPath: '/api/public/hooks/plan-cycle-submissions-due'
-      preLoaderRoute: typeof ApiPublicHooksPlanCycleSubmissionsDueRouteImport
-      parentRoute: typeof rootRouteImport
+    '/elder/meetings/$meetingId': {
+      id: '/elder/meetings/$meetingId'
+      path: '/$meetingId'
+      fullPath: '/elder/meetings/$meetingId'
+      preLoaderRoute: typeof ElderMeetingsMeetingIdRouteImport
+      parentRoute: typeof ElderMeetingsRoute
     }
-    '/api/public/hooks/plan-cycle-nudge': {
-      id: '/api/public/hooks/plan-cycle-nudge'
-      path: '/api/public/hooks/plan-cycle-nudge'
-      fullPath: '/api/public/hooks/plan-cycle-nudge'
-      preLoaderRoute: typeof ApiPublicHooksPlanCycleNudgeRouteImport
-      parentRoute: typeof rootRouteImport
+    '/elder/motions/': {
+      id: '/elder/motions/'
+      path: '/'
+      fullPath: '/elder/motions/'
+      preLoaderRoute: typeof ElderMotionsIndexRouteImport
+      parentRoute: typeof ElderMotionsRoute
     }
-    '/api/public/hooks/plan-cycle-may1': {
-      id: '/api/public/hooks/plan-cycle-may1'
-      path: '/api/public/hooks/plan-cycle-may1'
-      fullPath: '/api/public/hooks/plan-cycle-may1'
-      preLoaderRoute: typeof ApiPublicHooksPlanCycleMay1RouteImport
-      parentRoute: typeof rootRouteImport
+    '/elder/motions/$motionId': {
+      id: '/elder/motions/$motionId'
+      path: '/$motionId'
+      fullPath: '/elder/motions/$motionId'
+      preLoaderRoute: typeof ElderMotionsMotionIdRouteImport
+      parentRoute: typeof ElderMotionsRoute
     }
-    '/api/public/hooks/plan-cycle-jun30': {
-      id: '/api/public/hooks/plan-cycle-jun30'
-      path: '/api/public/hooks/plan-cycle-jun30'
-      fullPath: '/api/public/hooks/plan-cycle-jun30'
-      preLoaderRoute: typeof ApiPublicHooksPlanCycleJun30RouteImport
-      parentRoute: typeof rootRouteImport
+    '/ministry-plans/$planId/review': {
+      id: '/ministry-plans/$planId/review'
+      path: '/review'
+      fullPath: '/ministry-plans/$planId/review'
+      preLoaderRoute: typeof MinistryPlansPlanIdReviewRouteImport
+      parentRoute: typeof MinistryPlansPlanIdRoute
     }
-    '/api/public/hooks/elder-touchpoint-threshold': {
-      id: '/api/public/hooks/elder-touchpoint-threshold'
-      path: '/api/public/hooks/elder-touchpoint-threshold'
-      fullPath: '/api/public/hooks/elder-touchpoint-threshold'
-      preLoaderRoute: typeof ApiPublicHooksElderTouchpointThresholdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/elder-touchpoint-digest': {
-      id: '/api/public/hooks/elder-touchpoint-digest'
-      path: '/api/public/hooks/elder-touchpoint-digest'
-      fullPath: '/api/public/hooks/elder-touchpoint-digest'
-      preLoaderRoute: typeof ApiPublicHooksElderTouchpointDigestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/calendar-cycle-submissions-due': {
-      id: '/api/public/hooks/calendar-cycle-submissions-due'
-      path: '/api/public/hooks/calendar-cycle-submissions-due'
-      fullPath: '/api/public/hooks/calendar-cycle-submissions-due'
-      preLoaderRoute: typeof ApiPublicHooksCalendarCycleSubmissionsDueRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/calendar-cycle-nudge': {
-      id: '/api/public/hooks/calendar-cycle-nudge'
-      path: '/api/public/hooks/calendar-cycle-nudge'
-      fullPath: '/api/public/hooks/calendar-cycle-nudge'
-      preLoaderRoute: typeof ApiPublicHooksCalendarCycleNudgeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/calendar-cycle-may1': {
-      id: '/api/public/hooks/calendar-cycle-may1'
-      path: '/api/public/hooks/calendar-cycle-may1'
-      fullPath: '/api/public/hooks/calendar-cycle-may1'
-      preLoaderRoute: typeof ApiPublicHooksCalendarCycleMay1RouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/calendar-cycle-jun30': {
-      id: '/api/public/hooks/calendar-cycle-jun30'
-      path: '/api/public/hooks/calendar-cycle-jun30'
-      fullPath: '/api/public/hooks/calendar-cycle-jun30'
-      preLoaderRoute: typeof ApiPublicHooksCalendarCycleJun30RouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/budget-cycle-mar1': {
-      id: '/api/public/hooks/budget-cycle-mar1'
-      path: '/api/public/hooks/budget-cycle-mar1'
-      fullPath: '/api/public/hooks/budget-cycle-mar1'
-      preLoaderRoute: typeof ApiPublicHooksBudgetCycleMar1RouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/budget-cycle-apr1': {
-      id: '/api/public/hooks/budget-cycle-apr1'
-      path: '/api/public/hooks/budget-cycle-apr1'
-      fullPath: '/api/public/hooks/budget-cycle-apr1'
-      preLoaderRoute: typeof ApiPublicHooksBudgetCycleApr1RouteImport
+    '/api/public/hooks/action-items-digest': {
+      id: '/api/public/hooks/action-items-digest'
+      path: '/api/public/hooks/action-items-digest'
+      fullPath: '/api/public/hooks/action-items-digest'
+      preLoaderRoute: typeof ApiPublicHooksActionItemsDigestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/auto-finalize-meeting': {
@@ -1416,11 +1311,116 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksAutoFinalizeMeetingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/action-items-digest': {
-      id: '/api/public/hooks/action-items-digest'
-      path: '/api/public/hooks/action-items-digest'
-      fullPath: '/api/public/hooks/action-items-digest'
-      preLoaderRoute: typeof ApiPublicHooksActionItemsDigestRouteImport
+    '/api/public/hooks/budget-cycle-apr1': {
+      id: '/api/public/hooks/budget-cycle-apr1'
+      path: '/api/public/hooks/budget-cycle-apr1'
+      fullPath: '/api/public/hooks/budget-cycle-apr1'
+      preLoaderRoute: typeof ApiPublicHooksBudgetCycleApr1RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/budget-cycle-mar1': {
+      id: '/api/public/hooks/budget-cycle-mar1'
+      path: '/api/public/hooks/budget-cycle-mar1'
+      fullPath: '/api/public/hooks/budget-cycle-mar1'
+      preLoaderRoute: typeof ApiPublicHooksBudgetCycleMar1RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/calendar-cycle-jun30': {
+      id: '/api/public/hooks/calendar-cycle-jun30'
+      path: '/api/public/hooks/calendar-cycle-jun30'
+      fullPath: '/api/public/hooks/calendar-cycle-jun30'
+      preLoaderRoute: typeof ApiPublicHooksCalendarCycleJun30RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/calendar-cycle-may1': {
+      id: '/api/public/hooks/calendar-cycle-may1'
+      path: '/api/public/hooks/calendar-cycle-may1'
+      fullPath: '/api/public/hooks/calendar-cycle-may1'
+      preLoaderRoute: typeof ApiPublicHooksCalendarCycleMay1RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/calendar-cycle-nudge': {
+      id: '/api/public/hooks/calendar-cycle-nudge'
+      path: '/api/public/hooks/calendar-cycle-nudge'
+      fullPath: '/api/public/hooks/calendar-cycle-nudge'
+      preLoaderRoute: typeof ApiPublicHooksCalendarCycleNudgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/calendar-cycle-submissions-due': {
+      id: '/api/public/hooks/calendar-cycle-submissions-due'
+      path: '/api/public/hooks/calendar-cycle-submissions-due'
+      fullPath: '/api/public/hooks/calendar-cycle-submissions-due'
+      preLoaderRoute: typeof ApiPublicHooksCalendarCycleSubmissionsDueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/elder-touchpoint-digest': {
+      id: '/api/public/hooks/elder-touchpoint-digest'
+      path: '/api/public/hooks/elder-touchpoint-digest'
+      fullPath: '/api/public/hooks/elder-touchpoint-digest'
+      preLoaderRoute: typeof ApiPublicHooksElderTouchpointDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/elder-touchpoint-threshold': {
+      id: '/api/public/hooks/elder-touchpoint-threshold'
+      path: '/api/public/hooks/elder-touchpoint-threshold'
+      fullPath: '/api/public/hooks/elder-touchpoint-threshold'
+      preLoaderRoute: typeof ApiPublicHooksElderTouchpointThresholdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/plan-cycle-jun30': {
+      id: '/api/public/hooks/plan-cycle-jun30'
+      path: '/api/public/hooks/plan-cycle-jun30'
+      fullPath: '/api/public/hooks/plan-cycle-jun30'
+      preLoaderRoute: typeof ApiPublicHooksPlanCycleJun30RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/plan-cycle-may1': {
+      id: '/api/public/hooks/plan-cycle-may1'
+      path: '/api/public/hooks/plan-cycle-may1'
+      fullPath: '/api/public/hooks/plan-cycle-may1'
+      preLoaderRoute: typeof ApiPublicHooksPlanCycleMay1RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/plan-cycle-nudge': {
+      id: '/api/public/hooks/plan-cycle-nudge'
+      path: '/api/public/hooks/plan-cycle-nudge'
+      fullPath: '/api/public/hooks/plan-cycle-nudge'
+      preLoaderRoute: typeof ApiPublicHooksPlanCycleNudgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/plan-cycle-submissions-due': {
+      id: '/api/public/hooks/plan-cycle-submissions-due'
+      path: '/api/public/hooks/plan-cycle-submissions-due'
+      fullPath: '/api/public/hooks/plan-cycle-submissions-due'
+      preLoaderRoute: typeof ApiPublicHooksPlanCycleSubmissionsDueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/send-weekly-digest': {
+      id: '/api/public/hooks/send-weekly-digest'
+      path: '/api/public/hooks/send-weekly-digest'
+      fullPath: '/api/public/hooks/send-weekly-digest'
+      preLoaderRoute: typeof ApiPublicHooksSendWeeklyDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/sunday-review-nudge': {
+      id: '/api/public/hooks/sunday-review-nudge'
+      path: '/api/public/hooks/sunday-review-nudge'
+      fullPath: '/api/public/hooks/sunday-review-nudge'
+      preLoaderRoute: typeof ApiPublicHooksSundayReviewNudgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/sync-google-tasks': {
+      id: '/api/public/hooks/sync-google-tasks'
+      path: '/api/public/hooks/sync-google-tasks'
+      fullPath: '/api/public/hooks/sync-google-tasks'
+      preLoaderRoute: typeof ApiPublicHooksSyncGoogleTasksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/weekly-digest-monday': {
+      id: '/api/public/hooks/weekly-digest-monday'
+      path: '/api/public/hooks/weekly-digest-monday'
+      fullPath: '/api/public/hooks/weekly-digest-monday'
+      preLoaderRoute: typeof ApiPublicHooksWeeklyDigestMondayRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/missions/inquiry/$token': {

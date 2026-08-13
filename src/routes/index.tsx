@@ -417,7 +417,7 @@ function MetricsStatusCard({ connected, error, weeks }: { connected: boolean; er
       ) : (
         <p className="text-sm text-muted-foreground">
           Not connected.{" "}
-          <Link to="/settings" className="underline">Connect in Settings</Link> to see live attendance and giving here.
+          <Link to="/settings" search={{ google: undefined, msg: undefined }} className="underline">Connect in Settings</Link> to see live attendance and giving here.
         </p>
       )}
     </div>
