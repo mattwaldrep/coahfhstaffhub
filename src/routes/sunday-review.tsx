@@ -200,11 +200,11 @@ function SundayReviewPage() {
         <div className="bg-surface border border-border rounded-xl p-4 mb-6">
           <h2 className="text-sm font-medium mb-2">Rating scale</h2>
           <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 text-sm">
-            <div><span className="font-bold text-primary">5</span> — unusually outstanding</div>
-            <div><span className="font-bold text-primary">4</span> — really good</div>
-            <div><span className="font-bold text-primary">3</span> — just okay</div>
-            <div><span className="font-bold text-primary">2</span> — needs some work</div>
-            <div><span className="font-bold text-primary">1</span> — totally bombed, bad</div>
+            <div><span className="font-bold text-primary">5</span> — amazing</div>
+            <div><span className="font-bold text-primary">4</span> — very good</div>
+            <div><span className="font-bold text-primary">3</span> — good</div>
+            <div><span className="font-bold text-primary">2</span> — okay</div>
+            <div><span className="font-bold text-primary">1</span> — bad</div>
           </div>
         </div>
 
