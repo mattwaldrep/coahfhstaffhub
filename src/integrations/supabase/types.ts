@@ -3321,6 +3321,7 @@ export type Database = {
       is_chair_of_deacons: { Args: { _user_id: string }; Returns: boolean }
       is_full_elder: { Args: { _user_id: string }; Returns: boolean }
       is_serve_leader_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_staff_member: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role:
