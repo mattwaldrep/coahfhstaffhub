@@ -654,10 +654,10 @@ const SUNDAY_SLOTS = [
   { key: "core_value_highlight", label: "Core Value Highlight" },
 ] as const;
 
-const CORE_VALUE_ROTATION = ["Gospel", "Community", "Mission"] as const;
-// Anchor: Sunday 2024-01-07 starts the rotation on "Gospel".
+const CORE_VALUE_ROTATION = ["Gospel", "Family", "Sent"] as const;
+// Anchor: Sunday 2026-08-30 starts the rotation on "Gospel".
 function coreValueForSunday(sundayIso: string): string {
-  const anchor = Date.UTC(2024, 0, 7); // 2024-01-07
+  const anchor = Date.UTC(2026, 7, 30); // 2026-08-30
   const [y, m, d] = sundayIso.split("-").map(Number);
   const target = Date.UTC(y, (m ?? 1) - 1, d ?? 1);
   const weeks = Math.round((target - anchor) / (7 * 86400000));
