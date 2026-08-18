@@ -86,8 +86,8 @@ CRITICAL writing rules for notes:
 - Only include sections the user actually spoke about. Leave others as empty string.
 - Don't invent details or sentiment the user didn't express.
 
-Rating rules (1=poor, 2=below average, 3=solid, 4=great, 5=outstanding):
-- Only set a rating when the user gave a clear qualitative signal (e.g. "worship was awesome" → 5; "sermon was solid but the intro dragged" → 4; "confession felt flat" → 2). If they didn't comment evaluatively on a section, leave its rating null.
+Rating rules (1=bad, 2=okay, 3=good, 4=very good, 5=amazing):
+- Only set a rating when the user gave a clear qualitative signal (e.g. "worship was awesome" → 5; "sermon was good but the intro dragged" → 4; "confession felt flat" → 2). If they didn't comment evaluatively on a section, leave its rating null.
 - If they explicitly said a number ("I'd give the sermon a 4"), use that.
 
 Task rules:
