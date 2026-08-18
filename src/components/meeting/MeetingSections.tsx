@@ -343,7 +343,7 @@ export function SundayReviewSection({ meetingId }: { meetingId: string }) {
             <RatingPill label="Worship" value={avg(latest.map((r) => r.worship_rating))} />
             <RatingPill label="Sermon" value={avg(latest.map((r) => r.sermon_rating))} />
             <RatingPill label="Connect" value={avg(latest.map((r) => r.connect_rating))} />
-            <RatingPill label="Confession" value={avg(latest.map((r) => r.confession_rating))} />
+            <RatingPill label="Call & Confession" value={avg(latest.map((r) => r.confession_rating))} />
           </div>
 
           {/* Wins / opportunities aggregated */}

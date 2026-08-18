@@ -73,7 +73,7 @@ export const processSundayReviewVoice = createServerFn({ method: "POST" })
 
 Form sections (each has free-text notes; the first four also have a 1-5 rating):
 - worship (musical worship)
-- confession (call to worship / confession)
+- call and confession (call to worship / confession)
 - connect (connect moment / core values / ministry highlight)
 - sermon
 - wins: things that went well overall
@@ -87,7 +87,7 @@ CRITICAL writing rules for notes:
 - Don't invent details or sentiment the user didn't express.
 
 Rating rules (1=bad, 2=okay, 3=good, 4=very good, 5=amazing):
-- Only set a rating when the user gave a clear qualitative signal (e.g. "worship was awesome" → 5; "sermon was good but the intro dragged" → 4; "confession felt flat" → 2). If they didn't comment evaluatively on a section, leave its rating null.
+- Only set a rating when the user gave a clear qualitative signal (e.g. "worship was awesome" → 5; "sermon was good but the intro dragged" → 4; "call and confession felt flat" → 2). If they didn't comment evaluatively on a section, leave its rating null.
 - If they explicitly said a number ("I'd give the sermon a 4"), use that.
 
 Task rules:
