@@ -98,13 +98,17 @@ function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="font-display font-bold text-2xl tracking-tight">
-            COAH Forest Hills Staff Hub
+          <Link to="/" className="inline-flex flex-col items-center gap-3">
+            <span className="rounded-2xl bg-foreground p-5">
+              <img src={coahLogo.url} alt="City on a Hill Forest Hills" className="h-24 w-auto" />
+            </span>
+            <span className="font-display font-semibold text-xl tracking-tight">Leadership Hub</span>
           </Link>
           <p className="text-sm text-muted-foreground mt-2">
             {mode === "signin" ? "Sign in to continue" : "Create your account"}
           </p>
         </div>
+
         <form onSubmit={submit} className="bg-surface border border-border rounded-2xl p-6 space-y-4 shadow-soft">
           <Button type="button" variant="outline" className="w-full" onClick={signInWithGoogle}>
             Continue with Google
