@@ -39,6 +39,7 @@ import {
   HandHeart,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import coahMark from "@/assets/coah-mark.png.asset.json";
 
 type NavItem = {
   to?: string;
@@ -179,7 +180,7 @@ export function AppSidebar() {
       <SidebarHeader className="px-3 py-3 border-b border-sidebar-border">
         <Link to="/" className="flex items-center gap-2.5 font-display font-semibold tracking-tight">
           <div className="w-8 h-8 shrink-0 rounded-md bg-foreground flex items-center justify-center p-1">
-            <img src={coahLogo.url} alt="City on a Hill Forest Hills" className="w-full h-full object-contain object-top" />
+            <img src={coahMark.url} alt="City on a Hill Forest Hills" className="w-full h-full object-contain" />
           </div>
           {!collapsed && <span className="whitespace-pre-line leading-tight">COAH Forest Hills{"\n"}Leadership Hub</span>}
         </Link>
