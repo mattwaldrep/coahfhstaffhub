@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import coahLogo from "@/assets/coah-logo.png.asset.json";
 
 async function signInWithGoogle() {
   const result = await lovable.auth.signInWithOAuth("google", {
