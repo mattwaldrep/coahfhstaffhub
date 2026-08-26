@@ -177,13 +177,14 @@ export function AppSidebar() {
       className="[&_[data-sidebar=content]]:bg-sidebar [&_[data-sidebar=content]]:text-sidebar-foreground [&_[data-sidebar=group-label]]:text-sidebar-foreground/70 [&_[data-sidebar=menu-button]]:text-sidebar-foreground [&_[data-sidebar=menu-button][data-active=true]]:bg-sidebar-accent [&_[data-sidebar=menu-button][data-active=true]]:text-sidebar-accent-foreground [&_[data-sidebar=menu-button]:hover]:bg-sidebar-accent [&_[data-sidebar=menu-button]:hover]:text-sidebar-accent-foreground [&_[data-sidebar=menu-sub-button]]:text-sidebar-foreground/85 [&_[data-sidebar=menu-sub-button][data-active=true]]:bg-sidebar-accent [&_[data-sidebar=menu-sub-button][data-active=true]]:text-sidebar-accent-foreground [&_[data-sidebar=menu-sub-button]:hover]:bg-sidebar-accent [&_[data-sidebar=menu-sub-button]:hover]:text-sidebar-accent-foreground"
     >
       <SidebarHeader className="px-3 py-3 border-b border-sidebar-border">
-        <Link to="/" className="flex items-center gap-2 font-display font-bold tracking-tight">
-          <div className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-xs">
-            CH
+        <Link to="/" className="flex items-center gap-2.5 font-display font-semibold tracking-tight">
+          <div className="w-8 h-8 shrink-0 rounded-md bg-foreground flex items-center justify-center p-1">
+            <img src={coahLogo.url} alt="City on a Hill Forest Hills" className="w-full h-full object-contain object-top" />
           </div>
-          {!collapsed && <span className="whitespace-pre-line">COAH Forest Hills{"\n"}Leadership Hub</span>}
+          {!collapsed && <span className="whitespace-pre-line leading-tight">COAH Forest Hills{"\n"}Leadership Hub</span>}
         </Link>
       </SidebarHeader>
+
       <SidebarContent>
         <SidebarGroup>
           {!collapsed && <SidebarGroupLabel>Staff Hub</SidebarGroupLabel>}
