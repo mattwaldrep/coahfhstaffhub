@@ -318,6 +318,10 @@ export type Database = {
           multi_day_mode: string
           other_listings: string[]
           pco_registration: boolean
+          pco_signup_id: string | null
+          pco_signup_time_id: string | null
+          pco_signup_url: string | null
+          pco_synced_at: string | null
           readiness: Database["public"]["Enums"]["readiness"] | null
           recurrence_end_date: string | null
           room_approval_received: boolean
@@ -355,6 +359,10 @@ export type Database = {
           multi_day_mode?: string
           other_listings?: string[]
           pco_registration?: boolean
+          pco_signup_id?: string | null
+          pco_signup_time_id?: string | null
+          pco_signup_url?: string | null
+          pco_synced_at?: string | null
           readiness?: Database["public"]["Enums"]["readiness"] | null
           recurrence_end_date?: string | null
           room_approval_received?: boolean
@@ -392,6 +400,10 @@ export type Database = {
           multi_day_mode?: string
           other_listings?: string[]
           pco_registration?: boolean
+          pco_signup_id?: string | null
+          pco_signup_time_id?: string | null
+          pco_signup_url?: string | null
+          pco_synced_at?: string | null
           readiness?: Database["public"]["Enums"]["readiness"] | null
           recurrence_end_date?: string | null
           room_approval_received?: boolean
@@ -3015,6 +3027,30 @@ export type Database = {
           id?: boolean
           sunday_service_type_id?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      pco_signup_ignores: {
+        Row: {
+          created_at: string
+          ignored_by: string | null
+          signup_id: string
+          signup_name: string | null
+          signup_time_id: string
+        }
+        Insert: {
+          created_at?: string
+          ignored_by?: string | null
+          signup_id: string
+          signup_name?: string | null
+          signup_time_id: string
+        }
+        Update: {
+          created_at?: string
+          ignored_by?: string | null
+          signup_id?: string
+          signup_name?: string | null
+          signup_time_id?: string
         }
         Relationships: []
       }
