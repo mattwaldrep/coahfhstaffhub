@@ -60,7 +60,13 @@ export const listPcoSignupQueue = createServerFn({ method: "POST" })
       const ev = linkedMap.get(s.signup_time_id);
       if (!ev) continue;
       const title = titleFor(s);
-      const patch: Record<string, unknown> = {};
+      const patch: {
+        title?: string;
+        start_at?: string;
+        end_at?: string | null;
+        location?: string;
+        pco_synced_at?: string;
+      } = {};
       if (ev.title !== title) patch.title = title;
       if (ev.start_at !== s.starts_at) patch.start_at = s.starts_at;
       if ((ev.end_at ?? null) !== (s.ends_at ?? null)) patch.end_at = s.ends_at;
