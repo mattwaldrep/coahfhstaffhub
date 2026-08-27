@@ -598,6 +598,7 @@ function CalendarBody() {
     }
   };
   useEffect(() => { reloadCategories(); }, []);
+  const [pcoSignupsOpen, setPcoSignupsOpen] = useState(false);
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
