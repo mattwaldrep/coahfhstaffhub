@@ -1769,6 +1769,16 @@ function CalendarBody() {
             ))}
           </div>
 
+          {isCore && (
+            <Button
+              variant="outline"
+              onClick={() => setPcoSignupsOpen(true)}
+              className="rounded-xl font-semibold shadow-sm"
+            >
+              <Download className="w-4 h-4 mr-1.5" /> PCO sign-ups
+            </Button>
+          )}
+
           {canEdit && (
             <Button onClick={() => openNew()} className="rounded-xl font-bold shadow-sm">
               <Plus className="w-4 h-4 mr-1.5" /> New
