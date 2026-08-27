@@ -66,7 +66,9 @@ import {
   CheckCircle2,
   Search,
   CheckSquare,
+  Download,
 } from "lucide-react";
+import { PcoSignupsDialog } from "@/components/calendar/PcoSignupsDialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -596,6 +598,7 @@ function CalendarBody() {
     }
   };
   useEffect(() => { reloadCategories(); }, []);
+  const [pcoSignupsOpen, setPcoSignupsOpen] = useState(false);
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
@@ -1769,6 +1772,16 @@ function CalendarBody() {
             ))}
           </div>
 
+          {isCore && (
+            <Button
+              variant="outline"
+              onClick={() => setPcoSignupsOpen(true)}
+              className="rounded-xl font-semibold shadow-sm"
+            >
+              <Download className="w-4 h-4 mr-1.5" /> PCO sign-ups
+            </Button>
+          )}
+
           {canEdit && (
             <Button onClick={() => openNew()} className="rounded-xl font-bold shadow-sm">
               <Plus className="w-4 h-4 mr-1.5" /> New
@@ -1980,6 +1993,13 @@ function CalendarBody() {
         />
       )}
 
+      <PcoSignupsDialog
+        open={pcoSignupsOpen}
+        onOpenChange={setPcoSignupsOpen}
+        subCals={SUB_CALS}
+        categories={categories}
+        onImported={() => { load(); }}
+      />
 
       <Dialog open={manageCatOpen} onOpenChange={setManageCatOpen}>
         <DialogContent className="max-w-md">
