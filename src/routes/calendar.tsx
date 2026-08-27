@@ -1993,6 +1993,13 @@ function CalendarBody() {
         />
       )}
 
+      <PcoSignupsDialog
+        open={pcoSignupsOpen}
+        onOpenChange={setPcoSignupsOpen}
+        subCals={SUB_CALS}
+        categories={categories}
+        onImported={() => { load(); }}
+      />
 
       <Dialog open={manageCatOpen} onOpenChange={setManageCatOpen}>
         <DialogContent className="max-w-md">
