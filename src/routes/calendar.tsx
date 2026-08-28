@@ -1635,7 +1635,9 @@ function CalendarBody() {
     if (categoryFilter !== "all" && o.category !== categoryFilter) return false;
     if (flagFilter === "pco" && !o.pco_registration) return false;
     if (flagFilter === "missions" && !o.missions_team_needed) return false;
-    if (hidePast && o.occurrence_date < startOfToday) return false;
+    // "Hide past" only trims days before today when the current view actually
+    // includes today — navigating to past months must still show everything.
+    if (hidePast && range.end >= startOfToday && o.occurrence_date < startOfToday) return false;
     if (normalizedQuery) {
       const hay = [
         o.title,
