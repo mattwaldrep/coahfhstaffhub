@@ -2011,6 +2011,14 @@ function CalendarBody() {
         onImported={() => { load(); }}
       />
 
+      <ExportCalendarDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        subCals={SUB_CALS}
+        categories={categories}
+        expand={(evts, s, e) => expandEvents(evts as EventRow[], s, e)}
+      />
+
       <Dialog open={manageCatOpen} onOpenChange={setManageCatOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
