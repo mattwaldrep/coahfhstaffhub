@@ -69,6 +69,7 @@ import {
   Download,
 } from "lucide-react";
 import { PcoSignupsDialog } from "@/components/calendar/PcoSignupsDialog";
+import { ExportCalendarDialog } from "@/components/calendar/ExportCalendarDialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -599,6 +600,7 @@ function CalendarBody() {
   };
   useEffect(() => { reloadCategories(); }, []);
   const [pcoSignupsOpen, setPcoSignupsOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
@@ -1782,6 +1784,14 @@ function CalendarBody() {
             </Button>
           )}
 
+          <Button
+            variant="outline"
+            onClick={() => setExportOpen(true)}
+            className="rounded-xl font-semibold shadow-sm"
+          >
+            <Download className="w-4 h-4 mr-1.5" /> Export
+          </Button>
+
           {canEdit && (
             <Button onClick={() => openNew()} className="rounded-xl font-bold shadow-sm">
               <Plus className="w-4 h-4 mr-1.5" /> New
@@ -1999,6 +2009,14 @@ function CalendarBody() {
         subCals={SUB_CALS}
         categories={categories}
         onImported={() => { load(); }}
+      />
+
+      <ExportCalendarDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        subCals={SUB_CALS}
+        categories={categories}
+        expand={(evts, s, e) => expandEvents(evts as EventRow[], s, e)}
       />
 
       <Dialog open={manageCatOpen} onOpenChange={setManageCatOpen}>
