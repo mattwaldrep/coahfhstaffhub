@@ -1784,6 +1784,14 @@ function CalendarBody() {
             </Button>
           )}
 
+          <Button
+            variant="outline"
+            onClick={() => setExportOpen(true)}
+            className="rounded-xl font-semibold shadow-sm"
+          >
+            <Download className="w-4 h-4 mr-1.5" /> Export
+          </Button>
+
           {canEdit && (
             <Button onClick={() => openNew()} className="rounded-xl font-bold shadow-sm">
               <Plus className="w-4 h-4 mr-1.5" /> New
