@@ -67,7 +67,13 @@ import {
   Search,
   CheckSquare,
   Download,
+  SlidersHorizontal,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { PcoSignupsDialog } from "@/components/calendar/PcoSignupsDialog";
 import { ExportCalendarDialog } from "@/components/calendar/ExportCalendarDialog";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -556,6 +562,7 @@ function CalendarBody() {
   })();
   const [view, setView] = useState<"month" | "week" | "list">(loadedPrefs?.view ?? "list");
   const [hidePast, setHidePast] = useState<boolean>(loadedPrefs?.hidePast ?? false);
+  const [listSpan, setListSpan] = useState<number>(loadedPrefs?.listSpan ?? 1);
   const [cursor, setCursor] = useState(new Date());
   const [events, setEvents] = useState<EventRow[]>([]);
   const [filters, setFilters] = useState<Record<string, boolean>>(loadedPrefs?.filters ?? {});
@@ -741,10 +748,10 @@ function CalendarBody() {
       };
     }
     return {
-      start: new Date(cursor.getFullYear(), cursor.getMonth(), 1),
-      end: addMonths(cursor, 2),
+      start: startOfMonth(cursor),
+      end: endOfMonth(addMonths(cursor, Math.max(1, listSpan) - 1)),
     };
-  }, [cursor, view]);
+  }, [cursor, view, listSpan]);
 
   const formIdRef = useRef<string | undefined>(undefined);
   useEffect(() => { formIdRef.current = form.id; }, [form.id]);
@@ -1721,6 +1728,14 @@ function CalendarBody() {
   }
 
 
+  const stepMonths = view === "list" ? Math.max(1, listSpan) : 1;
+  const rangeLabel =
+    view === "week"
+      ? format(cursor, "MMM d, yyyy")
+      : view === "month" || listSpan === 1
+        ? format(cursor, "MMMM yyyy")
+        : `${format(cursor, "MMM yyyy")} – ${format(addMonths(cursor, listSpan - 1), "MMM yyyy")}`;
+
   return (
     <>
       <PlanningBanner />
@@ -1733,20 +1748,40 @@ function CalendarBody() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-3 bg-card border border-border px-3 py-1.5 rounded-xl shadow-sm">
-            <label className="flex items-center gap-2 pr-3 border-r border-border/60 cursor-pointer">
-              <Switch checked={hidePast} onCheckedChange={setHidePast} />
-              <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Hide past</span>
-            </label>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="rounded-xl shadow-sm" aria-label="View options">
+                <SlidersHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 p-2 space-y-2">
+              <label className="flex items-center justify-between gap-2 cursor-pointer px-1 py-1">
+                <span className="text-sm font-medium text-muted-foreground">Hide past</span>
+                <Switch checked={hidePast} onCheckedChange={setHidePast} />
+              </label>
+              {view === "list" && (
+                <div className="px-1 py-1 space-y-1">
+                  <span className="text-sm font-medium text-muted-foreground">Months shown</span>
+                  <Select value={String(listSpan)} onValueChange={(v) => setListSpan(Number(v))}>
+                    <SelectTrigger className="h-8 text-sm rounded-lg"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 month</SelectItem>
+                      <SelectItem value="3">3 months</SelectItem>
+                      <SelectItem value="6">6 months</SelectItem>
+                      <SelectItem value="12">12 months</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             <button
               type="button"
-              className="text-sm font-semibold text-foreground hover:text-primary transition-colors px-1"
+              className="w-full text-left text-sm font-semibold text-foreground hover:text-primary transition-colors px-1 py-1"
               onClick={() => {
                 if (!prefsKey) { toast.error("Sign in to save preferences"); return; }
                 try {
                   window.localStorage.setItem(
                     prefsKey,
-                    JSON.stringify({ view, hidePast, filters, categoryFilter, flagFilter }),
+                    JSON.stringify({ view, hidePast, listSpan, filters, categoryFilter, flagFilter }),
                   );
                   toast.success("Saved as your default calendar view");
                 } catch {
@@ -1756,7 +1791,8 @@ function CalendarBody() {
             >
               Save as default
             </button>
-          </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <div className="flex bg-card border border-border p-1 rounded-xl shadow-sm">
             {(["month", "week", "list"] as const).map((v) => (
@@ -1805,14 +1841,14 @@ function CalendarBody() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="icon" className="rounded-lg"
-                onClick={() => setCursor(view === "week" ? addWeeks(cursor, -1) : addMonths(cursor, -1))}>
+                onClick={() => setCursor(view === "week" ? addWeeks(cursor, -1) : addMonths(cursor, -stepMonths))}>
                 <ChevronLeft className="w-4 h-4" />
               </Button>
-              <div className="font-display text-lg font-bold min-w-[10rem] text-center">
-                {format(cursor, view === "week" ? "MMM d, yyyy" : "MMMM yyyy")}
+              <div className="font-display text-lg font-bold min-w-[12rem] text-center">
+                {rangeLabel}
               </div>
               <Button variant="ghost" size="icon" className="rounded-lg"
-                onClick={() => setCursor(view === "week" ? addWeeks(cursor, 1) : addMonths(cursor, 1))}>
+                onClick={() => setCursor(view === "week" ? addWeeks(cursor, 1) : addMonths(cursor, stepMonths))}>
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
