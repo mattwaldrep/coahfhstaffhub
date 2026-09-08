@@ -77,10 +77,6 @@ type Meeting = {
   completed_at?: string | null;
 };
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function MeetingPage() {
   const { user, hasAnyRole } = useAuth();
   const canManageMeeting = hasAnyRole(["core", "meeting"]);
@@ -111,24 +107,24 @@ function MeetingPage() {
     if (!user) return;
     let mounted = true;
     (async () => {
-      const date = todayISO();
-      // Find the current week's meeting (Mon–Sun) so opening the app on a
+      // Find the current week's meeting (Wed–Tue) so opening the app on a
       // different day reuses the same meeting rather than creating a second
       // entry for the week. Prefer one that hasn't been recapped yet.
       const today = new Date();
       const day = today.getDay(); // 0=Sun..6=Sat
-      const mondayOffset = day === 0 ? -6 : 1 - day;
-      const monday = new Date(today);
-      monday.setDate(today.getDate() + mondayOffset);
-      const sunday = new Date(monday);
-      sunday.setDate(monday.getDate() + 6);
+      const wednesdayOffset = day - 3; // 3 = Wed; negative before Wed, positive after
+      const wednesday = new Date(today);
+      wednesday.setDate(today.getDate() + wednesdayOffset);
+      const tuesday = new Date(wednesday);
+      tuesday.setDate(wednesday.getDate() + 6);
       const iso = (d: Date) => d.toISOString().slice(0, 10);
+      const meetingDate = iso(wednesday);
 
       const { data: weekRows } = await supabase
         .from("meetings")
         .select("*")
-        .gte("meeting_date", iso(monday))
-        .lte("meeting_date", iso(sunday))
+        .gte("meeting_date", iso(wednesday))
+        .lte("meeting_date", iso(tuesday))
         .order("meeting_date", { ascending: false });
 
       const open = (weekRows ?? []).find((r: any) => !r.recap_sent_at) ?? (weekRows ?? [])[0] ?? null;
@@ -142,7 +138,7 @@ function MeetingPage() {
         const { data: created, error } = await supabase
           .from("meetings")
           .upsert(
-            { meeting_date: date, title: "Weekly Staff Meeting", created_by: user.id },
+            { meeting_date: meetingDate, title: "Weekly Staff Meeting", created_by: user.id },
             { onConflict: "meeting_date" },
           )
           .select()
@@ -153,6 +149,7 @@ function MeetingPage() {
         }
         m = created as Meeting;
       }
+
       if (!mounted) return;
       setMeeting(m);
       setNotesDraft(m.notes ?? "");
