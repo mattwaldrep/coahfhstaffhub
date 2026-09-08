@@ -77,10 +77,6 @@ type Meeting = {
   completed_at?: string | null;
 };
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function MeetingPage() {
   const { user, hasAnyRole } = useAuth();
   const canManageMeeting = hasAnyRole(["core", "meeting"]);
