@@ -274,9 +274,9 @@ type SundayReview = {
 function RatingPill({ label, value }: { label: string; value: number | null }) {
   const v = value ?? 0;
   const tone =
-    v >= 4 ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-    : v === 3 ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
-    : v > 0 ? "bg-rose-500/15 text-rose-700 dark:text-rose-300"
+    v >= 3 ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+    : v >= 2 ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+    : v >= 1 ? "bg-rose-500/15 text-rose-700 dark:text-rose-300"
     : "bg-muted text-muted-foreground";
   return (
     <div className={cn("rounded-lg px-3 py-2 flex items-center justify-between", tone)}>
