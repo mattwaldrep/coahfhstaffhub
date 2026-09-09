@@ -112,7 +112,9 @@ function MeetingPage() {
       // entry for the week. Prefer one that hasn't been recapped yet.
       const today = new Date();
       const day = today.getDay(); // 0=Sun..6=Sat
-      const wednesdayOffset = day - 3; // 3 = Wed; negative before Wed, positive after
+      // Find the current week's Wednesday (Wed–Tue window). On Wednesday the offset is 0;
+      // on any other day we roll back to the most recent Wednesday.
+      const wednesdayOffset = -((day - 3 + 7) % 7);
       const wednesday = new Date(today);
       wednesday.setDate(today.getDate() + wednesdayOffset);
       const tuesday = new Date(wednesday);
