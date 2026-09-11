@@ -5,9 +5,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
 import { supabaseAdmin, assertFullElder } from "@/server/elder.server";
 
 async function loadRecipients(meetingType: string) {
-  const roles = meetingType === "joint"
+  const roles = (meetingType === "joint"
     ? ["elder", "elder_candidate", "deacon", "chair_of_deacons"]
-    : ["elder", "elder_candidate"];
+    : ["elder", "elder_candidate"]) as ("elder" | "elder_candidate" | "deacon" | "chair_of_deacons")[];
   const { data: roleRows } = await supabaseAdmin
     .from("user_roles")
     .select("user_id, role")
