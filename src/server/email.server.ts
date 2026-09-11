@@ -7,6 +7,8 @@ export type SendEmailParams = {
   html: string;
   text?: string;
   replyTo?: string;
+  /** Optional file attachments; content must be base64-encoded. */
+  attachments?: { filename: string; content: string }[];
 };
 
 export async function sendEmail(params: SendEmailParams) {
