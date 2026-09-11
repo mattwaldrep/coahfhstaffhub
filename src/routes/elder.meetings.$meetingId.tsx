@@ -15,7 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { RichTextEditor, RichTextView, extractMentions } from "@/components/ui/rich-text-editor";
 import { LinkedText } from "@/lib/render-linked-text";
 import type { MentionUser } from "@/components/ui/mention-list";
-import { Plus, Trash2, Lock, Unlock, ChevronLeft, ChevronDown, ChevronRight, Check, Square, Bookmark, GripVertical, Pencil, X, MessageSquare, Gavel } from "lucide-react";
+import { Plus, Trash2, Lock, Unlock, ChevronLeft, ChevronDown, ChevronRight, Check, Square, Bookmark, GripVertical, Pencil, X, MessageSquare, Gavel, Send } from "lucide-react";
+import { SendAgendaDialog } from "@/components/elder/SendAgendaDialog";
 import { createMotion } from "@/lib/elder-motions.functions";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -50,6 +51,7 @@ function MeetingDetail() {
   const [data, setData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [mentionUsers, setMentionUsers] = useState<MentionUser[]>([]);
+  const [sendOpen, setSendOpen] = useState(false);
 
   useEffect(() => {
     listMentionableUsers().then((u: any) => setMentionUsers(u as MentionUser[])).catch(() => {});
@@ -104,6 +106,11 @@ function MeetingDetail() {
         {!isDeaconOnly && (
           <div className="flex items-center gap-2">
             {isFullElder && (
+              <Button size="sm" variant="outline" className="h-8" onClick={() => setSendOpen(true)}>
+                <Send className="w-3.5 h-3.5 mr-1.5" /> Send agenda
+              </Button>
+            )}
+            {isFullElder && (
               <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none border border-border rounded h-8 px-2">
                 <input
                   type="checkbox"
@@ -144,6 +151,10 @@ function MeetingDetail() {
 
       {!isDeaconOnly && (
         <ActionItemsBlock meetingId={meetingId} items={data.actionItems} isFullElder={isFullElder} reload={load} />
+      )}
+
+      {isFullElder && (
+        <SendAgendaDialog meetingId={meetingId} open={sendOpen} onOpenChange={setSendOpen} />
       )}
     </div>
   );

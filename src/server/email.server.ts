@@ -7,6 +7,8 @@ export type SendEmailParams = {
   html: string;
   text?: string;
   replyTo?: string;
+  /** Optional file attachments; content must be base64-encoded. */
+  attachments?: { filename: string; content: string }[];
 };
 
 export async function sendEmail(params: SendEmailParams) {
@@ -31,6 +33,9 @@ export async function sendEmail(params: SendEmailParams) {
       html: params.html,
       text: params.text,
       reply_to: params.replyTo,
+      attachments: params.attachments?.length
+        ? params.attachments.map((a) => ({ filename: a.filename, content: a.content }))
+        : undefined,
     }),
   });
   const data = await res.json().catch(() => ({}));
