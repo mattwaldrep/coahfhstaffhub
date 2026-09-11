@@ -33,6 +33,9 @@ export async function sendEmail(params: SendEmailParams) {
       html: params.html,
       text: params.text,
       reply_to: params.replyTo,
+      attachments: params.attachments?.length
+        ? params.attachments.map((a) => ({ filename: a.filename, content: a.content }))
+        : undefined,
     }),
   });
   const data = await res.json().catch(() => ({}));
