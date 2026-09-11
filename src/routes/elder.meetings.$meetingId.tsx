@@ -152,6 +152,10 @@ function MeetingDetail() {
       {!isDeaconOnly && (
         <ActionItemsBlock meetingId={meetingId} items={data.actionItems} isFullElder={isFullElder} reload={load} />
       )}
+
+      {isFullElder && (
+        <SendAgendaDialog meetingId={meetingId} open={sendOpen} onOpenChange={setSendOpen} />
+      )}
     </div>
   );
 }
