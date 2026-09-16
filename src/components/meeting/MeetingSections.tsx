@@ -269,6 +269,8 @@ type SundayReview = {
   confession_notes: string | null;
   wins: string | null;
   opportunities: string | null;
+  submitted_by: string | null;
+
 };
 
 function RatingPill({ label, value }: { label: string; value: number | null }) {
