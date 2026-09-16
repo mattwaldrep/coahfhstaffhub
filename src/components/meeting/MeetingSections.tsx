@@ -364,8 +364,14 @@ export function SundayReviewSection({ meetingId }: { meetingId: string }) {
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Wins</div>
               <ul className="text-sm space-y-1.5 list-disc list-inside">
                 {latest.filter((r) => r.wins?.trim()).map((r) => (
-                  <li key={`w-${r.id}`}>{r.wins}</li>
+                  <li key={`w-${r.id}`}>
+                    {r.wins}
+                    <span className="ml-1.5 text-xs text-muted-foreground">
+                      — {names[r.submitted_by ?? ""] ?? "Unknown"}
+                    </span>
+                  </li>
                 ))}
+
                 {latest.every((r) => !r.wins?.trim()) && (
                   <li className="text-muted-foreground italic list-none">No wins logged</li>
                 )}
