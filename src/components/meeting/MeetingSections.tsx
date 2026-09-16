@@ -288,20 +288,30 @@ function RatingPill({ label, value }: { label: string; value: number | null }) {
 
 export function SundayReviewSection({ meetingId }: { meetingId: string }) {
   const [reviews, setReviews] = useState<SundayReview[]>([]);
+  const [names, setNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       const since = format(subDays(new Date(), 14), "yyyy-MM-dd");
-      const { data } = await supabase
-        .from("sunday_reviews")
-        .select("*")
-        .gte("service_date", since)
-        .order("service_date", { ascending: false });
+      const [{ data }, { data: profs }] = await Promise.all([
+        supabase
+          .from("sunday_reviews")
+          .select("*")
+          .gte("service_date", since)
+          .order("service_date", { ascending: false }),
+        supabase.from("profiles").select("id,full_name,email"),
+      ]);
       setReviews((data ?? []) as SundayReview[]);
+      const map: Record<string, string> = {};
+      (profs ?? []).forEach((p: any) => {
+        map[p.id] = p.full_name || p.email || "Unknown";
+      });
+      setNames(map);
       setLoading(false);
     })();
   }, []);
+
 
   // Anchor to the most recent Sunday (today if Sunday), not the max submitted
   // date — otherwise a stray off-by-one submission hides everyone else's.
