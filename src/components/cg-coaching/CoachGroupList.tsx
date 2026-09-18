@@ -606,3 +606,29 @@ function TouchpointLogDialog({
     </Dialog>
   );
 }
+
+function EventRow({ event, muted }: { event: PcoGroupEvent; muted?: boolean }) {
+  const start = event.starts_at ? new Date(event.starts_at) : null;
+  const end = event.ends_at ? new Date(event.ends_at) : null;
+  return (
+    <div className={`text-xs bg-surface border border-border rounded p-2 ${muted ? "opacity-70" : ""}`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className={`font-medium truncate ${event.canceled ? "line-through" : ""}`}>
+            {event.name}
+            {event.canceled && <span className="ml-2 text-destructive not-italic">Canceled</span>}
+          </div>
+          <div className="text-muted-foreground">
+            {start ? format(start, "EEE, MMM d · h:mm a") : "Date TBD"}
+            {end ? ` – ${format(end, "h:mm a")}` : ""}
+          </div>
+          {event.location && (
+            <div className="text-muted-foreground flex items-center gap-1 mt-0.5">
+              <MapPin className="w-3 h-3 shrink-0" /> <span className="truncate">{event.location}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
