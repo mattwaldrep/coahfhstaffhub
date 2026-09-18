@@ -6,10 +6,18 @@ import {
   listGroupTypes,
   listGroupsByType,
   listGroupLeaders,
+  listGroupMembers,
+  listGroupEvents,
   invalidateGroupsCache,
+  invalidateGroupDetailCache,
   type PcoGroup,
   type PcoGroupLeader,
+  type PcoGroupMember,
+  type PcoGroupEvent,
 } from "@/server/pco-groups.server";
+
+export type { PcoGroupMember, PcoGroupEvent };
+
 
 async function assertCgCoach(supabase: any, userId: string) {
   const { data } = await supabase
@@ -275,4 +283,27 @@ export const deleteGroupTouchpoint = createServerFn({ method: "POST" })
       .eq("user_id", context.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+// ---- Group detail: members + calendar (from PCO) ----
+
+export const getGroupDetails = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        group_id: z.string().min(1).max(50),
+        refresh: z.boolean().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCgCoach(context.supabase, context.userId);
+    const bypass = data.refresh === true;
+    if (bypass) invalidateGroupDetailCache(data.group_id);
+    const [members, events] = await Promise.all([
+      listGroupMembers(data.group_id, { bypass_cache: bypass }).catch(() => [] as PcoGroupMember[]),
+      listGroupEvents(data.group_id, { bypass_cache: bypass }).catch(() => [] as PcoGroupEvent[]),
+    ]);
+    return { members, events };
   });

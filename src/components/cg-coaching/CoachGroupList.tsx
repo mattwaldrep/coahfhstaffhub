@@ -11,14 +11,15 @@ import {
 } from "@/components/ui/dialog";
 import {
   MessageSquare, RefreshCw, Search, Trash2, History, UserCheck, Link as LinkIcon,
-  Phone, Mail, Users as UsersIcon, ChevronDown, ChevronUp,
+  Phone, Mail, Users as UsersIcon, ChevronDown, ChevronUp, CalendarDays, MapPin,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import {
   listCoachGroups, listCoaches, assignCoach,
-  logGroupTouchpoint, listGroupTouchpoints, deleteGroupTouchpoint,
-  type CoachGroup,
+  logGroupTouchpoint, listGroupTouchpoints, deleteGroupTouchpoint, getGroupDetails,
+  type CoachGroup, type PcoGroupMember, type PcoGroupEvent,
 } from "@/lib/cg-coaching.functions";
+
 
 type SortKey = "name_asc" | "name_desc" | "my_first";
 
@@ -272,6 +273,34 @@ function GroupPanel({
 
   useEffect(() => { load(); }, [load]);
 
+  const [tab, setTab] = useState<"members" | "calendar">("members");
+  const [details, setDetails] = useState<{ members: PcoGroupMember[]; events: PcoGroupEvent[] } | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(true);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
+
+  const loadDetails = useCallback(async (refresh = false) => {
+    setDetailsLoading(true);
+    setDetailsError(null);
+    try {
+      const d = await getGroupDetails({ data: { group_id: group.id, refresh } });
+      setDetails(d as any);
+    } catch (e: any) {
+      setDetailsError(e?.message ?? "Couldn't load from Planning Center");
+    } finally {
+      setDetailsLoading(false);
+    }
+  }, [group.id]);
+
+  useEffect(() => { loadDetails(false); }, [loadDetails]);
+
+  const now = Date.now();
+  const upcoming = (details?.events ?? []).filter((e) => e.starts_at && new Date(e.starts_at).getTime() >= now);
+  const past = (details?.events ?? [])
+    .filter((e) => !e.starts_at || new Date(e.starts_at).getTime() < now)
+    .slice(-10)
+    .reverse();
+
+
   async function post() {
     if (!note.trim() && kind !== "text") return;
     setSaving(true);
@@ -342,6 +371,98 @@ function GroupPanel({
           </div>
         )}
       </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="inline-flex rounded-md border border-border overflow-hidden">
+            <button
+              onClick={() => setTab("members")}
+              className={`text-xs px-3 py-1.5 ${tab === "members" ? "bg-[oklch(0.55_0.15_280)]/15 text-[oklch(0.55_0.15_280)]" : "text-muted-foreground hover:bg-background/60"}`}
+            >
+              <UsersIcon className="w-3.5 h-3.5 inline mr-1" />
+              Members{details ? ` (${details.members.length})` : ""}
+            </button>
+            <button
+              onClick={() => setTab("calendar")}
+              className={`text-xs px-3 py-1.5 border-l border-border ${tab === "calendar" ? "bg-[oklch(0.55_0.15_280)]/15 text-[oklch(0.55_0.15_280)]" : "text-muted-foreground hover:bg-background/60"}`}
+            >
+              <CalendarDays className="w-3.5 h-3.5 inline mr-1" /> Calendar
+            </button>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 text-xs ml-auto"
+            onClick={() => loadDetails(true)}
+            disabled={detailsLoading}
+          >
+            <RefreshCw className={`w-3 h-3 mr-1 ${detailsLoading ? "animate-spin" : ""}`} /> Sync
+          </Button>
+        </div>
+
+        {detailsLoading ? (
+          <div className="text-xs text-muted-foreground">Loading from Planning Center…</div>
+        ) : detailsError ? (
+          <div className="text-xs text-destructive">{detailsError}</div>
+        ) : tab === "members" ? (
+          (details?.members.length ?? 0) === 0 ? (
+            <div className="text-xs text-muted-foreground">No members found in Planning Center.</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {details!.members.map((m) => (
+                <div key={m.person_id} className="text-xs bg-surface border border-border rounded p-2 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-medium truncate flex items-center gap-1.5">
+                      {m.name}
+                      {m.role.toLowerCase() === "leader" && (
+                        <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-[oklch(0.55_0.15_280)]/15 text-[oklch(0.55_0.15_280)]">
+                          Leader
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-muted-foreground truncate">
+                      {[m.phone, m.email].filter(Boolean).join(" · ") || "No contact info"}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {m.phone && (
+                      <a href={`sms:${m.phone}`} className="text-[oklch(0.55_0.15_280)] p-1 hover:bg-[oklch(0.55_0.15_280)]/10 rounded" title={`Text ${m.name}`}>
+                        <Phone className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                    {m.email && (
+                      <a href={`mailto:${m.email}`} className="text-[oklch(0.55_0.15_280)] p-1 hover:bg-[oklch(0.55_0.15_280)]/10 rounded" title={`Email ${m.name}`}>
+                        <Mail className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : (details?.events.length ?? 0) === 0 ? (
+          <div className="text-xs text-muted-foreground">No meetings on this group's Planning Center calendar.</div>
+        ) : (
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Upcoming</div>
+              {upcoming.length === 0 ? (
+                <div className="text-xs text-muted-foreground">Nothing scheduled.</div>
+              ) : (
+                upcoming.map((e) => <EventRow key={e.id} event={e} />)
+              )}
+            </div>
+            {past.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Recent</div>
+                {past.map((e) => <EventRow key={e.id} event={e} muted />)}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+
 
       <div className="space-y-2">
         <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Reach-out log</div>
@@ -483,5 +604,31 @@ function TouchpointLogDialog({
         <DialogFooter />
       </DialogContent>
     </Dialog>
+  );
+}
+
+function EventRow({ event, muted }: { event: PcoGroupEvent; muted?: boolean }) {
+  const start = event.starts_at ? new Date(event.starts_at) : null;
+  const end = event.ends_at ? new Date(event.ends_at) : null;
+  return (
+    <div className={`text-xs bg-surface border border-border rounded p-2 ${muted ? "opacity-70" : ""}`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className={`font-medium truncate ${event.canceled ? "line-through" : ""}`}>
+            {event.name}
+            {event.canceled && <span className="ml-2 text-destructive not-italic">Canceled</span>}
+          </div>
+          <div className="text-muted-foreground">
+            {start ? format(start, "EEE, MMM d · h:mm a") : "Date TBD"}
+            {end ? ` – ${format(end, "h:mm a")}` : ""}
+          </div>
+          {event.location && (
+            <div className="text-muted-foreground flex items-center gap-1 mt-0.5">
+              <MapPin className="w-3 h-3 shrink-0" /> <span className="truncate">{event.location}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
