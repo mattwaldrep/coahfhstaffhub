@@ -273,6 +273,34 @@ function GroupPanel({
 
   useEffect(() => { load(); }, [load]);
 
+  const [tab, setTab] = useState<"members" | "calendar">("members");
+  const [details, setDetails] = useState<{ members: PcoGroupMember[]; events: PcoGroupEvent[] } | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(true);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
+
+  const loadDetails = useCallback(async (refresh = false) => {
+    setDetailsLoading(true);
+    setDetailsError(null);
+    try {
+      const d = await getGroupDetails({ data: { group_id: group.id, refresh } });
+      setDetails(d as any);
+    } catch (e: any) {
+      setDetailsError(e?.message ?? "Couldn't load from Planning Center");
+    } finally {
+      setDetailsLoading(false);
+    }
+  }, [group.id]);
+
+  useEffect(() => { loadDetails(false); }, [loadDetails]);
+
+  const now = Date.now();
+  const upcoming = (details?.events ?? []).filter((e) => e.starts_at && new Date(e.starts_at).getTime() >= now);
+  const past = (details?.events ?? [])
+    .filter((e) => !e.starts_at || new Date(e.starts_at).getTime() < now)
+    .slice(-10)
+    .reverse();
+
+
   async function post() {
     if (!note.trim() && kind !== "text") return;
     setSaving(true);
