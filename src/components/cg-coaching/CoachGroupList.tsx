@@ -11,14 +11,15 @@ import {
 } from "@/components/ui/dialog";
 import {
   MessageSquare, RefreshCw, Search, Trash2, History, UserCheck, Link as LinkIcon,
-  Phone, Mail, Users as UsersIcon, ChevronDown, ChevronUp,
+  Phone, Mail, Users as UsersIcon, ChevronDown, ChevronUp, CalendarDays, MapPin,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import {
   listCoachGroups, listCoaches, assignCoach,
-  logGroupTouchpoint, listGroupTouchpoints, deleteGroupTouchpoint,
-  type CoachGroup,
+  logGroupTouchpoint, listGroupTouchpoints, deleteGroupTouchpoint, getGroupDetails,
+  type CoachGroup, type PcoGroupMember, type PcoGroupEvent,
 } from "@/lib/cg-coaching.functions";
+
 
 type SortKey = "name_asc" | "name_desc" | "my_first";
 
