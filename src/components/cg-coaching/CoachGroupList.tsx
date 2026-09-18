@@ -373,6 +373,98 @@ function GroupPanel({
       </div>
 
       <div className="space-y-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="inline-flex rounded-md border border-border overflow-hidden">
+            <button
+              onClick={() => setTab("members")}
+              className={`text-xs px-3 py-1.5 ${tab === "members" ? "bg-[oklch(0.55_0.15_280)]/15 text-[oklch(0.55_0.15_280)]" : "text-muted-foreground hover:bg-background/60"}`}
+            >
+              <UsersIcon className="w-3.5 h-3.5 inline mr-1" />
+              Members{details ? ` (${details.members.length})` : ""}
+            </button>
+            <button
+              onClick={() => setTab("calendar")}
+              className={`text-xs px-3 py-1.5 border-l border-border ${tab === "calendar" ? "bg-[oklch(0.55_0.15_280)]/15 text-[oklch(0.55_0.15_280)]" : "text-muted-foreground hover:bg-background/60"}`}
+            >
+              <CalendarDays className="w-3.5 h-3.5 inline mr-1" /> Calendar
+            </button>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 text-xs ml-auto"
+            onClick={() => loadDetails(true)}
+            disabled={detailsLoading}
+          >
+            <RefreshCw className={`w-3 h-3 mr-1 ${detailsLoading ? "animate-spin" : ""}`} /> Sync
+          </Button>
+        </div>
+
+        {detailsLoading ? (
+          <div className="text-xs text-muted-foreground">Loading from Planning Center…</div>
+        ) : detailsError ? (
+          <div className="text-xs text-destructive">{detailsError}</div>
+        ) : tab === "members" ? (
+          (details?.members.length ?? 0) === 0 ? (
+            <div className="text-xs text-muted-foreground">No members found in Planning Center.</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {details!.members.map((m) => (
+                <div key={m.person_id} className="text-xs bg-surface border border-border rounded p-2 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-medium truncate flex items-center gap-1.5">
+                      {m.name}
+                      {m.role.toLowerCase() === "leader" && (
+                        <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-[oklch(0.55_0.15_280)]/15 text-[oklch(0.55_0.15_280)]">
+                          Leader
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-muted-foreground truncate">
+                      {[m.phone, m.email].filter(Boolean).join(" · ") || "No contact info"}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {m.phone && (
+                      <a href={`sms:${m.phone}`} className="text-[oklch(0.55_0.15_280)] p-1 hover:bg-[oklch(0.55_0.15_280)]/10 rounded" title={`Text ${m.name}`}>
+                        <Phone className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                    {m.email && (
+                      <a href={`mailto:${m.email}`} className="text-[oklch(0.55_0.15_280)] p-1 hover:bg-[oklch(0.55_0.15_280)]/10 rounded" title={`Email ${m.name}`}>
+                        <Mail className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : (details?.events.length ?? 0) === 0 ? (
+          <div className="text-xs text-muted-foreground">No meetings on this group's Planning Center calendar.</div>
+        ) : (
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Upcoming</div>
+              {upcoming.length === 0 ? (
+                <div className="text-xs text-muted-foreground">Nothing scheduled.</div>
+              ) : (
+                upcoming.map((e) => <EventRow key={e.id} event={e} />)
+              )}
+            </div>
+            {past.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Recent</div>
+                {past.map((e) => <EventRow key={e.id} event={e} muted />)}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+
+
+      <div className="space-y-2">
         <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Reach-out log</div>
         <div className="flex flex-col sm:flex-row gap-2">
           <Select value={kind} onValueChange={(v) => setKind(v as any)}>
