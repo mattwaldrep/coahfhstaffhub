@@ -242,3 +242,114 @@ export async function listLeaderServeTeamsForPerson(
 
 
 
+
+// ---- Members & events ----
+
+export type PcoGroupMember = {
+  person_id: string;
+  name: string;
+  role: string;
+  phone: string | null;
+  email: string | null;
+  joined_at: string | null;
+};
+
+export type PcoGroupEvent = {
+  id: string;
+  name: string;
+  starts_at: string | null;
+  ends_at: string | null;
+  location: string | null;
+  description: string | null;
+  canceled: boolean;
+  attendance_submitted: boolean;
+};
+
+const membersCache = new Map<string, { at: number; data: PcoGroupMember[] }>();
+const eventsCache = new Map<string, { at: number; data: PcoGroupEvent[] }>();
+const DETAIL_CACHE_MS = 5 * 60_000;
+
+export async function listGroupMembers(
+  groupId: string,
+  opts?: { bypass_cache?: boolean },
+): Promise<PcoGroupMember[]> {
+  const cached = membersCache.get(groupId);
+  if (!opts?.bypass_cache && cached && Date.now() - cached.at < DETAIL_CACHE_MS) return cached.data;
+
+  const out: PcoGroupMember[] = [];
+  let next: string | null = `${PCO_GROUPS_BASE}/groups/${encodeURIComponent(groupId)}/memberships?include=person&per_page=100`;
+  while (next) {
+    const json: any = await pcoFetch(next);
+    const included: any[] = json.included ?? [];
+    for (const m of json.data ?? []) {
+      const rel = m.relationships?.person?.data;
+      if (!rel) continue;
+      const inc = included.find((i) => i.type === "Person" && i.id === rel.id);
+      const a = inc?.attributes ?? {};
+      const name = a.name ?? `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() ?? "(unknown)";
+      out.push({
+        person_id: String(rel.id),
+        name: name || "(unknown)",
+        role: String(m.attributes?.role ?? "member"),
+        phone: a.phone_number ? String(a.phone_number) : null,
+        email: a.email_address ? String(a.email_address) : null,
+        joined_at: m.attributes?.joined_at ?? null,
+      });
+    }
+    next = json.links?.next ?? null;
+  }
+  out.sort((a, b) => {
+    const rank = (r: string) => (r.toLowerCase() === "leader" ? 0 : 1);
+    return rank(a.role) - rank(b.role) || a.name.localeCompare(b.name);
+  });
+  membersCache.set(groupId, { at: Date.now(), data: out });
+  return out;
+}
+
+export async function listGroupEvents(
+  groupId: string,
+  opts?: { bypass_cache?: boolean },
+): Promise<PcoGroupEvent[]> {
+  const cached = eventsCache.get(groupId);
+  if (!opts?.bypass_cache && cached && Date.now() - cached.at < DETAIL_CACHE_MS) return cached.data;
+
+  const out: PcoGroupEvent[] = [];
+  let next: string | null = `${PCO_GROUPS_BASE}/groups/${encodeURIComponent(groupId)}/events?order=-starts_at&per_page=50&include=location`;
+  let pages = 0;
+  while (next && pages < 3) {
+    const json: any = await pcoFetch(next);
+    const included: any[] = json.included ?? [];
+    for (const e of json.data ?? []) {
+      const locId = e.relationships?.location?.data?.id;
+      const loc = locId ? included.find((i) => i.type === "Location" && i.id === locId) : null;
+      out.push({
+        id: String(e.id),
+        name: e.attributes?.name ?? "Group meeting",
+        starts_at: e.attributes?.starts_at ?? null,
+        ends_at: e.attributes?.ends_at ?? null,
+        location:
+          loc?.attributes?.display_preference === "hidden"
+            ? null
+            : loc?.attributes?.name ?? loc?.attributes?.full_formatted_address ?? null,
+        description: e.attributes?.description ?? null,
+        canceled: Boolean(e.attributes?.canceled),
+        attendance_submitted: Boolean(e.attributes?.attendance_requests_enabled && e.attributes?.attendance_submitted),
+      });
+    }
+    next = json.links?.next ?? null;
+    pages += 1;
+  }
+  out.sort((a, b) => String(a.starts_at ?? "").localeCompare(String(b.starts_at ?? "")));
+  eventsCache.set(groupId, { at: Date.now(), data: out });
+  return out;
+}
+
+export function invalidateGroupDetailCache(groupId?: string) {
+  if (groupId) {
+    membersCache.delete(groupId);
+    eventsCache.delete(groupId);
+  } else {
+    membersCache.clear();
+    eventsCache.clear();
+  }
+}
