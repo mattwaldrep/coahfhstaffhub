@@ -255,8 +255,25 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
     });
   };
 
+  // People flagged with a crisis-level tag in Planning Center — always shown
+  // at the top of the page regardless of the active filters.
+  const crisisTags = useMemo(
+    () => healthOptions.filter((o) => /crisis/i.test(o)),
+    [healthOptions],
+  );
+  const crisisPeople = useMemo(() => {
+    if (!fields || crisisTags.length === 0) return [] as Person[];
+    return people
+      .filter((p) => {
+        const v = (p.fields[fields.spiritual_health]?.value ?? "").trim();
+        return v !== "" && crisisTags.includes(v);
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [people, fields, crisisTags]);
+
   const activeFilterCount =
     (search ? 1 : 0) + healthFilter.size + (elderFilter !== "all" ? 1 : 0) + (notesFilter !== "any" ? 1 : 0) + (myPeopleActive ? 1 : 0);
+
 
   const clearAll = () => {
     setSearch(""); setHealthFilter(new Set()); setElderFilter("all"); setNotesFilter("any"); setMyPeopleActive(false);
