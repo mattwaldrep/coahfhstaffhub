@@ -108,11 +108,25 @@ export const listCareList = createServerFn({ method: "POST" })
       bypass_cache: data.refresh === true,
     });
     let health_options: string[] = [];
+    let options_ok = false;
     try {
       health_options = await listFieldOptions(cfg.spiritual_health_field_id);
+      options_ok = true;
     } catch {
       health_options = [];
     }
+    // Planning Center is the source of truth: drop any stored value whose tag
+    // no longer exists in PCO so retired tags disappear from the app.
+    const cleaned = options_ok && health_options.length > 0
+      ? people.map((p) => {
+          const cur = p.fields[cfg.spiritual_health_field_id!];
+          if (!cur?.value || health_options.includes(cur.value)) return p;
+          return {
+            ...p,
+            fields: { ...p.fields, [cfg.spiritual_health_field_id!]: { ...cur, value: null } },
+          };
+        })
+      : people;
     return {
       configured: true,
       fields: {
@@ -120,8 +134,9 @@ export const listCareList = createServerFn({ method: "POST" })
         spiritual_health: cfg.spiritual_health_field_id,
       },
       health_options,
-      people,
+      people: cleaned,
     };
+
   });
 
 export const updateSpiritualHealth = createServerFn({ method: "POST" })
