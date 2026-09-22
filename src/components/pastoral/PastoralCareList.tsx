@@ -380,7 +380,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
         <div className="flex items-center gap-1.5 flex-wrap">
           {healthOptions.map((h: string) => {
             const active = healthFilter.has(h);
-            const count = people.filter((p) => ((fields ? p.fields[fields.spiritual_health]?.value : null) ?? "Unknown") === h).length;
+            const count = people.filter((p) => ((fields ? p.fields[fields.spiritual_health]?.value : null) ?? "") === h).length;
             return (
               <button
                 key={h}
