@@ -11,8 +11,10 @@ export const Route = createFileRoute("/elder/")({
   component: ElderOverview,
 });
 
-const HEALTHY_HEALTH = new Set(["Healthy", "Thriving"]);
-const URGENT_RANK: Record<string, number> = { Crisis: 4, Struggling: 3, Watch: 2, Unknown: 1 };
+// Health tags come from Planning Center. The first two tags PCO lists are
+// treated as "doing well"; anything after that needs attention, ranked by order.
+const WELL_COUNT = 2;
+
 
 type CarePerson = {
   id: string;
