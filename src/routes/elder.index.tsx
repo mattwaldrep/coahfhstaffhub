@@ -113,7 +113,7 @@ function ElderOverview() {
         title="Needs attention"
         icon={AlertTriangle}
         cta={{ to: "/elder/pastoral-care", label: "Open list" }}
-        subtitle="Crisis, struggling, or on watch"
+        subtitle="Flagged by their Planning Center health tag"
       >
         {urgent.length === 0 && <Empty text="No one flagged right now." />}
         {urgent.slice(0, 6).map((p) => {
@@ -126,7 +126,8 @@ function ElderOverview() {
               title={p.name}
               sub={elder ? `${h} · ${elder}` : `${h} · unassigned`}
               tag={h}
-              tagTone={h === "Crisis" ? "crisis" : h === "Struggling" ? "warn" : "watch"}
+              tagTone={toneFor(h)}
+
             />
           );
         })}
