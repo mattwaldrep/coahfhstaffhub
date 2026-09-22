@@ -83,7 +83,8 @@ function ElderOverview() {
   const recent = meetings.filter((m) => new Date(m.meeting_date) < new Date()).slice(0, 3);
 
   const healthOf = (p: CarePerson) =>
-    careFields ? (p.fields[careFields.spiritual_health]?.value ?? "Unknown") : "Unknown";
+    (careFields ? (p.fields[careFields.spiritual_health]?.value ?? "") : "") || "No tag";
+
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
