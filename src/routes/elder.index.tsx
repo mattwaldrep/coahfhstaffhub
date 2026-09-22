@@ -11,8 +11,10 @@ export const Route = createFileRoute("/elder/")({
   component: ElderOverview,
 });
 
-const HEALTHY_HEALTH = new Set(["Healthy", "Thriving"]);
-const URGENT_RANK: Record<string, number> = { Crisis: 4, Struggling: 3, Watch: 2, Unknown: 1 };
+// Health tags come from Planning Center. The first two tags PCO lists are
+// treated as "doing well"; anything after that needs attention, ranked by order.
+const WELL_COUNT = 2;
+
 
 type CarePerson = {
   id: string;
@@ -26,6 +28,7 @@ function ElderOverview() {
   const [care, setCare] = useState<CarePerson[]>([]);
   const [careFields, setCareFields] = useState<{ assigned_elder: string; spiritual_health: string } | null>(null);
   const [myName, setMyName] = useState<string>("");
+  const [healthOptions, setHealthOptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,6 +43,7 @@ function ElderOverview() {
         setMeetings(m as any[]);
         setCare(((c?.people ?? []) as CarePerson[]));
         setCareFields(c?.fields ?? null);
+        setHealthOptions(Array.isArray(c?.health_options) ? (c.health_options as string[]) : []);
         setMyName((prof?.data?.full_name ?? "").trim());
       })
       .catch(() => { /* surfaced elsewhere */ })
@@ -57,12 +61,21 @@ function ElderOverview() {
 
   const urgent = useMemo(() => {
     if (!careFields) return [] as CarePerson[];
+    const rank = (h: string) => healthOptions.indexOf(h);
     return care
       .map((p) => ({ p, h: (p.fields[careFields.spiritual_health]?.value ?? "").trim() }))
-      .filter(({ h }) => h && !HEALTHY_HEALTH.has(h))
-      .sort((a, b) => (URGENT_RANK[b.h] ?? 0) - (URGENT_RANK[a.h] ?? 0) || a.p.name.localeCompare(b.p.name))
+      .filter(({ h }) => h && rank(h) >= WELL_COUNT)
+      .sort((a, b) => rank(b.h) - rank(a.h) || a.p.name.localeCompare(b.p.name))
       .map(({ p }) => p);
-  }, [care, careFields]);
+  }, [care, careFields, healthOptions]);
+
+  const toneFor = (h: string) => {
+    const i = healthOptions.indexOf(h);
+    if (i < 0 || healthOptions.length <= WELL_COUNT) return "watch" as const;
+    const ratio = (i - WELL_COUNT) / Math.max(1, healthOptions.length - 1 - WELL_COUNT);
+    return ratio >= 0.66 ? ("crisis" as const) : ratio >= 0.33 ? ("warn" as const) : ("watch" as const);
+  };
+
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
@@ -70,7 +83,8 @@ function ElderOverview() {
   const recent = meetings.filter((m) => new Date(m.meeting_date) < new Date()).slice(0, 3);
 
   const healthOf = (p: CarePerson) =>
-    careFields ? (p.fields[careFields.spiritual_health]?.value ?? "Unknown") : "Unknown";
+    (careFields ? (p.fields[careFields.spiritual_health]?.value ?? "") : "") || "No tag";
+
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -99,7 +113,7 @@ function ElderOverview() {
         title="Needs attention"
         icon={AlertTriangle}
         cta={{ to: "/elder/pastoral-care", label: "Open list" }}
-        subtitle="Crisis, struggling, or on watch"
+        subtitle="Flagged by their Planning Center health tag"
       >
         {urgent.length === 0 && <Empty text="No one flagged right now." />}
         {urgent.slice(0, 6).map((p) => {
@@ -112,7 +126,8 @@ function ElderOverview() {
               title={p.name}
               sub={elder ? `${h} · ${elder}` : `${h} · unassigned`}
               tag={h}
-              tagTone={h === "Crisis" ? "crisis" : h === "Struggling" ? "warn" : "watch"}
+              tagTone={toneFor(h)}
+
             />
           );
         })}

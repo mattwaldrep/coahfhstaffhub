@@ -24,11 +24,9 @@ import { TextComposerDialog } from "@/components/pastoral/TextComposerDialog";
 import { LogReplyDialog } from "@/components/pastoral/LogReplyDialog";
 import { TextThread, type TextTouchpoint } from "@/components/pastoral/TextThread";
 
-const DEFAULT_HEALTH_OPTIONS = ["Thriving", "Healthy", "Watch", "Struggling", "Crisis", "Unknown"];
-// Severity ranking — higher = more urgent. Unknown values default to mid-rank.
-const HEALTH_SEVERITY: Record<string, number> = {
-  Crisis: 5, Struggling: 4, Watch: 3, Unknown: 2, Healthy: 1, Thriving: 0,
-};
+// Health tags come entirely from Planning Center. Urgency ranking follows the
+// order PCO lists them in (later in the list = more urgent).
+
 
 type SortKey =
   | "attention_first"
@@ -89,6 +87,13 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
       const opts: string[] = Array.isArray(res.health_options) ? res.health_options : [];
       // Use ONLY PCO options so the dropdown matches Planning Center exactly.
       setHealthOptions(opts);
+      // Drop any active filter chip for a tag that no longer exists in PCO.
+      setHealthFilter((prev) => {
+        if (opts.length === 0 || prev.size === 0) return prev;
+        const next = new Set(Array.from(prev).filter((v) => opts.includes(v)));
+        return next.size === prev.size ? prev : next;
+      });
+
     } catch (e: any) {
       toast.error(e.message ?? "Failed to load");
     } finally {
@@ -171,7 +176,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
     return people.filter((p) => {
       if (q && !p.name.toLowerCase().includes(q)) return false;
 
-      const health = (fields ? p.fields[fields.spiritual_health]?.value : null) ?? "Unknown";
+      const health = (fields ? p.fields[fields.spiritual_health]?.value : null) ?? "";
       if (healthFilter.size > 0 && !healthFilter.has(health)) return false;
 
       const elderVal = (fields ? p.fields[fields.assigned_elder]?.value : null)?.trim() || "";
@@ -194,7 +199,12 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
   const sorted = useMemo(() => {
     const arr = [...filtered];
     const healthOf = (p: Person) =>
-      (fields ? p.fields[fields.spiritual_health]?.value : null) ?? "Unknown";
+      (fields ? p.fields[fields.spiritual_health]?.value : null) ?? "";
+    // Rank by the order Planning Center lists the tags in; unset sits in the middle.
+    const severity = (v: string) => {
+      const i = healthOptions.indexOf(v);
+      return i === -1 ? (healthOptions.length - 1) / 2 : i;
+    };
     arr.sort((a, b) => {
       switch (sort) {
         case "attention_first": {
@@ -211,10 +221,11 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
         case "name_asc": return a.name.localeCompare(b.name);
         case "name_desc": return b.name.localeCompare(a.name);
         case "health_urgent":
-          return (HEALTH_SEVERITY[healthOf(b)] ?? 0) - (HEALTH_SEVERITY[healthOf(a)] ?? 0)
+          return severity(healthOf(b)) - severity(healthOf(a))
             || a.name.localeCompare(b.name);
         case "health_thriving":
-          return (HEALTH_SEVERITY[healthOf(a)] ?? 0) - (HEALTH_SEVERITY[healthOf(b)] ?? 0)
+          return severity(healthOf(a)) - severity(healthOf(b))
+
             || a.name.localeCompare(b.name);
         case "notes_most":
           return (counts[b.id] ?? 0) - (counts[a.id] ?? 0) || a.name.localeCompare(b.name);
@@ -233,7 +244,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
       }
     });
     return arr;
-  }, [filtered, sort, counts, latestNote, fields, gaps]);
+  }, [filtered, sort, counts, latestNote, fields, gaps, healthOptions]);
 
 
   const toggleHealth = (h: string) => {
@@ -369,7 +380,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
         <div className="flex items-center gap-1.5 flex-wrap">
           {healthOptions.map((h: string) => {
             const active = healthFilter.has(h);
-            const count = people.filter((p) => ((fields ? p.fields[fields.spiritual_health]?.value : null) ?? "Unknown") === h).length;
+            const count = people.filter((p) => ((fields ? p.fields[fields.spiritual_health]?.value : null) ?? "") === h).length;
             return (
               <button
                 key={h}
