@@ -244,7 +244,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
       }
     });
     return arr;
-  }, [filtered, sort, counts, latestNote, fields, gaps]);
+  }, [filtered, sort, counts, latestNote, fields, gaps, healthOptions]);
 
 
   const toggleHealth = (h: string) => {
