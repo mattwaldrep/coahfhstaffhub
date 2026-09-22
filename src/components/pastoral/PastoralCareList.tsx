@@ -87,6 +87,13 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
       const opts: string[] = Array.isArray(res.health_options) ? res.health_options : [];
       // Use ONLY PCO options so the dropdown matches Planning Center exactly.
       setHealthOptions(opts);
+      // Drop any active filter chip for a tag that no longer exists in PCO.
+      setHealthFilter((prev) => {
+        if (opts.length === 0 || prev.size === 0) return prev;
+        const next = new Set(Array.from(prev).filter((v) => opts.includes(v)));
+        return next.size === prev.size ? prev : next;
+      });
+
     } catch (e: any) {
       toast.error(e.message ?? "Failed to load");
     } finally {
