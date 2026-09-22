@@ -199,7 +199,12 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
   const sorted = useMemo(() => {
     const arr = [...filtered];
     const healthOf = (p: Person) =>
-      (fields ? p.fields[fields.spiritual_health]?.value : null) ?? "Unknown";
+      (fields ? p.fields[fields.spiritual_health]?.value : null) ?? "";
+    // Rank by the order Planning Center lists the tags in; unset sits in the middle.
+    const severity = (v: string) => {
+      const i = healthOptions.indexOf(v);
+      return i === -1 ? (healthOptions.length - 1) / 2 : i;
+    };
     arr.sort((a, b) => {
       switch (sort) {
         case "attention_first": {
@@ -216,10 +221,11 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
         case "name_asc": return a.name.localeCompare(b.name);
         case "name_desc": return b.name.localeCompare(a.name);
         case "health_urgent":
-          return (HEALTH_SEVERITY[healthOf(b)] ?? 0) - (HEALTH_SEVERITY[healthOf(a)] ?? 0)
+          return severity(healthOf(b)) - severity(healthOf(a))
             || a.name.localeCompare(b.name);
         case "health_thriving":
-          return (HEALTH_SEVERITY[healthOf(a)] ?? 0) - (HEALTH_SEVERITY[healthOf(b)] ?? 0)
+          return severity(healthOf(a)) - severity(healthOf(b))
+
             || a.name.localeCompare(b.name);
         case "notes_most":
           return (counts[b.id] ?? 0) - (counts[a.id] ?? 0) || a.name.localeCompare(b.name);
