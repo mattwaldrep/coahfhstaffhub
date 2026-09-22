@@ -28,6 +28,7 @@ function ElderOverview() {
   const [care, setCare] = useState<CarePerson[]>([]);
   const [careFields, setCareFields] = useState<{ assigned_elder: string; spiritual_health: string } | null>(null);
   const [myName, setMyName] = useState<string>("");
+  const [healthOptions, setHealthOptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,6 +43,7 @@ function ElderOverview() {
         setMeetings(m as any[]);
         setCare(((c?.people ?? []) as CarePerson[]));
         setCareFields(c?.fields ?? null);
+        setHealthOptions(Array.isArray(c?.health_options) ? (c.health_options as string[]) : []);
         setMyName((prof?.data?.full_name ?? "").trim());
       })
       .catch(() => { /* surfaced elsewhere */ })
@@ -59,12 +61,21 @@ function ElderOverview() {
 
   const urgent = useMemo(() => {
     if (!careFields) return [] as CarePerson[];
+    const rank = (h: string) => healthOptions.indexOf(h);
     return care
       .map((p) => ({ p, h: (p.fields[careFields.spiritual_health]?.value ?? "").trim() }))
-      .filter(({ h }) => h && !HEALTHY_HEALTH.has(h))
-      .sort((a, b) => (URGENT_RANK[b.h] ?? 0) - (URGENT_RANK[a.h] ?? 0) || a.p.name.localeCompare(b.p.name))
+      .filter(({ h }) => h && rank(h) >= WELL_COUNT)
+      .sort((a, b) => rank(b.h) - rank(a.h) || a.p.name.localeCompare(b.p.name))
       .map(({ p }) => p);
-  }, [care, careFields]);
+  }, [care, careFields, healthOptions]);
+
+  const toneFor = (h: string) => {
+    const i = healthOptions.indexOf(h);
+    if (i < 0 || healthOptions.length <= WELL_COUNT) return "watch" as const;
+    const ratio = (i - WELL_COUNT) / Math.max(1, healthOptions.length - 1 - WELL_COUNT);
+    return ratio >= 0.66 ? ("crisis" as const) : ratio >= 0.33 ? ("warn" as const) : ("watch" as const);
+  };
+
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
