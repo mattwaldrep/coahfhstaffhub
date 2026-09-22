@@ -301,9 +301,10 @@ export const getGroupDetails = createServerFn({ method: "POST" })
     await assertCgCoach(context.supabase, context.userId);
     const bypass = data.refresh === true;
     if (bypass) invalidateGroupDetailCache(data.group_id);
+    // Let PCO failures propagate so the UI shows an error instead of an empty list.
     const [members, events] = await Promise.all([
-      listGroupMembers(data.group_id, { bypass_cache: bypass }).catch(() => [] as PcoGroupMember[]),
-      listGroupEvents(data.group_id, { bypass_cache: bypass }).catch(() => [] as PcoGroupEvent[]),
+      listGroupMembers(data.group_id, { bypass_cache: bypass }),
+      listGroupEvents(data.group_id, { bypass_cache: bypass }),
     ]);
     return { members, events };
   });
