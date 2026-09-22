@@ -176,7 +176,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
     return people.filter((p) => {
       if (q && !p.name.toLowerCase().includes(q)) return false;
 
-      const health = (fields ? p.fields[fields.spiritual_health]?.value : null) ?? "Unknown";
+      const health = (fields ? p.fields[fields.spiritual_health]?.value : null) ?? "";
       if (healthFilter.size > 0 && !healthFilter.has(health)) return false;
 
       const elderVal = (fields ? p.fields[fields.assigned_elder]?.value : null)?.trim() || "";
