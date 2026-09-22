@@ -24,11 +24,9 @@ import { TextComposerDialog } from "@/components/pastoral/TextComposerDialog";
 import { LogReplyDialog } from "@/components/pastoral/LogReplyDialog";
 import { TextThread, type TextTouchpoint } from "@/components/pastoral/TextThread";
 
-const DEFAULT_HEALTH_OPTIONS = ["Thriving", "Healthy", "Watch", "Struggling", "Crisis", "Unknown"];
-// Severity ranking — higher = more urgent. Unknown values default to mid-rank.
-const HEALTH_SEVERITY: Record<string, number> = {
-  Crisis: 5, Struggling: 4, Watch: 3, Unknown: 2, Healthy: 1, Thriving: 0,
-};
+// Health tags come entirely from Planning Center. Urgency ranking follows the
+// order PCO lists them in (later in the list = more urgent).
+
 
 type SortKey =
   | "attention_first"
