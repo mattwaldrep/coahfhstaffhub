@@ -9,7 +9,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Lock, MessageSquarePlus, MessageSquare, RefreshCw, Search, Trash2, Link as LinkIcon, X, ArrowUpDown, History, UserCheck, Clock } from "lucide-react";
+import { Lock, MessageSquarePlus, MessageSquare, RefreshCw, Search, Trash2, Link as LinkIcon, X, ArrowUpDown, History, UserCheck, Clock, AlertTriangle } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
@@ -255,8 +255,25 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
     });
   };
 
+  // People flagged with a crisis-level tag in Planning Center — always shown
+  // at the top of the page regardless of the active filters.
+  const crisisTags = useMemo(
+    () => healthOptions.filter((o) => /crisis/i.test(o)),
+    [healthOptions],
+  );
+  const crisisPeople = useMemo(() => {
+    if (!fields || crisisTags.length === 0) return [] as Person[];
+    return people
+      .filter((p) => {
+        const v = (p.fields[fields.spiritual_health]?.value ?? "").trim();
+        return v !== "" && crisisTags.includes(v);
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [people, fields, crisisTags]);
+
   const activeFilterCount =
     (search ? 1 : 0) + healthFilter.size + (elderFilter !== "all" ? 1 : 0) + (notesFilter !== "any" ? 1 : 0) + (myPeopleActive ? 1 : 0);
+
 
   const clearAll = () => {
     setSearch(""); setHealthFilter(new Set()); setElderFilter("all"); setNotesFilter("any"); setMyPeopleActive(false);
@@ -282,6 +299,43 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
   return (
     <div className="space-y-3">
       {variant === "page" && <CareLoadCard />}
+
+      {crisisPeople.length > 0 && (
+        <div className="rounded-2xl border border-[oklch(0.58_0.20_25)]/40 bg-[oklch(0.58_0.20_25)]/8 p-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-[oklch(0.58_0.20_25)]" />
+            <h3 className="text-sm font-semibold text-[oklch(0.58_0.20_25)]">
+              Escalated care — {crisisPeople.length} {crisisPeople.length === 1 ? "person" : "people"} in crisis
+            </h3>
+          </div>
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {crisisPeople.map((p) => {
+              const elder = fields ? (p.fields[fields.assigned_elder]?.value ?? "").trim() : "";
+              const tag = fields ? (p.fields[fields.spiritual_health]?.value ?? "").trim() : "";
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => { clearAll(); setExpanded(p.id); }}
+                  className="text-left rounded-xl border border-border bg-surface px-3 py-2 hover:border-[oklch(0.58_0.20_25)]/50 transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium truncate">{p.name}</span>
+                    <span className="shrink-0 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-[oklch(0.58_0.20_25)]/15 text-[oklch(0.58_0.20_25)]">
+                      {tag}
+                    </span>
+                  </div>
+                  <div className="mt-0.5 text-xs text-muted-foreground flex items-center gap-1">
+                    <UserCheck className="w-3 h-3" />
+                    {elder ? `Elder: ${elder}` : "No elder assigned"}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         {variant === "page" && (
           <div className="flex items-center gap-2 flex-wrap">
