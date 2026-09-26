@@ -14,7 +14,7 @@ import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import {
-  listCareList, listPcoNotes, addPcoNote, deletePcoNote, updateSpiritualHealth,
+  listCareList, listPcoNotes, addPcoNote, deletePcoNote, updateSpiritualHealth, setEscalatedCare,
   logTouchpoint, listTouchpoints, deleteTouchpoint, getMyElderName,
 } from "@/lib/pastoral-care.functions";
 import { getPastoralGaps, type PastoralGap } from "@/lib/pastoral-gaps.functions";
