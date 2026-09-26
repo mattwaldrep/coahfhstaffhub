@@ -10,13 +10,14 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Lock, MessageSquarePlus, MessageSquare, RefreshCw, Search, Trash2, Link as LinkIcon, X, ArrowUpDown, History, UserCheck, Clock, AlertTriangle } from "lucide-react";
+import { Lock, MessageSquarePlus, MessageSquare, RefreshCw, Search, Trash2, Link as LinkIcon, X, ArrowUpDown, History, UserCheck, Clock, AlertTriangle, ChevronDown } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import {
   listCareList, listPcoNotes, addPcoNote, deletePcoNote, updateSpiritualHealth, setEscalatedCare,
   logTouchpoint, listTouchpoints, deleteTouchpoint, getMyElderName,
+  listSecondaryElders, setSecondaryElder,
 } from "@/lib/pastoral-care.functions";
 import { getPastoralGaps, type PastoralGap } from "@/lib/pastoral-gaps.functions";
 import { supabase } from "@/integrations/supabase/client";
