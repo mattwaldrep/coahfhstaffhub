@@ -120,7 +120,7 @@ export const listCareList = createServerFn({ method: "POST" })
       try {
         const defs = await listFieldDefinitions();
         const match = defs.find(
-          (f) => /elevated\s*care/i.test(f.name) && (f.data_type ?? "").toLowerCase().includes("check"),
+          (f) => /(escalated|elevated)\s*care/i.test(f.name) && (f.data_type ?? "").toLowerCase().includes("check"),
         );
         if (match) {
           elevatedFieldId = match.id;
