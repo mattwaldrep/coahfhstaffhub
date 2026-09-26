@@ -2985,6 +2985,27 @@ export type Database = {
         }
         Relationships: []
       }
+      pco_care_assignments: {
+        Row: {
+          pco_person_id: string
+          secondary_elder: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          pco_person_id: string
+          secondary_elder?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          pco_person_id?: string
+          secondary_elder?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       pco_pastoral_notes: {
         Row: {
           author_id: string | null

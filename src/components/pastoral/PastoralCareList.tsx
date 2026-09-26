@@ -10,13 +10,14 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Lock, MessageSquarePlus, MessageSquare, RefreshCw, Search, Trash2, Link as LinkIcon, X, ArrowUpDown, History, UserCheck, Clock, AlertTriangle } from "lucide-react";
+import { Lock, MessageSquarePlus, MessageSquare, RefreshCw, Search, Trash2, Link as LinkIcon, X, ArrowUpDown, History, UserCheck, Clock, AlertTriangle, ChevronDown } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import {
   listCareList, listPcoNotes, addPcoNote, deletePcoNote, updateSpiritualHealth, setEscalatedCare,
   logTouchpoint, listTouchpoints, deleteTouchpoint, getMyElderName,
+  listSecondaryElders, setSecondaryElder,
 } from "@/lib/pastoral-care.functions";
 import { getPastoralGaps, type PastoralGap } from "@/lib/pastoral-gaps.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -77,6 +78,8 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
   const [logOpen, setLogOpen] = useState(false);
   const [gaps, setGaps] = useState<Record<string, PastoralGap>>({});
   const [healthOptions, setHealthOptions] = useState<string[]>([]);
+  const [secondaryElders, setSecondaryElders] = useState<Record<string, string>>({});
+  const [crisisExpanded, setCrisisExpanded] = useState<string | null>(null);
 
   const load = useCallback(async (refresh = false) => {
     refresh ? setRefreshing(true) : setLoading(true);
@@ -113,6 +116,13 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
         setMyElderName(res?.full_name ?? null);
       } catch { /* noop */ }
     })();
+  }, []);
+
+  // Load secondary elder assignments
+  useEffect(() => {
+    (listSecondaryElders as any)()
+      .then((m: any) => setSecondaryElders(m ?? {}))
+      .catch(() => setSecondaryElders({}));
   }, []);
 
 
@@ -323,24 +333,77 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
               const tag = fields?.elevated_care
                 ? "Escalated care"
                 : (fields ? (p.fields[fields.spiritual_health]?.value ?? "").trim() : "") || "Escalated care";
+              const isOpen = crisisExpanded === p.id;
+              const secondary = secondaryElders[p.id] ?? "";
               return (
-                <button
+                <div
                   key={p.id}
-                  type="button"
-                  onClick={() => { clearAll(); setExpanded(p.id); }}
-                  className="text-left rounded-xl border border-border bg-surface px-3 py-2 hover:border-[oklch(0.58_0.20_25)]/50 transition-colors"
+                  className="rounded-xl border border-border bg-surface px-3 py-2 hover:border-[oklch(0.58_0.20_25)]/50 transition-colors"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium truncate">{p.name}</span>
-                    <span className="shrink-0 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-[oklch(0.58_0.20_25)]/15 text-[oklch(0.58_0.20_25)]">
-                      {tag}
-                    </span>
-                  </div>
-                  <div className="mt-0.5 text-xs text-muted-foreground flex items-center gap-1">
-                    <UserCheck className="w-3 h-3" />
-                    {elder ? `Elder: ${elder}` : "No elder assigned"}
-                  </div>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setCrisisExpanded(isOpen ? null : p.id)}
+                    className="w-full text-left"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium truncate">{p.name}</span>
+                      <span className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-[oklch(0.58_0.20_25)]/15 text-[oklch(0.58_0.20_25)]">
+                          {tag}
+                        </span>
+                        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                      </span>
+                    </div>
+                    <div className="mt-0.5 text-xs text-muted-foreground flex items-center gap-1">
+                      <UserCheck className="w-3 h-3" />
+                      {elder ? `Elder: ${elder}` : "No elder assigned"}
+                      {secondary ? ` · Secondary: ${secondary}` : ""}
+                    </div>
+                  </button>
+                  {isOpen && (
+                    <div className="mt-2 pt-2 border-t border-border space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] uppercase tracking-wider text-muted-foreground shrink-0">Secondary elder</span>
+                        <Select
+                          value={secondary || "none"}
+                          onValueChange={async (v) => {
+                            const val = v === "none" ? null : v;
+                            try {
+                              await setSecondaryElder({ data: { pco_person_id: p.id, secondary_elder: val } });
+                              setSecondaryElders((prev) => {
+                                const next = { ...prev };
+                                if (val) next[p.id] = val; else delete next[p.id];
+                                return next;
+                              });
+                              toast.success(val ? `Secondary elder set to ${val}` : "Secondary elder removed");
+                            } catch (e: any) {
+                              toast.error(e.message ?? "Failed to save");
+                            }
+                          }}
+                          disabled={!isFullElder}
+                        >
+                          <SelectTrigger className="h-8 text-xs flex-1">
+                            <SelectValue placeholder="None" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {elderOptions.filter((e) => e !== elder).map((e) => (
+                              <SelectItem key={e} value={e}>{e}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <PersonPanel
+                        person={p}
+                        fields={fields!}
+                        isFullElder={isFullElder}
+                        meetingId={meetingId}
+                        healthOptions={healthOptions}
+                        onHealthChanged={() => load(true)}
+                      />
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
