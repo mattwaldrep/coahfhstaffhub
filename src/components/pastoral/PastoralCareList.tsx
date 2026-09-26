@@ -269,7 +269,8 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
       .filter((p) => {
         if (elevatedId) {
           const v = (p.fields[elevatedId]?.value ?? "").trim().toLowerCase();
-          return v === "true" || v === "yes" || v === "1";
+          // PCO "checkboxes" fields store the checked option's label (e.g. "Escalated Care Needed").
+          return v !== "" && v !== "false" && v !== "no" && v !== "0";
         }
         if (crisisTags.length === 0) return false;
         const h = (fields ? p.fields[fields.spiritual_health]?.value : null) ?? "";
