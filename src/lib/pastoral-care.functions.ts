@@ -448,6 +448,54 @@ export const importArchiveBatch = createServerFn({ method: "POST" })
     return { ok: true, count: rows.length };
   });
 
+// ---- Secondary elder assignments -----------------------------------------
+
+export const listSecondaryElders = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAccess(context.supabase, context.userId);
+    const { data, error } = await context.supabase
+      .from("pco_care_assignments")
+      .select("pco_person_id, secondary_elder");
+    if (error) throw new Error(error.message);
+    const map: Record<string, string> = {};
+    for (const r of data ?? []) {
+      if ((r as any).secondary_elder) map[(r as any).pco_person_id] = (r as any).secondary_elder;
+    }
+    return map;
+  });
+
+export const setSecondaryElder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      pco_person_id: z.string().min(1).max(50),
+      secondary_elder: z.string().max(200).nullable(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const tier = await assertAccess(context.supabase, context.userId);
+    if (tier !== "elder") throw new Error("Forbidden: full elder required");
+    if (!data.secondary_elder) {
+      const { error } = await supabaseAdmin
+        .from("pco_care_assignments")
+        .delete()
+        .eq("pco_person_id", data.pco_person_id);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+    const { error } = await supabaseAdmin
+      .from("pco_care_assignments")
+      .upsert({
+        pco_person_id: data.pco_person_id,
+        secondary_elder: data.secondary_elder,
+        updated_by: context.userId,
+        updated_at: new Date().toISOString(),
+      });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const setEscalatedCare = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
