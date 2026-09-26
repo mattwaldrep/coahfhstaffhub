@@ -1505,6 +1505,7 @@ export type Database = {
       elder_pco_config: {
         Row: {
           assigned_elder_field_id: string | null
+          elevated_care_field_id: string | null
           id: string
           list_id: string | null
           spiritual_health_field_id: string | null
@@ -1513,6 +1514,7 @@ export type Database = {
         }
         Insert: {
           assigned_elder_field_id?: string | null
+          elevated_care_field_id?: string | null
           id?: string
           list_id?: string | null
           spiritual_health_field_id?: string | null
@@ -1521,6 +1523,7 @@ export type Database = {
         }
         Update: {
           assigned_elder_field_id?: string | null
+          elevated_care_field_id?: string | null
           id?: string
           list_id?: string | null
           spiritual_health_field_id?: string | null

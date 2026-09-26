@@ -48,6 +48,7 @@ function PcoCard() {
   const [listId, setListId] = useState("");
   const [elderField, setElderField] = useState("");
   const [healthField, setHealthField] = useState("");
+  const [elevatedField, setElevatedField] = useState("");
   const [fields, setFields] = useState<Array<{ id: string; name: string; tab: string | null; data_type: string | null }> | null>(null);
   const [loadingFields, setLoadingFields] = useState(false);
   const [fieldsError, setFieldsError] = useState<string | null>(null);
@@ -76,6 +77,7 @@ function PcoCard() {
         setListId(c?.list_id ?? "");
         setElderField(c?.assigned_elder_field_id ?? "");
         setHealthField(c?.spiritual_health_field_id ?? "");
+        setElevatedField(c?.elevated_care_field_id ?? "");
       } catch { /* noop */ }
     })();
     loadFields();
@@ -93,9 +95,10 @@ function PcoCard() {
     try {
       await savePcoConfig({
         data: {
-          list_id: listId.trim(),
-          assigned_elder_field_id: elderField.trim(),
-          spiritual_health_field_id: healthField.trim(),
+        list_id: listId.trim(),
+        assigned_elder_field_id: elderField.trim(),
+        spiritual_health_field_id: healthField.trim(),
+        elevated_care_field_id: elevatedField.trim() || null,
         },
       });
       toast.success("Saved");
@@ -147,6 +150,15 @@ function PcoCard() {
           label="Spiritual Health field"
           value={healthField}
           onChange={setHealthField}
+          fields={fields}
+          loading={loadingFields}
+          error={fieldsError}
+          onReload={loadFields}
+        />
+        <FieldPicker
+          label="Elevated care needed field (checkbox)"
+          value={elevatedField}
+          onChange={setElevatedField}
           fields={fields}
           loading={loadingFields}
           error={fieldsError}
