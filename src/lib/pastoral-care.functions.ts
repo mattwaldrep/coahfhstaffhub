@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
 import { supabaseAdmin } from "./admin.server";
-import { fetchCareList, setFieldDatum, pcoPing, invalidateCareListCache, listFieldDefinitions, listFieldOptions, createPersonNote } from "@/server/pco.server";
+import { fetchCareList, setFieldDatum, deleteFieldDatum, pcoPing, invalidateCareListCache, listFieldDefinitions, listFieldOptions, createPersonNote } from "@/server/pco.server";
 
 async function getTier(supabase: any, userId: string): Promise<"elder" | "candidate" | null> {
   const { data } = await supabase
@@ -446,4 +446,34 @@ export const importArchiveBatch = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("elder_meeting_archive").insert(rows);
     if (error) throw new Error(error.message);
     return { ok: true, count: rows.length };
+  });
+
+export const setEscalatedCare = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      person_id: z.string().min(1).max(50),
+      datum_id: z.string().min(1).max(50).nullable().optional(),
+      checked: z.boolean(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const tier = await assertAccess(context.supabase, context.userId);
+    if (tier !== "elder") throw new Error("Forbidden: full elder required");
+    const { data: cfg } = await context.supabase
+      .from("elder_pco_config")
+      .select("elevated_care_field_id")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const fieldId = (cfg as any)?.elevated_care_field_id as string | null;
+    if (!fieldId) throw new Error("Escalated care field not configured");
+    if (data.checked) {
+      const opts = await listFieldOptions(fieldId);
+      const value = opts[0] ?? "true";
+      await setFieldDatum({ person_id: data.person_id, field_definition_id: fieldId, datum_id: data.datum_id ?? null, value });
+    } else if (data.datum_id) {
+      await deleteFieldDatum(data.datum_id);
+    }
+    return { ok: true };
   });

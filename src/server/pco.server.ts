@@ -257,3 +257,15 @@ export async function pcoPing(): Promise<{ ok: boolean; me?: string; error?: str
     return { ok: false, error: e?.message ?? "Failed" };
   }
 }
+
+export async function deleteFieldDatum(datum_id: string) {
+  const res = await fetch(`${PCO_BASE}/field_data/${datum_id}`, {
+    method: "DELETE",
+    headers: { Authorization: authHeader(), Accept: "application/json" },
+  });
+  if (!res.ok && res.status !== 404) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`PCO ${res.status}: ${body.slice(0, 300)}`);
+  }
+  invalidateCareListCache();
+}
