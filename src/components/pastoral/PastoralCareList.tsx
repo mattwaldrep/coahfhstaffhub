@@ -255,6 +255,10 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
     });
   };
 
+  const crisisTags = useMemo(
+    () => healthOptions.filter((o) => /crisis/i.test(o)),
+    [healthOptions],
+  );
   // People escalated for care. The Planning Center "elevated care needed"
   // checkbox is the trigger; if that field isn't configured yet, fall back to
   // crisis-level health tags. Always shown at the top of the page regardless
@@ -308,7 +312,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-[oklch(0.58_0.20_25)]" />
             <h3 className="text-sm font-semibold text-[oklch(0.58_0.20_25)]">
-              Escalated care — {crisisPeople.length} {crisisPeople.length === 1 ? "person" : "people"} in crisis
+              Escalated care — {crisisPeople.length} {crisisPeople.length === 1 ? "person" : "people"} need{crisisPeople.length === 1 ? "s" : ""} escalated care
             </h3>
           </div>
           <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
