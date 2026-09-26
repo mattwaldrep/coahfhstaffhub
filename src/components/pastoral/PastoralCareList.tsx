@@ -78,6 +78,8 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
   const [logOpen, setLogOpen] = useState(false);
   const [gaps, setGaps] = useState<Record<string, PastoralGap>>({});
   const [healthOptions, setHealthOptions] = useState<string[]>([]);
+  const [secondaryElders, setSecondaryElders] = useState<Record<string, string>>({});
+  const [crisisExpanded, setCrisisExpanded] = useState<string | null>(null);
 
   const load = useCallback(async (refresh = false) => {
     refresh ? setRefreshing(true) : setLoading(true);
@@ -114,6 +116,13 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
         setMyElderName(res?.full_name ?? null);
       } catch { /* noop */ }
     })();
+  }, []);
+
+  // Load secondary elder assignments
+  useEffect(() => {
+    (listSecondaryElders as any)({ data: {} })
+      .then((m: any) => setSecondaryElders(m ?? {}))
+      .catch(() => setSecondaryElders({}));
   }, []);
 
 
