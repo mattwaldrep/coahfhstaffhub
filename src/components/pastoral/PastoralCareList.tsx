@@ -318,7 +318,9 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
           <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
             {crisisPeople.map((p) => {
               const elder = fields ? (p.fields[fields.assigned_elder]?.value ?? "").trim() : "";
-              const tag = fields ? (p.fields[fields.spiritual_health]?.value ?? "").trim() : "";
+              const tag = fields?.elevated_care
+                ? "Elevated care"
+                : (fields ? (p.fields[fields.spiritual_health]?.value ?? "").trim() : "") || "Elevated care";
               return (
                 <button
                   key={p.id}
