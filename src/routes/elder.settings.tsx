@@ -156,7 +156,7 @@ function PcoCard() {
           onReload={loadFields}
         />
         <FieldPicker
-          label="Elevated care needed field (checkbox)"
+          label="Escalated care needed field (checkbox)"
           value={elevatedField}
           onChange={setElevatedField}
           fields={fields}
