@@ -46,6 +46,7 @@ export const savePcoConfig = createServerFn({ method: "POST" })
         list_id: z.string().min(1).max(50),
         assigned_elder_field_id: z.string().min(1).max(50),
         spiritual_health_field_id: z.string().min(1).max(50),
+        elevated_care_field_id: z.string().max(50).nullable().optional(),
       })
       .parse(d),
   )
@@ -58,7 +59,16 @@ export const savePcoConfig = createServerFn({ method: "POST" })
       .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    const payload = { ...data, updated_by: context.userId, updated_at: new Date().toISOString() };
+    const payload: any = {
+      list_id: data.list_id,
+      assigned_elder_field_id: data.assigned_elder_field_id,
+      spiritual_health_field_id: data.spiritual_health_field_id,
+      updated_by: context.userId,
+      updated_at: new Date().toISOString(),
+    };
+    if (data.elevated_care_field_id !== undefined) {
+      payload.elevated_care_field_id = data.elevated_care_field_id || null;
+    }
     if (existing?.id) {
       const { error } = await supabaseAdmin.from("elder_pco_config").update(payload).eq("id", existing.id);
       if (error) throw new Error(error.message);
