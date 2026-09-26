@@ -112,9 +112,29 @@ export const listCareList = createServerFn({ method: "POST" })
     if (!cfg?.list_id || !cfg?.assigned_elder_field_id || !cfg?.spiritual_health_field_id) {
       return { configured: false, people: [], fields: null };
     }
+    // Elevated-care checkbox field: the trigger for the Escalated care section.
+    // If no field has been picked yet, try to auto-detect a checkbox field on
+    // the same tab named like "elevated care needed" and remember it.
+    let elevatedFieldId: string | null = (cfg as any).elevated_care_field_id ?? null;
+    if (!elevatedFieldId) {
+      try {
+        const defs = await listFieldDefinitions();
+        const match = defs.find(
+          (f) => /elevated\s*care/i.test(f.name) && (f.data_type ?? "").toLowerCase().includes("check"),
+        );
+        if (match) {
+          elevatedFieldId = match.id;
+          await supabaseAdmin.from("elder_pco_config").update({ elevated_care_field_id: elevatedFieldId }).eq("id", (cfg as any).id);
+        }
+      } catch {
+        // best effort — fall back to crisis-tag behavior below
+      }
+    }
+    const field_ids: string[] = [cfg.assigned_elder_field_id, cfg.spiritual_health_field_id];
+    if (elevatedFieldId) field_ids.push(elevatedFieldId);
     const people = await fetchCareList({
       list_id: cfg.list_id,
-      field_ids: [cfg.assigned_elder_field_id, cfg.spiritual_health_field_id],
+      field_ids,
       bypass_cache: data.refresh === true,
     });
     let health_options: string[] = [];
@@ -142,6 +162,7 @@ export const listCareList = createServerFn({ method: "POST" })
       fields: {
         assigned_elder: cfg.assigned_elder_field_id,
         spiritual_health: cfg.spiritual_health_field_id,
+        elevated_care: elevatedFieldId,
       },
       health_options,
       people: cleaned,
