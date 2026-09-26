@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -610,7 +611,7 @@ function PersonPanel({
   person, fields, isFullElder, meetingId, healthOptions, onHealthChanged,
 }: {
   person: Person;
-  fields: { assigned_elder: string; spiritual_health: string };
+  fields: { assigned_elder: string; spiritual_health: string; elevated_care?: string | null };
   isFullElder: boolean;
   meetingId?: string;
   healthOptions: string[];
@@ -624,6 +625,11 @@ function PersonPanel({
   const [composerOpen, setComposerOpen] = useState(false);
   const [replyOpen, setReplyOpen] = useState(false);
   const health = person.fields[fields.spiritual_health];
+  const esc = fields.elevated_care ? person.fields[fields.elevated_care] : undefined;
+  const escOn = !!esc?.value && !["false", "no", "0"].includes(esc.value.trim().toLowerCase());
+  const [escChecked, setEscChecked] = useState(escOn);
+  const [escSaving, setEscSaving] = useState(false);
+  useEffect(() => { setEscChecked(escOn); }, [escOn]);
 
   const load = useCallback(async () => {
     try {
@@ -719,6 +725,30 @@ function PersonPanel({
           </Select>
         ) : (
           <span className="text-xs">{health?.value ?? "Unknown"}</span>
+        )}
+        {fields.elevated_care && (
+          <label className="flex items-center gap-2 text-xs cursor-pointer">
+            <Checkbox
+              checked={escChecked}
+              disabled={!isFullElder || escSaving}
+              onCheckedChange={async (c) => {
+                const next = c === true;
+                setEscSaving(true);
+                setEscChecked(next);
+                try {
+                  await setEscalatedCare({ data: { person_id: person.id, datum_id: esc?.datum_id ?? null, checked: next } });
+                  toast.success("Updated in Planning Center");
+                  onHealthChanged();
+                } catch (e: any) {
+                  setEscChecked(!next);
+                  toast.error(e.message ?? "Failed");
+                } finally {
+                  setEscSaving(false);
+                }
+              }}
+            />
+            Escalated care needed
+          </label>
         )}
         <div className="flex items-center gap-3 md:ml-auto flex-wrap w-full md:w-auto">
           <button
