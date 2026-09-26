@@ -120,7 +120,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
 
   // Load secondary elder assignments
   useEffect(() => {
-    (listSecondaryElders as any)({ data: {} })
+    (listSecondaryElders as any)()
       .then((m: any) => setSecondaryElders(m ?? {}))
       .catch(() => setSecondaryElders({}));
   }, []);
