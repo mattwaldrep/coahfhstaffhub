@@ -59,7 +59,7 @@ type Props = {
 export function PastoralCareList({ meetingId, variant = "page" }: Props) {
   const { isFullElder } = useAuth();
   const [people, setPeople] = useState<Person[]>([]);
-  const [fields, setFields] = useState<{ assigned_elder: string; spiritual_health: string } | null>(null);
+  const [fields, setFields] = useState<{ assigned_elder: string; spiritual_health: string; elevated_care?: string | null } | null>(null);
   const [configured, setConfigured] = useState(true);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -255,18 +255,21 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
     });
   };
 
-  // People flagged with a crisis-level tag in Planning Center — always shown
-  // at the top of the page regardless of the active filters.
-  const crisisTags = useMemo(
-    () => healthOptions.filter((o) => /crisis/i.test(o)),
-    [healthOptions],
-  );
+  // People escalated for care. The Planning Center "elevated care needed"
+  // checkbox is the trigger; if that field isn't configured yet, fall back to
+  // crisis-level health tags. Always shown at the top of the page regardless
+  // of the active filters.
   const crisisPeople = useMemo(() => {
-    if (!fields || crisisTags.length === 0) return [] as Person[];
+    const elevatedId = fields?.elevated_care ?? null;
     return people
       .filter((p) => {
-        const v = (p.fields[fields.spiritual_health]?.value ?? "").trim();
-        return v !== "" && crisisTags.includes(v);
+        if (elevatedId) {
+          const v = (p.fields[elevatedId]?.value ?? "").trim().toLowerCase();
+          return v === "true" || v === "yes" || v === "1";
+        }
+        if (crisisTags.length === 0) return false;
+        const h = (fields ? p.fields[fields.spiritual_health]?.value : null) ?? "";
+        return h !== "" && crisisTags.includes(h);
       })
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [people, fields, crisisTags]);
