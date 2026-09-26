@@ -259,7 +259,7 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
     () => healthOptions.filter((o) => /crisis/i.test(o)),
     [healthOptions],
   );
-  // People escalated for care. The Planning Center "elevated care needed"
+  // People escalated for care. The Planning Center "escalated care needed"
   // checkbox is the trigger; if that field isn't configured yet, fall back to
   // crisis-level health tags. Always shown at the top of the page regardless
   // of the active filters.
@@ -319,8 +319,8 @@ export function PastoralCareList({ meetingId, variant = "page" }: Props) {
             {crisisPeople.map((p) => {
               const elder = fields ? (p.fields[fields.assigned_elder]?.value ?? "").trim() : "";
               const tag = fields?.elevated_care
-                ? "Elevated care"
-                : (fields ? (p.fields[fields.spiritual_health]?.value ?? "").trim() : "") || "Elevated care";
+                ? "Escalated care"
+                : (fields ? (p.fields[fields.spiritual_health]?.value ?? "").trim() : "") || "Escalated care";
               return (
                 <button
                   key={p.id}
