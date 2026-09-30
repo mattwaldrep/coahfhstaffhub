@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "core" | "meeting" | "extended" | "elder" | "elder_candidate" | "cg_coach" | "deacon" | "chair_of_deacons" | "serve_leader_admin";
+export type AppRole = "core" | "meeting" | "extended" | "elder" | "elder_candidate" | "cg_coach" | "deacon" | "chair_of_deacons" | "serve_leader_admin" | "calendar_admin";
 
 interface AuthContextValue {
   session: Session | null;
@@ -21,6 +21,7 @@ interface AuthContextValue {
   isDeaconOnly: boolean;
   hasElderHubAccess: boolean;
   hasServeLeadersHubAccess: boolean;
+  isCalendarAdmin: boolean;
 }
 
 /** @deprecated Use `hasServeLeadersHubAccess` from useAuth() instead. Kept only to seed the initial owner. */
@@ -70,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     user: session?.user ?? null,
     hasServeLeadersHubAccess: roles.includes("serve_leader_admin"),
+    isCalendarAdmin: roles.includes("core") || roles.includes("calendar_admin"),
     roles,
     loading,
     signOut: async () => {

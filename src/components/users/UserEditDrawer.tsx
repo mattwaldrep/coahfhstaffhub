@@ -15,7 +15,7 @@ import {
 import { Trash2 } from "lucide-react";
 import {
   setUserRole, setUserElderTier, setUserDeaconTier, setUserCgCoach,
-  setUserServeLeaderAdmin, removeUser,
+  setUserServeLeaderAdmin, setUserCalendarAdmin, removeUser,
 } from "@/lib/users.functions";
 
 export type UserRow = {
@@ -79,6 +79,7 @@ export function UserEditDrawer({
     : "none";
   const isCgCoach = row.roles.includes("cg_coach");
   const isServeLeader = row.roles.includes("serve_leader_admin");
+  const isCalendarAdmin = row.roles.includes("calendar_admin");
 
   async function run(key: string, fn: () => Promise<unknown>, msg: string) {
     setSaving(key);
@@ -149,6 +150,15 @@ export function UserEditDrawer({
             </Section>
 
             <Section title="Additional hubs" hint="Independent, on top of staff tier.">
+              <ToggleRow
+                label="Calendar admin"
+                desc="Full calendar control: events, sub-calendars, and calendar settings."
+                checked={isCalendarAdmin}
+                disabled={saving !== null}
+                onChange={(v) =>
+                  run("cal", () => setUserCalendarAdmin({ data: { userId: row.id, enabled: v } }), v ? "Granted calendar admin" : "Revoked calendar admin")
+                }
+              />
               <ToggleRow
                 label="CG Coach"
                 desc="Grants access to the CG Coaching Hub."

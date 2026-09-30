@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790793335026,
+      "tag": "0000_add_calendar_admin_enum_value",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790793358511,
+      "tag": "0001_calendar_admin_functions",
+      "breakpoints": true
+    }
+  ]
+}
