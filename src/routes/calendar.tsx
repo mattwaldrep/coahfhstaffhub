@@ -538,9 +538,9 @@ function CalendarPage() {
 }
 
 function CalendarBody() {
-  const { hasRole, user } = useAuth();
+  const { hasRole, user, isCalendarAdmin } = useAuth();
   const SUB_CALS = useSubCals();
-  const isCore = hasRole("core");
+  const isCore = isCalendarAdmin;
   const canEditKey = (key: string | null | undefined): boolean => {
     if (isCore) return true;
     if (!key || !user?.id) return false;
