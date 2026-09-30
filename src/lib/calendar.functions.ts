@@ -4,18 +4,18 @@ import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
 import { supabaseAdmin } from "./admin.server";
 import { notifyCycleOpen, notifySubmissionReady } from "@/server/calendar-notifications.server";
 
-async function isCore(supabase: any, userId: string): Promise<boolean> {
+async function isCalendarAdmin(supabase: any, userId: string): Promise<boolean> {
   const { data } = await supabase
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
-    .eq("role", "core")
-    .maybeSingle();
-  return !!data;
+    .in("role", ["core", "calendar_admin"])
+    .limit(1);
+  return (data ?? []).length > 0;
 }
 
-async function assertCore(supabase: any, userId: string) {
-  if (!(await isCore(supabase, userId))) throw new Error("Forbidden: core role required");
+async function assertCalendarAdmin(supabase: any, userId: string) {
+  if (!(await isCalendarAdmin(supabase, userId))) throw new Error("Forbidden: calendar admin access required");
 }
 
 // sub_calendar is now dynamic; validated by the calendar_sub_calendars table.
