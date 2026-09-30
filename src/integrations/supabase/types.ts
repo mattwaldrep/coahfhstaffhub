@@ -3377,6 +3377,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_calendar_admin: { Args: { _user_id: string }; Returns: boolean }
       is_cg_coach: { Args: { _user_id: string }; Returns: boolean }
       is_chair_of_deacons: { Args: { _user_id: string }; Returns: boolean }
       is_full_elder: { Args: { _user_id: string }; Returns: boolean }
