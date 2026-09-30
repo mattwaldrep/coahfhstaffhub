@@ -3394,6 +3394,7 @@ export type Database = {
         | "deacon"
         | "chair_of_deacons"
         | "serve_leader_admin"
+        | "calendar_admin"
       elder_motion_choice: "yes" | "no" | "abstain"
       elder_motion_outcome: "open" | "passed" | "failed" | "tied"
       ministry_area:
@@ -3571,6 +3572,7 @@ export const Constants = {
         "deacon",
         "chair_of_deacons",
         "serve_leader_admin",
+        "calendar_admin",
       ],
       elder_motion_choice: ["yes", "no", "abstain"],
       elder_motion_outcome: ["open", "passed", "failed", "tied"],
