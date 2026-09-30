@@ -7,9 +7,9 @@ async function assertCore(supabase: any, userId: string) {
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
-    .eq("role", "core")
-    .maybeSingle();
-  if (!data) throw new Error("Forbidden: core role required");
+    .in("role", ["core", "calendar_admin"])
+    .limit(1);
+  if (!(data ?? []).length) throw new Error("Forbidden: calendar admin access required");
 }
 
 export const listEventCategories = createServerFn({ method: "GET" })
