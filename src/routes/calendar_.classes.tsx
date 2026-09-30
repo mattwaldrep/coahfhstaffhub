@@ -94,7 +94,7 @@ const emptyForm = (): FormState => ({
 
 function ClassesPage() {
   const { hasRole } = useAuth();
-  const canEdit = hasRole("core");
+  const canEdit = hasRole("core") || hasRole("calendar_admin");
   const [rows, setRows] = useState<ClassSeries[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);

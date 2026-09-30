@@ -15,6 +15,13 @@
       "when": 1790793358511,
       "tag": "0001_calendar_admin_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790794848884,
+      "tag": "0002_calendar_admin_table_policies",
+      "breakpoints": true
     }
   ]
 }
