@@ -511,7 +511,8 @@ function CalendarPage() {
   const fetchSubCals = useServerFn(listSubCalendars);
   useEffect(() => {
     let alive = true;
-    fetchSubCals()
+    supabase.auth.getSession()
+      .then(({ data }) => (data.session ? fetchSubCals() : []))
       .then((rows: SubCalendarRow[]) => {
         if (!alive) return;
         const mapped = (rows ?? [])
