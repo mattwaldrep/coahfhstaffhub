@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { supabase } from "@/integrations/supabase/client";
 import { listSubCalendars, type SubCalendarRow } from "@/lib/sub-calendars.functions";
 
 /**
@@ -14,13 +15,14 @@ export function useSubCals() {
 
   useEffect(() => {
     let cancelled = false;
-    fetchFn()
+    supabase.auth.getSession()
+      .then(({ data }) => (data.session ? fetchFn() : []))
       .then((r) => {
         if (!cancelled) setRows(r ?? []);
       })
       .catch((e) => console.error("useSubCals", e));
     return () => {
-      cancelled = false;
+      cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
