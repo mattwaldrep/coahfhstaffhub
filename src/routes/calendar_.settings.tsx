@@ -117,8 +117,8 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (v: string)
 
 
 function SettingsPage() {
-  const { hasRole } = useAuth();
-  const isCore = hasRole("core");
+  const { isCalendarAdmin } = useAuth();
+  const isCore = isCalendarAdmin;
   const fetchList = useServerFn(listSubCalendars);
   const fetchSuggestions = useServerFn(listSubCalendarSuggestions);
   const fetchProfiles = useServerFn(listStaffProfiles);
@@ -176,7 +176,7 @@ function SettingsPage() {
   if (!isCore) {
     return (
       <div className="p-6">
-        <EmptyState icon={SettingsIcon} title="Core only" description="Only Core admins can manage sub-calendars." />
+        <EmptyState icon={SettingsIcon} title="Calendar admins only" description="Only Core staff and calendar admins can manage sub-calendars." />
       </div>
     );
   }
