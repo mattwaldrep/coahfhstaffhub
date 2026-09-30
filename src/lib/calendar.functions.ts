@@ -79,7 +79,7 @@ export const createPlanningCycle = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertCore(context.supabase, context.userId);
+    await assertCalendarAdmin(context.supabase, context.userId);
     const { data: row, error } = await supabaseAdmin
       .from("calendar_planning_cycles")
       .insert({ ...data, created_by: context.userId, status: "open" })
@@ -102,7 +102,7 @@ export const updatePlanningCycle = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertCore(context.supabase, context.userId);
+    await assertCalendarAdmin(context.supabase, context.userId);
     const { id, ...patch } = data;
     const { error } = await supabaseAdmin
       .from("calendar_planning_cycles")
@@ -273,7 +273,7 @@ export const reviewProposedEvent = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertCore(context.supabase, context.userId);
+    await assertCalendarAdmin(context.supabase, context.userId);
 
     // Fetch the proposed event
     const { data: prop, error: pErr } = await supabaseAdmin
@@ -343,7 +343,7 @@ export const finalizeSubmissionReview = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertCore(context.supabase, context.userId);
+    await assertCalendarAdmin(context.supabase, context.userId);
 
     const { data: events } = await supabaseAdmin
       .from("calendar_proposed_events")
@@ -382,7 +382,7 @@ export const bulkReviewSubmission = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertCore(context.supabase, context.userId);
+    await assertCalendarAdmin(context.supabase, context.userId);
     const { data: events } = await supabaseAdmin
       .from("calendar_proposed_events")
       .select("id")
