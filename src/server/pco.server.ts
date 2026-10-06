@@ -1,3 +1,4 @@
+import { isDevRequest, fakeName, fakePhone } from "@/lib/dev-redact.server";
 // Server-only Planning Center Online wrapper.
 // Uses a Personal Access Token (PCO_APP_ID:PCO_SECRET) via HTTP Basic auth.
 
@@ -63,7 +64,7 @@ function pickPhone(numbers: any[]): string | null {
 let cache: { key: string; at: number; data: PcoPerson[] } | null = null;
 const CACHE_MS = 60_000;
 
-export async function fetchCareList(opts: {
+async function fetchCareListRaw(opts: {
   list_id: string;
   field_ids: string[]; // field_definition_ids we want surfaced
   bypass_cache?: boolean;
@@ -113,6 +114,14 @@ export async function fetchCareList(opts: {
   people.sort((a, b) => a.name.localeCompare(b.name));
   cache = { key, at: Date.now(), data: people };
   return people;
+}
+
+export async function fetchCareList(opts: { list_id: string; field_ids: string[]; bypass_cache?: boolean }): Promise<PcoPerson[]> {
+  const people = await fetchCareListRaw(opts);
+  if (!isDevRequest()) return people;
+  return people
+    .map((p) => ({ ...p, name: fakeName(p.id), phone: p.phone ? fakePhone(p.id) : null }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function invalidateCareListCache() {
