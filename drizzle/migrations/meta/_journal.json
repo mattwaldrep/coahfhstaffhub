@@ -29,6 +29,13 @@
       "when": 1790817912542,
       "tag": "0003_meeting_staff_manage_sunday_slots",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791302966217,
+      "tag": "0004_restrict_open_select_policies_to_role_holders",
+      "breakpoints": true
     }
   ]
 }
