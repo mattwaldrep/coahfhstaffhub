@@ -32,7 +32,14 @@ function encodeRawEmail(to: string, subject: string, body: string): string {
 export const sendGmailMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const { data: roleRows } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .in("role", ["core", "meeting"])
+      .limit(1);
+    if (!(roleRows ?? []).length) throw new Error("Forbidden: staff role required");
     const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
     const GOOGLE_MAIL_API_KEY = process.env.GOOGLE_MAIL_API_KEY;

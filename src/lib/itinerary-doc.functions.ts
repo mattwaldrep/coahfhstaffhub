@@ -36,7 +36,16 @@ async function docsFetch(path: string, init: RequestInit) {
 export const syncItineraryDoc = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const { data: trip } = await context.supabase
+      .from("mission_trips")
+      .select("id, itinerary_doc_id")
+      .eq("id", data.tripId)
+      .maybeSingle();
+    if (!trip) throw new Error("Forbidden: trip not found or not accessible");
+    if (data.existingDocId && data.existingDocId !== (trip as any).itinerary_doc_id) {
+      throw new Error("Forbidden: document is not linked to this trip");
+    }
     let docId = data.existingDocId ?? null;
 
     // Create if missing
