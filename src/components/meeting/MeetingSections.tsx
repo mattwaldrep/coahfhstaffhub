@@ -323,7 +323,11 @@ export function SundayReviewSection({ meetingId }: { meetingId: string }) {
     return format(d, "yyyy-MM-dd");
   })();
   const latestDate = lastSunday;
-  const latest = reviews.filter((r) => r.service_date === latestDate);
+  // Accept reviews dated the day before through the week after that Sunday,
+  // so a review saved with an off-by-one date still counts for this service.
+  const windowStart = format(subDays(new Date(lastSunday + "T12:00"), 1), "yyyy-MM-dd");
+  const windowEnd = format(subDays(new Date(lastSunday + "T12:00"), -6), "yyyy-MM-dd");
+  const latest = reviews.filter((r) => r.service_date >= windowStart && r.service_date <= windowEnd);
 
   return (
     <StandingSection
