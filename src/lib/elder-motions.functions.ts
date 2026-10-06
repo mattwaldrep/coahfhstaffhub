@@ -233,7 +233,7 @@ export const createMotion = createServerFn({ method: "POST" })
       if (emails.length) {
         await sendEmail({
           to: emails,
-          subject: `New motion to vote: ${inserted.title}`,
+          subject: `New motion to vote: ${String(inserted.title).replace(/[\r\n\t]+/g, " ").slice(0, 200)}`,
           html: emailLayout(
             "New motion",
             `<p>A new motion has been opened for elder vote.</p>
