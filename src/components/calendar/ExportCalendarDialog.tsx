@@ -124,6 +124,7 @@ export function ExportCalendarDialog({
           Room: o.room_needed ?? "",
           ...(includeDetails ? { Details: (o.description ?? "").replace(/<[^>]+>/g, " ").trim() } : {}),
         })),
+        { escapeFormulae: true },
       );
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
