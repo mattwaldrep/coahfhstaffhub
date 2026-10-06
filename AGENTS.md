@@ -1,0 +1,1 @@
+- Pastoral/PCO member data is redacted server-side (src/lib/dev-redact.server.ts) for any non-published request host; never bypass it or query pastoral tables/PCO people from the build workspace — church AI policy.
