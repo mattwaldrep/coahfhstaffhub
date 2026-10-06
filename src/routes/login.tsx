@@ -9,7 +9,12 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import coahLogo from "@/assets/coah-logo.png.asset.json";
 
-async function signInWithGoogle() {
+function safeRedirect(r: unknown): string {
+  return typeof r === "string" && r.startsWith("/") && !r.startsWith("//") && !r.startsWith("/login") ? r : "/";
+}
+
+async function signInWithGoogle(dest: string) {
+  if (dest !== "/") sessionStorage.setItem("post_login_redirect", dest);
   const result = await lovable.auth.signInWithOAuth("google", {
     redirect_uri: window.location.origin,
   });
@@ -17,12 +22,24 @@ async function signInWithGoogle() {
 }
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (s: Record<string, unknown>): { redirect?: string } =>
+    typeof s.redirect === "string" ? { redirect: s.redirect } : {},
+  head: () => ({
+    meta: [
+      { title: "Sign in — COAH Staff Hub" },
+      { name: "description", content: "Sign in to the COAH Forest Hills Staff Hub." },
+      { property: "og:title", content: "Sign in — COAH Staff Hub" },
+      { property: "og:description", content: "Sign in to the COAH Forest Hills Staff Hub." },
+    ],
+  }),
   component: LoginPage,
 });
 
 function LoginPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const search = Route.useSearch();
+  const dest = safeRedirect(search.redirect);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,8 +48,8 @@ function LoginPage() {
   const [pendingConfirmEmail, setPendingConfirmEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: "/" });
-  }, [loading, user, navigate]);
+    if (!loading && user) navigate({ to: dest as any, replace: true });
+  }, [loading, user, navigate, dest]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,14 +67,14 @@ function LoginPage() {
         if (error) throw error;
         // If a session was returned immediately (auto-confirm), go home.
         if (data.session) {
-          navigate({ to: "/" });
+          navigate({ to: dest as any, replace: true });
         } else {
           setPendingConfirmEmail(email);
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate({ to: "/" });
+        navigate({ to: dest as any, replace: true });
       }
     } catch (err: any) {
       const msg = err.message ?? "Authentication failed";
@@ -111,7 +128,7 @@ function LoginPage() {
         </div>
 
         <form onSubmit={submit} className="bg-surface border border-border rounded-2xl p-6 space-y-4 shadow-soft">
-          <Button type="button" variant="outline" className="w-full" onClick={signInWithGoogle}>
+          <Button type="button" variant="outline" className="w-full" onClick={() => signInWithGoogle(dest)}>
             Continue with Google
           </Button>
           <div className="relative">
