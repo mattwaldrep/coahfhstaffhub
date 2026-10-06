@@ -54,6 +54,7 @@ const ELDER_ITEMS: NavItem[] = [
   { to: "/elder/meetings", label: "Meetings", icon: ClipboardList },
   { to: "/elder/motions", label: "Motions", icon: Gavel },
   { to: "/elder/pastoral-care", label: "Pastoral Care", icon: HeartHandshake },
+  { to: "/quick-note", label: "Quick Note", icon: Megaphone },
   { to: "/elder/archive", label: "Archive", icon: ScrollText },
 ];
 

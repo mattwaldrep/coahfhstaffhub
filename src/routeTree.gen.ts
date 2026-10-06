@@ -21,6 +21,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MeetingRouteImport } from './routes/meeting'
 import { Route as MissionsRouteImport } from './routes/missions'
+import { Route as QuickNoteRouteImport } from './routes/quick-note'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as ServeLeadersRouteImport } from './routes/serve-leaders'
@@ -138,6 +139,11 @@ const MeetingRoute = MeetingRouteImport.update({
 const MissionsRoute = MissionsRouteImport.update({
   id: '/missions',
   path: '/missions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuickNoteRoute = QuickNoteRouteImport.update({
+  id: '/quick-note',
+  path: '/quick-note',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -467,6 +473,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/meeting': typeof MeetingRoute
   '/missions': typeof MissionsRoute
+  '/quick-note': typeof QuickNoteRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/serve-leaders': typeof ServeLeadersRoute
@@ -537,6 +544,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/meeting': typeof MeetingRoute
   '/missions': typeof MissionsRoute
+  '/quick-note': typeof QuickNoteRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/serve-leaders': typeof ServeLeadersRoute
@@ -608,6 +616,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/meeting': typeof MeetingRoute
   '/missions': typeof MissionsRoute
+  '/quick-note': typeof QuickNoteRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/serve-leaders': typeof ServeLeadersRoute
@@ -682,6 +691,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/meeting'
     | '/missions'
+    | '/quick-note'
     | '/reset-password'
     | '/rooms'
     | '/serve-leaders'
@@ -752,6 +762,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/meeting'
     | '/missions'
+    | '/quick-note'
     | '/reset-password'
     | '/rooms'
     | '/serve-leaders'
@@ -822,6 +833,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/meeting'
     | '/missions'
+    | '/quick-note'
     | '/reset-password'
     | '/rooms'
     | '/serve-leaders'
@@ -895,6 +907,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MeetingRoute: typeof MeetingRoute
   MissionsRoute: typeof MissionsRoute
+  QuickNoteRoute: typeof QuickNoteRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RoomsRoute: typeof RoomsRoute
   ServeLeadersRoute: typeof ServeLeadersRoute
@@ -1022,6 +1035,13 @@ declare module '@tanstack/react-router' {
       path: '/missions'
       fullPath: '/missions'
       preLoaderRoute: typeof MissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quick-note': {
+      id: '/quick-note'
+      path: '/quick-note'
+      fullPath: '/quick-note'
+      preLoaderRoute: typeof QuickNoteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -1545,6 +1565,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MeetingRoute: MeetingRoute,
   MissionsRoute: MissionsRoute,
+  QuickNoteRoute: QuickNoteRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RoomsRoute: RoomsRoute,
   ServeLeadersRoute: ServeLeadersRoute,
