@@ -207,11 +207,12 @@ function WeeklyDigestCard() {
   async function sendNow() {
     setBusy(true);
     try {
+      const { data: sess } = await supabase.auth.getSession();
       const res = await fetch("/api/public/hooks/send-weekly-digest", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string,
+          Authorization: `Bearer ${sess.session?.access_token ?? ""}`,
         },
         body: "{}",
       });

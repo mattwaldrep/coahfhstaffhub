@@ -32,21 +32,34 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { messages } = await req.json();
+    const reqBody = await req.json().catch(() => ({}));
+    const rawMessages = Array.isArray(reqBody?.messages) ? reqBody.messages : [];
+    const messages = rawMessages
+      .filter((m: any) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
+      .slice(-40)
+      .map((m: any) => ({ role: m.role, content: String(m.content).slice(0, 8000) }));
 
-    // Build live context from the hub via service role
+    // Build live context from the hub via service role, limited to what the caller's roles allow
     const admin = createClient(supabaseUrl, serviceKey);
+    const { data: roleRows } = await userClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userData.user.id);
+    const roles = new Set((roleRows ?? []).map((r: any) => r.role as string));
+    const canMeeting = roles.has("core") || roles.has("meeting");
+    const canElder = roles.has("elder") || roles.has("elder_candidate");
+    const none: any = Promise.resolve({ data: null });
     const today = new Date().toISOString().slice(0, 10);
     const sevenDays = new Date(Date.now() + 7 * 86400000).toISOString();
 
     const [meetingRes, agendaRes, actionsRes, eventsRes, reviewsRes, elderMeetingsRes, motionsRes] = await Promise.all([
-      admin.from("meetings").select("id,meeting_date,title").eq("meeting_date", today).maybeSingle(),
-      admin
+      !canMeeting ? none : admin.from("meetings").select("id,meeting_date,title").eq("meeting_date", today).maybeSingle(),
+      !canMeeting ? none : admin
         .from("agenda_items")
         .select("id,title,status,owner_name,meeting_id")
         .order("position")
         .limit(40),
-      admin
+      !canMeeting ? none : admin
         .from("action_items")
         .select("id,title,completed,due_date,meeting_id")
         .eq("completed", false)
@@ -64,12 +77,12 @@ Deno.serve(async (req) => {
         .select("id,service_date")
         .order("service_date", { ascending: false })
         .limit(4),
-      admin
+      !canElder ? none : admin
         .from("elder_meetings")
         .select("id,meeting_date,title")
         .order("meeting_date", { ascending: false })
         .limit(10),
-      admin
+      !canElder ? none : admin
         .from("elder_motions")
         .select("id,title,status,deadline_at")
         .order("created_at", { ascending: false })

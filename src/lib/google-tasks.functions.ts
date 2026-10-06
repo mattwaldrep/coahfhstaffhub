@@ -238,6 +238,12 @@ async function ensureAccessToken(userId: string): Promise<string> {
   return refreshed.access_token;
 }
 
+async function canPushFor(supabase: any, callerId: string, targetUser: string) {
+  if (callerId === targetUser) return true;
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", callerId).in("role", ["core", "meeting"]).limit(1);
+  return (data ?? []).length > 0;
+}
+
 export const pushActionItemToGoogleTasks = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ actionItemId: z.string().uuid() }).parse(d))
@@ -249,6 +255,9 @@ export const pushActionItemToGoogleTasks = createServerFn({ method: "POST" })
       .single();
     if (error || !item) throw new Error("Action item not found");
     const targetUser = item.assignee_id ?? context.userId;
+    if (!(await canPushFor(context.supabase, context.userId, targetUser))) {
+      throw new Error("Forbidden: you can't push tasks for this person");
+    }
 
     const accessToken = await ensureAccessToken(targetUser);
 
@@ -298,6 +307,10 @@ export const pushActionItemsBulk = createServerFn({ method: "POST" })
         continue;
       }
       const targetUser = item.assignee_id ?? context.userId;
+      if (!(await canPushFor(context.supabase, context.userId, targetUser))) {
+        results.push({ id: item.id, ok: false, error: "Forbidden" });
+        continue;
+      }
       try {
         let accessToken = tokenCache.get(targetUser);
         if (!accessToken) {

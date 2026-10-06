@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -314,7 +315,7 @@ export function RichTextView({ html, className }: { html: string; className?: st
         "[&_[data-mention-id]]:text-[oklch(0.55_0.15_280)] [&_[data-mention-id]]:font-medium " +
         (className ?? "")
       }
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{ __html: typeof window === "undefined" ? "" : DOMPurify.sanitize(html ?? "", { ADD_ATTR: ["data-mention-id", "target"] }) }}
     />
   );
 }

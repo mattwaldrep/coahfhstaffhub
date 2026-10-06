@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { checkCronAuth } from "@/lib/cycle-hook-auth";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ensureAccessTokenForUser } from "@/server/google-tasks.server";
 
@@ -62,7 +63,9 @@ async function syncUser(userId: string) {
 export const Route = createFileRoute("/api/public/hooks/sync-google-tasks")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const unauth = checkCronAuth(request);
+        if (unauth) return unauth;
         const { data: integrations, error } = await supabaseAdmin
           .from("user_integrations")
           .select("user_id")

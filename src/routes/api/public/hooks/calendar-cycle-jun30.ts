@@ -4,7 +4,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { fiscalYearOf } from "@/lib/fiscal-year";
-import { checkCronAuth, sendCoreEmail } from "@/lib/cycle-hook-auth";
+import { checkCronAuth, sendCoreEmail, escapeHtml } from "@/lib/cycle-hook-auth";
 
 export const Route = createFileRoute("/api/public/hooks/calendar-cycle-jun30")({
   server: {
@@ -47,7 +47,7 @@ export const Route = createFileRoute("/api/public/hooks/calendar-cycle-jun30")({
           .in("id", coreIds.length ? coreIds : ["00000000-0000-0000-0000-000000000000"]);
         const emails = (profs ?? []).map((p: any) => p.email).filter(Boolean);
         const rows = outstanding
-          .map((s: any) => `<li>${s.sub_calendar} — ${s.status}</li>`)
+          .map((s: any) => `<li>${escapeHtml(s.sub_calendar)} — ${escapeHtml(s.status)}</li>`)
           .join("");
 
         const emailed = await sendCoreEmail({
