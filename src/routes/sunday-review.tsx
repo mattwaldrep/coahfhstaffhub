@@ -10,6 +10,7 @@ import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { WorshipTrendStrip } from "@/components/sunday-review/WorshipTrendStrip";
 import { VoiceNoteRecorder } from "@/components/sunday-review/VoiceNoteRecorder";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/sunday-review")({
   component: SundayReviewPage,
@@ -100,6 +101,19 @@ function SundayReviewPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<Review | null>(null);
+  const [names, setNames] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    supabase
+      .from("profiles")
+      .select("id,full_name,email")
+      .then(({ data }) => {
+        const m: Record<string, string> = {};
+        (data ?? []).forEach((p: any) => (m[p.id] = p.full_name || p.email || "Unknown"));
+        setNames(m);
+      });
+  }, []);
 
   const load = async () => {
     setLoading(true);
@@ -340,16 +354,26 @@ function SundayReviewPage() {
                     : "—";
                   const mine = r.submitted_by === user?.id;
                   return (
-                    <li key={r.id} className="border border-border rounded-lg p-3">
+                    <li
+                      key={r.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setViewing(r)}
+                      onKeyDown={(e) => { if (e.key === "Enter") setViewing(r); }}
+                      className="border border-border rounded-lg p-3 cursor-pointer hover:bg-muted/40 transition-colors"
+                    >
                       <div className="flex items-center justify-between gap-2">
                         <div className="font-medium text-sm">
+                          <span className="block text-xs text-muted-foreground font-normal">
+                            {names[r.submitted_by] ?? "Staff member"}
+                          </span>
                           {new Date(r.service_date + "T00:00").toLocaleDateString(undefined, {
                             month: "short",
                             day: "numeric",
                             year: "numeric",
                           })}
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                           <div className="text-xs text-muted-foreground">avg {avg}/5</div>
                           {mine && (
                             <>
@@ -410,6 +434,49 @@ function SundayReviewPage() {
           </aside>
         </div>
       </div>
+      <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
+        <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
+          {viewing && (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {names[viewing.submitted_by] ?? "Staff member"} ·{" "}
+                  {new Date(viewing.service_date + "T00:00").toLocaleDateString(undefined, {
+                    weekday: "short", month: "short", day: "numeric", year: "numeric",
+                  })}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 text-sm">
+                {SECTIONS.map((s) => {
+                  const rating = viewing[`${s.key}_rating` as keyof Review] as number | null;
+                  const notes = viewing[`${s.key}_notes` as keyof Review] as string | null;
+                  return (
+                    <div key={s.key} className="border-b border-border pb-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="font-medium">{s.label}</div>
+                        <div className="text-xs font-semibold tabular-nums">{rating ?? "—"}/5</div>
+                      </div>
+                      {notes ? (
+                        <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{notes}</p>
+                      ) : (
+                        <p className="mt-1 text-muted-foreground/60 italic">No notes</p>
+                      )}
+                    </div>
+                  );
+                })}
+                <div>
+                  <div className="font-medium">Wins</div>
+                  <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{viewing.wins || "—"}</p>
+                </div>
+                <div>
+                  <div className="font-medium">Opportunities</div>
+                  <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{viewing.opportunities || "—"}</p>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
