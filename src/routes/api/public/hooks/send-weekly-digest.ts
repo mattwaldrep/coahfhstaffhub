@@ -8,21 +8,15 @@
  * No PII leakage: only sends to authenticated staff emails fetched server-side.
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { checkCronOrCoreAuth } from "@/lib/cycle-hook-auth";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export const Route = createFileRoute("/api/public/hooks/send-weekly-digest")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // Apikey gate: must match SUPABASE_ANON_KEY or SUPABASE_PUBLISHABLE_KEY.
-        const apikey = request.headers.get("apikey");
-        const allowed = [
-          process.env.SUPABASE_ANON_KEY,
-          process.env.SUPABASE_PUBLISHABLE_KEY,
-        ].filter(Boolean) as string[];
-        if (!apikey || !allowed.includes(apikey)) {
-          return new Response("Unauthorized", { status: 401 });
-        }
+        const unauth = await checkCronOrCoreAuth(request);
+        if (unauth) return unauth;
 
         const resendKey = process.env.RESEND_API_KEY;
         const from = process.env.EMAIL_FROM_ADDRESS;
