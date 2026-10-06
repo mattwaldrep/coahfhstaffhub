@@ -3361,6 +3361,7 @@ export type Database = {
         Returns: boolean
       }
       extract_finance_account_code: { Args: { _name: string }; Returns: string }
+      has_any_app_role: { Args: { _user_id: string }; Returns: boolean }
       has_any_elder_access: { Args: { _user_id: string }; Returns: boolean }
       has_any_role: {
         Args: {
