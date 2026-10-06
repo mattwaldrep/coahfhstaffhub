@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
 import { supabaseAdmin } from "./admin.server";
+import { isDevRequest, REDACTED_NOTE, fakeName } from "./dev-redact.server";
 import { fetchCareList, setFieldDatum, deleteFieldDatum, pcoPing, invalidateCareListCache, listFieldDefinitions, listFieldOptions, createPersonNote } from "@/server/pco.server";
 
 async function getTier(supabase: any, userId: string): Promise<"elder" | "candidate" | null> {
@@ -213,6 +214,7 @@ export const listPcoNotes = createServerFn({ method: "POST" })
       .eq("pco_person_id", data.pco_person_id)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
+    if (isDevRequest()) return (rows ?? []).map((r: any) => ({ ...r, body: REDACTED_NOTE }));
     return rows ?? [];
   });
 
@@ -349,7 +351,12 @@ export const listTouchpoints = createServerFn({ method: "POST" })
         names[p.id] = p.full_name || p.email || "Unknown";
       }
     }
-    return (rows ?? []).map((r: any) => ({ ...r, user_name: names[r.user_id] ?? "Unknown" }));
+    const dev = isDevRequest();
+    return (rows ?? []).map((r: any) => ({
+      ...r,
+      user_name: names[r.user_id] ?? "Unknown",
+      ...(dev ? { note: r.note ? REDACTED_NOTE : null, person_name: fakeName(r.pco_person_id) } : {}),
+    }));
   });
 
 export const deleteTouchpoint = createServerFn({ method: "POST" })
@@ -406,6 +413,9 @@ export const getArchiveEntry = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
+    if (row && isDevRequest()) {
+      return { ...row, raw_text: row.raw_text ? REDACTED_NOTE : null, agenda: [], action_items: [] } as typeof row;
+    }
     return row;
   });
 
