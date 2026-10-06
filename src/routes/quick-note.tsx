@@ -5,8 +5,9 @@ import { listCareList, addPcoNote, logTouchpoint, getMyElderName } from "@/lib/p
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle2, Loader2, Search, ShieldAlert, X } from "lucide-react";
+import { CheckCircle2, Loader2, MessageSquare, Phone, Search, ShieldAlert, X } from "lucide-react";
 import { toast } from "sonner";
+import { TextComposerDialog } from "@/components/pastoral/TextComposerDialog";
 
 export const Route = createFileRoute("/quick-note")({
   head: () => ({
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/quick-note")({
   component: QuickNotePage,
 });
 
-type Person = { id: string; name: string; fields: Record<string, { value: string | null }> };
+type Person = { id: string; name: string; phone?: string | null; fields: Record<string, { value: string | null }> };
 const KINDS = [
   { v: "in_person", l: "In person" },
   { v: "call", l: "Call" },
@@ -72,6 +73,7 @@ function QuickNoteForm() {
   const [body, setBody] = useState("");
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState<string | null>(null);
+  const [composerOpen, setComposerOpen] = useState(false);
 
   useEffect(() => {
     Promise.all([listCareList({ data: {} }), getMyElderName()])
@@ -134,9 +136,33 @@ function QuickNoteForm() {
       <section className="mt-4 space-y-2">
         <label className="text-sm font-medium">Who is this about?</label>
         {person ? (
-          <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
-            <span className="font-medium">{person.name}</span>
-            <Button size="icon" variant="ghost" onClick={() => setPerson(null)} aria-label="Change person"><X className="w-4 h-4" /></Button>
+          <div className="rounded-lg border border-border bg-card p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="font-medium">{person.name}</span>
+              <Button size="icon" variant="ghost" onClick={() => setPerson(null)} aria-label="Change person"><X className="w-4 h-4" /></Button>
+            </div>
+            {person.phone ? (
+              <div className="grid grid-cols-2 gap-2">
+                <Button className="h-12" onClick={() => setComposerOpen(true)}>
+                  <MessageSquare className="w-4 h-4 mr-2" /> Text
+                </Button>
+                <Button asChild variant="outline" className="h-12">
+                  <a href={`tel:${person.phone}`} onClick={() => setKind("call")}><Phone className="w-4 h-4 mr-2" /> Call</a>
+                </Button>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">No phone number in Planning Center.</p>
+            )}
+            {person.phone && (
+              <TextComposerDialog
+                open={composerOpen}
+                onOpenChange={setComposerOpen}
+                personId={person.id}
+                personName={person.name}
+                phone={person.phone}
+                onSent={() => { setKind("text"); toast.success("Text logged on their card"); }}
+              />
+            )}
           </div>
         ) : (
           <>
