@@ -58,7 +58,11 @@ const schema = z.object({
 function lastSundayISO() {
   const d = new Date();
   d.setDate(d.getDate() - d.getDay());
-  return d.toISOString().slice(0, 10);
+  // Use local date (toISOString shifts to UTC and can land on Monday in the evening).
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 type FormState = {
