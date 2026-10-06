@@ -43,6 +43,15 @@ export function AppShell({ children }: { children: ReactNode }) {
       const here = window.location.pathname + window.location.search;
       navigate({ to: "/login", search: here && here !== "/" ? { redirect: here } : {} });
     }
+    if (!loading && user) {
+      const saved = sessionStorage.getItem("post_login_redirect");
+      if (saved) {
+        sessionStorage.removeItem("post_login_redirect");
+        if (saved.startsWith("/") && !saved.startsWith("//") && saved !== window.location.pathname) {
+          navigate({ to: saved as any, replace: true });
+        }
+      }
+    }
   }, [loading, user, navigate]);
 
   useEffect(() => {
