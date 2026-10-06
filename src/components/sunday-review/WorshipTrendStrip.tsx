@@ -85,19 +85,23 @@ function DeltaPill({ delta }: { delta: number | null }) {
 }
 
 function Sparkline({ points, warn }: { points: number[]; warn: boolean }) {
-  if (points.length < 2) return <div className="h-6 mt-2" />;
+  if (points.length < 2) return <div className="h-10 mt-2" />;
+  // Fixed 1–5 scale so small wobbles don't look like big swings.
   const w = 100;
-  const h = 24;
-  const min = Math.min(...points);
-  const max = Math.max(...points);
-  const range = max - min || 1;
+  const h = 40;
+  const pad = 3;
+  const y = (v: number) => pad + (1 - (Math.min(5, Math.max(1, v)) - 1) / 4) * (h - pad * 2);
   const step = w / (points.length - 1);
-  const d = points
-    .map((v, i) => `${i === 0 ? "M" : "L"}${(i * step).toFixed(2)},${(h - ((v - min) / range) * h).toFixed(2)}`)
-    .join(" ");
+  const coords = points.map((v, i) => [i * step, y(v)] as const);
+  const d = coords.map(([x, yy], i) => `${i === 0 ? "M" : "L"}${x.toFixed(2)},${yy.toFixed(2)}`).join(" ");
+  const [lx, ly] = coords[coords.length - 1];
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-6 mt-2" preserveAspectRatio="none">
-      <path d={d} fill="none" strokeWidth="1.5" className={warn ? "stroke-warning" : "stroke-primary"} />
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-10 mt-2 overflow-visible" preserveAspectRatio="none">
+      {[1, 3, 5].map((g) => (
+        <line key={g} x1={0} x2={w} y1={y(g)} y2={y(g)} className="stroke-border" strokeWidth="1" vectorEffect="non-scaling-stroke" strokeDasharray={g === 3 ? "2 3" : undefined} />
+      ))}
+      <path d={d} fill="none" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" className={warn ? "stroke-warning" : "stroke-primary"} />
+      <circle cx={lx} cy={ly} r="2.5" vectorEffect="non-scaling-stroke" className={warn ? "fill-warning" : "fill-primary"} />
     </svg>
   );
 }
