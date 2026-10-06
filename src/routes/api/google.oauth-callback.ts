@@ -54,7 +54,7 @@ export const Route = createFileRoute("/api/google/oauth-callback")({
         });
         const tok = await tokenRes.json();
         if (!tokenRes.ok || !tok.refresh_token) {
-          console.error("Google token exchange failed:", tok);
+          console.error("Google token exchange failed:", tokenRes.status, tok?.error ?? (tok?.refresh_token ? "" : "no refresh_token"));
           return redirect(`/settings?google=error&code=token_exchange_failed`);
         }
 
