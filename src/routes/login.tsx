@@ -67,14 +67,14 @@ function LoginPage() {
         if (error) throw error;
         // If a session was returned immediately (auto-confirm), go home.
         if (data.session) {
-          navigate({ to: "/" });
+          navigate({ to: dest as any, replace: true });
         } else {
           setPendingConfirmEmail(email);
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate({ to: "/" });
+        navigate({ to: dest as any, replace: true });
       }
     } catch (err: any) {
       const msg = err.message ?? "Authentication failed";
@@ -128,7 +128,7 @@ function LoginPage() {
         </div>
 
         <form onSubmit={submit} className="bg-surface border border-border rounded-2xl p-6 space-y-4 shadow-soft">
-          <Button type="button" variant="outline" className="w-full" onClick={signInWithGoogle}>
+          <Button type="button" variant="outline" className="w-full" onClick={() => signInWithGoogle(dest)}>
             Continue with Google
           </Button>
           <div className="relative">
