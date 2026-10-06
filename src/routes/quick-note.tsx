@@ -43,7 +43,7 @@ function QuickNotePage() {
     return (
       <Center>
         <p className="text-sm text-muted-foreground">Sign in to log a care note.</p>
-        <Button asChild><Link to="/login">Sign in</Link></Button>
+        <Button asChild><Link to="/login" search={{ redirect: "/quick-note" }}>Sign in</Link></Button>
       </Center>
     );
   if (!hasElderAccess)

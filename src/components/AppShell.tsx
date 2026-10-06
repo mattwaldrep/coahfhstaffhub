@@ -39,7 +39,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [messages]);
 
   useEffect(() => {
-    if (!loading && !user) navigate({ to: "/login" });
+    if (!loading && !user) {
+      const here = window.location.pathname + window.location.search;
+      navigate({ to: "/login", search: here && here !== "/" ? { redirect: here } : {} });
+    }
   }, [loading, user, navigate]);
 
   useEffect(() => {
