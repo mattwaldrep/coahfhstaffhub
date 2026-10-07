@@ -3244,12 +3244,15 @@ export type Database = {
           connect_notes: string | null
           connect_rating: number | null
           created_at: string
+          follow_up_needed: string | null
+          god_at_work: string | null
           id: string
           opportunities: string | null
           sermon_notes: string | null
           sermon_rating: number | null
           service_date: string
           submitted_by: string | null
+          thank_this_week: string | null
           updated_at: string
           wins: string | null
           worship_notes: string | null
@@ -3261,12 +3264,15 @@ export type Database = {
           connect_notes?: string | null
           connect_rating?: number | null
           created_at?: string
+          follow_up_needed?: string | null
+          god_at_work?: string | null
           id?: string
           opportunities?: string | null
           sermon_notes?: string | null
           sermon_rating?: number | null
           service_date: string
           submitted_by?: string | null
+          thank_this_week?: string | null
           updated_at?: string
           wins?: string | null
           worship_notes?: string | null
@@ -3278,12 +3284,15 @@ export type Database = {
           connect_notes?: string | null
           connect_rating?: number | null
           created_at?: string
+          follow_up_needed?: string | null
+          god_at_work?: string | null
           id?: string
           opportunities?: string | null
           sermon_notes?: string | null
           sermon_rating?: number | null
           service_date?: string
           submitted_by?: string | null
+          thank_this_week?: string | null
           updated_at?: string
           wins?: string | null
           worship_notes?: string | null

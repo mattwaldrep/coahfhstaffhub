@@ -11,7 +11,10 @@ type FieldKey =
   | "connect_notes"
   | "sermon_notes"
   | "wins"
-  | "opportunities";
+  | "opportunities"
+  | "god_at_work"
+  | "thank_this_week"
+  | "follow_up_needed";
 
 type CurrentForm = Record<FieldKey, string>;
 
