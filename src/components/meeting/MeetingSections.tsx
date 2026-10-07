@@ -454,6 +454,8 @@ export function SundayReviewSection({ meetingId }: { meetingId: string }) {
               )}
             </ul>
           </div>
+
+          <div className="flex items-center justify-between">
             <Button asChild variant="outline" size="sm">
               <Link to="/sunday-review">Open full Sunday Review</Link>
             </Button>
