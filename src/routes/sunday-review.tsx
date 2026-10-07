@@ -30,6 +30,9 @@ type Review = {
   sermon_notes: string | null;
   wins: string | null;
   opportunities: string | null;
+  god_at_work: string | null;
+  thank_this_week: string | null;
+  follow_up_needed: string | null;
 };
 
 const SECTIONS = [
@@ -54,6 +57,9 @@ const schema = z.object({
   sermon_notes: notesSchema,
   wins: notesSchema,
   opportunities: notesSchema,
+  god_at_work: notesSchema,
+  thank_this_week: notesSchema,
+  follow_up_needed: notesSchema,
 });
 
 function lastSundayISO() {
@@ -78,6 +84,9 @@ type FormState = {
   sermon_notes: string;
   wins: string;
   opportunities: string;
+  god_at_work: string;
+  thank_this_week: string;
+  follow_up_needed: string;
 };
 
 const emptyForm = (): FormState => ({
@@ -92,6 +101,9 @@ const emptyForm = (): FormState => ({
   sermon_notes: "",
   wins: "",
   opportunities: "",
+  god_at_work: "",
+  thank_this_week: "",
+  follow_up_needed: "",
 });
 
 function SundayReviewPage() {
@@ -157,6 +169,9 @@ function SundayReviewPage() {
       sermon_notes: form.sermon_notes || null,
       wins: form.wins || null,
       opportunities: form.opportunities || null,
+      god_at_work: form.god_at_work || null,
+      thank_this_week: form.thank_this_week || null,
+      follow_up_needed: form.follow_up_needed || null,
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Invalid input");
@@ -200,6 +215,9 @@ function SundayReviewPage() {
       sermon_notes: r.sermon_notes ?? "",
       wins: r.wins ?? "",
       opportunities: r.opportunities ?? "",
+      god_at_work: r.god_at_work ?? "",
+      thank_this_week: r.thank_this_week ?? "",
+      follow_up_needed: r.follow_up_needed ?? "",
     });
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -307,6 +325,36 @@ function SundayReviewPage() {
                 rows={3}
                 value={form.opportunities}
                 onChange={(e) => setForm((f) => ({ ...f, opportunities: e.target.value }))}
+                className={inputCls}
+                maxLength={4000}
+              />
+            </Field>
+
+            <Field label="Where did you see God at work today?">
+              <textarea
+                rows={2}
+                value={form.god_at_work}
+                onChange={(e) => setForm((f) => ({ ...f, god_at_work: e.target.value }))}
+                className={inputCls}
+                maxLength={4000}
+              />
+            </Field>
+
+            <Field label="Who should we thank this week, and for what specifically?">
+              <textarea
+                rows={2}
+                value={form.thank_this_week}
+                onChange={(e) => setForm((f) => ({ ...f, thank_this_week: e.target.value }))}
+                className={inputCls}
+                maxLength={4000}
+              />
+            </Field>
+
+            <Field label="Name any guest or person who needs a follow-up, and who should own it.">
+              <textarea
+                rows={2}
+                value={form.follow_up_needed}
+                onChange={(e) => setForm((f) => ({ ...f, follow_up_needed: e.target.value }))}
                 className={inputCls}
                 maxLength={4000}
               />
@@ -471,6 +519,18 @@ function SundayReviewPage() {
                 <div>
                   <div className="font-medium">Opportunities</div>
                   <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{viewing.opportunities || "—"}</p>
+                </div>
+                <div>
+                  <div className="font-medium">God at work</div>
+                  <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{viewing.god_at_work || "—"}</p>
+                </div>
+                <div>
+                  <div className="font-medium">Thanks this week</div>
+                  <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{viewing.thank_this_week || "—"}</p>
+                </div>
+                <div>
+                  <div className="font-medium">Follow-ups needed</div>
+                  <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{viewing.follow_up_needed || "—"}</p>
                 </div>
               </div>
             </>
