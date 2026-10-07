@@ -33,7 +33,7 @@ type Review = {
 };
 
 const SECTIONS = [
-  { key: "worship", label: "Musical worship", question: "How was the Musical worship?" },
+  { key: "worship", label: "Musical worship", question: "How was the musical worship?" },
   { key: "confession", label: "Confession of Faith", question: "How was the Call To Worship & Confession of Faith?" },
   { key: "connect", label: "Connect moment / core values / ministry highlight", question: "How was the delivery of the connect moment / core values / ministry highlight?" },
   { key: "sermon", label: "Sermon", question: "How was the Sermon?" },
