@@ -1,0 +1,3 @@
+ALTER TABLE public.event_sunday_slots DROP CONSTRAINT IF EXISTS event_sunday_slots_channel_check;
+ALTER TABLE public.event_sunday_slots ADD CONSTRAINT event_sunday_slots_channel_check CHECK (channel IN ('ministry_highlight', 'announcement_1', 'announcement_2', 'announcement_3', 'core_value_highlight'));
+COMMENT ON CONSTRAINT event_sunday_slots_channel_check ON public.event_sunday_slots IS 'Sunday planning supports an optional third announcement; core_value_highlight is retained for historical compatibility but no longer used by the Sunday Announcements & Highlights section.';

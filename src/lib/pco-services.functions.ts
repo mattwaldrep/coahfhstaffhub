@@ -73,11 +73,11 @@ const SLOT_TITLES: Record<string, string> = {
   ministry_highlight: "Ministry Highlight",
   announcement_1: "Announcement 1",
   announcement_2: "Announcement 2",
-  core_value_highlight: "Core Value Highlight",
+  announcement_3: "Announcement 3",
 };
 
 export type PushSlotResult = {
-  slot: "ministry_highlight" | "announcement_1" | "announcement_2" | "core_value_highlight";
+  slot: "ministry_highlight" | "announcement_1" | "announcement_2" | "announcement_3";
   title: string;
   status: "updated" | "empty" | "missing_item";
 };
@@ -104,11 +104,12 @@ export const pushSundaySlotsToPco = createServerFn({ method: "POST" })
       return { ok: false, error: "Set the PCO Sunday Service Type ID in Settings first." };
     }
 
-    // Read the 3 slots for this Sunday.
+    // Read the ministry highlight and announcement slots for this Sunday.
     const { data: slotRows } = await supabaseAdmin
       .from("event_sunday_slots")
       .select("channel, event_id, text_label")
-      .eq("sunday_date", data.sundayIso);
+      .eq("sunday_date", data.sundayIso)
+      .in("channel", Object.keys(SLOT_TITLES));
 
     const slotMap: Record<string, { event_id: string | null; text_label: string | null }> = {};
     for (const r of (slotRows ?? []) as any[]) slotMap[r.channel] = r;
@@ -150,7 +151,7 @@ export const pushSundaySlotsToPco = createServerFn({ method: "POST" })
       "ministry_highlight",
       "announcement_1",
       "announcement_2",
-      "core_value_highlight",
+      "announcement_3",
     ];
     const results: PushSlotResult[] = [];
     for (const ch of channels) {
