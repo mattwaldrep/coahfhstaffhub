@@ -3186,7 +3186,7 @@ function MonthGrid({
   const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 0 });
   const end = endOfWeek(endOfMonth(cursor), { weekStartsOn: 0 });
   const days: Date[] = [];
-  for (let d = start; d <= end; d = new Date(d.getTime() + 86400000)) days.push(new Date(d));
+  for (let d = start; d <= end; d = addDays(d, 1)) days.push(new Date(d));
 
   return (
     <div className="bg-surface border border-border rounded-2xl overflow-hidden">
@@ -3240,7 +3240,7 @@ function WeekStrip({
 }) {
   const SUB_CALS = useSubCals();
   const start = startOfWeek(cursor, { weekStartsOn: 0 });
-  const days = Array.from({ length: 7 }, (_, i) => new Date(start.getTime() + i * 86400000));
+  const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
 
 
   return (
