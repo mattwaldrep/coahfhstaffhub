@@ -34,7 +34,7 @@ type Review = {
 
 const SECTIONS = [
   { key: "worship", label: "Musical worship" },
-  { key: "confession", label: "Call & confession" },
+  { key: "confession", label: "Confession of Faith" },
   { key: "connect", label: "Connect moment / core values / ministry highlight" },
   { key: "sermon", label: "Sermon" },
 ] as const;
