@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { getLatestLeadLikeJesusPost, getLatestSolidJoysPost, type LLJPost } from "@/lib/lead-like-jesus.functions";
+import { getLatestLeadLikeJesusPost, getLatestSolidJoysPost, getLatestTruthForLifeDevotional, type LLJPost } from "@/lib/lead-like-jesus.functions";
 import { pushActionItemToGoogleTasks, pushActionItemsBulk, autoPushIfEnabled, setActionItemCompleted } from "@/lib/google-tasks.functions";
 import { TaskSourceButton } from "@/components/tasks/TaskSourceButton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -167,12 +167,14 @@ export function NotesField({
 const DEVOTIONAL_SOURCES = {
   llj: { label: "Lead Like Jesus", site: "leadlikejesus.com", home: "https://leadlikejesus.com/blog/" },
   sj: { label: "Solid Joys", site: "desiringgod.org", home: "https://www.desiringgod.org/solid-joys" },
+  tfl: { label: "Truth for Life", site: "truthforlife.org", home: "https://www.truthforlife.org/daily/?tab=alistair_begg_devotional" },
 } as const;
 type DevoKey = keyof typeof DEVOTIONAL_SOURCES;
 
 export function DevotionalSection({ meetingId }: { meetingId: string }) {
   const fetchLlj = useServerFn(getLatestLeadLikeJesusPost);
   const fetchSj = useServerFn(getLatestSolidJoysPost);
+  const fetchTfl = useServerFn(getLatestTruthForLifeDevotional);
   const [source, setSource] = useState<DevoKey>("llj");
   const [data, setData] = useState<Partial<Record<DevoKey, { post: LLJPost | null; error: string | null }>>>({});
   const [expanded, setExpanded] = useState(false);
@@ -185,10 +187,11 @@ export function DevotionalSection({ meetingId }: { meetingId: string }) {
         .catch((e) => !cancelled && setData((d) => ({ ...d, [k]: { post: null, error: e?.message ?? "Failed to load" } })));
     load("llj", fetchLlj);
     load("sj", fetchSj);
+    load("tfl", fetchTfl);
     return () => {
       cancelled = true;
     };
-  }, [fetchLlj, fetchSj]);
+  }, [fetchLlj, fetchSj, fetchTfl]);
 
   const meta = DEVOTIONAL_SOURCES[source];
   const current = data[source];
