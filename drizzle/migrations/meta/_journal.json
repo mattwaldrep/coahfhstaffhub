@@ -43,6 +43,13 @@
       "when": 1791390995231,
       "tag": "0005_add_sunday_review_extra_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791398453642,
+      "tag": "0006_allow_optional_third_sunday_announcement",
+      "breakpoints": true
     }
   ]
 }

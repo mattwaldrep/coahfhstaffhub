@@ -747,27 +747,16 @@ export function UpcomingEventsSection({ meetingId }: { meetingId: string }) {
   );
 }
 
-/* ---------- This Sunday's slot (Ministry Highlight + 2 Announcements) ---------- */
+/* ---------- Sunday announcements and highlights ---------- */
 
 
 
 const SUNDAY_SLOTS = [
-  { key: "ministry_highlight", label: "Ministry Highlight" },
-  { key: "announcement_1", label: "Announcement 1" },
-  { key: "announcement_2", label: "Announcement 2" },
-  { key: "core_value_highlight", label: "Core Value Highlight" },
+  { key: "ministry_highlight", label: "Ministry Highlight", optional: false },
+  { key: "announcement_1", label: "Announcement 1", optional: false },
+  { key: "announcement_2", label: "Announcement 2", optional: false },
+  { key: "announcement_3", label: "Announcement 3 (optional)", optional: true },
 ] as const;
-
-const CORE_VALUE_ROTATION = ["Gospel", "Family", "Sent"] as const;
-// Anchor: Sunday 2026-08-30 starts the rotation on "Gospel".
-function coreValueForSunday(sundayIso: string): string {
-  const anchor = Date.UTC(2026, 7, 30); // 2026-08-30
-  const [y, m, d] = sundayIso.split("-").map(Number);
-  const target = Date.UTC(y, (m ?? 1) - 1, d ?? 1);
-  const weeks = Math.round((target - anchor) / (7 * 86400000));
-  const idx = ((weeks % 3) + 3) % 3;
-  return CORE_VALUE_ROTATION[idx];
-}
 
 type SundaySlotKey = (typeof SUNDAY_SLOTS)[number]["key"];
 
@@ -801,7 +790,8 @@ export function ThisSundaySection({ meetingDate }: { meetingDate: string }) {
       const { data: slots } = await supabase
         .from("event_sunday_slots" as any)
         .select("id, channel, event_id, text_label")
-        .eq("sunday_date", sundayIso);
+        .eq("sunday_date", sundayIso)
+        .in("channel", SUNDAY_SLOTS.map((slot) => slot.key));
       const slotRows = ((slots ?? []) as unknown as Array<{
         id: string; channel: SundaySlotKey; event_id: string | null; text_label: string | null;
       }>);
@@ -823,24 +813,6 @@ export function ThisSundaySection({ meetingDate }: { meetingDate: string }) {
           title: s.event_id ? (titles[s.event_id] ?? "(untitled)") : (s.text_label ?? ""),
         };
       }
-      // Auto-populate Core Value Highlight on the 3-week rotation if not set.
-      if (!map.core_value_highlight) {
-        const rotated = coreValueForSunday(sundayIso);
-        const { data: inserted } = await supabase
-          .from("event_sunday_slots" as any)
-          .insert({ sunday_date: sundayIso, channel: "core_value_highlight", text_label: rotated })
-          .select("id")
-          .single();
-        if (mounted && inserted) {
-          map.core_value_highlight = {
-            id: (inserted as any).id,
-            channel: "core_value_highlight",
-            event_id: null,
-            text_label: rotated,
-            title: rotated,
-          };
-        }
-      }
       setByChannel(map);
       setLoaded(true);
     })();
@@ -848,6 +820,8 @@ export function ThisSundaySection({ meetingDate }: { meetingDate: string }) {
   }, [sundayIso, tick]);
 
   const filledCount = SUNDAY_SLOTS.reduce((n, s) => n + (byChannel[s.key] ? 1 : 0), 0);
+  const primarySlots = SUNDAY_SLOTS.filter((slot) => !slot.optional);
+  const openCount = primarySlots.filter((slot) => !byChannel[slot.key]).length;
 
   async function saveSlot(channel: SundaySlotKey, payload: { text_label?: string; event_id?: string }) {
     await supabase
@@ -887,8 +861,8 @@ export function ThisSundaySection({ meetingDate }: { meetingDate: string }) {
       const results: PushSlotResult[] = res.results ?? [];
       const updated = results.filter((r) => r.status === "updated");
       const missing = results.filter((r) => r.status === "missing_item");
-      const empty = results.filter((r) => r.status === "empty");
-      const parts = [`Updated ${updated.length} of ${SUNDAY_SLOTS.length} items`];
+      const empty = results.filter((r) => r.status === "empty" && r.slot !== "announcement_3");
+      const parts = [`Updated ${updated.length} items`];
       if (missing.length) parts.push(`couldn't find: ${missing.map((m) => m.title).join(", ")}`);
       if (empty.length) parts.push(`skipped empty: ${empty.map((m) => m.title).join(", ")}`);
       toast.success(parts.join(" — "));
@@ -901,11 +875,11 @@ export function ThisSundaySection({ meetingDate }: { meetingDate: string }) {
 
   return (
     <StandingSection
-      title="This Sunday's Slot"
+      title="Sunday Announcements & Highlights"
       subtitle={`Ministry Highlight and announcements for ${sundayLabel}.`}
       badge={
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-normal">
-          {filledCount} of {SUNDAY_SLOTS.length}
+          {filledCount} planned
         </span>
       }
     >
@@ -932,9 +906,9 @@ export function ThisSundaySection({ meetingDate }: { meetingDate: string }) {
 
         <div className="flex items-center justify-between gap-2 pt-1">
           <div className="text-xs text-muted-foreground">
-            {filledCount === SUNDAY_SLOTS.length
+            {openCount === 0
               ? "All slots filled. Push to write into the PCO plan."
-              : `${SUNDAY_SLOTS.length - filledCount} slot${SUNDAY_SLOTS.length - filledCount === 1 ? "" : "s"} still open.`}
+              : `${openCount} slot${openCount === 1 ? "" : "s"} still open.`}
           </div>
           <Button size="sm" onClick={pushToPco} disabled={pushing || filledCount === 0}>
             {pushing && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
