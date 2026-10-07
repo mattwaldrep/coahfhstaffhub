@@ -44,6 +44,16 @@ import { listFirstStepSubmissions, listNextStepSubmissions } from "@/lib/pco-for
 
 
 export const Route = createFileRoute("/meeting")({
+  head: () => ({
+    meta: [
+      { title: "Staff Meeting | COAH Forest Hills Staff Hub" },
+      { name: "description", content: "Forest Hills staff meeting agenda, Sunday reviews, announcements, and ministry highlights." },
+      { property: "og:title", content: "Staff Meeting | COAH Forest Hills Staff Hub" },
+      { property: "og:description", content: "Forest Hills staff meeting agenda, Sunday reviews, announcements, and ministry highlights." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: MeetingPage,
 });
 
