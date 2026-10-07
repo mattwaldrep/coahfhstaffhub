@@ -259,6 +259,9 @@ function SundayReviewPage() {
                 sermon_notes: form.sermon_notes,
                 wins: form.wins,
                 opportunities: form.opportunities,
+                god_at_work: form.god_at_work,
+                thank_this_week: form.thank_this_week,
+                follow_up_needed: form.follow_up_needed,
               }}
               currentRatings={{
                 worship_rating: form.worship_rating,

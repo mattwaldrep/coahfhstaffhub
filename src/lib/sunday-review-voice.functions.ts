@@ -14,6 +14,9 @@ const inputSchema = z.object({
     sermon_notes: z.string().max(4000),
     wins: z.string().max(4000),
     opportunities: z.string().max(4000),
+    god_at_work: z.string().max(4000),
+    thank_this_week: z.string().max(4000),
+    follow_up_needed: z.string().max(4000),
   }),
   currentRatings: z.object({
     worship_rating: ratingSchema,
@@ -30,6 +33,9 @@ type AiResult = {
   sermon_notes?: string;
   wins?: string;
   opportunities?: string;
+  god_at_work?: string;
+  thank_this_week?: string;
+  follow_up_needed?: string;
   worship_rating?: number | null;
   confession_rating?: number | null;
   connect_rating?: number | null;
@@ -78,6 +84,9 @@ Form sections (each has free-text notes; the first four also have a 1-5 rating):
 - sermon
 - wins: things that went well overall
 - opportunities: opportunities for improvement overall
+- god_at_work: where the person saw God at work in the service today (life change, moments of response)
+- thank_this_week: people the team should thank this week and what specifically for
+- follow_up_needed: any guest or person who needs a follow-up, and who should own it (name + owner)
 
 CRITICAL writing rules for notes:
 - DO NOT transcribe the user verbatim. The user is rambling stream-of-consciousness; your job is to distill.
@@ -97,6 +106,7 @@ Respond with ONLY a JSON object:
 {
   "worship_notes": "", "confession_notes": "", "connect_notes": "", "sermon_notes": "",
   "wins": "", "opportunities": "",
+  "god_at_work": "", "thank_this_week": "", "follow_up_needed": "",
   "worship_rating": null, "confession_rating": null, "connect_rating": null, "sermon_rating": null,
   "tasks": [{"title": "...", "notes": "..."}]
 }`;
@@ -188,6 +198,9 @@ Respond with ONLY a JSON object:
         sermon_notes: parsed.sermon_notes ?? "",
         wins: parsed.wins ?? "",
         opportunities: parsed.opportunities ?? "",
+        god_at_work: parsed.god_at_work ?? "",
+        thank_this_week: parsed.thank_this_week ?? "",
+        follow_up_needed: parsed.follow_up_needed ?? "",
       },
       ratings: {
         worship_rating: clampRating(parsed.worship_rating),
