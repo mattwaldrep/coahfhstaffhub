@@ -58,7 +58,12 @@ export async function findNextUpcomingPlan(
   return null;
 }
 
-export type PcoPlanItem = { id: string; title: string; description: string | null };
+export type PcoPlanItem = {
+  id: string;
+  title: string;
+  description: string | null;
+  sequence: number | null;
+};
 
 export async function listPlanItems(serviceTypeId: string, planId: string): Promise<PcoPlanItem[]> {
   const items: PcoPlanItem[] = [];
@@ -66,10 +71,12 @@ export async function listPlanItems(serviceTypeId: string, planId: string): Prom
   while (next) {
     const json: any = await pcoFetch(next);
     for (const it of json.data ?? []) {
+      const seq = it.attributes?.sequence;
       items.push({
         id: String(it.id),
         title: it.attributes?.title ?? "",
         description: it.attributes?.description ?? null,
+        sequence: typeof seq === "number" ? seq : null,
       });
     }
     next = json.links?.next ?? null;
@@ -92,5 +99,20 @@ export async function updatePlanItemDescription(
         attributes: { description },
       },
     }),
+  });
+}
+
+export async function createPlanItem(
+  serviceTypeId: string,
+  planId: string,
+  title: string,
+  description: string,
+  sequence?: number | null,
+) {
+  const attributes: Record<string, unknown> = { title, description, item_type: "item" };
+  if (typeof sequence === "number") attributes.sequence = sequence;
+  await pcoFetch(`/service_types/${serviceTypeId}/plans/${planId}/items`, {
+    method: "POST",
+    body: JSON.stringify({ data: { type: "Item", attributes } }),
   });
 }
