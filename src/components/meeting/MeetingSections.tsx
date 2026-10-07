@@ -269,6 +269,9 @@ type SundayReview = {
   confession_notes: string | null;
   wins: string | null;
   opportunities: string | null;
+  god_at_work: string | null;
+  thank_this_week: string | null;
+  follow_up_needed: string | null;
   submitted_by: string | null;
 
 };
@@ -400,7 +403,57 @@ export function SundayReviewSection({ meetingId }: { meetingId: string }) {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="grid md:grid-cols-2 gap-3">
+            <div className="bg-background/40 rounded-lg p-3">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">God at work</div>
+              <ul className="text-sm space-y-1.5 list-disc list-inside">
+                {latest.filter((r) => r.god_at_work?.trim()).map((r) => (
+                  <li key={`g-${r.id}`}>
+                    {r.god_at_work}
+                    <span className="ml-1.5 text-xs text-muted-foreground">
+                      — {names[r.submitted_by ?? ""] ?? "Unknown"}
+                    </span>
+                  </li>
+                ))}
+                {latest.every((r) => !r.god_at_work?.trim()) && (
+                  <li className="text-muted-foreground italic list-none">None logged</li>
+                )}
+              </ul>
+            </div>
+            <div className="bg-background/40 rounded-lg p-3">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Thanks this week</div>
+              <ul className="text-sm space-y-1.5 list-disc list-inside">
+                {latest.filter((r) => r.thank_this_week?.trim()).map((r) => (
+                  <li key={`t-${r.id}`}>
+                    {r.thank_this_week}
+                    <span className="ml-1.5 text-xs text-muted-foreground">
+                      — {names[r.submitted_by ?? ""] ?? "Unknown"}
+                    </span>
+                  </li>
+                ))}
+                {latest.every((r) => !r.thank_this_week?.trim()) && (
+                  <li className="text-muted-foreground italic list-none">None logged</li>
+                )}
+              </ul>
+            </div>
+          </div>
+
+          <div className="bg-background/40 rounded-lg p-3">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Follow-ups needed</div>
+            <ul className="text-sm space-y-1.5 list-disc list-inside">
+              {latest.filter((r) => r.follow_up_needed?.trim()).map((r) => (
+                <li key={`f-${r.id}`}>
+                  {r.follow_up_needed}
+                  <span className="ml-1.5 text-xs text-muted-foreground">
+                    — {names[r.submitted_by ?? ""] ?? "Unknown"}
+                  </span>
+                </li>
+              ))}
+              {latest.every((r) => !r.follow_up_needed?.trim()) && (
+                <li className="text-muted-foreground italic list-none">None logged</li>
+              )}
+            </ul>
+          </div>
             <Button asChild variant="outline" size="sm">
               <Link to="/sunday-review">Open full Sunday Review</Link>
             </Button>
