@@ -76,6 +76,68 @@ function decodeEntities(s: string): string {
     .replace(/&#39;/g, "'");
 }
 
+export const getLatestTruthForLifeDevotional = createServerFn({ method: "GET" }).handler(
+  async (): Promise<{ post: LLJPost | null; error?: string }> => {
+    try {
+      const pageUrl = "https://www.truthforlife.org/daily/?tab=alistair_begg_devotional";
+      const res = await fetch(pageUrl, {
+        headers: { "User-Agent": "COAHStaffHub/1.0 (devotional fetcher)" },
+      });
+      if (!res.ok) return { post: null, error: `Upstream ${res.status}` };
+      const html = await res.text();
+
+      const tabIdx = html.indexOf("id=alistair_begg_devotional");
+      if (tabIdx < 0) return { post: null, error: "Devotional section not found" };
+      const tab = html.slice(tabIdx, tabIdx + 60000);
+
+      const pick = (re: RegExp) => tab.match(re)?.[1]?.trim() ?? "";
+      const title = decodeEntities(pick(/content-cluster__title>([\s\S]*?)<\/h1>/));
+      const scriptureText = decodeEntities(
+        pick(/devotional_scripture_text>([\s\S]*?)<\/div>/).replace(/<[^>]+>/g, ""),
+      );
+      const scriptureRef = decodeEntities(
+        pick(/devotional_scripture_reference>([\s\S]*?)<\/div>/).replace(/<[^>]+>/g, ""),
+      );
+      const body = pick(/<div class=content-body[^>]*>([\s\S]*?)<\/div>\s*<div class=devotional-subhead/);
+      const questionsBlock = pick(/<div class=devotional-questions>([\s\S]*?)<\/div>\s*<\/div>/);
+      const questions = [...questionsBlock.matchAll(/devotional-questions__text>([\s\S]*?)<\/p>/g)]
+        .map((m) => decodeEntities(m[1].replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ")).trim())
+        .filter(Boolean);
+
+      if (!title && !body) return { post: null, error: "No devotional content found" };
+
+      const dateMatch = tab.match(/date=(\d{2})\/(\d{2})\/(\d{4})/);
+      const date = dateMatch
+        ? new Date(`${dateMatch[3]}-${dateMatch[1]}-${dateMatch[2]}T12:00:00Z`).toISOString()
+        : new Date().toISOString();
+
+      const parts: string[] = [];
+      if (scriptureText)
+        parts.push(
+          `<blockquote><p>${scriptureText}</p>${scriptureRef ? `<p><strong>${scriptureRef}</strong></p>` : ""}</blockquote>`,
+        );
+      if (body) parts.push(sanitizeHtml(body));
+      if (questions.length)
+        parts.push(
+          `<p><strong>Questions for Thought</strong></p><ul>${questions.map((q) => `<li>${q}</li>`).join("")}</ul>`,
+        );
+
+      return {
+        post: {
+          id: 0,
+          title: title || "Truth for Life Daily",
+          date,
+          link: pageUrl,
+          excerptHtml: parts.join(""),
+          contentHtml: parts.join(""),
+        },
+      };
+    } catch (e: any) {
+      return { post: null, error: e?.message ?? "Failed to fetch" };
+    }
+  },
+);
+
 export const getLatestSolidJoysPost = createServerFn({ method: "GET" }).handler(
   async (): Promise<{ post: LLJPost | null; error?: string }> => {
     try {
