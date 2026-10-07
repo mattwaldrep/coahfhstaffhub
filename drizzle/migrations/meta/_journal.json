@@ -36,6 +36,13 @@
       "when": 1791302966217,
       "tag": "0004_restrict_open_select_policies_to_role_holders",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791390995231,
+      "tag": "0005_add_sunday_review_extra_fields",
+      "breakpoints": true
     }
   ]
 }
