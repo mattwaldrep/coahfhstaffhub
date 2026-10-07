@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { getLatestLeadLikeJesusPost, type LLJPost } from "@/lib/lead-like-jesus.functions";
+import { getLatestLeadLikeJesusPost, getLatestSolidJoysPost, type LLJPost } from "@/lib/lead-like-jesus.functions";
 import { pushActionItemToGoogleTasks, pushActionItemsBulk, autoPushIfEnabled, setActionItemCompleted } from "@/lib/google-tasks.functions";
 import { TaskSourceButton } from "@/components/tasks/TaskSourceButton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -164,35 +164,59 @@ export function NotesField({
 
 /* ---------- 1. & 2. Notes-only sections (Devotional, Lead Like Jesus) ---------- */
 
+const DEVOTIONAL_SOURCES = {
+  llj: { label: "Lead Like Jesus", site: "leadlikejesus.com", home: "https://leadlikejesus.com/blog/" },
+  sj: { label: "Solid Joys", site: "desiringgod.org", home: "https://www.desiringgod.org/solid-joys" },
+} as const;
+type DevoKey = keyof typeof DEVOTIONAL_SOURCES;
+
 export function DevotionalSection({ meetingId }: { meetingId: string }) {
-  const fetchPost = useServerFn(getLatestLeadLikeJesusPost);
-  const [post, setPost] = useState<LLJPost | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const fetchLlj = useServerFn(getLatestLeadLikeJesusPost);
+  const fetchSj = useServerFn(getLatestSolidJoysPost);
+  const [source, setSource] = useState<DevoKey>("llj");
+  const [data, setData] = useState<Partial<Record<DevoKey, { post: LLJPost | null; error: string | null }>>>({});
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    fetchPost()
-      .then((r) => {
-        if (cancelled) return;
-        setPost(r.post);
-        setError(r.error ?? null);
-      })
-      .catch((e) => !cancelled && setError(e?.message ?? "Failed to load"))
-      .finally(() => !cancelled && setLoading(false));
+    const load = (k: DevoKey, fn: () => Promise<{ post: LLJPost | null; error?: string }>) =>
+      fn()
+        .then((r) => !cancelled && setData((d) => ({ ...d, [k]: { post: r.post, error: r.error ?? null } })))
+        .catch((e) => !cancelled && setData((d) => ({ ...d, [k]: { post: null, error: e?.message ?? "Failed to load" } })));
+    load("llj", fetchLlj);
+    load("sj", fetchSj);
     return () => {
       cancelled = true;
     };
-  }, [fetchPost]);
+  }, [fetchLlj, fetchSj]);
+
+  const meta = DEVOTIONAL_SOURCES[source];
+  const current = data[source];
+  const loading = !current;
+  const post = current?.post ?? null;
+  const error = current?.error ?? null;
 
   return (
     <StandingSection
-      title="Devotional — Lead Like Jesus"
-      subtitle="Read the latest post together, then capture takeaways."
+      title="Devotional"
+      subtitle="Pick one of the latest devotionals, read it together, then capture takeaways."
     >
       <div className="space-y-3">
+        <div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/40">
+          {(Object.keys(DEVOTIONAL_SOURCES) as DevoKey[]).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => { setSource(k); setExpanded(false); }}
+              className={cn(
+                "px-3 py-1 text-sm rounded-md transition-colors",
+                source === k ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {DEVOTIONAL_SOURCES[k].label}
+            </button>
+          ))}
+        </div>
         {loading ? (
           <div className="text-sm text-muted-foreground inline-flex items-center gap-2">
             <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading latest post…
@@ -203,7 +227,7 @@ export function DevotionalSection({ meetingId }: { meetingId: string }) {
               <div className="min-w-0">
                 <h4 className="font-display font-semibold text-base leading-tight">{post.title}</h4>
                 <div className="text-xs text-muted-foreground mt-0.5">
-                  {format(new Date(post.date), "MMM d, yyyy")} · leadlikejesus.com
+                  {format(new Date(post.date), "MMM d, yyyy")} · {meta.site}
                 </div>
               </div>
               <Button asChild variant="ghost" size="sm" className="shrink-0">
@@ -218,13 +242,7 @@ export function DevotionalSection({ meetingId }: { meetingId: string }) {
               style={expanded ? undefined : { maxHeight: "12rem", overflow: "hidden", maskImage: "linear-gradient(to bottom, black 70%, transparent)" }}
               dangerouslySetInnerHTML={{ __html: post.contentHtml }}
             />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="mt-2"
-              onClick={() => setExpanded((v) => !v)}
-            >
+            <Button type="button" variant="ghost" size="sm" className="mt-2" onClick={() => setExpanded((v) => !v)}>
               <ChevronDown className={`w-3.5 h-3.5 mr-1.5 transition-transform ${expanded ? "rotate-180" : ""}`} />
               {expanded ? "Show less" : "Read full post"}
             </Button>
@@ -235,9 +253,9 @@ export function DevotionalSection({ meetingId }: { meetingId: string }) {
               {error ? `Couldn't load the latest post (${error}).` : "No post available."}
             </div>
             <Button asChild variant="outline" size="sm">
-              <a href="https://leadlikejesus.com/blog/" target="_blank" rel="noreferrer">
+              <a href={meta.home} target="_blank" rel="noreferrer">
                 <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                Open Lead Like Jesus blog
+                Open {meta.label}
               </a>
             </Button>
           </div>

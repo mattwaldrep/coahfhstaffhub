@@ -75,3 +75,36 @@ function decodeEntities(s: string): string {
     .replace(/&#8230;/g, "…")
     .replace(/&#39;/g, "'");
 }
+
+export const getLatestSolidJoysPost = createServerFn({ method: "GET" }).handler(
+  async (): Promise<{ post: LLJPost | null; error?: string }> => {
+    try {
+      const res = await fetch("https://feed.desiringgod.org/solid-joys.rss", {
+        headers: { "User-Agent": "COAHStaffHub/1.0 (devotional fetcher)" },
+      });
+      if (!res.ok) return { post: null, error: `Upstream ${res.status}` };
+      const xml = await res.text();
+      const item = xml.match(/<item>([\s\S]*?)<\/item>/)?.[1];
+      if (!item) return { post: null, error: "No posts found" };
+      const tag = (t: string) => {
+        const m = item.match(new RegExp(`<${t}[^>]*>([\\s\\S]*?)<\\/${t}>`));
+        return (m?.[1] ?? "").replace(/^\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*$/, "$1").trim();
+      };
+      const html = sanitizeHtml(tag("content:encoded") || tag("description"));
+      const pub = tag("pubDate");
+      const link = tag("link") || "https://www.desiringgod.org/solid-joys";
+      return {
+        post: {
+          id: 0,
+          title: decodeEntities(tag("title")),
+          date: pub ? new Date(pub).toISOString() : new Date().toISOString(),
+          link,
+          excerptHtml: html,
+          contentHtml: html,
+        },
+      };
+    } catch (e: any) {
+      return { post: null, error: e?.message ?? "Failed to fetch" };
+    }
+  },
+);
