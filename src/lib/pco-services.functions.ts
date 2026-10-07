@@ -146,9 +146,9 @@ export const pushSundaySlotsToPco = createServerFn({ method: "POST" })
       return { ok: false, error: `No upcoming PCO plan found on or after ${todayIso}.` };
     }
     const items = await pco.listPlanItems(serviceTypeId, plan.id);
-    const byTitle = new Map<string, { id: string }>();
+    const byTitle = new Map<string, { id: string; sequence: number | null }>();
     for (const it of items) {
-      byTitle.set(it.title.trim().toLowerCase(), { id: it.id });
+      byTitle.set(it.title.trim().toLowerCase(), { id: it.id, sequence: it.sequence });
     }
 
     const channels: PushSlotResult["slot"][] = [
@@ -167,6 +167,18 @@ export const pushSundaySlotsToPco = createServerFn({ method: "POST" })
       }
       const match = byTitle.get(expectedTitle.toLowerCase());
       if (!match) {
+        if (ch === "announcement_3") {
+          // Template only has two announcement items — add a third right after Announcement 2.
+          const a2 = byTitle.get(SLOT_TITLES.announcement_2.toLowerCase());
+          const seq = a2?.sequence != null ? a2.sequence + 1 : null;
+          try {
+            await pco.createPlanItem(serviceTypeId, plan.id, expectedTitle, text, seq);
+            results.push({ slot: ch, title: expectedTitle, status: "updated" });
+          } catch (e: any) {
+            return { ok: false, error: e?.message ?? `Failed to add ${expectedTitle}` };
+          }
+          continue;
+        }
         results.push({ slot: ch, title: expectedTitle, status: "missing_item" });
         continue;
       }
