@@ -33,10 +33,10 @@ type Review = {
 };
 
 const SECTIONS = [
-  { key: "worship", label: "Musical worship" },
-  { key: "confession", label: "Confession of Faith" },
-  { key: "connect", label: "Connect moment / core values / ministry highlight" },
-  { key: "sermon", label: "Sermon" },
+  { key: "worship", label: "Musical worship", question: "How was the Musical worship?" },
+  { key: "confession", label: "Confession of Faith", question: "How was the Call To Worship & Confession of Faith?" },
+  { key: "connect", label: "Connect moment / core values / ministry highlight", question: "How was the delivery of the connect moment / core values / ministry highlight?" },
+  { key: "sermon", label: "Sermon", question: "How was the Sermon?" },
 ] as const;
 
 const ratingSchema = z.number().int().min(1).max(5).nullable();
@@ -270,7 +270,7 @@ function SundayReviewPage() {
             {SECTIONS.map((s) => (
               <div key={s.key} className="space-y-3">
                 <div>
-                  <div className="text-sm font-medium">How was the {s.label.toLowerCase()}?</div>
+                  <div className="text-sm font-medium">{s.question}</div>
                   <RatingScale
                     value={form[`${s.key}_rating` as const] as number | null}
                     onChange={(v) =>
