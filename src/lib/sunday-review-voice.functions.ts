@@ -73,7 +73,7 @@ export const processSundayReviewVoice = createServerFn({ method: "POST" })
 
 Form sections (each has free-text notes; the first four also have a 1-5 rating):
 - worship (musical worship)
-- call and confession (call to worship / confession)
+- confession of faith (call to worship / confession of faith)
 - connect (connect moment / core values / ministry highlight)
 - sermon
 - wins: things that went well overall

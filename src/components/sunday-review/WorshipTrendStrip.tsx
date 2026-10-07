@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 const LABELS: Record<SectionKey, string> = {
   worship: "Musical worship",
-  confession: "Call & confession",
+  confession: "Confession of Faith",
   connect: "Connect moment",
   sermon: "Sermon",
 };
