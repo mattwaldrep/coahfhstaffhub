@@ -174,6 +174,7 @@ type DevoKey = keyof typeof DEVOTIONAL_SOURCES;
 export function DevotionalSection({ meetingId }: { meetingId: string }) {
   const fetchLlj = useServerFn(getLatestLeadLikeJesusPost);
   const fetchSj = useServerFn(getLatestSolidJoysPost);
+  const fetchTfl = useServerFn(getLatestTruthForLifeDevotional);
   const [source, setSource] = useState<DevoKey>("llj");
   const [data, setData] = useState<Partial<Record<DevoKey, { post: LLJPost | null; error: string | null }>>>({});
   const [expanded, setExpanded] = useState(false);
@@ -186,10 +187,11 @@ export function DevotionalSection({ meetingId }: { meetingId: string }) {
         .catch((e) => !cancelled && setData((d) => ({ ...d, [k]: { post: null, error: e?.message ?? "Failed to load" } })));
     load("llj", fetchLlj);
     load("sj", fetchSj);
+    load("tfl", fetchTfl);
     return () => {
       cancelled = true;
     };
-  }, [fetchLlj, fetchSj]);
+  }, [fetchLlj, fetchSj, fetchTfl]);
 
   const meta = DEVOTIONAL_SOURCES[source];
   const current = data[source];
