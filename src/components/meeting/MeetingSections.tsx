@@ -799,8 +799,12 @@ export function ThisSundaySection({ meetingDate }: { meetingDate: string }) {
       const titles: Record<string, string> = {};
       if (ids.length > 0) {
         const { data: evs } = await supabase
-          .from("calendar_events").select("id, title").in("id", ids);
-        for (const e of (evs ?? []) as Array<{ id: string; title: string }>) titles[e.id] = e.title;
+          .from("calendar_events").select("id, title, start_at").in("id", ids);
+        for (const e of (evs ?? []) as Array<{ id: string; title: string; start_at: string }>) {
+          titles[e.id] = e.start_at
+            ? `${e.title} (${format(new Date(e.start_at), "MM/dd")})`
+            : e.title;
+        }
       }
       if (!mounted) return;
       const map: Partial<Record<SundaySlotKey, SundaySlotRow>> = {};

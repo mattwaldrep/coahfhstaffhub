@@ -122,9 +122,13 @@ export const pushSundaySlotsToPco = createServerFn({ method: "POST" })
     if (eventIds.length > 0) {
       const { data: evs } = await supabaseAdmin
         .from("calendar_events")
-        .select("id, title")
+        .select("id, title, start_at")
         .in("id", eventIds);
-      for (const e of (evs ?? []) as any[]) eventTitles[e.id] = e.title;
+      for (const e of (evs ?? []) as any[]) {
+        eventTitles[e.id] = e.start_at
+          ? `${e.title} (${new Date(e.start_at).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit" })})`
+          : e.title;
+      }
     }
 
     function slotText(channel: string): string {
