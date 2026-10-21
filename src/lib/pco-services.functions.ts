@@ -126,7 +126,7 @@ export const pushSundaySlotsToPco = createServerFn({ method: "POST" })
         .in("id", eventIds);
       for (const e of (evs ?? []) as any[]) {
         eventTitles[e.id] = e.start_at
-          ? `${e.title} (${new Date(e.start_at).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit" })})`
+          ? `${e.title} (${new Date(e.start_at).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", timeZone: "America/Chicago" })})`
           : e.title;
       }
     }
