@@ -253,7 +253,13 @@ function FeedbackRow({ sub }: { sub: SundayOpsFeedback }) {
 function AnswerRow({ item }: { item: any }) {
   const label = item?.label ?? item?.question ?? "Answer";
   const type = item?.type ?? "";
-  const value = item?.value;
+  // Choice questions store answers in `selected` (array), text ones in `value`.
+  const value =
+    item?.value ??
+    item?.selected ??
+    item?.answer ??
+    item?.response ??
+    item?.checked;
   return (
     <div className="border-t border-border pt-2 first:border-t-0 first:pt-0">
       <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
@@ -265,7 +271,8 @@ function AnswerRow({ item }: { item: any }) {
 }
 
 function renderValue(type: string, value: any, item: any): React.ReactNode {
-  if (value == null || value === "") return <span className="text-muted-foreground italic">—</span>;
+  if (value == null || value === "" || (Array.isArray(value) && value.length === 0))
+    return <span className="text-muted-foreground italic">—</span>;
   if (Array.isArray(value)) {
     return (
       <ul className="list-disc list-inside">
