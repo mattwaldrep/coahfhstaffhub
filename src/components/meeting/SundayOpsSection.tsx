@@ -271,7 +271,8 @@ function AnswerRow({ item }: { item: any }) {
 }
 
 function renderValue(type: string, value: any, item: any): React.ReactNode {
-  if (value == null || value === "") return <span className="text-muted-foreground italic">—</span>;
+  if (value == null || value === "" || (Array.isArray(value) && value.length === 0))
+    return <span className="text-muted-foreground italic">—</span>;
   if (Array.isArray(value)) {
     return (
       <ul className="list-disc list-inside">
