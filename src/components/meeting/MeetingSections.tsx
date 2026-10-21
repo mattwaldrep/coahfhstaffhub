@@ -386,6 +386,36 @@ export function SundayReviewSection({ meetingId }: { meetingId: string }) {
             <RatingPill label="Confession of Faith" value={avg(latest.map((r) => r.confession_rating))} />
           </div>
 
+          {/* Per-section comments */}
+          <div className="grid md:grid-cols-2 gap-3">
+            {([
+              ["Musical worship", "worship_notes"],
+              ["Call to Worship & Confession of Faith", "confession_notes"],
+              ["Connect / Highlights", "connect_notes"],
+              ["Sermon", "sermon_notes"],
+            ] as const).map(([label, key]) => {
+              const rows = latest.filter((r) => r[key]?.trim());
+              return (
+                <div key={key} className="bg-background/40 rounded-lg p-3">
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">{label} comments</div>
+                  <ul className="text-sm space-y-1.5 list-disc list-inside">
+                    {rows.map((r) => (
+                      <li key={`${key}-${r.id}`} className="whitespace-pre-wrap">
+                        {r[key]}
+                        <span className="ml-1.5 text-xs text-muted-foreground">
+                          — {names[r.submitted_by ?? ""] ?? "Unknown"}
+                        </span>
+                      </li>
+                    ))}
+                    {rows.length === 0 && (
+                      <li className="text-muted-foreground italic list-none">No comments</li>
+                    )}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+
           {/* Wins / opportunities aggregated */}
           <div className="grid md:grid-cols-2 gap-3">
             <div className="bg-background/40 rounded-lg p-3">
