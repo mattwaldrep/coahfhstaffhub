@@ -100,7 +100,7 @@ function PcoCalendarPage() {
           </p>
         </div>
         <Button variant="outline" size="sm" asChild>
-          <Link to="/calendar" search={{} as never}>Back to current calendar</Link>
+          <Link to="/calendar" search={{ event: undefined }}>Back to current calendar</Link>
         </Button>
       </div>
 
