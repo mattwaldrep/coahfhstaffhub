@@ -126,18 +126,41 @@ function PcoCalendarPage() {
   }, [filtered]);
 
   const toggleTag = (id: string) =>
-    setTagFilter((prev) => {
+    setExcludedTags((prev) => {
       const n = new Set(prev);
       n.has(id) ? n.delete(id) : n.add(id);
       return n;
     });
 
   const toggleFeed = (id: string) =>
-    setFeedFilter((prev) => {
+    setExcludedFeeds((prev) => {
       const n = new Set(prev);
       n.has(id) ? n.delete(id) : n.add(id);
       return n;
     });
+
+  const saveDefaultView = () => {
+    if (!prefsKey) { toast.error("Sign in to save preferences"); return; }
+    try {
+      window.localStorage.setItem(
+        prefsKey,
+        JSON.stringify({ span, excludedTags: [...excludedTags], excludedFeeds: [...excludedFeeds] }),
+      );
+      toast.success("Saved as your default view");
+    } catch {
+      toast.error("Could not save preferences");
+    }
+  };
+
+  const resetDefaultView = () => {
+    if (prefsKey) {
+      try { window.localStorage.removeItem(prefsKey); } catch { /* ignore */ }
+    }
+    setSpan(1);
+    setExcludedTags(new Set());
+    setExcludedFeeds(new Set());
+    toast.success("Back to showing everything");
+  };
 
   const toggleFeedType = (type: string) =>
     setFeedTypesOpen((prev) => {
