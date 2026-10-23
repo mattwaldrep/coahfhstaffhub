@@ -4,7 +4,7 @@ import { useServerFn } from '@tanstack/react-start';
 import { Check, Send, Trash2, Plus, Pencil, ChevronDown, UserRound, MapPin, Megaphone, ListChecks, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth-context';
-import { getPcoEventCollaboration, changePcoEventCollaboration, type PcoCollaborationChange } from '@/lib/pco-collaboration.functions';
+import { getPcoEventCollaboration, getPcoRoomCatalog, changePcoEventCollaboration, type PcoCollaborationChange } from '@/lib/pco-collaboration.functions';
 import { PROMOTION_CHANNELS, COMMS_CHANNEL_OPTIONS } from '@/lib/event-channels';
 import { resolvePcoEventOwner } from '@/lib/pco-collaboration';
 import { isCommsLabel, scorePlanning, scoreComms, readinessColor } from '@/lib/event-readiness';
@@ -34,6 +34,8 @@ export function PcoEventCollaboration({ instanceId, pcoLocation }: { instanceId:
   const { user, hasRole } = useAuth();
   const queryClient = useQueryClient();
   const get = useServerFn(getPcoEventCollaboration);
+  const getRooms = useServerFn(getPcoRoomCatalog);
+  const roomQuery = useQuery({ queryKey: ['pco-room-catalog'], enabled: !!user, staleTime: 5 * 60_000, queryFn: () => getRooms() });
   const change = useServerFn(changePcoEventCollaboration);
   const [label, setLabel] = useState('');
   const [assignee, setAssignee] = useState('none');
@@ -66,6 +68,8 @@ export function PcoEventCollaboration({ instanceId, pcoLocation }: { instanceId:
   const doneCount = (items: typeof data.checklist) => items.filter(item => item.task?.completed).length;
   const ownerName = resolvePcoEventOwner(hub.owner_id, pco?.owner_name ?? null, people);
   const rooms = pco?.rooms ?? [];
+  const catalog = roomQuery.data ?? [];
+  const selectedRoom = catalog.find(room => room.name === hub.rooms_note);
   const planning = scorePlanning({ leader_name: ownerName, has_room: rooms.length > 0 || !!hub.rooms_note, checklist_total: otherItems.length, checklist_done: doneCount(otherItems) });
   const comms = scoreComms({ comms_total: commsItems.length, comms_done: doneCount(commsItems) });
 
@@ -121,8 +125,19 @@ export function PcoEventCollaboration({ instanceId, pcoLocation }: { instanceId:
       </div>
       <div className="space-y-1">
         <Label className="text-xs">Rooms</Label>
-        {rooms.length > 0 ? <p className="text-sm">{rooms.join(', ')} <span className="text-xs text-muted-foreground">· booked in Planning Center</span></p> :
-          <Input className="h-8 text-sm" placeholder="No rooms booked in Planning Center — note rooms here" maxLength={300} defaultValue={hub.rooms_note ?? ''} key={`rooms-${hub.rooms_note}`} disabled={!data.canEdit || busy} onBlur={e => { if (e.target.value.trim() !== (hub.rooms_note ?? '')) mutation.mutate({ operation: 'details', roomsNote: e.target.value.trim() || null }); }}/>}
+        {rooms.length > 0 && <p className="text-sm">{rooms.join(', ')} <span className="text-xs text-muted-foreground">· booked in Planning Center</span></p>}
+        <Select value={selectedRoom?.id ?? (hub.rooms_note ? 'previous' : 'none')} disabled={!data.canEdit || busy || roomQuery.isPending || !!roomQuery.error} onValueChange={value => mutation.mutate({ operation: 'details', roomId: value === 'none' ? null : value })}>
+          <SelectTrigger className="h-8 w-full text-sm" aria-label="Event room"><SelectValue placeholder="Select a room"/></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">{rooms.length ? 'Use Planning Center bookings' : 'No room selected'}</SelectItem>
+            {hub.rooms_note && !selectedRoom && <SelectItem value="previous" disabled>{hub.rooms_note}</SelectItem>}
+            {catalog.map(room => <SelectItem key={room.id} value={room.id}>{room.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {roomQuery.isPending && <p className="text-xs text-muted-foreground">Loading Planning Center rooms…</p>}
+        {roomQuery.error && <div className="flex items-center gap-2"><p className="text-xs text-destructive">Planning Center rooms could not be loaded.</p><Button size="sm" variant="ghost" onClick={() => roomQuery.refetch()}>Try again</Button></div>}
+        {roomQuery.isSuccess && !catalog.length && <p className="text-xs text-muted-foreground">No rooms listed in Planning Center.</p>}
+        {hub.rooms_note && <p className="text-xs text-muted-foreground">Selected in Hub · not a Planning Center booking</p>}
         {pco && pco.resources.length > 0 && <p className="text-xs text-muted-foreground">Resources: {pco.resources.join(', ')}</p>}
       </div>
       {!pco && <p className="text-xs text-muted-foreground">Planning Center owner and room details couldn't be loaded right now.</p>}

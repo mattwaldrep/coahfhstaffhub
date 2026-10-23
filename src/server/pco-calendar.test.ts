@@ -1,7 +1,31 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchTagGroups } from "./pco-calendar.server";
+import { fetchTagGroups, fetchRoomCatalog } from "./pco-calendar.server";
 
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+
+describe('PCO room catalog', () => {
+  it('includes rooms from every page but excludes other resources', async () => {
+    vi.stubEnv('PCO_APP_ID', 'fixture-app');
+    vi.stubEnv('PCO_SECRET', 'fixture-secret');
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(Response.json({ data: [
+        { id: '1', attributes: { name: 'Sanctuary', kind: 'Room' } },
+        { id: '2', attributes: { name: 'Projector', kind: 'Resource' } },
+      ], links: { next: 'https://api.planningcenteronline.com/calendar/v2/resources?offset=100' } }))
+      .mockResolvedValueOnce(Response.json({ data: [
+        { id: '3', attributes: { name: 'Classroom', kind: 'Room' } },
+        { id: '1', attributes: { name: 'Sanctuary', kind: 'Room' } },
+      ], links: {} }));
+    vi.stubGlobal('fetch', fetchMock);
+    expect(await fetchRoomCatalog()).toEqual([{ id: '3', name: 'Classroom' }, { id: '1', name: 'Sanctuary' }]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+  it('reports a catalog failure instead of returning no rooms', async () => {
+    vi.stubEnv('PCO_APP_ID', 'fixture-app'); vi.stubEnv('PCO_SECRET', 'fixture-secret');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('', { status: 503 })));
+    await expect(fetchRoomCatalog()).rejects.toThrow('PCO 503');
+  });
+});
 
 describe("PCO calendar tag catalog", () => {
   it("includes individual tags alongside grouped tags and follows pagination", async () => {

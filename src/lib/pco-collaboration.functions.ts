@@ -8,7 +8,7 @@ const instanceSchema = z.string().regex(/^\d+$/);
 export type PcoCollaborationChange = {
   instanceId: string;
   operation: 'add' | 'template' | 'update' | 'delete' | 'push' | 'comment' | 'delete-comment' | 'channel' | 'details';
-  channel?: string; enabled?: boolean; ownerId?: string | null; locationNote?: string | null; roomsNote?: string | null;
+  channel?: string; enabled?: boolean; ownerId?: string | null; locationNote?: string | null; roomsNote?: string | null; roomId?: string | null;
   id?: string; label?: string; body?: string; templateId?: string;
   assigneeId?: string | null; dueDate?: string | null; completed?: boolean;
 };
@@ -20,6 +20,15 @@ async function access(context: { supabase: any; userId: string }) {
   const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
   return { db: supabaseAdmin, roles };
 }
+
+export const getPcoRoomCatalog = createServerFn({ method: 'POST' })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await access(context);
+    const { fetchRoomCatalog } = await import('@/server/pco-calendar.server');
+    try { return await fetchRoomCatalog(); }
+    catch { throw new Error('Planning Center rooms could not be loaded. Try again.'); }
+  });
 
 export const getPcoEventCollaboration = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
@@ -99,6 +108,7 @@ export const changePcoEventCollaboration = createServerFn({ method: 'POST' })
     operation: z.enum(['add', 'template', 'update', 'delete', 'push', 'comment', 'delete-comment', 'channel', 'details']),
     channel: z.string().refine(key => CHANNEL_KEYS.includes(key)).optional(), enabled: z.boolean().optional(),
     ownerId: z.string().uuid().nullable().optional(),
+    roomId: instanceSchema.nullable().optional(),
     locationNote: z.string().trim().max(300).nullable().optional(), roomsNote: z.string().trim().max(300).nullable().optional(),
     id: z.string().uuid().optional(), label: z.string().trim().min(1).max(500).optional(),
     body: z.string().trim().min(1).max(5000).optional(), templateId: z.string().uuid().optional(),
@@ -128,6 +138,15 @@ export const changePcoEventCollaboration = createServerFn({ method: 'POST' })
       if (data.ownerId !== undefined) patch.owner_id = data.ownerId;
       if (data.locationNote !== undefined) patch.location_note = data.locationNote || null;
       if (data.roomsNote !== undefined) patch.rooms_note = data.roomsNote || null;
+      if (data.roomId !== undefined) {
+        if (data.roomId === null) patch.rooms_note = null;
+        else {
+          const { fetchRoomCatalog } = await import('@/server/pco-calendar.server');
+          const room = (await fetchRoomCatalog()).find(item => item.id === data.roomId);
+          if (!room) throw new Error('Choose a room listed in Planning Center');
+          patch.rooms_note = room.name;
+        }
+      }
       const { error } = await db.from('pco_calendar_workspaces').update(patch).eq('id', workspace.id);
       if (error) throw new Error('Unable to save event details');
       return { warning: null };
