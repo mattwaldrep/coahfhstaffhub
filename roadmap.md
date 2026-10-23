@@ -1,4 +1,5 @@
 # Tasks
+- [ ] Pull Planning Center rooms into the beta event room dropdown and verify selection persistence.
 - [x] Allow beta event owner reassignment independently of the PCO owner; 11 tests passed and signed-in save/reload verified, then original ownership restored.
 - [x] Correct individual PCO Calendar tag loading; verified six standalone tags appear and selection/clearing works while signed in. Seven tests passed; build OK.
 - [x] Apply the flagged dependency security update; patched DOMPurify installed and finding cleared.
