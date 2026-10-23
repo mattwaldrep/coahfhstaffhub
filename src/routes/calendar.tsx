@@ -1824,7 +1824,7 @@ function CalendarBody() {
           )}
 
           <Button variant="outline" className="rounded-xl font-semibold shadow-sm" asChild>
-            <Link to="/calendar/pco">Planning Center (Beta)</Link>
+            <Link to="/calendar/pco" search={{ instance: undefined, month: undefined }}>Planning Center (Beta)</Link>
           </Button>
 
           <Button

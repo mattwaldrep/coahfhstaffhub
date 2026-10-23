@@ -4,7 +4,7 @@ import { useServerFn } from '@tanstack/react-start';
 import { Check, Send, Trash2, Plus, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth-context';
-import { getPcoEventCollaboration, changePcoEventCollaboration } from '@/lib/pco-collaboration.functions';
+import { getPcoEventCollaboration, changePcoEventCollaboration, type PcoCollaborationChange } from '@/lib/pco-collaboration.functions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -27,7 +27,7 @@ export function PcoEventCollaboration({ instanceId }: { instanceId: string }) {
   const [editLabel, setEditLabel] = useState('');
   const q = useQuery({ queryKey: ['pco-event-collaboration', instanceId], enabled: !!user, queryFn: () => get({ data: { instanceId } }) });
   const mutation = useMutation({
-    mutationFn: (data: Omit<Parameters<typeof change>[0]['data'], 'instanceId'>) => change({ data: { ...data, instanceId } }),
+    mutationFn: (data: Omit<PcoCollaborationChange, 'instanceId'>) => change({ data: { ...data, instanceId } }),
     onSuccess: async result => {
       if (result.warning) toast.warning(result.warning);
       await queryClient.invalidateQueries({ queryKey: ['pco-event-collaboration', instanceId] });

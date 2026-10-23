@@ -4,6 +4,12 @@ import { requireSupabaseAuth } from '@/integrations/supabase/require-auth';
 import { canEditPcoChecklist, canPushPcoTask, PCO_STAFF_ROLES, pcoTaskFields } from './pco-collaboration';
 
 const instanceSchema = z.string().regex(/^\d+$/);
+export type PcoCollaborationChange = {
+  instanceId: string;
+  operation: 'add' | 'template' | 'update' | 'delete' | 'push' | 'comment' | 'delete-comment';
+  id?: string; label?: string; body?: string; templateId?: string;
+  assigneeId?: string | null; dueDate?: string | null; completed?: boolean;
+};
 async function access(context: { supabase: any; userId: string }) {
   const { data, error } = await context.supabase.from('user_roles').select('role').eq('user_id', context.userId);
   if (error) throw new Error('Unable to check calendar permissions');
@@ -73,7 +79,7 @@ async function syncGoogle(db: any, task: any, callerId: string, force: boolean, 
 
 export const changePcoEventCollaboration = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
-  .inputValidator(input => z.object({
+  .inputValidator((input: PcoCollaborationChange) => z.object({
     instanceId: instanceSchema,
     operation: z.enum(['add', 'template', 'update', 'delete', 'push', 'comment', 'delete-comment']),
     id: z.string().uuid().optional(), label: z.string().trim().min(1).max(500).optional(),
@@ -128,7 +134,8 @@ export const changePcoEventCollaboration = createServerFn({ method: 'POST' })
       let warning: string | null = null;
       for (const label of labels) {
         const fields = pcoTaskFields(workspace, label);
-        const { data: taskId, error } = await db.rpc('create_pco_checklist_task', { _workspace_id: workspace.id, _label: label, _title: fields.title, _notes: fields.notes, _assignee_id: data.assigneeId ?? null, _due_date: data.dueDate ?? null, _created_by: context.userId });
+        // PostgreSQL accepts null for these optional task fields; generated RPC argument types omit nullability.
+        const { data: taskId, error } = await (db as any).rpc('create_pco_checklist_task', { _workspace_id: workspace.id, _label: label, _title: fields.title, _notes: fields.notes, _assignee_id: data.assigneeId ?? null, _due_date: data.dueDate ?? null, _created_by: context.userId });
         if (error) throw new Error('Unable to save checklist task');
         const sync = await syncGoogle(db, { id: taskId, ...fields, assignee_id: data.assigneeId ?? null, due_date: data.dueDate ?? null, completed: false }, context.userId, false);
         warning = sync.warning ?? warning;
