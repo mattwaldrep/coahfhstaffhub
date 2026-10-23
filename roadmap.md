@@ -1,4 +1,6 @@
 # Tasks
+- [x] Correct individual PCO Calendar tag loading; verified six standalone tags appear and selection/clearing works while signed in. Seven tests passed; build OK.
+- [x] Apply the flagged dependency security update; patched DOMPurify installed and finding cleared.
 - [x] Rename Sunday section and remove its core value slot.
 - [x] Add optional Announcement 3 to the meeting section and Planning Center push.
 - [x] Verify active channels, optional-slot completion counts, and PCO filtering with source checks; app build passed. Live saving and PCO push were not exercised.- [x] PCO Calendar phase 1-2: read-only pull + beta view at /calendar/pco with tag filters, 1/3/6/12 months.
