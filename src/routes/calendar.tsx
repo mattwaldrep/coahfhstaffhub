@@ -1823,6 +1823,10 @@ function CalendarBody() {
             </Button>
           )}
 
+          <Button variant="outline" className="rounded-xl font-semibold shadow-sm" asChild>
+            <Link to="/calendar/pco">Planning Center (Beta)</Link>
+          </Button>
+
           <Button
             variant="outline"
             onClick={() => setExportOpen(true)}
