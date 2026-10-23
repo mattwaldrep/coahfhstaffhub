@@ -54,30 +54,53 @@ describe("PCO feed catalog", () => {
 });
 
 describe("PCO feed-filtered instances", () => {
-  const instance = (id: string, starts: string) => ({
+  const instance = (id: string, eventId: string, starts: string) => ({
     type: "EventInstance", id,
     attributes: { name: `Event ${id}`, starts_at: starts, all_day_event: false },
-    relationships: { event: { data: { type: "Event", id: `e${id}` } } },
+    relationships: { event: { data: { type: "Event", id: eventId } } },
   });
+  const feedEvent = (id: string) => ({ type: "Event", id, attributes: { name: `Event ${id}` } });
 
-  it("queries each selected feed and merges unique instances in date order", async () => {
+  it("keeps only instances whose event belongs to a selected feed", async () => {
     vi.stubEnv("PCO_APP_ID", "fixture-app");
     vi.stubEnv("PCO_SECRET", "fixture-secret");
     const fetchMock = vi.fn()
-      .mockResolvedValueOnce(Response.json({ data: [instance("1", "2026-11-02T15:00:00Z"), instance("2", "2026-11-05T15:00:00Z")], included: [], links: {} }))
-      .mockResolvedValueOnce(Response.json({ data: [instance("2", "2026-11-05T15:00:00Z"), instance("3", "2026-11-01T15:00:00Z")], included: [], links: {} }));
+      // instances page
+      .mockResolvedValueOnce(Response.json({
+        data: [instance("1", "e1", "2026-11-02T15:00:00Z"), instance("2", "e2", "2026-11-05T15:00:00Z"), instance("3", "e3", "2026-11-01T15:00:00Z")],
+        included: [], links: {},
+      }))
+      // feed 12629 events (paginated)
+      .mockResolvedValueOnce(Response.json({ data: [feedEvent("e1")], links: { next: "https://api.planningcenteronline.com/calendar/v2/events?offset=100" } }))
+      .mockResolvedValueOnce(Response.json({ data: [feedEvent("e3")], links: {} }))
+      // feed 8351 events
+      .mockResolvedValueOnce(Response.json({ data: [feedEvent("e2")], links: {} }));
     vi.stubGlobal("fetch", fetchMock);
     const out = await fetchEventInstances("2026-11-01T00:00:00Z", "2026-12-01T00:00:00Z", ["12629", "8351"]);
-    expect(out.map((i) => i.id)).toEqual(["3", "1", "2"]);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(fetchMock.mock.calls[0]?.[0]).toContain("where[feed_id]=12629");
-    expect(fetchMock.mock.calls[1]?.[0]).toContain("where[feed_id]=8351");
+    expect(out.map((i) => i.id)).toEqual(["1", "2", "3"]);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    expect(fetchMock.mock.calls[1]?.[0]).toContain("where[feed_id]=12629");
+    expect(fetchMock.mock.calls[3]?.[0]).toContain("where[feed_id]=8351");
   });
 
-  it("ignores invalid feed ids and falls back to the unfiltered query", async () => {
+  it("drops instances outside the selected feeds", async () => {
     vi.stubEnv("PCO_APP_ID", "fixture-app");
     vi.stubEnv("PCO_SECRET", "fixture-secret");
-    const fetchMock = vi.fn().mockResolvedValueOnce(Response.json({ data: [instance("9", "2026-11-02T15:00:00Z")], included: [], links: {} }));
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(Response.json({
+        data: [instance("1", "e1", "2026-11-02T15:00:00Z"), instance("2", "e2", "2026-11-05T15:00:00Z")],
+        included: [], links: {},
+      }))
+      .mockResolvedValueOnce(Response.json({ data: [feedEvent("e2")], links: {} }));
+    vi.stubGlobal("fetch", fetchMock);
+    const out = await fetchEventInstances("2026-11-01T00:00:00Z", "2026-12-01T00:00:00Z", ["12629"]);
+    expect(out.map((i) => i.id)).toEqual(["2"]);
+  });
+
+  it("ignores invalid feed ids and returns the unfiltered list", async () => {
+    vi.stubEnv("PCO_APP_ID", "fixture-app");
+    vi.stubEnv("PCO_SECRET", "fixture-secret");
+    const fetchMock = vi.fn().mockResolvedValueOnce(Response.json({ data: [instance("9", "e9", "2026-11-02T15:00:00Z")], included: [], links: {} }));
     vi.stubGlobal("fetch", fetchMock);
     const out = await fetchEventInstances("2026-11-01T00:00:00Z", "2026-12-01T00:00:00Z", ["bad id!"]);
     expect(out.map((i) => i.id)).toEqual(["9"]);
