@@ -82,6 +82,25 @@ export async function fetchCalendarInstance(id: string) {
 
 export type PcoEventDetails = { owner_name: string | null; rooms: string[]; resources: string[] };
 
+export async function fetchRoomCatalog(): Promise<{ id: string; name: string }[]> {
+  const rooms = new Map<string, { id: string; name: string }>();
+  let next: string | null = '/resources?per_page=100';
+  const seen = new Set<string>();
+  while (next) {
+    if (seen.has(next)) throw new Error('Planning Center room pagination repeated a page');
+    seen.add(next);
+    const page = await pcoFetch(next);
+    for (const resource of page.data ?? []) {
+      if (resource.attributes?.kind === 'Room' && resource.attributes?.name) {
+        const id = String(resource.id);
+        rooms.set(id, { id, name: resource.attributes.name });
+      }
+    }
+    next = page.links?.next ?? null;
+  }
+  return [...rooms.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
 /** Event owner (name only) and booked rooms/resources from PCO Calendar. */
 export async function fetchEventDetails(instanceId: string, eventId: string): Promise<PcoEventDetails> {
   const [eventJson, bookingsJson] = await Promise.all([

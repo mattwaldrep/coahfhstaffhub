@@ -4,3 +4,4 @@
 - PCO Calendar beta collaboration is keyed by PCO event-instance ID in separate workspaces, never duplicated into calendar_events; checklist completion lives in existing action_items so My Tasks and Google sync share one state.
 - Resolve beta event ownership from the workspace owner_id first, falling back to the PCO owner only when null; reassignment is Hub-only and clearing the override restores PCO ownership.
 - PCO Calendar filters read the paginated tag catalog with tag_group relationships, not only tag_groups, so standalone Individual Tags are retained.
+- Beta room choices come from the paginated Calendar Resource catalog filtered to kind Room; selections save in the Hub workspace rooms_note and never create or change PCO resource bookings.
