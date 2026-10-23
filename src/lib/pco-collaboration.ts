@@ -21,3 +21,5 @@ export function roomRequestTaskLabels(roomName: string | null, fromCatalog: bool
   if (!roomName || !fromCatalog || /\boffice\b/i.test(roomName)) return [];
   return [`Room request form submitted – ${roomName}`, `Room request form received – ${roomName}`];
 }
+
+export const ROOM_REQUEST_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdgoTPdxqzE8JVKIpDkza4QyF2auNbNA3zqFwRUkPXcPGW0WQ/viewform';

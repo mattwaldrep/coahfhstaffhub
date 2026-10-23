@@ -1,4 +1,4 @@
-import { roomRequestTaskLabels } from '@/lib/pco-collaboration';
+import { roomRequestTaskLabels, ROOM_REQUEST_FORM_URL } from '@/lib/pco-collaboration';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/require-auth';
@@ -157,7 +157,8 @@ export const changePcoEventCollaboration = createServerFn({ method: 'POST' })
         const have = new Set((existing ?? []).map(row => row.label));
         for (const label of requestLabels.filter(item => !have.has(item))) {
           const fields = pcoTaskFields(workspace, label);
-          const { error: taskError } = await (db as any).rpc('create_pco_checklist_task', { _workspace_id: workspace.id, _label: label, _title: fields.title, _notes: fields.notes, _assignee_id: null, _due_date: null, _created_by: context.userId });
+          const notes = label.includes('submitted') ? `${fields.notes}\nRoom request form: ${ROOM_REQUEST_FORM_URL}` : fields.notes;
+          const { error: taskError } = await (db as any).rpc('create_pco_checklist_task', { _workspace_id: workspace.id, _label: label, _title: fields.title, _notes: notes, _assignee_id: null, _due_date: null, _created_by: context.userId });
           if (taskError) return { warning: 'Room saved, but the room request tasks could not be created.' };
         }
       }

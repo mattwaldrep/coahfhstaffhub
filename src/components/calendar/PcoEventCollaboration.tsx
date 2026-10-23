@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth-context';
 import { getPcoEventCollaboration, getPcoRoomCatalog, changePcoEventCollaboration, type PcoCollaborationChange } from '@/lib/pco-collaboration.functions';
 import { PROMOTION_CHANNELS, COMMS_CHANNEL_OPTIONS } from '@/lib/event-channels';
-import { resolvePcoEventOwner } from '@/lib/pco-collaboration';
+import { resolvePcoEventOwner, ROOM_REQUEST_FORM_URL } from '@/lib/pco-collaboration';
 import { isCommsLabel, scorePlanning, scoreComms, readinessColor } from '@/lib/event-readiness';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -137,7 +137,7 @@ export function PcoEventCollaboration({ instanceId, pcoLocation }: { instanceId:
           </SelectContent>
         </Select>
         {(writeIn || (hub.rooms_note && !selectedRoom)) && <Input className="h-8 text-sm" placeholder="Type a room" aria-label="Write-in room" maxLength={300} autoFocus={writeIn} defaultValue={selectedRoom ? '' : hub.rooms_note ?? ''} key={`room-${hub.rooms_note}`} disabled={!data.canEdit || busy} onBlur={e => { const v = e.target.value.trim(); if (v && v !== (hub.rooms_note ?? '')) mutation.mutate({ operation: 'details', roomsNote: v }); setWriteIn(false); }}/>}
-        {selectedRoom && !/\boffice\b/i.test(selectedRoom.name) && <p className="text-xs text-muted-foreground">Room request form tasks added to the checklist.</p>}
+        {selectedRoom && !/\boffice\b/i.test(selectedRoom.name) && <p className="text-xs text-muted-foreground">Room request tasks added to the checklist · <a href={ROOM_REQUEST_FORM_URL} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">Open the room request form</a></p>}
         {roomQuery.isPending && <p className="text-xs text-muted-foreground">Loading Planning Center rooms…</p>}
         {roomQuery.error && <div className="flex items-center gap-2"><p className="text-xs text-destructive">Planning Center rooms could not be loaded.</p><Button size="sm" variant="ghost" onClick={() => roomQuery.refetch()}>Try again</Button></div>}
         {roomQuery.isSuccess && !catalog.length && <p className="text-xs text-muted-foreground">No rooms listed in Planning Center.</p>}
