@@ -3069,36 +3069,42 @@ export type Database = {
       pco_calendar_workspaces: {
         Row: {
           channels: string[]
+          childcare_needed: boolean
           created_at: string
           event_id: string
           id: string
           instance_id: string
           location_note: string | null
           name: string
+          no_room_needed: boolean
           owner_id: string | null
           rooms_note: string | null
           starts_at: string
         }
         Insert: {
           channels?: string[]
+          childcare_needed?: boolean
           created_at?: string
           event_id: string
           id?: string
           instance_id: string
           location_note?: string | null
           name: string
+          no_room_needed?: boolean
           owner_id?: string | null
           rooms_note?: string | null
           starts_at: string
         }
         Update: {
           channels?: string[]
+          childcare_needed?: boolean
           created_at?: string
           event_id?: string
           id?: string
           instance_id?: string
           location_note?: string | null
           name?: string
+          no_room_needed?: boolean
           owner_id?: string | null
           rooms_note?: string | null
           starts_at?: string

@@ -64,6 +64,13 @@
       "when": 1792766100283,
       "tag": "0008_pco_workspace_channels_and_details",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792770896534,
+      "tag": "0009_pco_event_room_and_childcare_options",
+      "breakpoints": true
     }
   ]
 }

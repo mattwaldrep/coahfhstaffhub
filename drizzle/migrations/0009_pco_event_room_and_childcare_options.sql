@@ -1,0 +1,3 @@
+ALTER TABLE public.pco_calendar_workspaces ADD COLUMN IF NOT EXISTS no_room_needed boolean NOT NULL DEFAULT false, ADD COLUMN IF NOT EXISTS childcare_needed boolean NOT NULL DEFAULT false;
+COMMENT ON COLUMN public.pco_calendar_workspaces.no_room_needed IS 'Hub-only room exemption; does not change Planning Center location or bookings.';
+COMMENT ON COLUMN public.pco_calendar_workspaces.childcare_needed IS 'Hub-only childcare requirement for this event occurrence.';

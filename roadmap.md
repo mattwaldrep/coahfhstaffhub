@@ -1,4 +1,5 @@
 # Tasks
+- [ ] Add No room needed and Needs childcare to beta event details; verify saving and restored state.
 - [x] Pull Planning Center rooms into the beta event room dropdown; 14 tests passed and signed-in selection/save/reload verified, original selection restored; no PCO bookings changed.
 - [x] Allow beta event owner reassignment independently of the PCO owner; 11 tests passed and signed-in save/reload verified, then original ownership restored.
 - [x] Correct individual PCO Calendar tag loading; verified six standalone tags appear and selection/clearing works while signed in. Seven tests passed; build OK.
