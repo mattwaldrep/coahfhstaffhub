@@ -1,3 +1,4 @@
 - Pastoral/PCO member data is redacted server-side (src/lib/dev-redact.server.ts) for any non-published request host; never bypass it or query pastoral tables/PCO people from the build workspace — church AI policy.
 - Calendar day grids must advance with date-fns addDays, not fixed millisecond intervals, so daylight-saving transitions cannot repeat or skip dates.
 - Sunday planning and PCO push must filter to active slot channels; retain deprecated channel rows for compatibility without displaying or pushing them.
+- PCO Calendar beta collaboration is keyed by PCO event-instance ID in separate workspaces, never duplicated into calendar_events; checklist completion lives in existing action_items so My Tasks and Google sync share one state.

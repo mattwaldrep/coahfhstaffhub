@@ -27,6 +27,7 @@ export type Database = {
           id: string
           meeting_id: string | null
           notes: string | null
+          pco_workspace_id: string | null
           source_checklist_item_id: string | null
           source_event_id: string | null
           source_issue_external_id: string | null
@@ -47,6 +48,7 @@ export type Database = {
           id?: string
           meeting_id?: string | null
           notes?: string | null
+          pco_workspace_id?: string | null
           source_checklist_item_id?: string | null
           source_event_id?: string | null
           source_issue_external_id?: string | null
@@ -67,6 +69,7 @@ export type Database = {
           id?: string
           meeting_id?: string | null
           notes?: string | null
+          pco_workspace_id?: string | null
           source_checklist_item_id?: string | null
           source_event_id?: string | null
           source_issue_external_id?: string | null
@@ -95,6 +98,13 @@ export type Database = {
             columns: ["meeting_id"]
             isOneToOne: false
             referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_items_pco_workspace_id_fkey"
+            columns: ["pco_workspace_id"]
+            isOneToOne: false
+            referencedRelation: "pco_calendar_workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -2985,6 +2995,104 @@ export type Database = {
         }
         Relationships: []
       }
+      pco_calendar_checklist: {
+        Row: {
+          action_item_id: string
+          created_at: string
+          id: string
+          label: string
+          workspace_id: string
+        }
+        Insert: {
+          action_item_id: string
+          created_at?: string
+          id?: string
+          label: string
+          workspace_id: string
+        }
+        Update: {
+          action_item_id?: string
+          created_at?: string
+          id?: string
+          label?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pco_calendar_checklist_action_item_id_fkey"
+            columns: ["action_item_id"]
+            isOneToOne: true
+            referencedRelation: "action_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pco_calendar_checklist_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "pco_calendar_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pco_calendar_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          workspace_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          workspace_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pco_calendar_comments_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "pco_calendar_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pco_calendar_workspaces: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          instance_id: string
+          name: string
+          starts_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          instance_id: string
+          name: string
+          starts_at: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          instance_id?: string
+          name?: string
+          starts_at?: string
+        }
+        Relationships: []
+      }
       pco_care_assignments: {
         Row: {
           pco_person_id: string
@@ -3368,6 +3476,18 @@ export type Database = {
       can_edit_sub_calendar: {
         Args: { _key: string; _user_id: string }
         Returns: boolean
+      }
+      create_pco_checklist_task: {
+        Args: {
+          _assignee_id: string
+          _created_by: string
+          _due_date: string
+          _label: string
+          _notes: string
+          _title: string
+          _workspace_id: string
+        }
+        Returns: string
       }
       extract_finance_account_code: { Args: { _name: string }; Returns: string }
       has_any_app_role: { Args: { _user_id: string }; Returns: boolean }
