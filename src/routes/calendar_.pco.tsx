@@ -67,12 +67,12 @@ function PcoCalendarPage() {
   useEffect(() => setToday(new Date()), []);
 
   const rangeEnd = addMonths(anchor, span);
-  const feedKey = [...feedFilter].sort().join(",");
+  const feedKey = [...excludedFeeds].sort().join(",");
   const q = useQuery({
     queryKey: ["pco-calendar", anchor.toISOString(), span, feedKey],
     enabled: !!user,
     staleTime: 5 * 60_000,
-    queryFn: () => fetchCal({ data: { from: anchor.toISOString(), to: rangeEnd.toISOString(), feedIds: feedFilter.size > 0 ? [...feedFilter] : undefined } }),
+    queryFn: () => fetchCal({ data: { from: anchor.toISOString(), to: rangeEnd.toISOString(), excludeFeedIds: excludedFeeds.size > 0 ? [...excludedFeeds] : undefined } }),
   });
 
   const tagGroups = q.data?.tagGroups ?? [];
@@ -109,10 +109,10 @@ function PcoCalendarPage() {
     const s = search.trim().toLowerCase();
     return (q.data?.instances ?? []).filter((e) => {
       if (s && !`${e.name} ${e.location ?? ""}`.toLowerCase().includes(s)) return false;
-      if (tagFilter.size > 0 && !e.tag_ids.some((t) => tagFilter.has(t))) return false;
+      if (excludedTags.size > 0 && e.tag_ids.some((t) => excludedTags.has(t))) return false;
       return true;
     });
-  }, [q.data, search, tagFilter]);
+  }, [q.data, search, excludedTags]);
 
   const byDay = useMemo(() => {
     const groups: { day: Date; items: PcoCalendarInstance[] }[] = [];
