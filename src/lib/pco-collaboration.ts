@@ -23,3 +23,15 @@ export function roomRequestTaskLabels(roomName: string | null, fromCatalog: bool
 }
 
 export const ROOM_REQUEST_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdgoTPdxqzE8JVKIpDkza4QyF2auNbNA3zqFwRUkPXcPGW0WQ/viewform';
+
+export function pcoLogisticsPatch(data: { noRoomNeeded?: boolean; childcareNeeded?: boolean; roomId?: string | null; roomsNote?: string | null }) {
+  return {
+    ...(data.noRoomNeeded !== undefined ? { no_room_needed: data.noRoomNeeded, ...(data.noRoomNeeded ? { rooms_note: null } : {}) } : {}),
+    ...(data.roomId !== undefined || data.roomsNote !== undefined ? { no_room_needed: false } : {}),
+    ...(data.childcareNeeded !== undefined ? { childcare_needed: data.childcareNeeded } : {}),
+  };
+}
+
+export function hasPcoRoomPlan(noRoomNeeded: boolean, bookedRooms: string[], roomNote: string | null) {
+  return noRoomNeeded || bookedRooms.length > 0 || !!roomNote;
+}

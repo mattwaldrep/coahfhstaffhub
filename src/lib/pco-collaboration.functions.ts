@@ -1,4 +1,4 @@
-import { roomRequestTaskLabels, ROOM_REQUEST_FORM_URL } from '@/lib/pco-collaboration';
+import { roomRequestTaskLabels, ROOM_REQUEST_FORM_URL, pcoLogisticsPatch } from '@/lib/pco-collaboration';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/require-auth';
@@ -10,6 +10,7 @@ export type PcoCollaborationChange = {
   instanceId: string;
   operation: 'add' | 'template' | 'update' | 'delete' | 'push' | 'comment' | 'delete-comment' | 'channel' | 'details';
   channel?: string; enabled?: boolean; ownerId?: string | null; locationNote?: string | null; roomsNote?: string | null; roomId?: string | null;
+  noRoomNeeded?: boolean; childcareNeeded?: boolean;
   id?: string; label?: string; body?: string; templateId?: string;
   assigneeId?: string | null; dueDate?: string | null; completed?: boolean;
 };
@@ -66,7 +67,7 @@ export const getPcoEventCollaboration = createServerFn({ method: 'POST' })
       comments: comments.data ?? [], people: people.data ?? [],
       templates: (templates.data ?? []).map(template => ({ ...template, items: (templateItems.data ?? []).filter(item => item.template_id === template.id) })),
       canEdit: canEditPcoChecklist(roles), googleConnected: !!connection.data,
-      hub: { channels: (workspace?.channels ?? []) as string[], owner_id: workspace?.owner_id ?? null, location_note: workspace?.location_note ?? null, rooms_note: workspace?.rooms_note ?? null },
+      hub: { channels: (workspace?.channels ?? []) as string[], owner_id: workspace?.owner_id ?? null, location_note: workspace?.location_note ?? null, rooms_note: workspace?.rooms_note ?? null, no_room_needed: workspace?.no_room_needed ?? false, childcare_needed: workspace?.childcare_needed ?? false },
       pco: details,
     };
   });
@@ -110,6 +111,7 @@ export const changePcoEventCollaboration = createServerFn({ method: 'POST' })
     channel: z.string().refine(key => CHANNEL_KEYS.includes(key)).optional(), enabled: z.boolean().optional(),
     ownerId: z.string().uuid().nullable().optional(),
     roomId: instanceSchema.nullable().optional(),
+    noRoomNeeded: z.boolean().optional(), childcareNeeded: z.boolean().optional(),
     locationNote: z.string().trim().max(300).nullable().optional(), roomsNote: z.string().trim().max(300).nullable().optional(),
     id: z.string().uuid().optional(), label: z.string().trim().min(1).max(500).optional(),
     body: z.string().trim().min(1).max(5000).optional(), templateId: z.string().uuid().optional(),
@@ -136,7 +138,8 @@ export const changePcoEventCollaboration = createServerFn({ method: 'POST' })
         if (error || !(ownerRoles ?? []).some(row => PCO_STAFF_ROLES.includes(row.role))) throw new Error('Choose a staff owner');
       }
       let requestLabels: string[] = [];
-      const patch: { owner_id?: string | null; location_note?: string | null; rooms_note?: string | null } = {};
+      if (data.noRoomNeeded === true && (data.roomId !== undefined || data.roomsNote !== undefined)) throw new Error('Choose a room or no room needed, not both');
+      const patch: { owner_id?: string | null; location_note?: string | null; rooms_note?: string | null; no_room_needed?: boolean; childcare_needed?: boolean } = pcoLogisticsPatch(data);
       if (data.ownerId !== undefined) patch.owner_id = data.ownerId;
       if (data.locationNote !== undefined) patch.location_note = data.locationNote || null;
       if (data.roomsNote !== undefined) patch.rooms_note = data.roomsNote || null;

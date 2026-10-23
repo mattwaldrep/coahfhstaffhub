@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { canEditPcoChecklist, canPushPcoTask, pcoTaskFields, resolvePcoEventOwner } from './pco-collaboration';
+import { canEditPcoChecklist, canPushPcoTask, pcoTaskFields, resolvePcoEventOwner, pcoLogisticsPatch, hasPcoRoomPlan } from './pco-collaboration';
 describe('PCO beta event ownership', () => {
   const people = [{ id: 'staff-one', full_name: 'Test coordinator' }];
   it('uses the reassigned Hub owner instead of the PCO owner', () => {
@@ -41,4 +41,21 @@ describe('PCO beta room request tasks', () => {
   });
   it('skips the office', () => { expect(roomRequestTaskLabels('Office', true)).toEqual([]); });
   it('skips write-in rooms', () => { expect(roomRequestTaskLabels('Back patio', false)).toEqual([]); });
+});
+
+describe('PCO beta logistics options', () => {
+  it('records no room needed without clearing the event location', () => {
+    expect(pcoLogisticsPatch({ noRoomNeeded: true })).toEqual({ no_room_needed: true, rooms_note: null });
+    expect(hasPcoRoomPlan(true, [], null)).toBe(true);
+    expect(hasPcoRoomPlan(false, [], null)).toBe(false);
+    expect(roomRequestTaskLabels(null, false)).toEqual([]);
+  });
+  it('clears the exemption when a catalog or write-in room is selected', () => {
+    expect(pcoLogisticsPatch({ roomId: '123' })).toEqual({ no_room_needed: false });
+    expect(pcoLogisticsPatch({ roomsNote: 'Home' })).toEqual({ no_room_needed: false });
+  });
+  it('saves childcare independently and supports unchecking it', () => {
+    expect(pcoLogisticsPatch({ childcareNeeded: true })).toEqual({ childcare_needed: true });
+    expect(pcoLogisticsPatch({ childcareNeeded: false })).toEqual({ childcare_needed: false });
+  });
 });

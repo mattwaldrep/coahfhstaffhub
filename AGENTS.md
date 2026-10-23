@@ -5,3 +5,4 @@
 - Resolve beta event ownership from the workspace owner_id first, falling back to the PCO owner only when null; reassignment is Hub-only and clearing the override restores PCO ownership.
 - PCO Calendar filters read the paginated tag catalog with tag_group relationships, not only tag_groups, so standalone Individual Tags are retained.
 - Beta room choices come from the paginated Calendar Resource catalog filtered to kind Room; selections save in the Hub workspace rooms_note and never create or change PCO resource bookings.
+- Store beta room exemptions and childcare requirements as occurrence-level workspace flags; an explicit room selection clears the exemption so the two states cannot conflict, and PCO locations/bookings stay unchanged.
