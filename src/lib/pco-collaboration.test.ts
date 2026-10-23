@@ -1,5 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { canEditPcoChecklist, canPushPcoTask, pcoTaskFields } from './pco-collaboration';
+import { canEditPcoChecklist, canPushPcoTask, pcoTaskFields, resolvePcoEventOwner } from './pco-collaboration';
+describe('PCO beta event ownership', () => {
+  const people = [{ id: 'staff-one', full_name: 'Test coordinator' }];
+  it('uses the reassigned Hub owner instead of the PCO owner', () => {
+    expect(resolvePcoEventOwner('staff-one', 'PCO owner', people)).toBe('Test coordinator');
+  });
+  it('restores the PCO owner when the Hub override is cleared', () => {
+    expect(resolvePcoEventOwner(null, 'PCO owner', people)).toBe('PCO owner');
+  });
+  it('leaves the event without an owner when neither source has one', () => {
+    expect(resolvePcoEventOwner(null, null, people)).toBeNull();
+  });
+});
 describe('PCO collaboration permissions', () => {
   it('keeps extended staff checklist view-only', () => expect(canEditPcoChecklist(['extended'])).toBe(false));
   it('allows calendar admins to manage checklist tasks', () => expect(canEditPcoChecklist(['calendar_admin'])).toBe(true));

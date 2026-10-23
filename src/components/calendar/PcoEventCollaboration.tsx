@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth-context';
 import { getPcoEventCollaboration, changePcoEventCollaboration, type PcoCollaborationChange } from '@/lib/pco-collaboration.functions';
 import { PROMOTION_CHANNELS, COMMS_CHANNEL_OPTIONS } from '@/lib/event-channels';
+import { resolvePcoEventOwner } from '@/lib/pco-collaboration';
 import { isCommsLabel, scorePlanning, scoreComms, readinessColor } from '@/lib/event-readiness';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,7 +64,7 @@ export function PcoEventCollaboration({ instanceId, pcoLocation }: { instanceId:
   const commsItems = data.checklist.filter(item => isCommsLabel(item.label));
   const otherItems = data.checklist.filter(item => !isCommsLabel(item.label));
   const doneCount = (items: typeof data.checklist) => items.filter(item => item.task?.completed).length;
-  const ownerName = pco?.owner_name || (hub.owner_id ? personName(hub.owner_id) : null);
+  const ownerName = resolvePcoEventOwner(hub.owner_id, pco?.owner_name ?? null, people);
   const rooms = pco?.rooms ?? [];
   const planning = scorePlanning({ leader_name: ownerName, has_room: rooms.length > 0 || !!hub.rooms_note, checklist_total: otherItems.length, checklist_done: doneCount(otherItems) });
   const comms = scoreComms({ comms_total: commsItems.length, comms_done: doneCount(commsItems) });
@@ -107,11 +108,11 @@ export function PcoEventCollaboration({ instanceId, pcoLocation }: { instanceId:
     <Section icon={<UserRound className="h-4 w-4"/>} title="Owner & location" meta={ownerName ?? 'No owner'} defaultOpen={!ownerName}>
       <div className="space-y-1">
         <Label className="text-xs">Event owner</Label>
-        {pco?.owner_name ? <p className="text-sm">{pco.owner_name} <span className="text-xs text-muted-foreground">· from Planning Center</span></p> :
-          <Select value={hub.owner_id ?? 'none'} disabled={!data.canEdit || busy} onValueChange={v => mutation.mutate({ operation: 'details', ownerId: v === 'none' ? null : v })}>
-            <SelectTrigger className="h-8 w-56 text-xs" aria-label="Event owner"><SelectValue/></SelectTrigger>
-            <SelectContent><SelectItem value="none">No owner</SelectItem>{people.map(p => <SelectItem key={p.id} value={p.id}>{p.full_name || 'Staff member'}</SelectItem>)}</SelectContent>
-          </Select>}
+        <Select value={hub.owner_id ?? 'none'} disabled={!data.canEdit || busy} onValueChange={v => mutation.mutate({ operation: 'details', ownerId: v === 'none' ? null : v })}>
+          <SelectTrigger className="h-8 w-full text-xs" aria-label="Event owner"><SelectValue/></SelectTrigger>
+          <SelectContent><SelectItem value="none">{pco?.owner_name ? `Planning Center · ${pco.owner_name}` : 'No Hub owner'} </SelectItem>{people.map(p => <SelectItem key={p.id} value={p.id}>{p.full_name || 'Staff member'}</SelectItem>)}</SelectContent>
+        </Select>
+        {hub.owner_id && <p className="text-xs text-muted-foreground">Hub owner{pco?.owner_name ? ` · Planning Center: ${pco.owner_name}` : ''}</p>}
       </div>
       <div className="space-y-1">
         <Label className="text-xs flex items-center gap-1"><MapPin className="h-3 w-3"/>Location</Label>
@@ -122,7 +123,7 @@ export function PcoEventCollaboration({ instanceId, pcoLocation }: { instanceId:
         <Label className="text-xs">Rooms</Label>
         {rooms.length > 0 ? <p className="text-sm">{rooms.join(', ')} <span className="text-xs text-muted-foreground">· booked in Planning Center</span></p> :
           <Input className="h-8 text-sm" placeholder="No rooms booked in Planning Center — note rooms here" maxLength={300} defaultValue={hub.rooms_note ?? ''} key={`rooms-${hub.rooms_note}`} disabled={!data.canEdit || busy} onBlur={e => { if (e.target.value.trim() !== (hub.rooms_note ?? '')) mutation.mutate({ operation: 'details', roomsNote: e.target.value.trim() || null }); }}/>}
-        {(pco?.resources.length ?? 0) > 0 && <p className="text-xs text-muted-foreground">Resources: {pco!.resources.join(', ')}</p>}
+        {pco && pco.resources.length > 0 && <p className="text-xs text-muted-foreground">Resources: {pco.resources.join(', ')}</p>}
       </div>
       {!pco && <p className="text-xs text-muted-foreground">Planning Center owner and room details couldn't be loaded right now.</p>}
     </Section>
