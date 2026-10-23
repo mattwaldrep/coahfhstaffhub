@@ -45,17 +45,21 @@ function PcoCalendarPage() {
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState<Set<string>>(new Set());
   const [tagsExpanded, setTagsExpanded] = useState(false);
+  const [feedFilter, setFeedFilter] = useState<Set<string>>(new Set());
+  const [feedsExpanded, setFeedsExpanded] = useState(false);
+  const [feedTypesOpen, setFeedTypesOpen] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState<PcoCalendarInstance | null>(null);
   const [today, setToday] = useState<Date | null>(null);
   const [openedFromLink, setOpenedFromLink] = useState(false);
   useEffect(() => setToday(new Date()), []);
 
   const rangeEnd = addMonths(anchor, span);
+  const feedKey = [...feedFilter].sort().join(",");
   const q = useQuery({
-    queryKey: ["pco-calendar", anchor.toISOString(), span],
+    queryKey: ["pco-calendar", anchor.toISOString(), span, feedKey],
     enabled: !!user,
     staleTime: 5 * 60_000,
-    queryFn: () => fetchCal({ data: { from: anchor.toISOString(), to: rangeEnd.toISOString() } }),
+    queryFn: () => fetchCal({ data: { from: anchor.toISOString(), to: rangeEnd.toISOString(), feedIds: feedFilter.size > 0 ? [...feedFilter] : undefined } }),
   });
 
   const tagGroups = q.data?.tagGroups ?? [];
@@ -69,6 +73,24 @@ function PcoCalendarPage() {
     for (const g of tagGroups) for (const t of g.tags) m.set(t.id, { name: t.name, color: t.color, group: g.name });
     return m;
   }, [tagGroups]);
+
+  const feeds = q.data?.feeds ?? [];
+  const FEED_TYPE_LABELS: Record<string, string> = { calendar: "Calendar", registrations: "Registrations", groups: "Groups", form: "Forms", ical: "iCal Feeds" };
+  const feedTypeOrder = ["calendar", "registrations", "groups", "form", "ical"];
+  const feedsByType = useMemo(() => {
+    const m = new Map<string, typeof feeds>();
+    for (const f of feeds) {
+      const list = m.get(f.feed_type) ?? [];
+      list.push(f);
+      m.set(f.feed_type, list);
+    }
+    return [...m.entries()].sort((a, b) => {
+      const ai = feedTypeOrder.indexOf(a[0]);
+      const bi = feedTypeOrder.indexOf(b[0]);
+      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    });
+  }, [feeds]);
+  const feedById = useMemo(() => new Map(feeds.map((f) => [f.id, f])), [feeds]);
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
