@@ -70,8 +70,8 @@ describe("PCO feed-filtered instances", () => {
     const out = await fetchEventInstances("2026-11-01T00:00:00Z", "2026-12-01T00:00:00Z", ["12629", "8351"]);
     expect(out.map((i) => i.id)).toEqual(["3", "1", "2"]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(fetchMock.mock.calls[0]?.[0]).toContain("where%5Bfeed_id%5D=12629");
-    expect(fetchMock.mock.calls[1]?.[0]).toContain("where%5Bfeed_id%5D=8351");
+    expect(fetchMock.mock.calls[0]?.[0]).toContain("where[feed_id]=12629");
+    expect(fetchMock.mock.calls[1]?.[0]).toContain("where[feed_id]=8351");
   });
 
   it("ignores invalid feed ids and falls back to the unfiltered query", async () => {
