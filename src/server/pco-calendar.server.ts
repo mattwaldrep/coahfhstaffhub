@@ -41,17 +41,35 @@ export type PcoCalendarInstance = {
 };
 
 export async function fetchTagGroups(): Promise<PcoTagGroup[]> {
-  const j = await pcoFetch(`/tag_groups?include=tags&per_page=100`);
-  const tags = new Map<string, any>();
-  for (const i of j.included ?? []) if (i.type === "Tag") tags.set(i.id, i);
-  return (j.data ?? []).map((g: any) => ({
-    id: g.id,
-    name: g.attributes.name,
-    tags: (g.relationships?.tags?.data ?? [])
-      .map((r: any) => tags.get(r.id))
-      .filter(Boolean)
-      .map((t: any) => ({ id: t.id, name: t.attributes.name, color: t.attributes.color ?? null })),
-  }));
+  // The tag-groups endpoint excludes PCO's standalone "Individual Tags".
+  // Read the full tag catalog and its group relationship, across every page.
+  const groups = new Map<string, PcoTagGroup>();
+  let next: string | null = "/tags?include=tag_group&per_page=100";
+  const seenPages = new Set<string>();
+  while (next) {
+    if (seenPages.has(next)) throw new Error("Planning Center tag pagination repeated a page");
+    seenPages.add(next);
+    const j = await pcoFetch(next);
+    for (const item of j.included ?? []) {
+      if (item.type !== "TagGroup") continue;
+      const id = String(item.id);
+      if (!groups.has(id)) groups.set(id, { id, name: item.attributes.name, tags: [] });
+    }
+    for (const tag of j.data ?? []) {
+      const groupId = tag.relationships?.tag_group?.data?.id;
+      const id = groupId == null ? "individual-tags" : String(groupId);
+      let group = groups.get(id);
+      if (!group) {
+        group = { id, name: groupId == null ? "Individual Tags" : "Other Tags", tags: [] };
+        groups.set(id, group);
+      }
+      if (!group.tags.some((item) => item.id === String(tag.id))) {
+        group.tags.push({ id: String(tag.id), name: tag.attributes.name, color: tag.attributes.color ?? null });
+      }
+    }
+    next = j.links?.next ?? null;
+  }
+  return [...groups.values()].filter((group) => group.tags.length > 0);
 }
 
 export async function fetchCalendarInstance(id: string) {
