@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, ExternalLink, MapPin, RefreshCw, X } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, ExternalLink, MapPin, RefreshCw, X } from "lucide-react";
 import { getPcoCalendar, type PcoCalendarInstance } from "@/lib/pco-calendar.functions";
 import { PcoEventCollaboration } from '@/components/calendar/PcoEventCollaboration';
 
@@ -44,6 +44,7 @@ function PcoCalendarPage() {
   const [span, setSpan] = useState(1);
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState<Set<string>>(new Set());
+  const [tagsExpanded, setTagsExpanded] = useState(false);
   const [open, setOpen] = useState<PcoCalendarInstance | null>(null);
   const [today, setToday] = useState<Date | null>(null);
   const [openedFromLink, setOpenedFromLink] = useState(false);
@@ -137,21 +138,47 @@ function PcoCalendarPage() {
       </div>
 
       {tagGroups.some((g) => g.tags.length > 0) && (
-        <div className="space-y-2 border-y py-3">
-          {tagGroups.filter((g) => g.tags.length > 0).map((g) => (
-            <div key={g.id} className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs font-medium text-muted-foreground w-28 shrink-0">{g.name}</span>
-              {g.tags.map((t) => (
-                <Button key={t.id} size="sm" className="h-7" variant={tagFilter.has(t.id) ? "default" : "outline"} onClick={() => toggleTag(t.id)}>
-                  {t.name}
-                </Button>
+        <div className="border-y py-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setTagsExpanded((v) => !v)}
+              aria-expanded={tagsExpanded}
+              className="flex items-center gap-1.5 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+            >
+              <ChevronDown className={`w-4 h-4 transition-transform ${tagsExpanded ? "rotate-0" : "-rotate-90"}`} />
+              Tags
+              <span className="text-xs text-muted-foreground font-normal">
+                {tagFilter.size > 0 ? `${tagFilter.size} selected` : "All tags"}
+              </span>
+            </button>
+            {!tagsExpanded && tagFilter.size > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {Array.from(tagFilter).map((id) => {
+                  const tag = tagById.get(id);
+                  return tag ? <Badge key={id} variant="outline" className="text-[10px]">{tag.name}</Badge> : null;
+                })}
+              </div>
+            )}
+            {tagFilter.size > 0 && (
+              <Button size="sm" variant="ghost" className="h-7 ml-auto" onClick={() => setTagFilter(new Set())}>
+                <X className="w-3 h-3 mr-1" /> Clear tags
+              </Button>
+            )}
+          </div>
+          {tagsExpanded && (
+            <div className="space-y-2 mt-3 pt-3 border-t border-border/50">
+              {tagGroups.filter((g) => g.tags.length > 0).map((g) => (
+                <div key={g.id} className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs font-medium text-muted-foreground w-28 shrink-0">{g.name}</span>
+                  {g.tags.map((t) => (
+                    <Button key={t.id} size="sm" className="h-7" variant={tagFilter.has(t.id) ? "default" : "outline"} onClick={() => toggleTag(t.id)}>
+                      {t.name}
+                    </Button>
+                  ))}
+                </div>
               ))}
             </div>
-          ))}
-          {tagFilter.size > 0 && (
-            <Button size="sm" variant="ghost" className="h-7" onClick={() => setTagFilter(new Set())}>
-              <X className="w-3 h-3 mr-1" /> Clear tags
-            </Button>
           )}
         </div>
       )}
