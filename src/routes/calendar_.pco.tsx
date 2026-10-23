@@ -293,20 +293,20 @@ function PcoCalendarPage() {
               <ChevronDown className={`w-4 h-4 transition-transform ${tagsExpanded ? "rotate-0" : "-rotate-90"}`} />
               Tags
               <span className="text-xs text-muted-foreground font-normal">
-                {tagFilter.size > 0 ? `${tagFilter.size} selected` : "All tags"}
+                {excludedTags.size > 0 ? `${excludedTags.size} hidden` : "All on"}
               </span>
             </button>
-            {!tagsExpanded && tagFilter.size > 0 && (
+            {!tagsExpanded && excludedTags.size > 0 && (
               <div className="flex flex-wrap gap-1.5">
-                {Array.from(tagFilter).map((id) => {
+                {Array.from(excludedTags).map((id) => {
                   const tag = tagById.get(id);
-                  return tag ? <Badge key={id} variant="outline" className="text-[10px]">{tag.name}</Badge> : null;
+                  return tag ? <Badge key={id} variant="outline" className="text-[10px] line-through opacity-60">{tag.name}</Badge> : null;
                 })}
               </div>
             )}
-            {tagFilter.size > 0 && (
-              <Button size="sm" variant="ghost" className="h-7 ml-auto" onClick={() => setTagFilter(new Set())}>
-                <X className="w-3 h-3 mr-1" /> Clear tags
+            {excludedTags.size > 0 && (
+              <Button size="sm" variant="ghost" className="h-7 ml-auto" onClick={() => setExcludedTags(new Set())}>
+                <X className="w-3 h-3 mr-1" /> Show all tags
               </Button>
             )}
           </div>
@@ -315,11 +315,14 @@ function PcoCalendarPage() {
               {tagGroups.filter((g) => g.tags.length > 0).map((g) => (
                 <div key={g.id} className="flex flex-wrap items-center gap-1.5">
                   <span className="text-xs font-medium text-muted-foreground w-28 shrink-0">{g.name}</span>
-                  {g.tags.map((t) => (
-                    <Button key={t.id} size="sm" className="h-7" variant={tagFilter.has(t.id) ? "default" : "outline"} onClick={() => toggleTag(t.id)}>
-                      {t.name}
-                    </Button>
-                  ))}
+                  {g.tags.map((t) => {
+                    const off = excludedTags.has(t.id);
+                    return (
+                      <Button key={t.id} size="sm" className={`h-7 ${off ? "opacity-60 line-through" : ""}`} variant={off ? "outline" : "default"} onClick={() => toggleTag(t.id)}>
+                        {t.name}
+                      </Button>
+                    );
+                  })}
                 </div>
               ))}
             </div>
