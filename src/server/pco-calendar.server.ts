@@ -54,6 +54,14 @@ export async function fetchTagGroups(): Promise<PcoTagGroup[]> {
   }));
 }
 
+export async function fetchCalendarInstance(id: string) {
+  const j = await pcoFetch(`/event_instances/${encodeURIComponent(id)}?include=event`);
+  const d = j.data;
+  if (!d?.id || !d.attributes?.starts_at) throw new Error('Planning Center event not found');
+  const event = (j.included ?? []).find((item: any) => item.type === 'Event');
+  return { id: String(d.id), event_id: String(d.relationships?.event?.data?.id ?? ''), name: d.attributes.name ?? event?.attributes?.name ?? 'Untitled', starts_at: d.attributes.starts_at };
+}
+
 export async function fetchEventInstances(fromIso: string, toIso: string): Promise<PcoCalendarInstance[]> {
   const out: PcoCalendarInstance[] = [];
   let next: string | null =
@@ -83,7 +91,10 @@ export async function fetchEventInstances(fromIso: string, toIso: string): Promi
         registration_url: ev.registration_url ?? null,
         image_url: ev.image_url ?? null,
         visible_in_church_center: !!ev.visible_in_church_center,
-        tag_ids: (d.relationships?.tags?.data ?? []).map((t: any) => t.id),
+        tag_ids: [...new Set<string>([
+          ...(d.relationships?.tags?.data ?? []).map((t: any) => String(t.id)),
+          ...(events.get(evId)?.relationships?.tags?.data ?? []).map((t: any) => String(t.id)),
+        ])],
       });
     }
     next = j.links?.next ?? null;
