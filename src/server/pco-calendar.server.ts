@@ -176,19 +176,33 @@ async function fetchInstancePages(startUrl: string): Promise<PcoCalendarInstance
   return out;
 }
 
+/** Event IDs belonging to a feed. where[feed_id] works on /events but is silently ignored on /event_instances. */
+async function fetchFeedEventIds(feedId: string): Promise<Set<string>> {
+  const ids = new Set<string>();
+  let next: string | null = `/events?where[feed_id]=${encodeURIComponent(feedId)}&per_page=100`;
+  const seen = new Set<string>();
+  while (next) {
+    if (seen.has(next)) throw new Error("Planning Center feed event pagination repeated a page");
+    seen.add(next);
+    const j = await pcoFetch(next);
+    for (const e of j.data ?? []) ids.add(String(e.id));
+    next = j.links?.next ?? null;
+  }
+  return ids;
+}
+
 export async function fetchEventInstances(fromIso: string, toIso: string, feedIds?: string[]): Promise<PcoCalendarInstance[]> {
   const base =
     `/event_instances?where[starts_at][gte]=${encodeURIComponent(fromIso)}` +
     `&where[starts_at][lte]=${encodeURIComponent(toIso)}&order=starts_at&per_page=100&include=event,tags`;
-  // PCO events don't carry a feed relationship, so feed filtering happens
-  // server-side via where[feed_id], one query per selected feed, merged.
+  const instances = await fetchInstancePages(base);
+  // PCO events don't carry a feed relationship, so resolve each selected
+  // feed's event IDs and keep only instances of those events.
   const feeds = (feedIds ?? []).filter((id) => /^[a-z0-9]+$/i.test(id));
-  if (feeds.length === 0) return fetchInstancePages(base);
-  const byId = new Map<string, PcoCalendarInstance>();
+  if (feeds.length === 0) return instances;
+  const allowed = new Set<string>();
   for (const feedId of feeds) {
-    for (const instance of await fetchInstancePages(`${base}&where[feed_id]=${encodeURIComponent(feedId)}`)) {
-      byId.set(instance.id, instance);
-    }
+    for (const eventId of await fetchFeedEventIds(feedId)) allowed.add(eventId);
   }
-  return [...byId.values()].sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  return instances.filter((instance) => allowed.has(instance.event_id));
 }
