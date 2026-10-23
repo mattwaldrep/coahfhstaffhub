@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { addMonths, startOfMonth, format, isSameDay } from "date-fns";
+import { addMonths, startOfMonth, format, isSameDay, parseISO } from "date-fns";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, ExternalLink, MapPin, RefreshCw, X } from "lucide-react";
 import { getPcoCalendar, type PcoCalendarInstance } from "@/lib/pco-calendar.functions";
+import { PcoEventCollaboration } from '@/components/calendar/PcoEventCollaboration';
 
 export const Route = createFileRoute("/calendar_/pco")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    instance: typeof search.instance === 'string' && /^\d+$/.test(search.instance) ? search.instance : undefined,
+    month: typeof search.month === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(search.month) ? search.month : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Planning Center Calendar (Beta) — Staff Hub" },
@@ -33,13 +38,15 @@ export const Route = createFileRoute("/calendar_/pco")({
 
 function PcoCalendarPage() {
   const { user } = useAuth();
+  const routeSearch = Route.useSearch();
   const fetchCal = useServerFn(getPcoCalendar);
-  const [anchor, setAnchor] = useState(() => startOfMonth(new Date()));
+  const [anchor, setAnchor] = useState(() => startOfMonth(routeSearch.month ? parseISO(`${routeSearch.month}-01`) : new Date()));
   const [span, setSpan] = useState(1);
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState<PcoCalendarInstance | null>(null);
   const [today, setToday] = useState<Date | null>(null);
+  const [openedFromLink, setOpenedFromLink] = useState(false);
   useEffect(() => setToday(new Date()), []);
 
   const rangeEnd = addMonths(anchor, span);
@@ -51,6 +58,11 @@ function PcoCalendarPage() {
   });
 
   const tagGroups = q.data?.tagGroups ?? [];
+  useEffect(() => {
+    if (!routeSearch.instance || openedFromLink || !q.data) return;
+    const event = q.data.instances.find(item => item.id === routeSearch.instance);
+    if (event) { setOpen(event); setOpenedFromLink(true); }
+  }, [routeSearch.instance, openedFromLink, q.data]);
   const tagById = useMemo(() => {
     const m = new Map<string, { name: string; color: string | null; group: string }>();
     for (const g of tagGroups) for (const t of g.tags) m.set(t.id, { name: t.name, color: t.color, group: g.name });
@@ -95,9 +107,6 @@ function PcoCalendarPage() {
             <h1 className="text-2xl font-semibold">Planning Center Calendar</h1>
             <Badge variant="secondary">Beta</Badge>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Read-only, pulled live from Planning Center. Add or change events in Planning Center.
-          </p>
         </div>
         <Button variant="outline" size="sm" asChild>
           <Link to="/calendar" search={{ event: undefined }}>Back to current calendar</Link>
@@ -128,7 +137,7 @@ function PcoCalendarPage() {
       </div>
 
       {tagGroups.some((g) => g.tags.length > 0) && (
-        <div className="space-y-2 rounded-lg border bg-card p-3">
+        <div className="space-y-2 border-y py-3">
           {tagGroups.filter((g) => g.tags.length > 0).map((g) => (
             <div key={g.id} className="flex flex-wrap items-center gap-1.5">
               <span className="text-xs font-medium text-muted-foreground w-28 shrink-0">{g.name}</span>
@@ -163,7 +172,7 @@ function PcoCalendarPage() {
             </div>
             <div className="space-y-2">
               {items.map((e) => (
-                <button key={e.id} onClick={() => setOpen(e)} className="w-full text-left rounded-lg border bg-card p-3 hover:bg-accent transition-colors">
+                <Button variant="outline" key={e.id} onClick={() => setOpen(e)} className="w-full h-auto block whitespace-normal text-left rounded-lg border bg-card p-3 hover:bg-accent transition-colors">
                   <div className="flex flex-wrap items-baseline gap-x-3">
                     <span className="text-xs text-muted-foreground w-28">
                       {e.all_day ? "All day" : `${format(new Date(e.starts_at), "h:mm a")}${e.ends_at ? ` – ${format(new Date(e.ends_at), "h:mm a")}` : ""}`}
@@ -172,11 +181,12 @@ function PcoCalendarPage() {
                   </div>
                   <div className="mt-1 flex flex-wrap gap-1.5 pl-0 sm:pl-[124px]">
                     {e.location && <span className="text-xs text-muted-foreground truncate max-w-xs">{e.location}</span>}
-                    {e.tag_ids.map((t) => tagById.get(t)).filter(Boolean).map((t) => (
-                      <Badge key={t!.name} variant="outline" className="text-[10px]">{t!.name}</Badge>
-                    ))}
+                    {e.tag_ids.map((id) => {
+                      const tag = tagById.get(id);
+                      return tag ? <Badge key={id} variant="outline" className="text-[10px]">{tag.name}</Badge> : null;
+                    })}
                   </div>
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -184,7 +194,7 @@ function PcoCalendarPage() {
       </div>
 
       <Dialog open={!!open} onOpenChange={(o) => !o && setOpen(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[85dvh] overflow-y-auto">
           {open && (
             <>
               <DialogHeader><DialogTitle>{open.name}</DialogTitle></DialogHeader>
@@ -215,6 +225,7 @@ function PcoCalendarPage() {
                   </Button>
                 </div>
               </div>
+              <PcoEventCollaboration key={open.id} instanceId={open.id} />
             </>
           )}
         </DialogContent>

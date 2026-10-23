@@ -50,6 +50,13 @@
       "when": 1791398453642,
       "tag": "0006_allow_optional_third_sunday_announcement",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792764345232,
+      "tag": "0007_pco_calendar_collaboration",
+      "breakpoints": true
     }
   ]
 }

@@ -28,7 +28,7 @@ export const getTaskSource = createServerFn({ method: "POST" })
     const { data: item, error } = await supabaseAdmin
       .from("action_items")
       .select(
-        "id,title,created_at,created_by,meeting_id,source_checklist_item_id,source_event_id,source_issue_external_id,source_onboarding_task_id,source_workflow_id",
+        "id,title,created_at,created_by,meeting_id,source_checklist_item_id,source_event_id,source_issue_external_id,source_onboarding_task_id,source_workflow_id,pco_workspace_id",
       )
       .eq("id", data.actionItemId)
       .maybeSingle();
@@ -45,6 +45,11 @@ export const getTaskSource = createServerFn({ method: "POST" })
     }
 
     const base = { createdAt: item.created_at, createdByName };
+
+    if (item.pco_workspace_id) {
+      const { data: workspace } = await supabaseAdmin.from('pco_calendar_workspaces').select('name,instance_id,starts_at').eq('id', item.pco_workspace_id).maybeSingle();
+      return { ...base, kind: 'event_checklist', label: 'Planning Center event checklist', detail: workspace?.name ?? null, href: '/calendar/pco', hrefSearch: workspace ? { instance: workspace.instance_id, month: workspace.starts_at.slice(0, 7) } : null };
+    }
 
     // 1. Event checklist item
     if (item.source_checklist_item_id) {
