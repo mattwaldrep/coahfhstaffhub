@@ -80,6 +80,24 @@ export async function fetchCalendarInstance(id: string) {
   return { id: String(d.id), event_id: String(d.relationships?.event?.data?.id ?? ''), name: d.attributes.name ?? event?.attributes?.name ?? 'Untitled', starts_at: d.attributes.starts_at };
 }
 
+export type PcoEventDetails = { owner_name: string | null; rooms: string[]; resources: string[] };
+
+/** Event owner (name only) and booked rooms/resources from PCO Calendar. */
+export async function fetchEventDetails(instanceId: string, eventId: string): Promise<PcoEventDetails> {
+  const [eventJson, bookingsJson] = await Promise.all([
+    pcoFetch(`/events/${encodeURIComponent(eventId)}?include=owner`),
+    pcoFetch(`/event_instances/${encodeURIComponent(instanceId)}/resource_bookings?include=resource&per_page=100`),
+  ]);
+  const owner = (eventJson.included ?? []).find((i: any) => i.type === 'Person');
+  const rooms: string[] = [];
+  const resources: string[] = [];
+  for (const r of bookingsJson.included ?? []) {
+    if (r.type !== 'Resource' || !r.attributes?.name) continue;
+    (r.attributes.kind === 'Room' ? rooms : resources).push(r.attributes.name);
+  }
+  return { owner_name: owner?.attributes?.name ?? null, rooms: [...new Set(rooms)], resources: [...new Set(resources)] };
+}
+
 export async function fetchEventInstances(fromIso: string, toIso: string): Promise<PcoCalendarInstance[]> {
   const out: PcoCalendarInstance[] = [];
   let next: string | null =
