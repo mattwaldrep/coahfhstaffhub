@@ -32,6 +32,7 @@ import { Route as UsersRouteImport } from './routes/users'
 import { Route as AnnualPlanningIndexRouteImport } from './routes/annual-planning.index'
 import { Route as AnnualPlanningBudgetRouteImport } from './routes/annual-planning.budget'
 import { Route as CalendarClassesRouteImport } from './routes/calendar_.classes'
+import { Route as CalendarPcoRouteImport } from './routes/calendar_.pco'
 import { Route as CalendarPlanningRouteImport } from './routes/calendar_.planning'
 import { Route as CalendarPublicRouteImport } from './routes/calendar_.public'
 import { Route as CalendarSettingsRouteImport } from './routes/calendar_.settings'
@@ -194,6 +195,11 @@ const AnnualPlanningBudgetRoute = AnnualPlanningBudgetRouteImport.update({
 const CalendarClassesRoute = CalendarClassesRouteImport.update({
   id: '/calendar_/classes',
   path: '/calendar/classes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarPcoRoute = CalendarPcoRouteImport.update({
+  id: '/calendar_/pco',
+  path: '/calendar/pco',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalendarPlanningRoute = CalendarPlanningRouteImport.update({
@@ -483,6 +489,7 @@ export interface FileRoutesByFullPath {
   '/users': typeof UsersRoute
   '/annual-planning/budget': typeof AnnualPlanningBudgetRouteWithChildren
   '/calendar/classes': typeof CalendarClassesRoute
+  '/calendar/pco': typeof CalendarPcoRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
   '/calendar/settings': typeof CalendarSettingsRoute
@@ -554,6 +561,7 @@ export interface FileRoutesByTo {
   '/users': typeof UsersRoute
   '/annual-planning/budget': typeof AnnualPlanningBudgetRouteWithChildren
   '/calendar/classes': typeof CalendarClassesRoute
+  '/calendar/pco': typeof CalendarPcoRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
   '/calendar/settings': typeof CalendarSettingsRoute
@@ -626,6 +634,7 @@ export interface FileRoutesById {
   '/users': typeof UsersRoute
   '/annual-planning/budget': typeof AnnualPlanningBudgetRouteWithChildren
   '/calendar_/classes': typeof CalendarClassesRoute
+  '/calendar_/pco': typeof CalendarPcoRoute
   '/calendar_/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar_/public': typeof CalendarPublicRoute
   '/calendar_/settings': typeof CalendarSettingsRoute
@@ -701,6 +710,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/annual-planning/budget'
     | '/calendar/classes'
+    | '/calendar/pco'
     | '/calendar/planning'
     | '/calendar/public'
     | '/calendar/settings'
@@ -772,6 +782,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/annual-planning/budget'
     | '/calendar/classes'
+    | '/calendar/pco'
     | '/calendar/planning'
     | '/calendar/public'
     | '/calendar/settings'
@@ -843,6 +854,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/annual-planning/budget'
     | '/calendar_/classes'
+    | '/calendar_/pco'
     | '/calendar_/planning'
     | '/calendar_/public'
     | '/calendar_/settings'
@@ -917,6 +929,7 @@ export interface RootRouteChildren {
   UsersRoute: typeof UsersRoute
   AnnualPlanningBudgetRoute: typeof AnnualPlanningBudgetRouteWithChildren
   CalendarClassesRoute: typeof CalendarClassesRoute
+  CalendarPcoRoute: typeof CalendarPcoRoute
   CalendarPlanningRoute: typeof CalendarPlanningRouteWithChildren
   CalendarPublicRoute: typeof CalendarPublicRoute
   CalendarSettingsRoute: typeof CalendarSettingsRoute
@@ -1112,6 +1125,13 @@ declare module '@tanstack/react-router' {
       path: '/calendar/classes'
       fullPath: '/calendar/classes'
       preLoaderRoute: typeof CalendarClassesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendar_/pco': {
+      id: '/calendar_/pco'
+      path: '/calendar/pco'
+      fullPath: '/calendar/pco'
+      preLoaderRoute: typeof CalendarPcoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calendar_/planning': {
@@ -1575,6 +1595,7 @@ const rootRouteChildren: RootRouteChildren = {
   UsersRoute: UsersRoute,
   AnnualPlanningBudgetRoute: AnnualPlanningBudgetRouteWithChildren,
   CalendarClassesRoute: CalendarClassesRoute,
+  CalendarPcoRoute: CalendarPcoRoute,
   CalendarPlanningRoute: CalendarPlanningRouteWithChildren,
   CalendarPublicRoute: CalendarPublicRoute,
   CalendarSettingsRoute: CalendarSettingsRoute,
