@@ -16,4 +16,8 @@ export function pcoTaskFields(event: { name: string; starts_at: string; instance
     title: `${event.name} (${date}) — ${label}`,
     notes: `Event: ${event.name}\nOpen in Staff Hub: https://coahfhstaffhub.lovable.app/calendar/pco?instance=${encodeURIComponent(event.instance_id)}&month=${event.starts_at.slice(0, 7)}`,
   };
+}/** Rented Planning Center rooms need a reservation form; the office does not. Write-in rooms never do. */
+export function roomRequestTaskLabels(roomName: string | null, fromCatalog: boolean) {
+  if (!roomName || !fromCatalog || /\boffice\b/i.test(roomName)) return [];
+  return [`Room request form submitted – ${roomName}`, `Room request form received – ${roomName}`];
 }

@@ -69,6 +69,7 @@ export function PcoEventCollaboration({ instanceId, pcoLocation }: { instanceId:
   const ownerName = resolvePcoEventOwner(hub.owner_id, pco?.owner_name ?? null, people);
   const rooms = pco?.rooms ?? [];
   const catalog = roomQuery.data ?? [];
+  const [writeIn, setWriteIn] = useState(false);
   const selectedRoom = catalog.find(room => room.name === hub.rooms_note);
   const planning = scorePlanning({ leader_name: ownerName, has_room: rooms.length > 0 || !!hub.rooms_note, checklist_total: otherItems.length, checklist_done: doneCount(otherItems) });
   const comms = scoreComms({ comms_total: commsItems.length, comms_done: doneCount(commsItems) });
@@ -126,14 +127,17 @@ export function PcoEventCollaboration({ instanceId, pcoLocation }: { instanceId:
       <div className="space-y-1">
         <Label className="text-xs">Rooms</Label>
         {rooms.length > 0 && <p className="text-sm">{rooms.join(', ')} <span className="text-xs text-muted-foreground">· booked in Planning Center</span></p>}
-        <Select value={selectedRoom?.id ?? (hub.rooms_note ? 'previous' : 'none')} disabled={!data.canEdit || busy || roomQuery.isPending || !!roomQuery.error} onValueChange={value => mutation.mutate({ operation: 'details', roomId: value === 'none' ? null : value })}>
+        <Select value={writeIn ? 'write-in' : selectedRoom?.id ?? (hub.rooms_note ? 'previous' : 'none')} disabled={!data.canEdit || busy || roomQuery.isPending || !!roomQuery.error} onValueChange={value => { if (value === 'write-in') { setWriteIn(true); return; } setWriteIn(false); mutation.mutate({ operation: 'details', roomId: value === 'none' ? null : value }); }}>
           <SelectTrigger className="h-8 w-full text-sm" aria-label="Event room"><SelectValue placeholder="Select a room"/></SelectTrigger>
           <SelectContent>
             <SelectItem value="none">{rooms.length ? 'Use Planning Center bookings' : 'No room selected'}</SelectItem>
             {hub.rooms_note && !selectedRoom && <SelectItem value="previous" disabled>{hub.rooms_note}</SelectItem>}
             {catalog.map(room => <SelectItem key={room.id} value={room.id}>{room.name}</SelectItem>)}
+            <SelectItem value="write-in">Write in a room…</SelectItem>
           </SelectContent>
         </Select>
+        {(writeIn || (hub.rooms_note && !selectedRoom)) && <Input className="h-8 text-sm" placeholder="Type a room" aria-label="Write-in room" maxLength={300} autoFocus={writeIn} defaultValue={selectedRoom ? '' : hub.rooms_note ?? ''} key={`room-${hub.rooms_note}`} disabled={!data.canEdit || busy} onBlur={e => { const v = e.target.value.trim(); if (v && v !== (hub.rooms_note ?? '')) mutation.mutate({ operation: 'details', roomsNote: v }); setWriteIn(false); }}/>}
+        {selectedRoom && !/\boffice\b/i.test(selectedRoom.name) && <p className="text-xs text-muted-foreground">Room request form tasks added to the checklist.</p>}
         {roomQuery.isPending && <p className="text-xs text-muted-foreground">Loading Planning Center rooms…</p>}
         {roomQuery.error && <div className="flex items-center gap-2"><p className="text-xs text-destructive">Planning Center rooms could not be loaded.</p><Button size="sm" variant="ghost" onClick={() => roomQuery.refetch()}>Try again</Button></div>}
         {roomQuery.isSuccess && !catalog.length && <p className="text-xs text-muted-foreground">No rooms listed in Planning Center.</p>}

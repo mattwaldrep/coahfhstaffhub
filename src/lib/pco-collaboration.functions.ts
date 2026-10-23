@@ -1,3 +1,4 @@
+import { roomRequestTaskLabels } from '@/lib/pco-collaboration';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/require-auth';
@@ -134,6 +135,7 @@ export const changePcoEventCollaboration = createServerFn({ method: 'POST' })
         const { data: ownerRoles, error } = await db.from('user_roles').select('role').eq('user_id', data.ownerId);
         if (error || !(ownerRoles ?? []).some(row => PCO_STAFF_ROLES.includes(row.role))) throw new Error('Choose a staff owner');
       }
+      let requestLabels: string[] = [];
       const patch: { owner_id?: string | null; location_note?: string | null; rooms_note?: string | null } = {};
       if (data.ownerId !== undefined) patch.owner_id = data.ownerId;
       if (data.locationNote !== undefined) patch.location_note = data.locationNote || null;
@@ -145,10 +147,20 @@ export const changePcoEventCollaboration = createServerFn({ method: 'POST' })
           const room = (await fetchRoomCatalog()).find(item => item.id === data.roomId);
           if (!room) throw new Error('Choose a room listed in Planning Center');
           patch.rooms_note = room.name;
+          requestLabels = roomRequestTaskLabels(room.name, true);
         }
       }
       const { error } = await db.from('pco_calendar_workspaces').update(patch).eq('id', workspace.id);
       if (error) throw new Error('Unable to save event details');
+      if (requestLabels.length) {
+        const { data: existing } = await db.from('pco_calendar_checklist').select('label').eq('workspace_id', workspace.id).in('label', requestLabels);
+        const have = new Set((existing ?? []).map(row => row.label));
+        for (const label of requestLabels.filter(item => !have.has(item))) {
+          const fields = pcoTaskFields(workspace, label);
+          const { error: taskError } = await (db as any).rpc('create_pco_checklist_task', { _workspace_id: workspace.id, _label: label, _title: fields.title, _notes: fields.notes, _assignee_id: null, _due_date: null, _created_by: context.userId });
+          if (taskError) return { warning: 'Room saved, but the room request tasks could not be created.' };
+        }
+      }
       return { warning: null };
     }
     if (data.operation === 'channel') {

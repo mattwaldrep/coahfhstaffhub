@@ -34,3 +34,11 @@ describe('PCO beta channel tasks', () => {
   });
   it('rejects unknown channels', () => expect(channelTaskLabel('fax')).toBeNull());
 });
+import { roomRequestTaskLabels } from './pco-collaboration';
+describe('PCO beta room request tasks', () => {
+  it('creates submitted and received tasks for rented Planning Center rooms', () => {
+    expect(roomRequestTaskLabels('Fellowship Hall', true)).toEqual(['Room request form submitted – Fellowship Hall', 'Room request form received – Fellowship Hall']);
+  });
+  it('skips the office', () => { expect(roomRequestTaskLabels('Office', true)).toEqual([]); });
+  it('skips write-in rooms', () => { expect(roomRequestTaskLabels('Back patio', false)).toEqual([]); });
+});
