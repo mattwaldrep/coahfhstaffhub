@@ -33,7 +33,7 @@ export const getPcoCalendar = createServerFn({ method: "POST" })
     const { fetchEventInstances, fetchFeeds, fetchTagGroups } = await import("@/server/pco-calendar.server");
     try {
       const [instances, tagGroups, feeds] = await Promise.all([
-        fetchEventInstances(from.toISOString(), to.toISOString(), data.feedIds),
+        fetchEventInstances(from.toISOString(), to.toISOString(), data.feedIds, data.excludeFeedIds),
         fetchTagGroups(),
         fetchFeeds(),
       ]);
