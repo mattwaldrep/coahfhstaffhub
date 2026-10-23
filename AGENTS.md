@@ -6,3 +6,4 @@
 - PCO Calendar filters read the paginated tag catalog with tag_group relationships, not only tag_groups, so standalone Individual Tags are retained.
 - Beta room choices come from the paginated Calendar Resource catalog filtered to kind Room; selections save in the Hub workspace rooms_note and never create or change PCO resource bookings.
 - Store beta room exemptions and childcare requirements as occurrence-level workspace flags; an explicit room selection clears the exemption so the two states cannot conflict, and PCO locations/bookings stay unchanged.
+- PCO feed filtering must resolve event IDs via /events?where[feed_id]= and filter instances by event_id; where[feed_id] on /event_instances returns 200 but is silently ignored.
