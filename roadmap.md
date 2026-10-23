@@ -1,4 +1,5 @@
 # Tasks
+- [x] Add PCO-style Feeds filter to the beta calendar (collapsible, grouped by feed type with sub-arrows); signed-in preview verified Community Groups filtering shows only CG events. Seven server tests passed; build OK.
 - [x] Make the beta calendar tag filter section collapsible; signed-in preview verified collapsed by default, expand/collapse, selected-tag summary, and clear.
 - [x] Add No room needed and Needs childcare to beta event details; 20 tests passed, signed-in save/reopen verified, original settings restored, build OK.
 - [x] Pull Planning Center rooms into the beta event room dropdown; 14 tests passed and signed-in selection/save/reload verified, original selection restored; no PCO bookings changed.

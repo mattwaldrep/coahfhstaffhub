@@ -2,12 +2,20 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/require-auth";
 
-export type { PcoCalendarInstance, PcoTagGroup } from "@/server/pco-calendar.server";
+export type { PcoCalendarInstance, PcoFeed, PcoTagGroup } from "@/server/pco-calendar.server";
 
 /** Read-only pull of Planning Center Calendar events (any staff role). */
 export const getPcoCalendar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ from: z.string().datetime(), to: z.string().datetime() }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        from: z.string().datetime(),
+        to: z.string().datetime(),
+        feedIds: z.array(z.string().regex(/^[a-z0-9]+$/i)).max(25).optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { data: roles } = await context.supabase
       .from("user_roles")
@@ -21,15 +29,16 @@ export const getPcoCalendar = createServerFn({ method: "POST" })
     const maxTo = new Date(from.getTime() + 400 * 86400000);
     const to = new Date(data.to) > maxTo ? maxTo : new Date(data.to);
 
-    const { fetchEventInstances, fetchTagGroups } = await import("@/server/pco-calendar.server");
+    const { fetchEventInstances, fetchFeeds, fetchTagGroups } = await import("@/server/pco-calendar.server");
     try {
-      const [instances, tagGroups] = await Promise.all([
-        fetchEventInstances(from.toISOString(), to.toISOString()),
+      const [instances, tagGroups, feeds] = await Promise.all([
+        fetchEventInstances(from.toISOString(), to.toISOString(), data.feedIds),
         fetchTagGroups(),
+        fetchFeeds(),
       ]);
-      return { instances, tagGroups, error: null as string | null };
+      return { instances, tagGroups, feeds, error: null as string | null };
     } catch (e) {
       console.error("PCO calendar fetch failed", e);
-      return { instances: [], tagGroups: [], error: "Couldn't reach Planning Center Calendar. Try again shortly." };
+      return { instances: [], tagGroups: [], feeds: [], error: "Couldn't reach Planning Center Calendar. Try again shortly." };
     }
   });

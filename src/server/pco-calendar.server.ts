@@ -117,11 +117,30 @@ export async function fetchEventDetails(instanceId: string, eventId: string): Pr
   return { owner_name: owner?.attributes?.name ?? null, rooms: [...new Set(rooms)], resources: [...new Set(resources)] };
 }
 
-export async function fetchEventInstances(fromIso: string, toIso: string): Promise<PcoCalendarInstance[]> {
+export type PcoFeed = { id: string; name: string; feed_type: string };
+
+/** PCO Calendar feeds (Calendar, Registrations, Groups, Forms, iCal). */
+export async function fetchFeeds(): Promise<PcoFeed[]> {
+  const feeds = new Map<string, PcoFeed>();
+  let next: string | null = "/feeds?per_page=100";
+  const seen = new Set<string>();
+  while (next) {
+    if (seen.has(next)) throw new Error("Planning Center feed pagination repeated a page");
+    seen.add(next);
+    const j = await pcoFetch(next);
+    for (const f of j.data ?? []) {
+      if (f.type !== "Feed" || !f.attributes?.name) continue;
+      const id = String(f.id);
+      feeds.set(id, { id, name: f.attributes.name, feed_type: f.attributes.feed_type ?? "other" });
+    }
+    next = j.links?.next ?? null;
+  }
+  return [...feeds.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function fetchInstancePages(startUrl: string): Promise<PcoCalendarInstance[]> {
   const out: PcoCalendarInstance[] = [];
-  let next: string | null =
-    `/event_instances?where[starts_at][gte]=${encodeURIComponent(fromIso)}` +
-    `&where[starts_at][lte]=${encodeURIComponent(toIso)}&order=starts_at&per_page=100&include=event,tags`;
+  let next: string | null = startUrl;
   let guard = 0;
   while (next && guard++ < 40) {
     const j: any = await pcoFetch(next);
@@ -155,4 +174,35 @@ export async function fetchEventInstances(fromIso: string, toIso: string): Promi
     next = j.links?.next ?? null;
   }
   return out;
+}
+
+/** Event IDs belonging to a feed. where[feed_id] works on /events but is silently ignored on /event_instances. */
+async function fetchFeedEventIds(feedId: string): Promise<Set<string>> {
+  const ids = new Set<string>();
+  let next: string | null = `/events?where[feed_id]=${encodeURIComponent(feedId)}&per_page=100`;
+  const seen = new Set<string>();
+  while (next) {
+    if (seen.has(next)) throw new Error("Planning Center feed event pagination repeated a page");
+    seen.add(next);
+    const j = await pcoFetch(next);
+    for (const e of j.data ?? []) ids.add(String(e.id));
+    next = j.links?.next ?? null;
+  }
+  return ids;
+}
+
+export async function fetchEventInstances(fromIso: string, toIso: string, feedIds?: string[]): Promise<PcoCalendarInstance[]> {
+  const base =
+    `/event_instances?where[starts_at][gte]=${encodeURIComponent(fromIso)}` +
+    `&where[starts_at][lte]=${encodeURIComponent(toIso)}&order=starts_at&per_page=100&include=event,tags`;
+  const instances = await fetchInstancePages(base);
+  // PCO events don't carry a feed relationship, so resolve each selected
+  // feed's event IDs and keep only instances of those events.
+  const feeds = (feedIds ?? []).filter((id) => /^[a-z0-9]+$/i.test(id));
+  if (feeds.length === 0) return instances;
+  const allowed = new Set<string>();
+  for (const feedId of feeds) {
+    for (const eventId of await fetchFeedEventIds(feedId)) allowed.add(eventId);
+  }
+  return instances.filter((instance) => allowed.has(instance.event_id));
 }
