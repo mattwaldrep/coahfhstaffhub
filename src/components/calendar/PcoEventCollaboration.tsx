@@ -44,6 +44,7 @@ export function PcoEventCollaboration({ instanceId, pcoLocation }: { instanceId:
   const [template, setTemplate] = useState('');
   const [editing, setEditing] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState('');
+  const [writeIn, setWriteIn] = useState(false);
   const q = useQuery({ queryKey: ['pco-event-collaboration', instanceId], enabled: !!user, queryFn: () => get({ data: { instanceId } }) });
   const mutation = useMutation({
     mutationFn: (data: Omit<PcoCollaborationChange, 'instanceId'>) => change({ data: { ...data, instanceId } }),
@@ -69,7 +70,6 @@ export function PcoEventCollaboration({ instanceId, pcoLocation }: { instanceId:
   const ownerName = resolvePcoEventOwner(hub.owner_id, pco?.owner_name ?? null, people);
   const rooms = pco?.rooms ?? [];
   const catalog = roomQuery.data ?? [];
-  const [writeIn, setWriteIn] = useState(false);
   const selectedRoom = catalog.find(room => room.name === hub.rooms_note);
   const planning = scorePlanning({ leader_name: ownerName, has_room: rooms.length > 0 || !!hub.rooms_note, checklist_total: otherItems.length, checklist_done: doneCount(otherItems) });
   const comms = scoreComms({ comms_total: commsItems.length, comms_done: doneCount(commsItems) });
