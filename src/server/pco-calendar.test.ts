@@ -27,6 +27,65 @@ describe('PCO room catalog', () => {
   });
 });
 
+describe("PCO feed catalog", () => {
+  it("lists feeds with their type and follows pagination", async () => {
+    vi.stubEnv("PCO_APP_ID", "fixture-app");
+    vi.stubEnv("PCO_SECRET", "fixture-secret");
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(Response.json({
+        data: [
+          { type: "Feed", id: "calendar", attributes: { name: "Calendar", feed_type: "calendar" } },
+          { type: "Feed", id: "12629", attributes: { name: "Community Groups", feed_type: "groups" } },
+        ],
+        links: { next: "https://api.planningcenteronline.com/calendar/v2/feeds?offset=100" },
+      }))
+      .mockResolvedValueOnce(Response.json({
+        data: [{ type: "Feed", id: "8351", attributes: { name: "Registrations", feed_type: "registrations" } }],
+        links: {},
+      }));
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await fetchFeeds()).toEqual([
+      { id: "calendar", name: "Calendar", feed_type: "calendar" },
+      { id: "12629", name: "Community Groups", feed_type: "groups" },
+      { id: "8351", name: "Registrations", feed_type: "registrations" },
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("PCO feed-filtered instances", () => {
+  const instance = (id: string, starts: string) => ({
+    type: "EventInstance", id,
+    attributes: { name: `Event ${id}`, starts_at: starts, all_day_event: false },
+    relationships: { event: { data: { type: "Event", id: `e${id}` } } },
+  });
+
+  it("queries each selected feed and merges unique instances in date order", async () => {
+    vi.stubEnv("PCO_APP_ID", "fixture-app");
+    vi.stubEnv("PCO_SECRET", "fixture-secret");
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(Response.json({ data: [instance("1", "2026-11-02T15:00:00Z"), instance("2", "2026-11-05T15:00:00Z")], included: [], links: {} }))
+      .mockResolvedValueOnce(Response.json({ data: [instance("2", "2026-11-05T15:00:00Z"), instance("3", "2026-11-01T15:00:00Z")], included: [], links: {} }));
+    vi.stubGlobal("fetch", fetchMock);
+    const out = await fetchEventInstances("2026-11-01T00:00:00Z", "2026-12-01T00:00:00Z", ["12629", "8351"]);
+    expect(out.map((i) => i.id)).toEqual(["3", "1", "2"]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0]?.[0]).toContain("where%5Bfeed_id%5D=12629");
+    expect(fetchMock.mock.calls[1]?.[0]).toContain("where%5Bfeed_id%5D=8351");
+  });
+
+  it("ignores invalid feed ids and falls back to the unfiltered query", async () => {
+    vi.stubEnv("PCO_APP_ID", "fixture-app");
+    vi.stubEnv("PCO_SECRET", "fixture-secret");
+    const fetchMock = vi.fn().mockResolvedValueOnce(Response.json({ data: [instance("9", "2026-11-02T15:00:00Z")], included: [], links: {} }));
+    vi.stubGlobal("fetch", fetchMock);
+    const out = await fetchEventInstances("2026-11-01T00:00:00Z", "2026-12-01T00:00:00Z", ["bad id!"]);
+    expect(out.map((i) => i.id)).toEqual(["9"]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).not.toContain("feed_id");
+  });
+});
+
 describe("PCO calendar tag catalog", () => {
   it("includes individual tags alongside grouped tags and follows pagination", async () => {
     vi.stubEnv("PCO_APP_ID", "fixture-app");
