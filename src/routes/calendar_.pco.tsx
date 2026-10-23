@@ -207,6 +207,12 @@ function PcoCalendarPage() {
         <Button variant="ghost" size="icon" aria-label="Refresh" onClick={() => q.refetch()}>
           <RefreshCw className={`w-4 h-4 ${q.isFetching ? "animate-spin" : ""}`} />
         </Button>
+        <Button variant="outline" size="sm" onClick={saveDefaultView}>
+          <Bookmark className="w-3.5 h-3.5 mr-1" /> Save as default
+        </Button>
+        <Button variant="ghost" size="sm" onClick={resetDefaultView}>
+          <RotateCcw className="w-3.5 h-3.5 mr-1" /> Reset
+        </Button>
       </div>
 
       {feeds.length > 0 && (
@@ -221,20 +227,20 @@ function PcoCalendarPage() {
               <ChevronDown className={`w-4 h-4 transition-transform ${feedsExpanded ? "rotate-0" : "-rotate-90"}`} />
               Feeds
               <span className="text-xs text-muted-foreground font-normal">
-                {feedFilter.size > 0 ? `${feedFilter.size} selected` : "All feeds"}
+                {excludedFeeds.size > 0 ? `${excludedFeeds.size} hidden` : "All on"}
               </span>
             </button>
-            {!feedsExpanded && feedFilter.size > 0 && (
+            {!feedsExpanded && excludedFeeds.size > 0 && (
               <div className="flex flex-wrap gap-1.5">
-                {Array.from(feedFilter).map((id) => {
+                {Array.from(excludedFeeds).map((id) => {
                   const feed = feedById.get(id);
-                  return feed ? <Badge key={id} variant="outline" className="text-[10px]">{feed.name}</Badge> : null;
+                  return feed ? <Badge key={id} variant="outline" className="text-[10px] line-through opacity-60">{feed.name}</Badge> : null;
                 })}
               </div>
             )}
-            {feedFilter.size > 0 && (
-              <Button size="sm" variant="ghost" className="h-7 ml-auto" onClick={() => setFeedFilter(new Set())}>
-                <X className="w-3 h-3 mr-1" /> Clear feeds
+            {excludedFeeds.size > 0 && (
+              <Button size="sm" variant="ghost" className="h-7 ml-auto" onClick={() => setExcludedFeeds(new Set())}>
+                <X className="w-3 h-3 mr-1" /> Show all feeds
               </Button>
             )}
           </div>
