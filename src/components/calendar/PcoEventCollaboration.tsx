@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth-context';
 import { getPcoEventCollaboration, getPcoRoomCatalog, changePcoEventCollaboration, type PcoCollaborationChange } from '@/lib/pco-collaboration.functions';
 import { PROMOTION_CHANNELS, COMMS_CHANNEL_OPTIONS } from '@/lib/event-channels';
-import { resolvePcoEventOwner, ROOM_REQUEST_FORM_URL } from '@/lib/pco-collaboration';
+import { resolvePcoEventOwner, ROOM_REQUEST_FORM_URL, hasPcoRoomPlan } from '@/lib/pco-collaboration';
 import { isCommsLabel, scorePlanning, scoreComms, readinessColor } from '@/lib/event-readiness';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -71,7 +71,7 @@ export function PcoEventCollaboration({ instanceId, pcoLocation }: { instanceId:
   const rooms = pco?.rooms ?? [];
   const catalog = roomQuery.data ?? [];
   const selectedRoom = catalog.find(room => room.name === hub.rooms_note);
-  const planning = scorePlanning({ leader_name: ownerName, has_room: rooms.length > 0 || !!hub.rooms_note, checklist_total: otherItems.length, checklist_done: doneCount(otherItems) });
+  const planning = scorePlanning({ leader_name: ownerName, has_room: hasPcoRoomPlan(hub.no_room_needed, rooms, hub.rooms_note), checklist_total: otherItems.length, checklist_done: doneCount(otherItems) });
   const comms = scoreComms({ comms_total: commsItems.length, comms_done: doneCount(commsItems) });
 
   const renderItem = (item: (typeof data.checklist)[number]) => {
@@ -127,10 +127,11 @@ export function PcoEventCollaboration({ instanceId, pcoLocation }: { instanceId:
       <div className="space-y-1">
         <Label className="text-xs">Rooms</Label>
         {rooms.length > 0 && <p className="text-sm">{rooms.join(', ')} <span className="text-xs text-muted-foreground">· booked in Planning Center</span></p>}
-        <Select value={writeIn ? 'write-in' : selectedRoom?.id ?? (hub.rooms_note ? 'previous' : 'none')} disabled={!data.canEdit || busy || roomQuery.isPending || !!roomQuery.error} onValueChange={value => { if (value === 'write-in') { setWriteIn(true); return; } setWriteIn(false); mutation.mutate({ operation: 'details', roomId: value === 'none' ? null : value }); }}>
+        <Select value={writeIn ? 'write-in' : hub.no_room_needed ? 'not-needed' : selectedRoom?.id ?? (hub.rooms_note ? 'previous' : 'none')} disabled={!data.canEdit || busy} onValueChange={value => { if (value === 'write-in') { setWriteIn(true); return; } setWriteIn(false); mutation.mutate(value === 'not-needed' ? { operation: 'details', noRoomNeeded: true } : { operation: 'details', roomId: value === 'none' ? null : value }); }}>
           <SelectTrigger className="h-8 w-full text-sm" aria-label="Event room"><SelectValue placeholder="Select a room"/></SelectTrigger>
           <SelectContent>
             <SelectItem value="none">{rooms.length ? 'Use Planning Center bookings' : 'No room selected'}</SelectItem>
+            <SelectItem value="not-needed">No room needed</SelectItem>
             {hub.rooms_note && !selectedRoom && <SelectItem value="previous" disabled>{hub.rooms_note}</SelectItem>}
             {catalog.map(room => <SelectItem key={room.id} value={room.id}>{room.name}</SelectItem>)}
             <SelectItem value="write-in">Write in a room…</SelectItem>
@@ -143,6 +144,10 @@ export function PcoEventCollaboration({ instanceId, pcoLocation }: { instanceId:
         {roomQuery.isSuccess && !catalog.length && <p className="text-xs text-muted-foreground">No rooms listed in Planning Center.</p>}
         {hub.rooms_note && <p className="text-xs text-muted-foreground">Selected in Hub · not a Planning Center booking</p>}
         {pco && pco.resources.length > 0 && <p className="text-xs text-muted-foreground">Resources: {pco.resources.join(', ')}</p>}
+      </div>
+      <div className="flex items-center gap-2 border-t pt-3">
+        <Checkbox id={`childcare-${instanceId}`} checked={hub.childcare_needed} disabled={!data.canEdit || busy} onCheckedChange={value => mutation.mutate({ operation: 'details', childcareNeeded: value === true })}/>
+        <Label htmlFor={`childcare-${instanceId}`} className="text-sm">Needs childcare</Label>
       </div>
       {!pco && <p className="text-xs text-muted-foreground">Planning Center owner and room details couldn't be loaded right now.</p>}
     </Section>
