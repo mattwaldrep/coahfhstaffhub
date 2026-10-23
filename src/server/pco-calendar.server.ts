@@ -191,18 +191,33 @@ async function fetchFeedEventIds(feedId: string): Promise<Set<string>> {
   return ids;
 }
 
-export async function fetchEventInstances(fromIso: string, toIso: string, feedIds?: string[]): Promise<PcoCalendarInstance[]> {
+export async function fetchEventInstances(
+  fromIso: string,
+  toIso: string,
+  feedIds?: string[],
+  excludeFeedIds?: string[],
+): Promise<PcoCalendarInstance[]> {
   const base =
     `/event_instances?where[starts_at][gte]=${encodeURIComponent(fromIso)}` +
     `&where[starts_at][lte]=${encodeURIComponent(toIso)}&order=starts_at&per_page=100&include=event,tags`;
   const instances = await fetchInstancePages(base);
-  // PCO events don't carry a feed relationship, so resolve each selected
-  // feed's event IDs and keep only instances of those events.
+  // PCO events don't carry a feed relationship, so resolve each feed's event
+  // IDs and include or exclude instances of those events.
   const feeds = (feedIds ?? []).filter((id) => /^[a-z0-9]+$/i.test(id));
-  if (feeds.length === 0) return instances;
-  const allowed = new Set<string>();
-  for (const feedId of feeds) {
-    for (const eventId of await fetchFeedEventIds(feedId)) allowed.add(eventId);
+  const excluded = (excludeFeedIds ?? []).filter((id) => /^[a-z0-9]+$/i.test(id));
+  if (feeds.length > 0) {
+    const allowed = new Set<string>();
+    for (const feedId of feeds) {
+      for (const eventId of await fetchFeedEventIds(feedId)) allowed.add(eventId);
+    }
+    return instances.filter((instance) => allowed.has(instance.event_id));
   }
-  return instances.filter((instance) => allowed.has(instance.event_id));
+  if (excluded.length > 0) {
+    const blocked = new Set<string>();
+    for (const feedId of excluded) {
+      for (const eventId of await fetchFeedEventIds(feedId)) blocked.add(eventId);
+    }
+    return instances.filter((instance) => !blocked.has(instance.event_id));
+  }
+  return instances;
 }

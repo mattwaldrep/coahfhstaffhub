@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ChevronDown, ChevronLeft, ChevronRight, ExternalLink, MapPin, RefreshCw, X } from "lucide-react";
+import { Bookmark, ChevronDown, ChevronLeft, ChevronRight, ExternalLink, MapPin, RefreshCw, RotateCcw, X } from "lucide-react";
+import { toast } from "sonner";
 import { getPcoCalendar, type PcoCalendarInstance } from "@/lib/pco-calendar.functions";
 import { PcoEventCollaboration } from '@/components/calendar/PcoEventCollaboration';
 
@@ -41,11 +42,23 @@ function PcoCalendarPage() {
   const routeSearch = Route.useSearch();
   const fetchCal = useServerFn(getPcoCalendar);
   const [anchor, setAnchor] = useState(() => startOfMonth(routeSearch.month ? parseISO(`${routeSearch.month}-01`) : new Date()));
-  const [span, setSpan] = useState(1);
+  const prefsKey = user?.id ? `pco-calendar:prefs:${user.id}` : null;
+  const loadedPrefs = (() => {
+    if (typeof window === "undefined" || !prefsKey) return null;
+    try {
+      const raw = window.localStorage.getItem(prefsKey);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const [span, setSpan] = useState<number>(loadedPrefs?.span ?? 1);
   const [search, setSearch] = useState("");
-  const [tagFilter, setTagFilter] = useState<Set<string>>(new Set());
+  // Filters are exclusion-based: everything is on by default and clicking a
+  // tag or feed hides it. Empty sets mean "show everything".
+  const [excludedTags, setExcludedTags] = useState<Set<string>>(new Set(loadedPrefs?.excludedTags ?? []));
   const [tagsExpanded, setTagsExpanded] = useState(false);
-  const [feedFilter, setFeedFilter] = useState<Set<string>>(new Set());
+  const [excludedFeeds, setExcludedFeeds] = useState<Set<string>>(new Set(loadedPrefs?.excludedFeeds ?? []));
   const [feedsExpanded, setFeedsExpanded] = useState(false);
   const [feedTypesOpen, setFeedTypesOpen] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState<PcoCalendarInstance | null>(null);
@@ -54,12 +67,12 @@ function PcoCalendarPage() {
   useEffect(() => setToday(new Date()), []);
 
   const rangeEnd = addMonths(anchor, span);
-  const feedKey = [...feedFilter].sort().join(",");
+  const feedKey = [...excludedFeeds].sort().join(",");
   const q = useQuery({
     queryKey: ["pco-calendar", anchor.toISOString(), span, feedKey],
     enabled: !!user,
     staleTime: 5 * 60_000,
-    queryFn: () => fetchCal({ data: { from: anchor.toISOString(), to: rangeEnd.toISOString(), feedIds: feedFilter.size > 0 ? [...feedFilter] : undefined } }),
+    queryFn: () => fetchCal({ data: { from: anchor.toISOString(), to: rangeEnd.toISOString(), excludeFeedIds: excludedFeeds.size > 0 ? [...excludedFeeds] : undefined } }),
   });
 
   const tagGroups = q.data?.tagGroups ?? [];
@@ -96,10 +109,10 @@ function PcoCalendarPage() {
     const s = search.trim().toLowerCase();
     return (q.data?.instances ?? []).filter((e) => {
       if (s && !`${e.name} ${e.location ?? ""}`.toLowerCase().includes(s)) return false;
-      if (tagFilter.size > 0 && !e.tag_ids.some((t) => tagFilter.has(t))) return false;
+      if (excludedTags.size > 0 && e.tag_ids.some((t) => excludedTags.has(t))) return false;
       return true;
     });
-  }, [q.data, search, tagFilter]);
+  }, [q.data, search, excludedTags]);
 
   const byDay = useMemo(() => {
     const groups: { day: Date; items: PcoCalendarInstance[] }[] = [];
@@ -113,18 +126,41 @@ function PcoCalendarPage() {
   }, [filtered]);
 
   const toggleTag = (id: string) =>
-    setTagFilter((prev) => {
+    setExcludedTags((prev) => {
       const n = new Set(prev);
       n.has(id) ? n.delete(id) : n.add(id);
       return n;
     });
 
   const toggleFeed = (id: string) =>
-    setFeedFilter((prev) => {
+    setExcludedFeeds((prev) => {
       const n = new Set(prev);
       n.has(id) ? n.delete(id) : n.add(id);
       return n;
     });
+
+  const saveDefaultView = () => {
+    if (!prefsKey) { toast.error("Sign in to save preferences"); return; }
+    try {
+      window.localStorage.setItem(
+        prefsKey,
+        JSON.stringify({ span, excludedTags: [...excludedTags], excludedFeeds: [...excludedFeeds] }),
+      );
+      toast.success("Saved as your default view");
+    } catch {
+      toast.error("Could not save preferences");
+    }
+  };
+
+  const resetDefaultView = () => {
+    if (prefsKey) {
+      try { window.localStorage.removeItem(prefsKey); } catch { /* ignore */ }
+    }
+    setSpan(1);
+    setExcludedTags(new Set());
+    setExcludedFeeds(new Set());
+    toast.success("Back to showing everything");
+  };
 
   const toggleFeedType = (type: string) =>
     setFeedTypesOpen((prev) => {
@@ -171,6 +207,12 @@ function PcoCalendarPage() {
         <Button variant="ghost" size="icon" aria-label="Refresh" onClick={() => q.refetch()}>
           <RefreshCw className={`w-4 h-4 ${q.isFetching ? "animate-spin" : ""}`} />
         </Button>
+        <Button variant="outline" size="sm" onClick={saveDefaultView}>
+          <Bookmark className="w-3.5 h-3.5 mr-1" /> Save as default
+        </Button>
+        <Button variant="ghost" size="sm" onClick={resetDefaultView}>
+          <RotateCcw className="w-3.5 h-3.5 mr-1" /> Reset
+        </Button>
       </div>
 
       {feeds.length > 0 && (
@@ -185,20 +227,20 @@ function PcoCalendarPage() {
               <ChevronDown className={`w-4 h-4 transition-transform ${feedsExpanded ? "rotate-0" : "-rotate-90"}`} />
               Feeds
               <span className="text-xs text-muted-foreground font-normal">
-                {feedFilter.size > 0 ? `${feedFilter.size} selected` : "All feeds"}
+                {excludedFeeds.size > 0 ? `${excludedFeeds.size} hidden` : "All on"}
               </span>
             </button>
-            {!feedsExpanded && feedFilter.size > 0 && (
+            {!feedsExpanded && excludedFeeds.size > 0 && (
               <div className="flex flex-wrap gap-1.5">
-                {Array.from(feedFilter).map((id) => {
+                {Array.from(excludedFeeds).map((id) => {
                   const feed = feedById.get(id);
-                  return feed ? <Badge key={id} variant="outline" className="text-[10px]">{feed.name}</Badge> : null;
+                  return feed ? <Badge key={id} variant="outline" className="text-[10px] line-through opacity-60">{feed.name}</Badge> : null;
                 })}
               </div>
             )}
-            {feedFilter.size > 0 && (
-              <Button size="sm" variant="ghost" className="h-7 ml-auto" onClick={() => setFeedFilter(new Set())}>
-                <X className="w-3 h-3 mr-1" /> Clear feeds
+            {excludedFeeds.size > 0 && (
+              <Button size="sm" variant="ghost" className="h-7 ml-auto" onClick={() => setExcludedFeeds(new Set())}>
+                <X className="w-3 h-3 mr-1" /> Show all feeds
               </Button>
             )}
           </div>
@@ -206,7 +248,7 @@ function PcoCalendarPage() {
             <div className="space-y-1.5 mt-3 pt-3 border-t border-border/50">
               {feedsByType.map(([type, typeFeeds]) => {
                 const isOpen = feedTypesOpen.has(type);
-                const selectedCount = typeFeeds.filter((f) => feedFilter.has(f.id)).length;
+                const hiddenCount = typeFeeds.filter((f) => excludedFeeds.has(f.id)).length;
                 return (
                   <div key={type}>
                     <button
@@ -217,15 +259,18 @@ function PcoCalendarPage() {
                     >
                       <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? "rotate-0" : "-rotate-90"}`} />
                       {FEED_TYPE_LABELS[type] ?? type}
-                      {selectedCount > 0 && <span className="text-primary">· {selectedCount} selected</span>}
+                      {hiddenCount > 0 && <span className="text-muted-foreground">· {hiddenCount} hidden</span>}
                     </button>
                     {isOpen && (
                       <div className="flex flex-wrap gap-1.5 pl-5 pb-1">
-                        {typeFeeds.map((f) => (
-                          <Button key={f.id} size="sm" className="h-7" variant={feedFilter.has(f.id) ? "default" : "outline"} onClick={() => toggleFeed(f.id)}>
-                            {f.name}
-                          </Button>
-                        ))}
+                        {typeFeeds.map((f) => {
+                          const off = excludedFeeds.has(f.id);
+                          return (
+                            <Button key={f.id} size="sm" className={`h-7 ${off ? "opacity-60 line-through" : ""}`} variant={off ? "outline" : "default"} onClick={() => toggleFeed(f.id)}>
+                              {f.name}
+                            </Button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -248,20 +293,20 @@ function PcoCalendarPage() {
               <ChevronDown className={`w-4 h-4 transition-transform ${tagsExpanded ? "rotate-0" : "-rotate-90"}`} />
               Tags
               <span className="text-xs text-muted-foreground font-normal">
-                {tagFilter.size > 0 ? `${tagFilter.size} selected` : "All tags"}
+                {excludedTags.size > 0 ? `${excludedTags.size} hidden` : "All on"}
               </span>
             </button>
-            {!tagsExpanded && tagFilter.size > 0 && (
+            {!tagsExpanded && excludedTags.size > 0 && (
               <div className="flex flex-wrap gap-1.5">
-                {Array.from(tagFilter).map((id) => {
+                {Array.from(excludedTags).map((id) => {
                   const tag = tagById.get(id);
-                  return tag ? <Badge key={id} variant="outline" className="text-[10px]">{tag.name}</Badge> : null;
+                  return tag ? <Badge key={id} variant="outline" className="text-[10px] line-through opacity-60">{tag.name}</Badge> : null;
                 })}
               </div>
             )}
-            {tagFilter.size > 0 && (
-              <Button size="sm" variant="ghost" className="h-7 ml-auto" onClick={() => setTagFilter(new Set())}>
-                <X className="w-3 h-3 mr-1" /> Clear tags
+            {excludedTags.size > 0 && (
+              <Button size="sm" variant="ghost" className="h-7 ml-auto" onClick={() => setExcludedTags(new Set())}>
+                <X className="w-3 h-3 mr-1" /> Show all tags
               </Button>
             )}
           </div>
@@ -270,11 +315,14 @@ function PcoCalendarPage() {
               {tagGroups.filter((g) => g.tags.length > 0).map((g) => (
                 <div key={g.id} className="flex flex-wrap items-center gap-1.5">
                   <span className="text-xs font-medium text-muted-foreground w-28 shrink-0">{g.name}</span>
-                  {g.tags.map((t) => (
-                    <Button key={t.id} size="sm" className="h-7" variant={tagFilter.has(t.id) ? "default" : "outline"} onClick={() => toggleTag(t.id)}>
-                      {t.name}
-                    </Button>
-                  ))}
+                  {g.tags.map((t) => {
+                    const off = excludedTags.has(t.id);
+                    return (
+                      <Button key={t.id} size="sm" className={`h-7 ${off ? "opacity-60 line-through" : ""}`} variant={off ? "outline" : "default"} onClick={() => toggleTag(t.id)}>
+                        {t.name}
+                      </Button>
+                    );
+                  })}
                 </div>
               ))}
             </div>
