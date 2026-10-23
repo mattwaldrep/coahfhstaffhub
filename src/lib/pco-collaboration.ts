@@ -1,5 +1,9 @@
 export const PCO_STAFF_ROLES = ['core', 'meeting', 'extended', 'calendar_admin', 'serve_leader_admin'];
 export const PCO_EDITOR_ROLES = ['core', 'meeting', 'calendar_admin', 'serve_leader_admin'];
+export function resolvePcoEventOwner(ownerId: string | null, pcoOwnerName: string | null, people: { id: string; full_name: string | null }[]) {
+  if (ownerId) return people.find(person => person.id === ownerId)?.full_name || 'Staff member';
+  return pcoOwnerName || null;
+}
 export function canEditPcoChecklist(roles: string[]) {
   return roles.some(role => PCO_EDITOR_ROLES.includes(role));
 }
