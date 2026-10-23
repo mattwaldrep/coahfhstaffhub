@@ -12,3 +12,4 @@
 - [x] Verify the new PCO Ministry and Serve Teams tags appear as beta calendar filters.
 - [x] PCO Calendar phase 3: occurrence-linked checklists, templates, comments, assignments, due dates, and Google Tasks push; signed-in test confirmed saving, completion, comments, automatic Google push status, and cleanup. Six permission/date tests passed; app validation passed.
 - [ ] PCO Calendar phase 4: retire planning cycles + registrations import, make PCO default (after staff sign-off).
+- [x] PCO beta filters inverted to exclusion-based (all on by default, click to hide) with per-user saved default view; verified signed-in (hide feed/tag, persist after reload, reset).
