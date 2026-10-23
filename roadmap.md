@@ -1,5 +1,5 @@
 # Tasks
-- [ ] Allow beta event owner reassignment independently of the PCO owner; verify saved owner precedence and restoration.
+- [x] Allow beta event owner reassignment independently of the PCO owner; 11 tests passed and signed-in save/reload verified, then original ownership restored.
 - [x] Correct individual PCO Calendar tag loading; verified six standalone tags appear and selection/clearing works while signed in. Seven tests passed; build OK.
 - [x] Apply the flagged dependency security update; patched DOMPurify installed and finding cleared.
 - [x] Rename Sunday section and remove its core value slot.
