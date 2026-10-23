@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ChevronDown, ChevronLeft, ChevronRight, ExternalLink, MapPin, RefreshCw, X } from "lucide-react";
+import { Bookmark, ChevronDown, ChevronLeft, ChevronRight, ExternalLink, MapPin, RefreshCw, RotateCcw, X } from "lucide-react";
+import { toast } from "sonner";
 import { getPcoCalendar, type PcoCalendarInstance } from "@/lib/pco-calendar.functions";
 import { PcoEventCollaboration } from '@/components/calendar/PcoEventCollaboration';
 
@@ -41,11 +42,23 @@ function PcoCalendarPage() {
   const routeSearch = Route.useSearch();
   const fetchCal = useServerFn(getPcoCalendar);
   const [anchor, setAnchor] = useState(() => startOfMonth(routeSearch.month ? parseISO(`${routeSearch.month}-01`) : new Date()));
-  const [span, setSpan] = useState(1);
+  const prefsKey = user?.id ? `pco-calendar:prefs:${user.id}` : null;
+  const loadedPrefs = (() => {
+    if (typeof window === "undefined" || !prefsKey) return null;
+    try {
+      const raw = window.localStorage.getItem(prefsKey);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const [span, setSpan] = useState<number>(loadedPrefs?.span ?? 1);
   const [search, setSearch] = useState("");
-  const [tagFilter, setTagFilter] = useState<Set<string>>(new Set());
+  // Filters are exclusion-based: everything is on by default and clicking a
+  // tag or feed hides it. Empty sets mean "show everything".
+  const [excludedTags, setExcludedTags] = useState<Set<string>>(new Set(loadedPrefs?.excludedTags ?? []));
   const [tagsExpanded, setTagsExpanded] = useState(false);
-  const [feedFilter, setFeedFilter] = useState<Set<string>>(new Set());
+  const [excludedFeeds, setExcludedFeeds] = useState<Set<string>>(new Set(loadedPrefs?.excludedFeeds ?? []));
   const [feedsExpanded, setFeedsExpanded] = useState(false);
   const [feedTypesOpen, setFeedTypesOpen] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState<PcoCalendarInstance | null>(null);
