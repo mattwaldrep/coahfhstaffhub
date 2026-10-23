@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchTagGroups, fetchRoomCatalog } from "./pco-calendar.server";
+import { fetchEventInstances, fetchFeeds, fetchTagGroups, fetchRoomCatalog } from "./pco-calendar.server";
 
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
