@@ -124,7 +124,7 @@ export const changePcoEventCollaboration = createServerFn({ method: 'POST' })
         const { data: ownerRoles, error } = await db.from('user_roles').select('role').eq('user_id', data.ownerId);
         if (error || !(ownerRoles ?? []).some(row => PCO_STAFF_ROLES.includes(row.role))) throw new Error('Choose a staff owner');
       }
-      const patch: Record<string, string | null> = {};
+      const patch: { owner_id?: string | null; location_note?: string | null; rooms_note?: string | null } = {};
       if (data.ownerId !== undefined) patch.owner_id = data.ownerId;
       if (data.locationNote !== undefined) patch.location_note = data.locationNote || null;
       if (data.roomsNote !== undefined) patch.rooms_note = data.roomsNote || null;
