@@ -57,6 +57,13 @@
       "when": 1792764345232,
       "tag": "0007_pco_calendar_collaboration",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792766100283,
+      "tag": "0008_pco_workspace_channels_and_details",
+      "breakpoints": true
     }
   ]
 }
