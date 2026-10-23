@@ -26,10 +26,13 @@ export const getPcoEventCollaboration = createServerFn({ method: 'POST' })
     const { db, roles } = await access(context);
     const { data: workspace, error } = await db.from('pco_calendar_workspaces').select('*').eq('instance_id', data.instanceId).maybeSingle();
     if (error) throw new Error('Unable to load event collaboration');
+    const { data: staffRoles, error: staffError } = await db.from('user_roles').select('user_id').in('role', PCO_STAFF_ROLES as any);
+    if (staffError) throw new Error('Unable to load staff assignees');
+    const staffIds = [...new Set((staffRoles ?? []).map(row => row.user_id))];
     const [checklist, comments, people, templates, templateItems, connection] = await Promise.all([
       workspace ? db.from('pco_calendar_checklist').select('id,label,action_item_id,created_at').eq('workspace_id', workspace.id).order('created_at') : Promise.resolve({ data: [], error: null }),
       workspace ? db.from('pco_calendar_comments').select('id,author_id,body,created_at').eq('workspace_id', workspace.id).order('created_at') : Promise.resolve({ data: [], error: null }),
-      db.from('profiles').select('id,full_name').order('full_name'),
+      db.from('profiles').select('id,full_name').in('id', staffIds).order('full_name'),
       db.from('checklist_templates').select('id,name').order('name'),
       db.from('checklist_template_items').select('id,template_id,label,position').order('position'),
       db.from('user_integrations').select('auto_push').eq('user_id', context.userId).eq('provider', 'google_tasks').maybeSingle(),
