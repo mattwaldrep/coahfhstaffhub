@@ -248,7 +248,7 @@ function PcoCalendarPage() {
             <div className="space-y-1.5 mt-3 pt-3 border-t border-border/50">
               {feedsByType.map(([type, typeFeeds]) => {
                 const isOpen = feedTypesOpen.has(type);
-                const selectedCount = typeFeeds.filter((f) => feedFilter.has(f.id)).length;
+                const hiddenCount = typeFeeds.filter((f) => excludedFeeds.has(f.id)).length;
                 return (
                   <div key={type}>
                     <button
@@ -259,15 +259,18 @@ function PcoCalendarPage() {
                     >
                       <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? "rotate-0" : "-rotate-90"}`} />
                       {FEED_TYPE_LABELS[type] ?? type}
-                      {selectedCount > 0 && <span className="text-primary">· {selectedCount} selected</span>}
+                      {hiddenCount > 0 && <span className="text-muted-foreground">· {hiddenCount} hidden</span>}
                     </button>
                     {isOpen && (
                       <div className="flex flex-wrap gap-1.5 pl-5 pb-1">
-                        {typeFeeds.map((f) => (
-                          <Button key={f.id} size="sm" className="h-7" variant={feedFilter.has(f.id) ? "default" : "outline"} onClick={() => toggleFeed(f.id)}>
-                            {f.name}
-                          </Button>
-                        ))}
+                        {typeFeeds.map((f) => {
+                          const off = excludedFeeds.has(f.id);
+                          return (
+                            <Button key={f.id} size="sm" className={`h-7 ${off ? "opacity-60 line-through" : ""}`} variant={off ? "outline" : "default"} onClick={() => toggleFeed(f.id)}>
+                              {f.name}
+                            </Button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
