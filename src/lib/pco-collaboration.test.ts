@@ -14,4 +14,11 @@ describe('PCO task occurrence identity', () => {
   it('links the exact occurrence rather than a recurring series', () => {
     expect(pcoTaskFields({ name: 'Team', starts_at: '2026-10-23T12:00:00Z', instance_id: '456' }, 'Prepare').notes).toContain('instance=456&month=2026-10');
   });
+});import { channelTaskLabel } from './event-channels';
+import { isCommsLabel } from './event-readiness';
+describe('PCO beta channel tasks', () => {
+  it('counts every promotion and comms channel task toward comms readiness', () => {
+    for (const key of ['pco', 'social_ads', 'direct_email', 'text_message']) expect(isCommsLabel(channelTaskLabel(key))).toBe(true);
+  });
+  it('rejects unknown channels', () => expect(channelTaskLabel('fax')).toBeNull());
 });

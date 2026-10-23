@@ -1,12 +1,14 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/require-auth';
+import { CHANNEL_KEYS, channelTaskLabel } from './event-channels';
 import { canEditPcoChecklist, canPushPcoTask, PCO_STAFF_ROLES, pcoTaskFields } from './pco-collaboration';
 
 const instanceSchema = z.string().regex(/^\d+$/);
 export type PcoCollaborationChange = {
   instanceId: string;
-  operation: 'add' | 'template' | 'update' | 'delete' | 'push' | 'comment' | 'delete-comment';
+  operation: 'add' | 'template' | 'update' | 'delete' | 'push' | 'comment' | 'delete-comment' | 'channel' | 'details';
+  channel?: string; enabled?: boolean; ownerId?: string | null; locationNote?: string | null; roomsNote?: string | null;
   id?: string; label?: string; body?: string; templateId?: string;
   assigneeId?: string | null; dueDate?: string | null; completed?: boolean;
 };
@@ -38,6 +40,14 @@ export const getPcoEventCollaboration = createServerFn({ method: 'POST' })
       db.from('user_integrations').select('auto_push').eq('user_id', context.userId).eq('provider', 'google_tasks').maybeSingle(),
     ]);
     if ([checklist, comments, people, templates, templateItems, connection].some(result => result.error)) throw new Error('Unable to load event collaboration');
+    let details: { owner_name: string | null; rooms: string[]; resources: string[] } | null = null;
+    try {
+      const pco = await import('@/server/pco-calendar.server');
+      const eventId = workspace?.event_id || (await pco.fetchCalendarInstance(data.instanceId)).event_id;
+      if (eventId) details = await pco.fetchEventDetails(data.instanceId, eventId);
+    } catch (err) {
+      console.error('PCO event details failed', err instanceof Error ? err.message : err);
+    }
     const ids = (checklist.data ?? []).map(row => row.action_item_id);
     const tasks = ids.length ? await db.from('action_items').select('id,title,assignee_id,due_date,completed,google_task_id,google_task_pushed_at').in('id', ids) : { data: [], error: null };
     if (tasks.error) throw new Error('Unable to load event tasks');
@@ -46,6 +56,8 @@ export const getPcoEventCollaboration = createServerFn({ method: 'POST' })
       comments: comments.data ?? [], people: people.data ?? [],
       templates: (templates.data ?? []).map(template => ({ ...template, items: (templateItems.data ?? []).filter(item => item.template_id === template.id) })),
       canEdit: canEditPcoChecklist(roles), googleConnected: !!connection.data,
+      hub: { channels: (workspace?.channels ?? []) as string[], owner_id: workspace?.owner_id ?? null, location_note: workspace?.location_note ?? null, rooms_note: workspace?.rooms_note ?? null },
+      pco: details,
     };
   });
 
@@ -84,7 +96,10 @@ export const changePcoEventCollaboration = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: PcoCollaborationChange) => z.object({
     instanceId: instanceSchema,
-    operation: z.enum(['add', 'template', 'update', 'delete', 'push', 'comment', 'delete-comment']),
+    operation: z.enum(['add', 'template', 'update', 'delete', 'push', 'comment', 'delete-comment', 'channel', 'details']),
+    channel: z.string().refine(key => CHANNEL_KEYS.includes(key)).optional(), enabled: z.boolean().optional(),
+    ownerId: z.string().uuid().nullable().optional(),
+    locationNote: z.string().trim().max(300).nullable().optional(), roomsNote: z.string().trim().max(300).nullable().optional(),
     id: z.string().uuid().optional(), label: z.string().trim().min(1).max(500).optional(),
     body: z.string().trim().min(1).max(5000).optional(), templateId: z.string().uuid().optional(),
     assigneeId: z.string().uuid().nullable().optional(), dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
@@ -93,16 +108,53 @@ export const changePcoEventCollaboration = createServerFn({ method: 'POST' })
   .handler(async ({ data, context }) => {
     const { db, roles } = await access(context);
     const isEditor = canEditPcoChecklist(roles);
-    if (['add', 'template', 'delete'].includes(data.operation) && !isEditor) throw new Error('Calendar editing access required');
+    if (['add', 'template', 'delete', 'channel', 'details'].includes(data.operation) && !isEditor) throw new Error('Calendar editing access required');
     let { data: workspace, error: workspaceError } = await db.from('pco_calendar_workspaces').select('*').eq('instance_id', data.instanceId).maybeSingle();
     if (workspaceError) throw new Error('Unable to load event');
     if (!workspace) {
-      if (!['add', 'template', 'comment'].includes(data.operation)) throw new Error('Event collaboration not found');
+      if (!['add', 'template', 'comment', 'channel', 'details'].includes(data.operation)) throw new Error('Event collaboration not found');
       const { fetchCalendarInstance } = await import('@/server/pco-calendar.server');
       const event = await fetchCalendarInstance(data.instanceId);
       const result = await db.from('pco_calendar_workspaces').upsert({ instance_id: event.id, event_id: event.event_id, name: event.name, starts_at: event.starts_at }, { onConflict: 'instance_id' }).select('*').single();
       if (result.error || !result.data) throw new Error('Unable to initialize event collaboration');
       workspace = result.data;
+    }
+    if (data.operation === 'details') {
+      if (data.ownerId) {
+        const { data: ownerRoles, error } = await db.from('user_roles').select('role').eq('user_id', data.ownerId);
+        if (error || !(ownerRoles ?? []).some(row => PCO_STAFF_ROLES.includes(row.role))) throw new Error('Choose a staff owner');
+      }
+      const patch: { owner_id?: string | null; location_note?: string | null; rooms_note?: string | null } = {};
+      if (data.ownerId !== undefined) patch.owner_id = data.ownerId;
+      if (data.locationNote !== undefined) patch.location_note = data.locationNote || null;
+      if (data.roomsNote !== undefined) patch.rooms_note = data.roomsNote || null;
+      const { error } = await db.from('pco_calendar_workspaces').update(patch).eq('id', workspace.id);
+      if (error) throw new Error('Unable to save event details');
+      return { warning: null };
+    }
+    if (data.operation === 'channel') {
+      const label = data.channel ? channelTaskLabel(data.channel) : null;
+      if (!data.channel || !label || data.enabled === undefined) throw new Error('Choose a channel');
+      const current: string[] = workspace.channels ?? [];
+      const next = data.enabled ? [...new Set([...current, data.channel])] : current.filter(key => key !== data.channel);
+      const { error } = await db.from('pco_calendar_workspaces').update({ channels: next }).eq('id', workspace.id);
+      if (error) throw new Error('Unable to save channel');
+      const { data: existing, error: existingError } = await db.from('pco_calendar_checklist').select('id,action_item_id').eq('workspace_id', workspace.id).eq('label', label);
+      if (existingError) throw new Error('Unable to update channel task');
+      if (data.enabled && !(existing ?? []).length) {
+        // Channel tasks start unassigned; staff assign them from the checklist.
+        const fields = pcoTaskFields(workspace, label);
+        const { error: taskError } = await (db as any).rpc('create_pco_checklist_task', { _workspace_id: workspace.id, _label: label, _title: fields.title, _notes: fields.notes, _assignee_id: null, _due_date: null, _created_by: context.userId });
+        if (taskError) throw new Error('Channel saved, but its task could not be created');
+      }
+      if (!data.enabled && (existing ?? []).length) {
+        const ids = (existing ?? []).map(row => row.action_item_id);
+        const { data: tasks } = await db.from('action_items').select('id,completed,google_task_id').in('id', ids);
+        const removable = (tasks ?? []).filter(task => !task.completed && !task.google_task_id).map(task => task.id);
+        if (removable.length) await db.from('action_items').delete().in('id', removable);
+        if (removable.length < ids.length) return { warning: 'Channel removed. Its task was kept because it is completed or already in Google Tasks.' };
+      }
+      return { warning: null };
     }
     if (data.operation === 'comment') {
       if (!data.body) throw new Error('Enter a comment');

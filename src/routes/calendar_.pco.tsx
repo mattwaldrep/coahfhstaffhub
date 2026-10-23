@@ -204,7 +204,7 @@ function PcoCalendarPage() {
                   {!open.all_day && ` · ${format(new Date(open.starts_at), "h:mm a")}${open.ends_at ? ` – ${format(new Date(open.ends_at), "h:mm a")}` : ""}`}
                 </div>
                 {open.recurrence && <div className="text-muted-foreground">{open.recurrence}</div>}
-                {open.location && <div className="flex gap-1.5"><MapPin className="w-4 h-4 shrink-0 mt-0.5" />{open.location}</div>}
+                
                 {open.summary && <p>{open.summary}</p>}
                 {open.description && (
                   <div className="text-muted-foreground whitespace-pre-line">{open.description.replace(/<[^>]+>/g, "")}</div>
@@ -225,7 +225,7 @@ function PcoCalendarPage() {
                   </Button>
                 </div>
               </div>
-              <PcoEventCollaboration key={open.id} instanceId={open.id} />
+              <PcoEventCollaboration key={open.id} instanceId={open.id} pcoLocation={open.location} />
             </>
           )}
         </DialogContent>
