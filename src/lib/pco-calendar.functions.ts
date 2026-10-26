@@ -13,7 +13,7 @@ export const getPcoCalendar = createServerFn({ method: "POST" })
         from: z.string().datetime(),
         to: z.string().datetime(),
         feedIds: z.array(z.string().regex(/^[a-z0-9]+$/i)).max(25).optional(),
-        excludeFeedIds: z.array(z.string().regex(/^[a-z0-9]+$/i)).max(25).optional(),
+        excludeFeedIds: z.array(z.string().regex(/^[a-z0-9]+$/i)).optional(),
       })
       .parse(d),
   )
