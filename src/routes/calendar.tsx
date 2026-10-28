@@ -186,7 +186,7 @@ function CalendarPage() {
             <Download className="w-3.5 h-3.5 mr-1" /> Export
           </Button>
           <Button variant="outline" size="sm" asChild>
-            <Link to="/calendar/archive" search={{ event: undefined }}>
+            <Link to="/calendar/archive" search={{ event: undefined, month: undefined }}>
               <Archive className="w-3.5 h-3.5 mr-1" /> Old calendar archive
             </Link>
           </Button>
