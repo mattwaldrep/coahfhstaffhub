@@ -28,8 +28,8 @@ function AnnualPlanningHub() {
     <AppShell>
       <div className="max-w-4xl mx-auto p-6 space-y-4">
         <p className="text-sm text-muted-foreground">
-          Three annual submissions from every ministry area. Calendar submissions
-          feed the church calendar once approved.
+          Two annual submissions from every ministry area. Events themselves are
+          planned directly in Planning Center.
         </p>
         <div className="grid gap-3 md:grid-cols-1">
           {TILES.map((tile) => {
