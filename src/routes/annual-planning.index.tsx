@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, CardContent } from "@/components/ui/card";
-import { CalendarClock, ClipboardCheck, Wallet, ArrowRight } from "lucide-react";
+import { ClipboardCheck, Wallet, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/annual-planning/")({
   head: () => ({ meta: [{ title: "Annual Planning" }] }),
@@ -9,12 +9,6 @@ export const Route = createFileRoute("/annual-planning/")({
 });
 
 const TILES = [
-  {
-    to: "/calendar/planning",
-    label: "Annual Calendar Submission",
-    desc: "Submit ministry events for the upcoming year. Approved items feed the church calendar.",
-    icon: CalendarClock,
-  },
   {
     to: "/ministry-plans",
     label: "Annual Plan Submission",
