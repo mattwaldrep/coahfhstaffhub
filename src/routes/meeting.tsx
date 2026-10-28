@@ -40,7 +40,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { autoPushIfEnabled } from "@/lib/google-tasks.functions";
 import { SundayOpsSection } from "@/components/meeting/SundayOpsSection";
 import { PcoFormSection } from "@/components/meeting/PcoFormSection";
+import { ConnectCardsSection } from "@/components/meeting/ConnectCardsSection";
 import { listFirstStepSubmissions, listNextStepSubmissions } from "@/lib/pco-forms.functions";
+import { listConnectCardSubmissions } from "@/lib/connect-cards.functions";
 
 
 export const Route = createFileRoute("/meeting")({
@@ -92,6 +94,7 @@ function MeetingPage() {
   const canManageMeeting = hasAnyRole(["core", "meeting"]);
   const fetchFirstStepSubmissions = useServerFn(listFirstStepSubmissions);
   const fetchNextStepSubmissions = useServerFn(listNextStepSubmissions);
+  const fetchConnectCardSubmissions = useServerFn(listConnectCardSubmissions);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [agenda, setAgenda] = useState<AgendaItem[]>([]);
   const [actions, setActions] = useState<ActionItem[]>([]);
@@ -462,6 +465,7 @@ function MeetingPage() {
             actions={actions}
             fetchFirstStepSubmissions={fetchFirstStepSubmissions}
             fetchNextStepSubmissions={fetchNextStepSubmissions}
+            fetchConnectCardSubmissions={fetchConnectCardSubmissions}
             newAgenda={newAgenda}
             setNewAgenda={setNewAgenda}
             addAgenda={addAgenda}
@@ -499,6 +503,7 @@ const DEFAULT_SECTION_ORDER: string[] = [
   "sunday-ops",
   "last-week-events",
   "first-step-cards",
+  "connect-cards",
   "next-step-cards",
   "review-trends",
   "review-tasks",
@@ -563,6 +568,7 @@ type SortableBodyProps = {
   actions: ActionItem[];
   fetchFirstStepSubmissions: (args: { data: { meetingId: string } }) => Promise<import("@/lib/pco-forms.functions").FormSubmissionsResponse>;
   fetchNextStepSubmissions: (args: { data: { meetingId: string } }) => Promise<import("@/lib/pco-forms.functions").FormSubmissionsResponse>;
+  fetchConnectCardSubmissions: (args: { data: { meetingId: string } }) => Promise<import("@/lib/connect-cards.functions").ConnectCardsResponse>;
   newAgenda: string;
   setNewAgenda: (v: string) => void;
   addAgenda: () => void;
@@ -715,6 +721,10 @@ function buildSectionBlocks(p: SortableBodyProps): SectionBlock[] {
           fetcher={fetchFirstStepSubmissions}
         />
       ),
+    },
+    {
+      id: "connect-cards",
+      node: <ConnectCardsSection meetingId={meeting.id} fetcher={p.fetchConnectCardSubmissions} />,
     },
     {
       id: "next-step-cards",
