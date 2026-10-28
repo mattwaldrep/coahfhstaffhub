@@ -568,6 +568,7 @@ type SortableBodyProps = {
   actions: ActionItem[];
   fetchFirstStepSubmissions: (args: { data: { meetingId: string } }) => Promise<import("@/lib/pco-forms.functions").FormSubmissionsResponse>;
   fetchNextStepSubmissions: (args: { data: { meetingId: string } }) => Promise<import("@/lib/pco-forms.functions").FormSubmissionsResponse>;
+  fetchConnectCardSubmissions: (args: { data: { meetingId: string } }) => Promise<import("@/lib/connect-cards.functions").ConnectCardsResponse>;
   newAgenda: string;
   setNewAgenda: (v: string) => void;
   addAgenda: () => void;
