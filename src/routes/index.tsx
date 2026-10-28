@@ -20,19 +20,13 @@ import { TaskSourceButton } from "@/components/tasks/TaskSourceButton";
 import { GoogleTasksCard } from "@/components/dashboard/GoogleTasksCard";
 import { useServerFn } from "@tanstack/react-start";
 import { setActionItemCompleted } from "@/lib/google-tasks.functions";
-import { useSubCals } from "@/lib/use-sub-cals";
+import { getPcoCalendar, type PcoCalendarInstance } from "@/lib/pco-calendar.functions";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-interface CalendarEvent {
-  id: string;
-  title: string;
-  start_at: string;
-  sub_calendar: string;
-  readiness: "green" | "yellow" | "red" | null;
-}
+interface ActionItem {
 interface ActionItem {
   id: string;
   title: string;
