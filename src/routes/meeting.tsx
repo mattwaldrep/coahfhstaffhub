@@ -723,6 +723,10 @@ function buildSectionBlocks(p: SortableBodyProps): SectionBlock[] {
       ),
     },
     {
+      id: "connect-cards",
+      node: <ConnectCardsSection meetingId={meeting.id} fetcher={p.fetchConnectCardSubmissions} />,
+    },
+    {
       id: "next-step-cards",
       node: (
         <PcoFormSection
