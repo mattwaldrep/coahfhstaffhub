@@ -42,6 +42,7 @@ import { fetchWeeksInRange, summarizeWeeks, type WeeklyMetric, type MetricsHeadl
 import { useMetricsSession } from "@/integrations/metrics/use-session";
 import { cn } from "@/lib/utils";
 import { pushSundaySlotsToPco, type PushSlotResult } from "@/lib/pco-services.functions";
+import { getPcoCalendar, type PcoCalendarInstance, type PcoTagGroup } from "@/lib/pco-calendar.functions";
 import { useSubCals } from "@/lib/use-sub-cals";
 
 /* ---------- shared collapsible card ---------- */
@@ -949,6 +950,7 @@ function SlotRow({
   onClear: () => void;
   onSave: (p: { text_label?: string; event_id?: string }) => void;
 }) {
+  const fetchCal = useServerFn(getPcoCalendar);
   const [mode, setMode] = useState<"text" | "event">("text");
   const [textValue, setTextValue] = useState(row?.text_label ?? "");
   const [eventSearch, setEventSearch] = useState("");
