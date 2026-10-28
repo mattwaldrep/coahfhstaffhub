@@ -59,15 +59,11 @@ function Dashboard() {
   const [metricsErr, setMetricsErr] = useState<string | null>(null);
 
   useEffect(() => {
-    const now = new Date().toISOString();
-    const in7 = new Date(Date.now() + 7 * 86400000).toISOString();
-    supabase
-      .from("calendar_events")
-      .select("id,title,start_at,sub_calendar,readiness")
-      .gte("start_at", now)
-      .lte("start_at", in7)
-      .order("start_at", { ascending: true })
-      .then(({ data }) => setEvents(data ?? []));
+    const now = new Date();
+    const in7 = new Date(Date.now() + 7 * 86400000);
+    fetchCal({ data: { from: now.toISOString(), to: in7.toISOString() } })
+      .then((res) => setEvents(res.instances))
+      .catch(() => setEvents([]));
     supabase
       .from("action_items")
       .select("id,title,due_date,completed,assignee_id")
@@ -217,29 +213,26 @@ function Dashboard() {
               <span className="text-xs text-muted-foreground">{events.length} scheduled</span>
             </div>
             {events.length === 0 ? (
-              <EmptyRow message="No upcoming events. Add one from the Calendar." />
+              <EmptyRow message="No upcoming events. Add one in Planning Center." />
             ) : (
               <ul className="divide-y divide-border">
                 {events.map((e) => (
                   <li key={e.id}>
                     <Link
                       to="/calendar"
-                      search={{ event: e.id }}
+                      search={{ instance: e.id, month: undefined }}
                       className="py-3 flex items-center justify-between gap-4 hover:bg-background/40 rounded-md px-2 -mx-2"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <span
-                          className="w-2 h-2 rounded-full shrink-0"
-                          style={{ background: subCalColor(e.sub_calendar) }}
-                        />
-                        <span className="font-medium truncate">{e.title}</span>
-                        <span className="text-xs text-muted-foreground shrink-0">
-                          · {subCalLabel(e.sub_calendar)}
-                        </span>
-                        {e.readiness && <ReadinessDot r={e.readiness} />}
+                        <span className="font-medium truncate">{e.name}</span>
+                        {e.location && (
+                          <span className="text-xs text-muted-foreground shrink-0 truncate">
+                            · {e.location}
+                          </span>
+                        )}
                       </div>
                       <div className="text-sm text-muted-foreground shrink-0">
-                        {format(new Date(e.start_at), "EEE p")}
+                        {e.all_day ? format(new Date(e.starts_at), "EEE") : format(new Date(e.starts_at), "EEE p")}
                       </div>
                     </Link>
                   </li>
