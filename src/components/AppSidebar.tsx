@@ -99,7 +99,6 @@ export function AppSidebar() {
       icon: CalendarClock,
       exact: true,
       children: [
-        { to: "/calendar/planning", label: "Calendar Submission", icon: CalendarClock },
         { to: "/ministry-plans", label: "Plan Submission", icon: ClipboardCheck },
         { to: "/annual-planning/budget", label: "Budget Submission", icon: Wallet },
       ],
