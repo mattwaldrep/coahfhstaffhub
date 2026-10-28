@@ -465,6 +465,7 @@ function MeetingPage() {
             actions={actions}
             fetchFirstStepSubmissions={fetchFirstStepSubmissions}
             fetchNextStepSubmissions={fetchNextStepSubmissions}
+            fetchConnectCardSubmissions={fetchConnectCardSubmissions}
             newAgenda={newAgenda}
             setNewAgenda={setNewAgenda}
             addAgenda={addAgenda}
@@ -502,6 +503,7 @@ const DEFAULT_SECTION_ORDER: string[] = [
   "sunday-ops",
   "last-week-events",
   "first-step-cards",
+  "connect-cards",
   "next-step-cards",
   "review-trends",
   "review-tasks",
