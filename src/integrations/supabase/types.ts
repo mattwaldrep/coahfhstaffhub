@@ -2085,6 +2085,7 @@ export type Database = {
           meeting_id: string
           notes: string | null
           occurrence_date: string
+          pco_instance_id: string | null
           updated_at: string
         }
         Insert: {
@@ -2094,6 +2095,7 @@ export type Database = {
           meeting_id: string
           notes?: string | null
           occurrence_date: string
+          pco_instance_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -2103,6 +2105,7 @@ export type Database = {
           meeting_id?: string
           notes?: string | null
           occurrence_date?: string
+          pco_instance_id?: string | null
           updated_at?: string
         }
         Relationships: []

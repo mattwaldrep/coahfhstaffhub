@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   addDays,
   addMonths,
-  addWeeks,
   endOfMonth,
   endOfWeek,
   format,
@@ -13,7 +12,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Repeat } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,8 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { expandEvents, type Occurrence } from "@/lib/calendar-expand";
-import { getPublicEvents, type PublicEventRow } from "@/lib/public-calendar.functions";
+import { getPublicPcoCalendar, type PublicPcoEvent, type PublicPcoTag } from "@/lib/public-calendar.functions";
 
 export const Route = createFileRoute("/calendar_/public")({
   head: () => ({
@@ -44,38 +42,17 @@ export const Route = createFileRoute("/calendar_/public")({
   component: PublicCalendarPage,
 });
 
-const SUB_CALS = [
-  { value: "general", label: "General", color: "var(--cal-main)" },
-  { value: "coah_lm", label: "COAH:LM", color: "var(--cal-lm)" },
-  { value: "youth", label: "Youth", color: "var(--cal-youth)" },
-  { value: "missions_teams", label: "Missions Teams", color: "var(--cal-missions)" },
-];
-
-type PubOccurrence = Occurrence<PublicEventRow & {
-  // calendar-expand requires these on EventRowLike — already present on PublicEventRow
-}>;
-
 function PublicCalendarPage() {
-  const [view, setView] = useState<"month" | "week" | "list">("month");
+  const [view, setView] = useState<"month" | "list">("month");
   const [cursor, setCursor] = useState(new Date());
-  const [events, setEvents] = useState<PublicEventRow[]>([]);
+  const [events, setEvents] = useState<PublicPcoEvent[]>([]);
+  const [tags, setTags] = useState<PublicPcoTag[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<Record<string, boolean>>({
-    general: true,
-    coah_lm: true,
-    youth: true,
-    missions_teams: true,
-  });
-  const [selected, setSelected] = useState<PubOccurrence | null>(null);
+  const [excludedTags, setExcludedTags] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<PublicPcoEvent | null>(null);
 
   const range = useMemo(() => {
-    if (view === "week") {
-      return {
-        start: startOfWeek(cursor, { weekStartsOn: 0 }),
-        end: endOfWeek(cursor, { weekStartsOn: 0 }),
-      };
-    }
     if (view === "month") {
       return {
         start: startOfWeek(startOfMonth(cursor), { weekStartsOn: 0 }),
@@ -91,7 +68,7 @@ function PublicCalendarPage() {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    getPublicEvents({
+    getPublicPcoCalendar({
       data: {
         rangeStart: range.start.toISOString(),
         rangeEnd: range.end.toISOString(),
@@ -100,6 +77,7 @@ function PublicCalendarPage() {
       .then((res) => {
         if (!active) return;
         setEvents(res.events);
+        setTags(res.tags);
         setLoadError(res.error);
       })
       .catch(() => {
@@ -114,15 +92,17 @@ function PublicCalendarPage() {
     };
   }, [range.start.getTime(), range.end.getTime()]);
 
-  const occurrences = useMemo(
-    () => expandEvents(events, range.start, range.end) as PubOccurrence[],
-    [events, range.start.getTime(), range.end.getTime()],
-  );
+  const tagById = useMemo(() => new Map(tags.map((t) => [t.id, t])), [tags]);
 
-  const visible = occurrences.filter((o) => {
-    const cals = [o.sub_calendar, ...(o.other_listings ?? [])];
-    return cals.some((c) => filters[c]);
-  });
+  // Only offer filters for tags actually present on visible events.
+  const activeTags = useMemo(() => {
+    const ids = new Set(events.flatMap((e) => e.tag_ids));
+    return tags.filter((t) => ids.has(t.id));
+  }, [events, tags]);
+
+  const visible = events.filter(
+    (e) => !(excludedTags.size > 0 && e.tag_ids.some((t) => excludedTags.has(t))),
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -149,21 +129,17 @@ function PublicCalendarPage() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() =>
-                setCursor(view === "week" ? addWeeks(cursor, -1) : addMonths(cursor, -1))
-              }
+              onClick={() => setCursor(addMonths(cursor, -1))}
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <div className="font-display text-lg min-w-[10rem] text-center">
-              {format(cursor, view === "week" ? "MMM d, yyyy" : "MMMM yyyy")}
+              {format(cursor, "MMMM yyyy")}
             </div>
             <Button
               variant="ghost"
               size="icon"
-              onClick={() =>
-                setCursor(view === "week" ? addWeeks(cursor, 1) : addMonths(cursor, 1))
-              }
+              onClick={() => setCursor(addMonths(cursor, 1))}
             >
               <ChevronRight className="w-4 h-4" />
             </Button>
@@ -173,7 +149,7 @@ function PublicCalendarPage() {
           </div>
 
           <div className="flex rounded-full border border-border overflow-hidden">
-            {(["month", "week", "list"] as const).map((v) => (
+            {(["month", "list"] as const).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
@@ -187,25 +163,32 @@ function PublicCalendarPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 mb-4">
-          {SUB_CALS.map((s) => (
-            <button
-              key={s.value}
-              onClick={() => setFilters({ ...filters, [s.value]: !filters[s.value] })}
-              className={`text-xs px-3 py-1.5 rounded-full border transition ${
-                filters[s.value]
-                  ? "bg-surface border-border"
-                  : "bg-transparent border-border/50 text-muted-foreground"
-              }`}
-            >
-              <span
-                className="inline-block w-2 h-2 rounded-full mr-2"
-                style={{ background: s.color }}
-              />
-              {s.label}
-            </button>
-          ))}
-        </div>
+        {activeTags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            {activeTags.map((t) => {
+              const off = excludedTags.has(t.id);
+              return (
+                <button
+                  key={t.id}
+                  onClick={() =>
+                    setExcludedTags((prev) => {
+                      const n = new Set(prev);
+                      n.has(t.id) ? n.delete(t.id) : n.add(t.id);
+                      return n;
+                    })
+                  }
+                  className={`text-xs px-3 py-1.5 rounded-full border transition ${
+                    off
+                      ? "bg-transparent border-border/50 text-muted-foreground line-through"
+                      : "bg-surface border-border"
+                  }`}
+                >
+                  {t.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {loadError && (
           <div className="mb-4 text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg p-3">
@@ -217,16 +200,10 @@ function PublicCalendarPage() {
           <div className="bg-surface border border-border rounded-2xl p-12 text-sm text-muted-foreground text-center">
             Loading events…
           </div>
+        ) : view === "month" ? (
+          <MonthGrid cursor={cursor} events={visible} onPickEvent={setSelected} />
         ) : (
-          <>
-            {view === "month" && (
-              <MonthGrid cursor={cursor} occurrences={visible} onPickEvent={setSelected} />
-            )}
-            {view === "week" && (
-              <WeekStrip cursor={cursor} occurrences={visible} onPickEvent={setSelected} />
-            )}
-            {view === "list" && <ListView occurrences={visible} onPickEvent={setSelected} />}
-          </>
+          <ListView events={visible} tagById={tagById} onPickEvent={setSelected} />
         )}
       </main>
 
@@ -234,35 +211,25 @@ function PublicCalendarPage() {
         © {new Date().getFullYear()} City on a Hill Forest Hills
       </footer>
 
-      <EventDetailsDialog occ={selected} onClose={() => setSelected(null)} />
+      <EventDetailsDialog event={selected} tagById={tagById} onClose={() => setSelected(null)} />
     </div>
   );
 }
 
-function EventChip({ occ }: { occ: PubOccurrence }) {
-  const cal = SUB_CALS.find((s) => s.value === occ.sub_calendar) ?? SUB_CALS[3];
-  return (
-    <div
-      className="text-[10px] truncate px-1.5 py-0.5 rounded hover:opacity-80"
-      style={{
-        background: `color-mix(in oklab, ${cal.color} 22%, transparent)`,
-        color: `color-mix(in oklab, ${cal.color} 90%, white)`,
-      }}
-    >
-      {!occ.all_day && <>{format(occ.occurrence_date, "h:mm")} </>}
-      {occ.title}
-    </div>
-  );
+function timeLabel(e: PublicPcoEvent) {
+  if (e.all_day) return "All day";
+  const start = format(new Date(e.starts_at), "h:mm a");
+  return e.ends_at ? `${start} – ${format(new Date(e.ends_at), "h:mm a")}` : start;
 }
 
 function MonthGrid({
   cursor,
-  occurrences,
+  events,
   onPickEvent,
 }: {
   cursor: Date;
-  occurrences: PubOccurrence[];
-  onPickEvent: (o: PubOccurrence) => void;
+  events: PublicPcoEvent[];
+  onPickEvent: (e: PublicPcoEvent) => void;
 }) {
   const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 0 });
   const end = endOfWeek(endOfMonth(cursor), { weekStartsOn: 0 });
@@ -280,7 +247,7 @@ function MonthGrid({
       </div>
       <div className="grid grid-cols-7 auto-rows-[minmax(6rem,1fr)]">
         {days.map((day) => {
-          const dayEvents = occurrences.filter((o) => isSameDay(o.occurrence_date, day));
+          const dayEvents = events.filter((e) => isSameDay(new Date(e.starts_at), day));
           const dim = !isSameMonth(day, cursor);
           return (
             <div
@@ -301,13 +268,16 @@ function MonthGrid({
                 {format(day, "d")}
               </div>
               <div className="space-y-0.5 overflow-hidden">
-                {dayEvents.slice(0, 3).map((o, i) => (
+                {dayEvents.slice(0, 3).map((e) => (
                   <button
-                    key={`${o.id}-${i}`}
-                    onClick={() => onPickEvent(o)}
+                    key={e.id}
+                    onClick={() => onPickEvent(e)}
                     className="w-full text-left"
                   >
-                    <EventChip occ={o} />
+                    <div className="text-[10px] truncate px-1.5 py-0.5 rounded bg-primary/10 hover:bg-primary/20">
+                      {!e.all_day && <>{format(new Date(e.starts_at), "h:mm")} </>}
+                      {e.name}
+                    </div>
                   </button>
                 ))}
                 {dayEvents.length > 3 && (
@@ -324,71 +294,16 @@ function MonthGrid({
   );
 }
 
-function WeekStrip({
-  cursor,
-  occurrences,
-  onPickEvent,
-}: {
-  cursor: Date;
-  occurrences: PubOccurrence[];
-  onPickEvent: (o: PubOccurrence) => void;
-}) {
-  const start = startOfWeek(cursor, { weekStartsOn: 0 });
-  const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
-      {days.map((day) => {
-        const dayEvents = occurrences.filter((o) => isSameDay(o.occurrence_date, day));
-        return (
-          <div
-            key={day.toISOString()}
-            className="bg-surface border border-border rounded-xl p-3 min-h-[10rem]"
-          >
-            <div className="mb-2">
-              <div className="text-xs text-muted-foreground">{format(day, "EEE")}</div>
-              <div className={`text-lg font-display ${isToday(day) ? "text-primary" : ""}`}>
-                {format(day, "d")}
-              </div>
-            </div>
-            <div className="space-y-1">
-              {dayEvents.map((o, i) => {
-                const cal = SUB_CALS.find((s) => s.value === o.sub_calendar) ?? SUB_CALS[3];
-                return (
-                  <button
-                    key={`${o.id}-${i}`}
-                    onClick={() => onPickEvent(o)}
-                    className="w-full text-left text-xs p-2 rounded-lg hover:opacity-90"
-                    style={{
-                      background: `color-mix(in oklab, ${cal.color} 18%, transparent)`,
-                    }}
-                  >
-                    <div className="font-medium truncate">{o.title}</div>
-                    <div className="text-[10px] text-muted-foreground">
-                      {o.all_day ? "All day" : format(o.occurrence_date, "p")}
-                    </div>
-                  </button>
-                );
-              })}
-              {dayEvents.length === 0 && (
-                <div className="text-[11px] text-muted-foreground/60">—</div>
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 function ListView({
-  occurrences,
+  events,
+  tagById,
   onPickEvent,
 }: {
-  occurrences: PubOccurrence[];
-  onPickEvent: (o: PubOccurrence) => void;
+  events: PublicPcoEvent[];
+  tagById: Map<string, PublicPcoTag>;
+  onPickEvent: (e: PublicPcoEvent) => void;
 }) {
-  if (occurrences.length === 0) {
+  if (events.length === 0) {
     return (
       <div className="bg-surface border border-border rounded-2xl p-8 text-sm text-muted-foreground text-center">
         No events to show.
@@ -397,99 +312,88 @@ function ListView({
   }
   return (
     <div className="bg-surface border border-border rounded-2xl divide-y divide-border">
-      {occurrences.map((o, i) => {
-        const cal = SUB_CALS.find((s) => s.value === o.sub_calendar) ?? SUB_CALS[3];
-        return (
-          <button
-            key={`${o.id}-${i}`}
-            onClick={() => onPickEvent(o)}
-            className="w-full p-4 flex items-center gap-4 text-left hover:bg-background/40 transition"
-          >
-            <div className="w-1 self-stretch rounded-full" style={{ background: cal.color }} />
-            <div className="flex-1 min-w-0">
-              <div className="font-medium flex items-center gap-2 flex-wrap">
-                {o.title}
-                {o.rrule && <Repeat className="w-3 h-3 text-muted-foreground" />}
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5">
-                {cal.label}
-                {o.category && <> · {o.category}</>}
-                {o.leader_name && <> · Led by {o.leader_name}</>}
-                {o.location && <> · {o.location}</>}
-              </div>
+      {events.map((e) => (
+        <button
+          key={e.id}
+          onClick={() => onPickEvent(e)}
+          className="w-full p-4 flex items-center gap-4 text-left hover:bg-background/40 transition"
+        >
+          <div className="flex-1 min-w-0">
+            <div className="font-medium">{e.name}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              {e.tag_ids.map((id) => tagById.get(id)?.name).filter(Boolean).join(" · ")}
+              {e.location && <>{e.tag_ids.length > 0 ? " · " : ""}{e.location}</>}
             </div>
-            <div className="text-sm text-muted-foreground shrink-0 text-right">
-              <div>{format(o.occurrence_date, "EEE, MMM d")}</div>
-              <div className="text-xs">
-                {o.all_day ? "All day" : format(o.occurrence_date, "p")}
-              </div>
-            </div>
-          </button>
-        );
-      })}
+          </div>
+          <div className="text-sm text-muted-foreground shrink-0 text-right">
+            <div>{format(new Date(e.starts_at), "EEE, MMM d")}</div>
+            <div className="text-xs">{timeLabel(e)}</div>
+          </div>
+        </button>
+      ))}
     </div>
   );
 }
 
 function EventDetailsDialog({
-  occ,
+  event,
+  tagById,
   onClose,
 }: {
-  occ: PubOccurrence | null;
+  event: PublicPcoEvent | null;
+  tagById: Map<string, PublicPcoTag>;
   onClose: () => void;
 }) {
-  const cal = occ ? SUB_CALS.find((s) => s.value === occ.sub_calendar) ?? SUB_CALS[3] : null;
   return (
-    <Dialog open={!!occ} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={!!event} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
-        {occ && cal && (
+        {event && (
           <>
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <span
-                  className="inline-block w-2.5 h-2.5 rounded-full"
-                  style={{ background: cal.color }}
-                />
-                {occ.title}
-              </DialogTitle>
+              <DialogTitle>{event.name}</DialogTitle>
             </DialogHeader>
             <div className="space-y-3 text-sm">
               <div>
                 <div className="text-xs text-muted-foreground">When</div>
                 <div>
-                  {format(occ.occurrence_date, "EEEE, MMMM d, yyyy")}
-                  {!occ.all_day && <> · {format(occ.occurrence_date, "p")}</>}
-                  {occ.all_day && <> · All day</>}
+                  {format(new Date(event.starts_at), "EEEE, MMMM d, yyyy")} · {timeLabel(event)}
                 </div>
               </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Calendar</div>
-                <div>{cal.label}</div>
-              </div>
-              {occ.category && (
+              {event.tag_ids.length > 0 && (
                 <div>
-                  <div className="text-xs text-muted-foreground">Category</div>
-                  <div>{occ.category}</div>
+                  <div className="text-xs text-muted-foreground">Tags</div>
+                  <div>{event.tag_ids.map((id) => tagById.get(id)?.name).filter(Boolean).join(", ")}</div>
                 </div>
               )}
-              {occ.leader_name && (
-                <div>
-                  <div className="text-xs text-muted-foreground">Led by</div>
-                  <div>{occ.leader_name}</div>
-                </div>
-              )}
-              {occ.location && (
+              {event.location && (
                 <div>
                   <div className="text-xs text-muted-foreground">Location</div>
-                  <div>{occ.location}</div>
+                  <div>{event.location}</div>
                 </div>
               )}
-              {occ.description && (
+              {event.summary && <p>{event.summary}</p>}
+              {event.description && (
                 <div>
                   <div className="text-xs text-muted-foreground">Details</div>
-                  <div className="whitespace-pre-wrap">{occ.description}</div>
+                  <div className="whitespace-pre-wrap">{event.description}</div>
                 </div>
               )}
+              <div className="flex flex-wrap gap-2 pt-1">
+                {event.registration_url && (
+                  <Button size="sm" variant="outline" asChild>
+                    <a href={event.registration_url} target="_blank" rel="noreferrer">
+                      Register <ExternalLink className="w-3 h-3 ml-1" />
+                    </a>
+                  </Button>
+                )}
+                {event.church_center_url && (
+                  <Button size="sm" variant="outline" asChild>
+                    <a href={event.church_center_url} target="_blank" rel="noreferrer">
+                      Church Center <ExternalLink className="w-3 h-3 ml-1" />
+                    </a>
+                  </Button>
+                )}
+              </div>
             </div>
           </>
         )}

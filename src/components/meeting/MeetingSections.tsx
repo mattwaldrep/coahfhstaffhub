@@ -42,6 +42,7 @@ import { fetchWeeksInRange, summarizeWeeks, type WeeklyMetric, type MetricsHeadl
 import { useMetricsSession } from "@/integrations/metrics/use-session";
 import { cn } from "@/lib/utils";
 import { pushSundaySlotsToPco, type PushSlotResult } from "@/lib/pco-services.functions";
+import { getPcoCalendar, type PcoCalendarInstance, type PcoTagGroup } from "@/lib/pco-calendar.functions";
 import { useSubCals } from "@/lib/use-sub-cals";
 
 /* ---------- shared collapsible card ---------- */
@@ -527,11 +528,6 @@ function avg(nums: (number | null)[]): number | null {
 
 /* ---------- 5. & 11. Events sections ---------- */
 
-function ReadinessDot({ r }: { r: "green" | "yellow" | "red" }) {
-  const color = r === "green" ? "bg-success" : r === "yellow" ? "bg-warning" : "bg-destructive";
-  return <span className={`inline-block w-1.5 h-1.5 rounded-full ${color}`} aria-label={`Readiness ${r}`} />;
-}
-
 function EventList({
   meetingId,
   rangeStart,
@@ -547,8 +543,9 @@ function EventList({
   showCategoryFilter?: boolean;
   filterStorageKey?: string;
 }) {
-  type EventRow = EventRowLike & { readiness?: "green" | "yellow" | "red" | null };
-  const [events, setEvents] = useState<EventRow[]>([]);
+  const fetchCal = useServerFn(getPcoCalendar);
+  const [events, setEvents] = useState<PcoCalendarInstance[]>([]);
+  const [tagGroups, setTagGroups] = useState<PcoTagGroup[]>([]);
   const [eventNotes, setEventNotes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [excluded, setExcluded] = useState<Set<string>>(() => {
@@ -568,56 +565,46 @@ function EventList({
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("calendar_events")
-        .select("id,title,start_at,end_at,sub_calendar,leader_name,category,all_day,rrule,excluded_dates,readiness")
-        .or(
-          `and(start_at.gte.${rangeStart.toISOString()},start_at.lte.${rangeEnd.toISOString()}),rrule.not.is.null`,
-        );
-      setEvents((data ?? []) as EventRow[]);
+      try {
+        const res = await fetchCal({
+          data: { from: rangeStart.toISOString(), to: rangeEnd.toISOString() },
+        });
+        setEvents(res.instances);
+        setTagGroups(res.tagGroups);
+      } catch {
+        setEvents([]);
+      }
 
       const { data: notes } = await supabase
         .from("meeting_event_notes")
-        .select("event_id,occurrence_date,notes")
+        .select("event_id,pco_instance_id,occurrence_date,notes")
         .eq("meeting_id", meetingId);
       const map: Record<string, string> = {};
       (notes ?? []).forEach((n: any) => {
-        map[`${n.event_id}__${n.occurrence_date}`] = n.notes ?? "";
+        map[`${n.pco_instance_id ?? n.event_id}__${n.occurrence_date}`] = n.notes ?? "";
       });
       setEventNotes(map);
       setLoading(false);
     })();
   }, [meetingId, rangeStart.getTime(), rangeEnd.getTime()]);
 
-  const occurrences = useMemo(
-    () => expandEvents(events, rangeStart, rangeEnd),
-    [events, rangeStart.getTime(), rangeEnd.getTime()],
-  );
+  const tagById = useMemo(() => {
+    const m = new Map<string, { name: string; group: string }>();
+    for (const g of tagGroups) for (const t of g.tags) m.set(t.id, { name: t.name, group: g.name });
+    return m;
+  }, [tagGroups]);
 
-  const { labelFor } = useSubCals();
-
-  const subCalendars = useMemo(() => {
-    const s = new Set<string>();
-    occurrences.forEach((o) => s.add(o.sub_calendar || "other"));
-    return Array.from(s).sort();
-  }, [occurrences]);
-
-  const categoryList = useMemo(() => {
-    const s = new Set<string>();
-    occurrences.forEach((o) => {
-      if (o.category && o.category.trim()) s.add(o.category);
-    });
-    return Array.from(s).sort();
-  }, [occurrences]);
+  const tagList = useMemo(() => {
+    const ids = new Set(events.flatMap((e) => e.tag_ids));
+    return tagGroups
+      .flatMap((g) => g.tags)
+      .filter((t) => ids.has(t.id))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [events, tagGroups]);
 
   const visible = useMemo(
-    () =>
-      occurrences.filter(
-        (o) =>
-          !excluded.has(`sub:${o.sub_calendar || "other"}`) &&
-          !(o.category && excluded.has(`cat:${o.category}`)),
-      ),
-    [occurrences, excluded],
+    () => events.filter((e) => !(excluded.size > 0 && e.tag_ids.some((t) => excluded.has(`tag:${t}`)))),
+    [events, excluded],
   );
 
   function toggleKey(key: string) {
@@ -629,55 +616,47 @@ function EventList({
     });
   }
 
-  async function saveNote(eventId: string, occDate: Date, val: string) {
+  async function saveNote(instanceId: string, occDate: Date, val: string) {
     const iso = format(occDate, "yyyy-MM-dd");
-    setEventNotes((prev) => ({ ...prev, [`${eventId}__${iso}`]: val }));
+    setEventNotes((prev) => ({ ...prev, [`${instanceId}__${iso}`]: val }));
     await supabase
       .from("meeting_event_notes")
       .upsert(
-        { meeting_id: meetingId, event_id: eventId, occurrence_date: iso, notes: val },
-        { onConflict: "meeting_id,event_id,occurrence_date" },
+        { meeting_id: meetingId, pco_instance_id: instanceId, occurrence_date: iso, notes: val },
+        { onConflict: "meeting_id,pco_instance_id,occurrence_date" },
       );
   }
 
   if (loading) return <div className="text-sm text-muted-foreground py-4">Loading…</div>;
 
-  function FilterRow({ label, items, prefix }: { label: string; items: string[]; prefix: "sub" | "cat" }) {
-    if (items.length === 0) return null;
-    return (
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground mr-1">
-          {label}
-        </span>
-        {items.map((c) => {
-          const key = `${prefix}:${c}`;
-          const on = !excluded.has(key);
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => toggleKey(key)}
-              className={cn(
-                "text-[11px] px-2 py-0.5 rounded-full border transition-colors",
-                on
-                  ? "bg-primary/15 border-primary/30 text-foreground"
-                  : "bg-transparent border-border text-muted-foreground line-through",
-              )}
-            >
-              {prefix === "sub" ? labelFor(c) : c}
-            </button>
-          );
-        })}
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-3">
-      {showCategoryFilter && (
+      {showCategoryFilter && tagList.length > 0 && (
         <div className="space-y-1.5">
-          <FilterRow label="Calendar" items={subCalendars} prefix="sub" />
-          <FilterRow label="Category" items={categoryList} prefix="cat" />
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground mr-1">
+              Tags
+            </span>
+            {tagList.map((t) => {
+              const key = `tag:${t.id}`;
+              const on = !excluded.has(key);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => toggleKey(key)}
+                  className={cn(
+                    "text-[11px] px-2 py-0.5 rounded-full border transition-colors",
+                    on
+                      ? "bg-primary/15 border-primary/30 text-foreground"
+                      : "bg-transparent border-border text-muted-foreground line-through",
+                  )}
+                >
+                  {t.name}
+                </button>
+              );
+            })}
+          </div>
           {excluded.size > 0 && (
             <button
               type="button"
@@ -695,35 +674,41 @@ function EventList({
       ) : (
         <ul className="divide-y divide-border">
           {visible.map((o) => {
-            const iso = format(o.occurrence_date, "yyyy-MM-dd");
+            const start = new Date(o.starts_at);
+            const iso = format(start, "yyyy-MM-dd");
             const key = `${o.id}__${iso}`;
             return (
               <li key={key} className="py-3 first:pt-0 last:pb-0">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <span className="text-xs font-mono text-muted-foreground">
-                    {format(o.occurrence_date, "EEE MMM d")}
-                    {!o.all_day && ` · ${format(o.occurrence_date, "h:mma").toLowerCase()}`}
+                    {format(start, "EEE MMM d")}
+                    {!o.all_day && ` · ${format(start, "h:mma").toLowerCase()}`}
                   </span>
                   <Link
                     to="/calendar"
-                    search={{ event: o.id }}
+                    search={{ instance: o.id, month: undefined }}
                     className="text-sm font-medium hover:underline inline-flex items-center gap-1.5"
                   >
-                    <span>{o.title}</span>
-                    {o.readiness && <ReadinessDot r={o.readiness} />}
+                    <span>{o.name}</span>
                   </Link>
-                  {o.leader_name && (
-                    <span className="text-xs text-muted-foreground">— {o.leader_name}</span>
+                  {o.location && (
+                    <span className="text-xs text-muted-foreground">— {o.location}</span>
                   )}
-                  {o.category && (
-                    <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                      {o.category}
-                    </span>
-                  )}
+                  {o.tag_ids.map((id) => {
+                    const tag = tagById.get(id);
+                    return tag ? (
+                      <span
+                        key={id}
+                        className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground"
+                      >
+                        {tag.name}
+                      </span>
+                    ) : null;
+                  })}
                 </div>
                 <Input
                   value={eventNotes[key] ?? ""}
-                  onChange={(e) => saveNote(o.id, o.occurrence_date, e.target.value)}
+                  onChange={(e) => saveNote(o.id, start, e.target.value)}
                   placeholder="Discussion note…"
                   className="mt-2 h-8 text-xs"
                 />
@@ -965,6 +950,7 @@ function SlotRow({
   onClear: () => void;
   onSave: (p: { text_label?: string; event_id?: string }) => void;
 }) {
+  const fetchCal = useServerFn(getPcoCalendar);
   const [mode, setMode] = useState<"text" | "event">("text");
   const [textValue, setTextValue] = useState(row?.text_label ?? "");
   const [eventSearch, setEventSearch] = useState("");
@@ -984,18 +970,20 @@ function SlotRow({
     if (!editing || mode !== "event") return;
     let mounted = true;
     (async () => {
-      const q = eventSearch.trim();
-      const nowIso = new Date().toISOString();
-      let query = supabase
-        .from("calendar_events")
-        .select("id, title, start_at")
-        .gte("start_at", nowIso)
-        .order("start_at", { ascending: true })
-        .limit(25);
-      if (q) query = query.ilike("title", `%${q}%`);
-      const { data } = await query;
-      if (!mounted) return;
-      setEventResults(((data ?? []) as Array<{ id: string; title: string; start_at: string }>));
+      const from = new Date();
+      const to = addDays(from, 120);
+      try {
+        const res = await fetchCal({ data: { from: from.toISOString(), to: to.toISOString() } });
+        if (!mounted) return;
+        const q = eventSearch.trim().toLowerCase();
+        const matches = res.instances
+          .filter((e) => !q || e.name.toLowerCase().includes(q))
+          .slice(0, 25)
+          .map((e) => ({ id: e.id, title: e.name, start_at: e.starts_at }));
+        setEventResults(matches);
+      } catch {
+        if (mounted) setEventResults([]);
+      }
     })();
     return () => { mounted = false; };
   }, [editing, mode, eventSearch]);
@@ -1007,7 +995,7 @@ function SlotRow({
           <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
           {row ? (
             row.event_id ? (
-              <Link to="/calendar" search={{ event: row.event_id }} className="text-sm hover:underline truncate block">
+              <Link to="/calendar/archive" search={{ event: row.event_id, month: undefined }} className="text-sm hover:underline truncate block">
                 {row.title}
               </Link>
             ) : (
@@ -1044,7 +1032,8 @@ function SlotRow({
       onSave({ text_label: v });
     } else {
       if (!pickedEvent) { toast.error("Pick an event"); return; }
-      onSave({ event_id: pickedEvent.id });
+      // PCO events are stored as a formatted label; the PCO push reads text_label.
+      onSave({ text_label: pickedEvent.title });
     }
   };
 
@@ -1098,7 +1087,7 @@ function SlotRow({
                   <button
                     type="button"
                     className="w-full text-left text-sm px-2.5 py-1.5 hover:bg-muted flex items-center justify-between gap-2"
-                    onClick={() => setPickedEvent({ id: ev.id, title: ev.title })}
+                    onClick={() => setPickedEvent({ id: ev.id, title: `${ev.title} (${format(new Date(ev.start_at), "MM/dd")})` })}
                   >
                     <span className="truncate">{ev.title}</span>
                     <span className="text-[11px] font-mono text-muted-foreground shrink-0">
