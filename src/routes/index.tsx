@@ -27,7 +27,6 @@ export const Route = createFileRoute("/")({
 });
 
 interface ActionItem {
-interface ActionItem {
   id: string;
   title: string;
   due_date: string | null;
@@ -45,10 +44,10 @@ function HomePage() {
 
 function Dashboard() {
   const { user, hasElderAccess } = useAuth();
-  const { labelFor: subCalLabel, colorFor: subCalColor } = useSubCals();
   const metricsSession = useMetricsSession();
   const completeAction = useServerFn(setActionItemCompleted);
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const fetchCal = useServerFn(getPcoCalendar);
+  const [events, setEvents] = useState<PcoCalendarInstance[]>([]);
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [classAlerts, setClassAlerts] = useState<Array<{ id: string; title: string; date: Date; gaps: string[]; leader_name: string | null; leader_not_needed: boolean; childcare_needed: boolean; childcare_arranged: boolean }>>([]);
   const [alertsTick, setAlertsTick] = useState(0);
