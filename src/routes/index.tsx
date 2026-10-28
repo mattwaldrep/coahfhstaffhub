@@ -380,10 +380,6 @@ function Stat({ label, value, hint, accent, badge }: { label: string; value: str
   );
 }
 
-function ReadinessDot({ r }: { r: "green" | "yellow" | "red" }) {
-  const color = r === "green" ? "bg-success" : r === "yellow" ? "bg-warning" : "bg-destructive";
-  return <span className={`inline-block w-1.5 h-1.5 rounded-full ${color} ml-1`} />;
-}
 
 function MetricsStatusCard({ connected, error, weeks }: { connected: boolean; error: string | null; weeks: number }) {
   return (

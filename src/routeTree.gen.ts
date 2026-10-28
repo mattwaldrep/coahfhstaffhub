@@ -34,7 +34,6 @@ import { Route as AnnualPlanningBudgetRouteImport } from './routes/annual-planni
 import { Route as CalendarArchiveRouteImport } from './routes/calendar_.archive'
 import { Route as CalendarClassesRouteImport } from './routes/calendar_.classes'
 import { Route as CalendarPcoRouteImport } from './routes/calendar_.pco'
-import { Route as CalendarPlanningRouteImport } from './routes/calendar_.planning'
 import { Route as CalendarPublicRouteImport } from './routes/calendar_.public'
 import { Route as CalendarSettingsRouteImport } from './routes/calendar_.settings'
 import { Route as CgCoachingIndexRouteImport } from './routes/cg-coaching.index'
@@ -56,8 +55,6 @@ import { Route as OnboardingTemplatesRouteImport } from './routes/onboarding.tem
 import { Route as AnnualPlanningBudgetSubmissionIdRouteImport } from './routes/annual-planning.budget.$submissionId'
 import { Route as AnnualPlanningBudgetAdminRouteImport } from './routes/annual-planning.budget.admin'
 import { Route as ApiGoogleOauthCallbackRouteImport } from './routes/api/google.oauth-callback'
-import { Route as CalendarPlanningSubmissionIdRouteImport } from './routes/calendar_.planning.$submissionId'
-import { Route as CalendarPlanningReviewRouteImport } from './routes/calendar_.planning.review'
 import { Route as ElderMeetingsIndexRouteImport } from './routes/elder.meetings.index'
 import { Route as ElderMeetingsMeetingIdRouteImport } from './routes/elder.meetings.$meetingId'
 import { Route as ElderMotionsIndexRouteImport } from './routes/elder.motions.index'
@@ -67,10 +64,6 @@ import { Route as ApiPublicHooksActionItemsDigestRouteImport } from './routes/ap
 import { Route as ApiPublicHooksAutoFinalizeMeetingRouteImport } from './routes/api/public/hooks.auto-finalize-meeting'
 import { Route as ApiPublicHooksBudgetCycleApr1RouteImport } from './routes/api/public/hooks/budget-cycle-apr1'
 import { Route as ApiPublicHooksBudgetCycleMar1RouteImport } from './routes/api/public/hooks/budget-cycle-mar1'
-import { Route as ApiPublicHooksCalendarCycleJun30RouteImport } from './routes/api/public/hooks/calendar-cycle-jun30'
-import { Route as ApiPublicHooksCalendarCycleMay1RouteImport } from './routes/api/public/hooks/calendar-cycle-may1'
-import { Route as ApiPublicHooksCalendarCycleNudgeRouteImport } from './routes/api/public/hooks/calendar-cycle-nudge'
-import { Route as ApiPublicHooksCalendarCycleSubmissionsDueRouteImport } from './routes/api/public/hooks/calendar-cycle-submissions-due'
 import { Route as ApiPublicHooksElderTouchpointDigestRouteImport } from './routes/api/public/hooks.elder-touchpoint-digest'
 import { Route as ApiPublicHooksElderTouchpointThresholdRouteImport } from './routes/api/public/hooks.elder-touchpoint-threshold'
 import { Route as ApiPublicHooksPlanCycleJun30RouteImport } from './routes/api/public/hooks/plan-cycle-jun30'
@@ -208,11 +201,6 @@ const CalendarPcoRoute = CalendarPcoRouteImport.update({
   path: '/calendar/pco',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CalendarPlanningRoute = CalendarPlanningRouteImport.update({
-  id: '/calendar_/planning',
-  path: '/calendar/planning',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CalendarPublicRoute = CalendarPublicRouteImport.update({
   id: '/calendar_/public',
   path: '/calendar/public',
@@ -320,17 +308,6 @@ const ApiGoogleOauthCallbackRoute = ApiGoogleOauthCallbackRouteImport.update({
   path: '/api/google/oauth-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CalendarPlanningSubmissionIdRoute =
-  CalendarPlanningSubmissionIdRouteImport.update({
-    id: '/$submissionId',
-    path: '/$submissionId',
-    getParentRoute: () => CalendarPlanningRoute,
-  } as any)
-const CalendarPlanningReviewRoute = CalendarPlanningReviewRouteImport.update({
-  id: '/review',
-  path: '/review',
-  getParentRoute: () => CalendarPlanningRoute,
-} as any)
 const ElderMeetingsIndexRoute = ElderMeetingsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -379,30 +356,6 @@ const ApiPublicHooksBudgetCycleMar1Route =
   ApiPublicHooksBudgetCycleMar1RouteImport.update({
     id: '/api/public/hooks/budget-cycle-mar1',
     path: '/api/public/hooks/budget-cycle-mar1',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksCalendarCycleJun30Route =
-  ApiPublicHooksCalendarCycleJun30RouteImport.update({
-    id: '/api/public/hooks/calendar-cycle-jun30',
-    path: '/api/public/hooks/calendar-cycle-jun30',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksCalendarCycleMay1Route =
-  ApiPublicHooksCalendarCycleMay1RouteImport.update({
-    id: '/api/public/hooks/calendar-cycle-may1',
-    path: '/api/public/hooks/calendar-cycle-may1',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksCalendarCycleNudgeRoute =
-  ApiPublicHooksCalendarCycleNudgeRouteImport.update({
-    id: '/api/public/hooks/calendar-cycle-nudge',
-    path: '/api/public/hooks/calendar-cycle-nudge',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksCalendarCycleSubmissionsDueRoute =
-  ApiPublicHooksCalendarCycleSubmissionsDueRouteImport.update({
-    id: '/api/public/hooks/calendar-cycle-submissions-due',
-    path: '/api/public/hooks/calendar-cycle-submissions-due',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksElderTouchpointDigestRoute =
@@ -497,7 +450,6 @@ export interface FileRoutesByFullPath {
   '/calendar/archive': typeof CalendarArchiveRoute
   '/calendar/classes': typeof CalendarClassesRoute
   '/calendar/pco': typeof CalendarPcoRoute
-  '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
   '/calendar/settings': typeof CalendarSettingsRoute
   '/cg-coaching/settings': typeof CgCoachingSettingsRoute
@@ -520,8 +472,6 @@ export interface FileRoutesByFullPath {
   '/annual-planning/budget/$submissionId': typeof AnnualPlanningBudgetSubmissionIdRoute
   '/annual-planning/budget/admin': typeof AnnualPlanningBudgetAdminRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
-  '/calendar/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
-  '/calendar/planning/review': typeof CalendarPlanningReviewRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/motions/$motionId': typeof ElderMotionsMotionIdRoute
   '/ministry-plans/$planId/review': typeof MinistryPlansPlanIdReviewRoute
@@ -531,10 +481,6 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/auto-finalize-meeting': typeof ApiPublicHooksAutoFinalizeMeetingRoute
   '/api/public/hooks/budget-cycle-apr1': typeof ApiPublicHooksBudgetCycleApr1Route
   '/api/public/hooks/budget-cycle-mar1': typeof ApiPublicHooksBudgetCycleMar1Route
-  '/api/public/hooks/calendar-cycle-jun30': typeof ApiPublicHooksCalendarCycleJun30Route
-  '/api/public/hooks/calendar-cycle-may1': typeof ApiPublicHooksCalendarCycleMay1Route
-  '/api/public/hooks/calendar-cycle-nudge': typeof ApiPublicHooksCalendarCycleNudgeRoute
-  '/api/public/hooks/calendar-cycle-submissions-due': typeof ApiPublicHooksCalendarCycleSubmissionsDueRoute
   '/api/public/hooks/elder-touchpoint-digest': typeof ApiPublicHooksElderTouchpointDigestRoute
   '/api/public/hooks/elder-touchpoint-threshold': typeof ApiPublicHooksElderTouchpointThresholdRoute
   '/api/public/hooks/plan-cycle-jun30': typeof ApiPublicHooksPlanCycleJun30Route
@@ -570,7 +516,6 @@ export interface FileRoutesByTo {
   '/calendar/archive': typeof CalendarArchiveRoute
   '/calendar/classes': typeof CalendarClassesRoute
   '/calendar/pco': typeof CalendarPcoRoute
-  '/calendar/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar/public': typeof CalendarPublicRoute
   '/calendar/settings': typeof CalendarSettingsRoute
   '/cg-coaching/settings': typeof CgCoachingSettingsRoute
@@ -591,8 +536,6 @@ export interface FileRoutesByTo {
   '/annual-planning/budget/$submissionId': typeof AnnualPlanningBudgetSubmissionIdRoute
   '/annual-planning/budget/admin': typeof AnnualPlanningBudgetAdminRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
-  '/calendar/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
-  '/calendar/planning/review': typeof CalendarPlanningReviewRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/motions/$motionId': typeof ElderMotionsMotionIdRoute
   '/ministry-plans/$planId/review': typeof MinistryPlansPlanIdReviewRoute
@@ -602,10 +545,6 @@ export interface FileRoutesByTo {
   '/api/public/hooks/auto-finalize-meeting': typeof ApiPublicHooksAutoFinalizeMeetingRoute
   '/api/public/hooks/budget-cycle-apr1': typeof ApiPublicHooksBudgetCycleApr1Route
   '/api/public/hooks/budget-cycle-mar1': typeof ApiPublicHooksBudgetCycleMar1Route
-  '/api/public/hooks/calendar-cycle-jun30': typeof ApiPublicHooksCalendarCycleJun30Route
-  '/api/public/hooks/calendar-cycle-may1': typeof ApiPublicHooksCalendarCycleMay1Route
-  '/api/public/hooks/calendar-cycle-nudge': typeof ApiPublicHooksCalendarCycleNudgeRoute
-  '/api/public/hooks/calendar-cycle-submissions-due': typeof ApiPublicHooksCalendarCycleSubmissionsDueRoute
   '/api/public/hooks/elder-touchpoint-digest': typeof ApiPublicHooksElderTouchpointDigestRoute
   '/api/public/hooks/elder-touchpoint-threshold': typeof ApiPublicHooksElderTouchpointThresholdRoute
   '/api/public/hooks/plan-cycle-jun30': typeof ApiPublicHooksPlanCycleJun30Route
@@ -644,7 +583,6 @@ export interface FileRoutesById {
   '/calendar_/archive': typeof CalendarArchiveRoute
   '/calendar_/classes': typeof CalendarClassesRoute
   '/calendar_/pco': typeof CalendarPcoRoute
-  '/calendar_/planning': typeof CalendarPlanningRouteWithChildren
   '/calendar_/public': typeof CalendarPublicRoute
   '/calendar_/settings': typeof CalendarSettingsRoute
   '/cg-coaching/settings': typeof CgCoachingSettingsRoute
@@ -667,8 +605,6 @@ export interface FileRoutesById {
   '/annual-planning/budget/$submissionId': typeof AnnualPlanningBudgetSubmissionIdRoute
   '/annual-planning/budget/admin': typeof AnnualPlanningBudgetAdminRoute
   '/api/google/oauth-callback': typeof ApiGoogleOauthCallbackRoute
-  '/calendar_/planning/$submissionId': typeof CalendarPlanningSubmissionIdRoute
-  '/calendar_/planning/review': typeof CalendarPlanningReviewRoute
   '/elder/meetings/$meetingId': typeof ElderMeetingsMeetingIdRoute
   '/elder/motions/$motionId': typeof ElderMotionsMotionIdRoute
   '/ministry-plans/$planId/review': typeof MinistryPlansPlanIdReviewRoute
@@ -678,10 +614,6 @@ export interface FileRoutesById {
   '/api/public/hooks/auto-finalize-meeting': typeof ApiPublicHooksAutoFinalizeMeetingRoute
   '/api/public/hooks/budget-cycle-apr1': typeof ApiPublicHooksBudgetCycleApr1Route
   '/api/public/hooks/budget-cycle-mar1': typeof ApiPublicHooksBudgetCycleMar1Route
-  '/api/public/hooks/calendar-cycle-jun30': typeof ApiPublicHooksCalendarCycleJun30Route
-  '/api/public/hooks/calendar-cycle-may1': typeof ApiPublicHooksCalendarCycleMay1Route
-  '/api/public/hooks/calendar-cycle-nudge': typeof ApiPublicHooksCalendarCycleNudgeRoute
-  '/api/public/hooks/calendar-cycle-submissions-due': typeof ApiPublicHooksCalendarCycleSubmissionsDueRoute
   '/api/public/hooks/elder-touchpoint-digest': typeof ApiPublicHooksElderTouchpointDigestRoute
   '/api/public/hooks/elder-touchpoint-threshold': typeof ApiPublicHooksElderTouchpointThresholdRoute
   '/api/public/hooks/plan-cycle-jun30': typeof ApiPublicHooksPlanCycleJun30Route
@@ -721,7 +653,6 @@ export interface FileRouteTypes {
     | '/calendar/archive'
     | '/calendar/classes'
     | '/calendar/pco'
-    | '/calendar/planning'
     | '/calendar/public'
     | '/calendar/settings'
     | '/cg-coaching/settings'
@@ -744,8 +675,6 @@ export interface FileRouteTypes {
     | '/annual-planning/budget/$submissionId'
     | '/annual-planning/budget/admin'
     | '/api/google/oauth-callback'
-    | '/calendar/planning/$submissionId'
-    | '/calendar/planning/review'
     | '/elder/meetings/$meetingId'
     | '/elder/motions/$motionId'
     | '/ministry-plans/$planId/review'
@@ -755,10 +684,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/auto-finalize-meeting'
     | '/api/public/hooks/budget-cycle-apr1'
     | '/api/public/hooks/budget-cycle-mar1'
-    | '/api/public/hooks/calendar-cycle-jun30'
-    | '/api/public/hooks/calendar-cycle-may1'
-    | '/api/public/hooks/calendar-cycle-nudge'
-    | '/api/public/hooks/calendar-cycle-submissions-due'
     | '/api/public/hooks/elder-touchpoint-digest'
     | '/api/public/hooks/elder-touchpoint-threshold'
     | '/api/public/hooks/plan-cycle-jun30'
@@ -794,7 +719,6 @@ export interface FileRouteTypes {
     | '/calendar/archive'
     | '/calendar/classes'
     | '/calendar/pco'
-    | '/calendar/planning'
     | '/calendar/public'
     | '/calendar/settings'
     | '/cg-coaching/settings'
@@ -815,8 +739,6 @@ export interface FileRouteTypes {
     | '/annual-planning/budget/$submissionId'
     | '/annual-planning/budget/admin'
     | '/api/google/oauth-callback'
-    | '/calendar/planning/$submissionId'
-    | '/calendar/planning/review'
     | '/elder/meetings/$meetingId'
     | '/elder/motions/$motionId'
     | '/ministry-plans/$planId/review'
@@ -826,10 +748,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/auto-finalize-meeting'
     | '/api/public/hooks/budget-cycle-apr1'
     | '/api/public/hooks/budget-cycle-mar1'
-    | '/api/public/hooks/calendar-cycle-jun30'
-    | '/api/public/hooks/calendar-cycle-may1'
-    | '/api/public/hooks/calendar-cycle-nudge'
-    | '/api/public/hooks/calendar-cycle-submissions-due'
     | '/api/public/hooks/elder-touchpoint-digest'
     | '/api/public/hooks/elder-touchpoint-threshold'
     | '/api/public/hooks/plan-cycle-jun30'
@@ -867,7 +785,6 @@ export interface FileRouteTypes {
     | '/calendar_/archive'
     | '/calendar_/classes'
     | '/calendar_/pco'
-    | '/calendar_/planning'
     | '/calendar_/public'
     | '/calendar_/settings'
     | '/cg-coaching/settings'
@@ -890,8 +807,6 @@ export interface FileRouteTypes {
     | '/annual-planning/budget/$submissionId'
     | '/annual-planning/budget/admin'
     | '/api/google/oauth-callback'
-    | '/calendar_/planning/$submissionId'
-    | '/calendar_/planning/review'
     | '/elder/meetings/$meetingId'
     | '/elder/motions/$motionId'
     | '/ministry-plans/$planId/review'
@@ -901,10 +816,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/auto-finalize-meeting'
     | '/api/public/hooks/budget-cycle-apr1'
     | '/api/public/hooks/budget-cycle-mar1'
-    | '/api/public/hooks/calendar-cycle-jun30'
-    | '/api/public/hooks/calendar-cycle-may1'
-    | '/api/public/hooks/calendar-cycle-nudge'
-    | '/api/public/hooks/calendar-cycle-submissions-due'
     | '/api/public/hooks/elder-touchpoint-digest'
     | '/api/public/hooks/elder-touchpoint-threshold'
     | '/api/public/hooks/plan-cycle-jun30'
@@ -943,7 +854,6 @@ export interface RootRouteChildren {
   CalendarArchiveRoute: typeof CalendarArchiveRoute
   CalendarClassesRoute: typeof CalendarClassesRoute
   CalendarPcoRoute: typeof CalendarPcoRoute
-  CalendarPlanningRoute: typeof CalendarPlanningRouteWithChildren
   CalendarPublicRoute: typeof CalendarPublicRoute
   CalendarSettingsRoute: typeof CalendarSettingsRoute
   InquiryTokenRoute: typeof InquiryTokenRoute
@@ -960,10 +870,6 @@ export interface RootRouteChildren {
   ApiPublicHooksAutoFinalizeMeetingRoute: typeof ApiPublicHooksAutoFinalizeMeetingRoute
   ApiPublicHooksBudgetCycleApr1Route: typeof ApiPublicHooksBudgetCycleApr1Route
   ApiPublicHooksBudgetCycleMar1Route: typeof ApiPublicHooksBudgetCycleMar1Route
-  ApiPublicHooksCalendarCycleJun30Route: typeof ApiPublicHooksCalendarCycleJun30Route
-  ApiPublicHooksCalendarCycleMay1Route: typeof ApiPublicHooksCalendarCycleMay1Route
-  ApiPublicHooksCalendarCycleNudgeRoute: typeof ApiPublicHooksCalendarCycleNudgeRoute
-  ApiPublicHooksCalendarCycleSubmissionsDueRoute: typeof ApiPublicHooksCalendarCycleSubmissionsDueRoute
   ApiPublicHooksElderTouchpointDigestRoute: typeof ApiPublicHooksElderTouchpointDigestRoute
   ApiPublicHooksElderTouchpointThresholdRoute: typeof ApiPublicHooksElderTouchpointThresholdRoute
   ApiPublicHooksPlanCycleJun30Route: typeof ApiPublicHooksPlanCycleJun30Route
@@ -1154,13 +1060,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CalendarPcoRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/calendar_/planning': {
-      id: '/calendar_/planning'
-      path: '/calendar/planning'
-      fullPath: '/calendar/planning'
-      preLoaderRoute: typeof CalendarPlanningRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/calendar_/public': {
       id: '/calendar_/public'
       path: '/calendar/public'
@@ -1308,20 +1207,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGoogleOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/calendar_/planning/$submissionId': {
-      id: '/calendar_/planning/$submissionId'
-      path: '/$submissionId'
-      fullPath: '/calendar/planning/$submissionId'
-      preLoaderRoute: typeof CalendarPlanningSubmissionIdRouteImport
-      parentRoute: typeof CalendarPlanningRoute
-    }
-    '/calendar_/planning/review': {
-      id: '/calendar_/planning/review'
-      path: '/review'
-      fullPath: '/calendar/planning/review'
-      preLoaderRoute: typeof CalendarPlanningReviewRouteImport
-      parentRoute: typeof CalendarPlanningRoute
-    }
     '/elder/meetings/': {
       id: '/elder/meetings/'
       path: '/'
@@ -1383,34 +1268,6 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/budget-cycle-mar1'
       fullPath: '/api/public/hooks/budget-cycle-mar1'
       preLoaderRoute: typeof ApiPublicHooksBudgetCycleMar1RouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/calendar-cycle-jun30': {
-      id: '/api/public/hooks/calendar-cycle-jun30'
-      path: '/api/public/hooks/calendar-cycle-jun30'
-      fullPath: '/api/public/hooks/calendar-cycle-jun30'
-      preLoaderRoute: typeof ApiPublicHooksCalendarCycleJun30RouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/calendar-cycle-may1': {
-      id: '/api/public/hooks/calendar-cycle-may1'
-      path: '/api/public/hooks/calendar-cycle-may1'
-      fullPath: '/api/public/hooks/calendar-cycle-may1'
-      preLoaderRoute: typeof ApiPublicHooksCalendarCycleMay1RouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/calendar-cycle-nudge': {
-      id: '/api/public/hooks/calendar-cycle-nudge'
-      path: '/api/public/hooks/calendar-cycle-nudge'
-      fullPath: '/api/public/hooks/calendar-cycle-nudge'
-      preLoaderRoute: typeof ApiPublicHooksCalendarCycleNudgeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/calendar-cycle-submissions-due': {
-      id: '/api/public/hooks/calendar-cycle-submissions-due'
-      path: '/api/public/hooks/calendar-cycle-submissions-due'
-      fullPath: '/api/public/hooks/calendar-cycle-submissions-due'
-      preLoaderRoute: typeof ApiPublicHooksCalendarCycleSubmissionsDueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/elder-touchpoint-digest': {
@@ -1568,19 +1425,6 @@ const AnnualPlanningBudgetRouteChildren: AnnualPlanningBudgetRouteChildren = {
 const AnnualPlanningBudgetRouteWithChildren =
   AnnualPlanningBudgetRoute._addFileChildren(AnnualPlanningBudgetRouteChildren)
 
-interface CalendarPlanningRouteChildren {
-  CalendarPlanningSubmissionIdRoute: typeof CalendarPlanningSubmissionIdRoute
-  CalendarPlanningReviewRoute: typeof CalendarPlanningReviewRoute
-}
-
-const CalendarPlanningRouteChildren: CalendarPlanningRouteChildren = {
-  CalendarPlanningSubmissionIdRoute: CalendarPlanningSubmissionIdRoute,
-  CalendarPlanningReviewRoute: CalendarPlanningReviewRoute,
-}
-
-const CalendarPlanningRouteWithChildren =
-  CalendarPlanningRoute._addFileChildren(CalendarPlanningRouteChildren)
-
 interface MinistryPlansPlanIdRouteChildren {
   MinistryPlansPlanIdReviewRoute: typeof MinistryPlansPlanIdReviewRoute
 }
@@ -1617,7 +1461,6 @@ const rootRouteChildren: RootRouteChildren = {
   CalendarArchiveRoute: CalendarArchiveRoute,
   CalendarClassesRoute: CalendarClassesRoute,
   CalendarPcoRoute: CalendarPcoRoute,
-  CalendarPlanningRoute: CalendarPlanningRouteWithChildren,
   CalendarPublicRoute: CalendarPublicRoute,
   CalendarSettingsRoute: CalendarSettingsRoute,
   InquiryTokenRoute: InquiryTokenRoute,
@@ -1635,11 +1478,6 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicHooksAutoFinalizeMeetingRoute,
   ApiPublicHooksBudgetCycleApr1Route: ApiPublicHooksBudgetCycleApr1Route,
   ApiPublicHooksBudgetCycleMar1Route: ApiPublicHooksBudgetCycleMar1Route,
-  ApiPublicHooksCalendarCycleJun30Route: ApiPublicHooksCalendarCycleJun30Route,
-  ApiPublicHooksCalendarCycleMay1Route: ApiPublicHooksCalendarCycleMay1Route,
-  ApiPublicHooksCalendarCycleNudgeRoute: ApiPublicHooksCalendarCycleNudgeRoute,
-  ApiPublicHooksCalendarCycleSubmissionsDueRoute:
-    ApiPublicHooksCalendarCycleSubmissionsDueRoute,
   ApiPublicHooksElderTouchpointDigestRoute:
     ApiPublicHooksElderTouchpointDigestRoute,
   ApiPublicHooksElderTouchpointThresholdRoute:
