@@ -995,7 +995,7 @@ function SlotRow({
           <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
           {row ? (
             row.event_id ? (
-              <Link to="/calendar" search={{ event: row.event_id }} className="text-sm hover:underline truncate block">
+              <Link to="/calendar/archive" search={{ event: row.event_id, month: undefined }} className="text-sm hover:underline truncate block">
                 {row.title}
               </Link>
             ) : (
@@ -1032,7 +1032,8 @@ function SlotRow({
       onSave({ text_label: v });
     } else {
       if (!pickedEvent) { toast.error("Pick an event"); return; }
-      onSave({ event_id: pickedEvent.id });
+      // PCO events are stored as a formatted label; the PCO push reads text_label.
+      onSave({ text_label: pickedEvent.title });
     }
   };
 
@@ -1086,7 +1087,7 @@ function SlotRow({
                   <button
                     type="button"
                     className="w-full text-left text-sm px-2.5 py-1.5 hover:bg-muted flex items-center justify-between gap-2"
-                    onClick={() => setPickedEvent({ id: ev.id, title: ev.title })}
+                    onClick={() => setPickedEvent({ id: ev.id, title: `${ev.title} (${format(new Date(ev.start_at), "MM/dd")})` })}
                   >
                     <span className="truncate">{ev.title}</span>
                     <span className="text-[11px] font-mono text-muted-foreground shrink-0">
