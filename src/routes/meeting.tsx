@@ -40,7 +40,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { autoPushIfEnabled } from "@/lib/google-tasks.functions";
 import { SundayOpsSection } from "@/components/meeting/SundayOpsSection";
 import { PcoFormSection } from "@/components/meeting/PcoFormSection";
+import { ConnectCardsSection } from "@/components/meeting/ConnectCardsSection";
 import { listFirstStepSubmissions, listNextStepSubmissions } from "@/lib/pco-forms.functions";
+import { listConnectCardSubmissions } from "@/lib/connect-cards.functions";
 
 
 export const Route = createFileRoute("/meeting")({
@@ -92,6 +94,7 @@ function MeetingPage() {
   const canManageMeeting = hasAnyRole(["core", "meeting"]);
   const fetchFirstStepSubmissions = useServerFn(listFirstStepSubmissions);
   const fetchNextStepSubmissions = useServerFn(listNextStepSubmissions);
+  const fetchConnectCardSubmissions = useServerFn(listConnectCardSubmissions);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [agenda, setAgenda] = useState<AgendaItem[]>([]);
   const [actions, setActions] = useState<ActionItem[]>([]);
