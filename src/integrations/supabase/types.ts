@@ -2080,7 +2080,7 @@ export type Database = {
       meeting_event_notes: {
         Row: {
           created_at: string
-          event_id: string
+          event_id: string | null
           id: string
           meeting_id: string
           notes: string | null
@@ -2090,7 +2090,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          event_id: string
+          event_id?: string | null
           id?: string
           meeting_id: string
           notes?: string | null
@@ -2100,7 +2100,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          event_id?: string
+          event_id?: string | null
           id?: string
           meeting_id?: string
           notes?: string | null

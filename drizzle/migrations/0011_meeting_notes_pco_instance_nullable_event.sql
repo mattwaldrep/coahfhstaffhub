@@ -1,0 +1,2 @@
+ALTER TABLE public.meeting_event_notes ALTER COLUMN event_id DROP NOT NULL;
+COMMENT ON COLUMN public.meeting_event_notes.event_id IS 'Legacy Hub calendar event id; null for notes on Planning Center events, which use pco_instance_id.';
