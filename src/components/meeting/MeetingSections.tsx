@@ -970,18 +970,20 @@ function SlotRow({
     if (!editing || mode !== "event") return;
     let mounted = true;
     (async () => {
-      const q = eventSearch.trim();
-      const nowIso = new Date().toISOString();
-      let query = supabase
-        .from("calendar_events")
-        .select("id, title, start_at")
-        .gte("start_at", nowIso)
-        .order("start_at", { ascending: true })
-        .limit(25);
-      if (q) query = query.ilike("title", `%${q}%`);
-      const { data } = await query;
-      if (!mounted) return;
-      setEventResults(((data ?? []) as Array<{ id: string; title: string; start_at: string }>));
+      const from = new Date();
+      const to = addDays(from, 120);
+      try {
+        const res = await fetchCal({ data: { from: from.toISOString(), to: to.toISOString() } });
+        if (!mounted) return;
+        const q = eventSearch.trim().toLowerCase();
+        const matches = res.instances
+          .filter((e) => !q || e.name.toLowerCase().includes(q))
+          .slice(0, 25)
+          .map((e) => ({ id: e.id, title: e.name, start_at: e.starts_at }));
+        setEventResults(matches);
+      } catch {
+        if (mounted) setEventResults([]);
+      }
     })();
     return () => { mounted = false; };
   }, [editing, mode, eventSearch]);
