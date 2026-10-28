@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 import {
   Home,
+  Archive,
   CalendarDays,
   CalendarClock,
   ClipboardList,
@@ -86,6 +87,7 @@ export function AppSidebar() {
       icon: CalendarDays,
       exact: true,
       children: [
+        { to: "/calendar/archive", label: "Archive", icon: Archive },
         ...(isCalendarAdmin ? [{ to: "/calendar/settings", label: "Sub-calendars", icon: SettingsIcon }] : []),
         ...(isCore ? [{ to: "/calendar/classes", label: "Classes", icon: GraduationCap }] : []),
         ...(isCore ? [{ to: "/rooms", label: "Rooms", icon: DoorOpen }] : []),
