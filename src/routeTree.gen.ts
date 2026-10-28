@@ -31,6 +31,7 @@ import { Route as TrendsRouteImport } from './routes/trends'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as AnnualPlanningIndexRouteImport } from './routes/annual-planning.index'
 import { Route as AnnualPlanningBudgetRouteImport } from './routes/annual-planning.budget'
+import { Route as CalendarArchiveRouteImport } from './routes/calendar_.archive'
 import { Route as CalendarClassesRouteImport } from './routes/calendar_.classes'
 import { Route as CalendarPcoRouteImport } from './routes/calendar_.pco'
 import { Route as CalendarPlanningRouteImport } from './routes/calendar_.planning'
@@ -190,6 +191,11 @@ const AnnualPlanningIndexRoute = AnnualPlanningIndexRouteImport.update({
 const AnnualPlanningBudgetRoute = AnnualPlanningBudgetRouteImport.update({
   id: '/annual-planning/budget',
   path: '/annual-planning/budget',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarArchiveRoute = CalendarArchiveRouteImport.update({
+  id: '/calendar_/archive',
+  path: '/calendar/archive',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalendarClassesRoute = CalendarClassesRouteImport.update({
@@ -488,6 +494,7 @@ export interface FileRoutesByFullPath {
   '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
   '/annual-planning/budget': typeof AnnualPlanningBudgetRouteWithChildren
+  '/calendar/archive': typeof CalendarArchiveRoute
   '/calendar/classes': typeof CalendarClassesRoute
   '/calendar/pco': typeof CalendarPcoRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
@@ -560,6 +567,7 @@ export interface FileRoutesByTo {
   '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
   '/annual-planning/budget': typeof AnnualPlanningBudgetRouteWithChildren
+  '/calendar/archive': typeof CalendarArchiveRoute
   '/calendar/classes': typeof CalendarClassesRoute
   '/calendar/pco': typeof CalendarPcoRoute
   '/calendar/planning': typeof CalendarPlanningRouteWithChildren
@@ -633,6 +641,7 @@ export interface FileRoutesById {
   '/trends': typeof TrendsRoute
   '/users': typeof UsersRoute
   '/annual-planning/budget': typeof AnnualPlanningBudgetRouteWithChildren
+  '/calendar_/archive': typeof CalendarArchiveRoute
   '/calendar_/classes': typeof CalendarClassesRoute
   '/calendar_/pco': typeof CalendarPcoRoute
   '/calendar_/planning': typeof CalendarPlanningRouteWithChildren
@@ -709,6 +718,7 @@ export interface FileRouteTypes {
     | '/trends'
     | '/users'
     | '/annual-planning/budget'
+    | '/calendar/archive'
     | '/calendar/classes'
     | '/calendar/pco'
     | '/calendar/planning'
@@ -781,6 +791,7 @@ export interface FileRouteTypes {
     | '/trends'
     | '/users'
     | '/annual-planning/budget'
+    | '/calendar/archive'
     | '/calendar/classes'
     | '/calendar/pco'
     | '/calendar/planning'
@@ -853,6 +864,7 @@ export interface FileRouteTypes {
     | '/trends'
     | '/users'
     | '/annual-planning/budget'
+    | '/calendar_/archive'
     | '/calendar_/classes'
     | '/calendar_/pco'
     | '/calendar_/planning'
@@ -928,6 +940,7 @@ export interface RootRouteChildren {
   TrendsRoute: typeof TrendsRoute
   UsersRoute: typeof UsersRoute
   AnnualPlanningBudgetRoute: typeof AnnualPlanningBudgetRouteWithChildren
+  CalendarArchiveRoute: typeof CalendarArchiveRoute
   CalendarClassesRoute: typeof CalendarClassesRoute
   CalendarPcoRoute: typeof CalendarPcoRoute
   CalendarPlanningRoute: typeof CalendarPlanningRouteWithChildren
@@ -1118,6 +1131,13 @@ declare module '@tanstack/react-router' {
       path: '/annual-planning/budget'
       fullPath: '/annual-planning/budget'
       preLoaderRoute: typeof AnnualPlanningBudgetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendar_/archive': {
+      id: '/calendar_/archive'
+      path: '/calendar/archive'
+      fullPath: '/calendar/archive'
+      preLoaderRoute: typeof CalendarArchiveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calendar_/classes': {
@@ -1594,6 +1614,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrendsRoute: TrendsRoute,
   UsersRoute: UsersRoute,
   AnnualPlanningBudgetRoute: AnnualPlanningBudgetRouteWithChildren,
+  CalendarArchiveRoute: CalendarArchiveRoute,
   CalendarClassesRoute: CalendarClassesRoute,
   CalendarPcoRoute: CalendarPcoRoute,
   CalendarPlanningRoute: CalendarPlanningRouteWithChildren,
