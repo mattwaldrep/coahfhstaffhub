@@ -619,12 +619,17 @@ function EventList({
   async function saveNote(instanceId: string, occDate: Date, val: string) {
     const iso = format(occDate, "yyyy-MM-dd");
     setEventNotes((prev) => ({ ...prev, [`${instanceId}__${iso}`]: val }));
-    await supabase
-      .from("meeting_event_notes")
-      .upsert(
-        { meeting_id: meetingId, pco_instance_id: instanceId, occurrence_date: iso, notes: val },
-        { onConflict: "meeting_id,pco_instance_id,occurrence_date" },
-      );
+    try {
+      const { error } = await supabase
+        .from("meeting_event_notes")
+        .upsert(
+          { meeting_id: meetingId, pco_instance_id: instanceId, occurrence_date: iso, notes: val },
+          { onConflict: "meeting_id,pco_instance_id,occurrence_date" },
+        );
+      if (error) throw error;
+    } catch {
+      toast.error("Discussion note couldn't be saved. Please try again.");
+    }
   }
 
   if (loading) return <div className="text-sm text-muted-foreground py-4">Loading…</div>;

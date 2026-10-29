@@ -85,6 +85,13 @@
       "when": 1793189877855,
       "tag": "0011_meeting_notes_pco_instance_nullable_event",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793288721825,
+      "tag": "0012_fix_meeting_event_notes_pco_upsert",
+      "breakpoints": true
     }
   ]
 }
