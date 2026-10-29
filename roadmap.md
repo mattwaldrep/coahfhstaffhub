@@ -1,4 +1,5 @@
 # Tasks
+- [ ] Fix staff meeting event note saving and verify persistence after reload.
 - [x] Add PCO-style Feeds filter to the beta calendar (collapsible, grouped by feed type with sub-arrows); signed-in preview verified Community Groups filtering shows only CG events. Seven server tests passed; build OK.
 - [x] Make the beta calendar tag filter section collapsible; signed-in preview verified collapsed by default, expand/collapse, selected-tag summary, and clear.
 - [x] Add No room needed and Needs childcare to beta event details; 20 tests passed, signed-in save/reopen verified, original settings restored, build OK.

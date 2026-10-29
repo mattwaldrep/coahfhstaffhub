@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX meeting_event_notes_pco_upsert_key ON public.meeting_event_notes (meeting_id, pco_instance_id, occurrence_date);
+COMMENT ON INDEX public.meeting_event_notes_pco_upsert_key IS 'Non-partial unique index for PostgREST upserts by meeting, PCO instance and occurrence. NULL PCO instance IDs remain allowed for legacy event notes.';
