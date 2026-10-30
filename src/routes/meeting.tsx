@@ -4,7 +4,8 @@ import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Plus, Check, Trash2, Loader2, Send, MailCheck, GripVertical, Pencil, X } from "lucide-react";
+import { Mic, MicOff, Plus, Check, Trash2, Loader2, Send, MailCheck, GripVertical, Pencil, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { addDays, format } from "date-fns";
 import { useServerFn } from "@tanstack/react-start";
 import { finalizeMeeting, sendMeetingRecap } from "@/lib/meeting.functions";
 import { cn } from "@/lib/utils";
@@ -107,6 +108,8 @@ function MeetingPage() {
   const [savingNotes, setSavingNotes] = useState(false);
   const notesTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const undo = useUndoableAction();
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [missingWeek, setMissingWeek] = useState<string | null>(null);
 
   useEffect(() => {
     supabase
@@ -119,20 +122,20 @@ function MeetingPage() {
   useEffect(() => {
     if (!user) return;
     let mounted = true;
+    setMeeting(null);
+    setAgenda([]);
+    setActions([]);
+    setNotesDraft("");
+    setMissingWeek(null);
     (async () => {
-      // Find the current week's meeting (Wed–Tue) so opening the app on a
+      // Find the selected week's meeting (Wed–Tue) so opening the app on a
       // different day reuses the same meeting rather than creating a second
       // entry for the week. Prefer one that hasn't been recapped yet.
       const today = new Date();
       const day = today.getDay(); // 0=Sun..6=Sat
-      // Find the current week's Wednesday (Wed–Tue window). On Wednesday the offset is 0;
-      // on any other day we roll back to the most recent Wednesday.
-      const wednesdayOffset = -((day - 3 + 7) % 7);
-      const wednesday = new Date(today);
-      wednesday.setDate(today.getDate() + wednesdayOffset);
-      const tuesday = new Date(wednesday);
-      tuesday.setDate(wednesday.getDate() + 6);
-      const iso = (d: Date) => d.toISOString().slice(0, 10);
+      const wednesday = addDays(today, -((day - 3 + 7) % 7) + weekOffset * 7);
+      const tuesday = addDays(wednesday, 6);
+      const iso = (d: Date) => format(d, "yyyy-MM-dd");
       const meetingDate = iso(wednesday);
 
       const { data: weekRows } = await supabase
@@ -145,9 +148,10 @@ function MeetingPage() {
       const open = (weekRows ?? []).find((r: any) => !r.recap_sent_at) ?? (weekRows ?? [])[0] ?? null;
       let m = open as Meeting | null;
       if (!m) {
-        if (!canManageMeeting) {
+        // Never auto-create past meetings; only this week or upcoming weeks.
+        if (!canManageMeeting || weekOffset < 0) {
           if (!mounted) return;
-          setMeeting(null);
+          setMissingWeek(meetingDate);
           return;
         }
         const { data: created, error } = await supabase
@@ -180,7 +184,7 @@ function MeetingPage() {
     return () => {
       mounted = false;
     };
-  }, [user, canManageMeeting]);
+  }, [user, canManageMeeting, weekOffset]);
 
   useEffect(() => {
     if (!meeting) return;
@@ -452,11 +456,37 @@ function MeetingPage() {
           </div>
         </header>
 
+        <nav className="flex items-center gap-2 flex-wrap mb-6" aria-label="Meeting week">
+          <Button variant="outline" size="sm" onClick={() => setWeekOffset((w) => w - 1)}>
+            <ChevronLeft className="w-4 h-4 mr-1" /> Previous meeting
+          </Button>
+          <Button
+            variant={weekOffset === 0 ? "secondary" : "outline"}
+            size="sm"
+            onClick={() => setWeekOffset(0)}
+            disabled={weekOffset === 0}
+          >
+            This week
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setWeekOffset((w) => w + 1)}>
+            Next meeting <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+          {weekOffset !== 0 && (
+            <span className="text-xs text-muted-foreground ml-1">
+              {weekOffset < 0
+                ? `Viewing a past meeting (${-weekOffset} week${weekOffset === -1 ? "" : "s"} ago)`
+                : `Planning ahead (${weekOffset} week${weekOffset === 1 ? "" : "s"} out)`}
+            </span>
+          )}
+        </nav>
+
         {!meeting ? (
           <div className="text-sm text-muted-foreground">
-            {canManageMeeting
-              ? "Loading meeting…"
-              : "This week's staff meeting hasn't been started yet. Check back once a meeting host opens it."}
+            {missingWeek
+              ? weekOffset < 0
+                ? `No staff meeting was recorded for the week of ${new Date(missingWeek + "T00:00").toLocaleDateString(undefined, { month: "long", day: "numeric" })}.`
+                : "This staff meeting hasn't been started yet. Check back once a meeting host opens it."
+              : "Loading meeting…"}
           </div>
         ) : (
           <SortableMeetingBody
