@@ -107,6 +107,8 @@ function MeetingPage() {
   const [savingNotes, setSavingNotes] = useState(false);
   const notesTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const undo = useUndoableAction();
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [missingWeek, setMissingWeek] = useState<string | null>(null);
 
   useEffect(() => {
     supabase
@@ -119,20 +121,20 @@ function MeetingPage() {
   useEffect(() => {
     if (!user) return;
     let mounted = true;
+    setMeeting(null);
+    setAgenda([]);
+    setActions([]);
+    setNotesDraft("");
+    setMissingWeek(null);
     (async () => {
-      // Find the current week's meeting (Wed–Tue) so opening the app on a
+      // Find the selected week's meeting (Wed–Tue) so opening the app on a
       // different day reuses the same meeting rather than creating a second
       // entry for the week. Prefer one that hasn't been recapped yet.
       const today = new Date();
       const day = today.getDay(); // 0=Sun..6=Sat
-      // Find the current week's Wednesday (Wed–Tue window). On Wednesday the offset is 0;
-      // on any other day we roll back to the most recent Wednesday.
-      const wednesdayOffset = -((day - 3 + 7) % 7);
-      const wednesday = new Date(today);
-      wednesday.setDate(today.getDate() + wednesdayOffset);
-      const tuesday = new Date(wednesday);
-      tuesday.setDate(wednesday.getDate() + 6);
-      const iso = (d: Date) => d.toISOString().slice(0, 10);
+      const wednesday = addDays(today, -((day - 3 + 7) % 7) + weekOffset * 7);
+      const tuesday = addDays(wednesday, 6);
+      const iso = (d: Date) => format(d, "yyyy-MM-dd");
       const meetingDate = iso(wednesday);
 
       const { data: weekRows } = await supabase
@@ -145,9 +147,10 @@ function MeetingPage() {
       const open = (weekRows ?? []).find((r: any) => !r.recap_sent_at) ?? (weekRows ?? [])[0] ?? null;
       let m = open as Meeting | null;
       if (!m) {
-        if (!canManageMeeting) {
+        // Never auto-create past meetings; only this week or upcoming weeks.
+        if (!canManageMeeting || weekOffset < 0) {
           if (!mounted) return;
-          setMeeting(null);
+          setMissingWeek(meetingDate);
           return;
         }
         const { data: created, error } = await supabase
@@ -180,7 +183,7 @@ function MeetingPage() {
     return () => {
       mounted = false;
     };
-  }, [user, canManageMeeting]);
+  }, [user, canManageMeeting, weekOffset]);
 
   useEffect(() => {
     if (!meeting) return;
