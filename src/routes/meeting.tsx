@@ -4,7 +4,8 @@ import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Plus, Check, Trash2, Loader2, Send, MailCheck, GripVertical, Pencil, X } from "lucide-react";
+import { Mic, MicOff, Plus, Check, Trash2, Loader2, Send, MailCheck, GripVertical, Pencil, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { addDays, format } from "date-fns";
 import { useServerFn } from "@tanstack/react-start";
 import { finalizeMeeting, sendMeetingRecap } from "@/lib/meeting.functions";
 import { cn } from "@/lib/utils";
@@ -455,11 +456,37 @@ function MeetingPage() {
           </div>
         </header>
 
+        <nav className="flex items-center gap-2 flex-wrap mb-6" aria-label="Meeting week">
+          <Button variant="outline" size="sm" onClick={() => setWeekOffset((w) => w - 1)}>
+            <ChevronLeft className="w-4 h-4 mr-1" /> Previous meeting
+          </Button>
+          <Button
+            variant={weekOffset === 0 ? "secondary" : "outline"}
+            size="sm"
+            onClick={() => setWeekOffset(0)}
+            disabled={weekOffset === 0}
+          >
+            This week
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setWeekOffset((w) => w + 1)}>
+            Next meeting <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+          {weekOffset !== 0 && (
+            <span className="text-xs text-muted-foreground ml-1">
+              {weekOffset < 0
+                ? `Viewing a past meeting (${-weekOffset} week${weekOffset === -1 ? "" : "s"} ago)`
+                : `Planning ahead (${weekOffset} week${weekOffset === 1 ? "" : "s"} out)`}
+            </span>
+          )}
+        </nav>
+
         {!meeting ? (
           <div className="text-sm text-muted-foreground">
-            {canManageMeeting
-              ? "Loading meeting…"
-              : "This week's staff meeting hasn't been started yet. Check back once a meeting host opens it."}
+            {missingWeek
+              ? weekOffset < 0
+                ? `No staff meeting was recorded for the week of ${new Date(missingWeek + "T00:00").toLocaleDateString(undefined, { month: "long", day: "numeric" })}.`
+                : "This staff meeting hasn't been started yet. Check back once a meeting host opens it."
+              : "Loading meeting…"}
           </div>
         ) : (
           <SortableMeetingBody
