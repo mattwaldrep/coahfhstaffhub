@@ -23,6 +23,16 @@ import { setActionItemCompleted } from "@/lib/google-tasks.functions";
 import { getPcoCalendar, type PcoCalendarInstance } from "@/lib/pco-calendar.functions";
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Staff Dashboard | COAH Forest Hills Staff Hub" },
+      { name: "description", content: "Forest Hills staff tasks, upcoming events, and ministry updates." },
+      { property: "og:title", content: "Staff Dashboard | COAH Forest Hills Staff Hub" },
+      { property: "og:description", content: "Forest Hills staff tasks, upcoming events, and ministry updates." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: HomePage,
 });
 
