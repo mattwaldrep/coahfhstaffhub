@@ -45,6 +45,7 @@ import { cn } from "@/lib/utils";
 import { pushSundaySlotsToPco, type PushSlotResult } from "@/lib/pco-services.functions";
 import { getPcoCalendar, type PcoCalendarInstance, type PcoTagGroup } from "@/lib/pco-calendar.functions";
 import { useSubCals } from "@/lib/use-sub-cals";
+import { ReviewTaskAssigner } from "@/components/meeting/ReviewTaskAssigner";
 
 /* ---------- shared collapsible card ---------- */
 
@@ -481,6 +482,12 @@ export function SundayReviewSection({ meetingId, meetingDate }: { meetingId: str
                   <li className="text-muted-foreground italic list-none">None logged</li>
                 )}
               </ul>
+            <ReviewTaskAssigner
+              meetingId={meetingId}
+              kind="thank"
+              names={names}
+              items={latest.filter((r) => r.thank_this_week?.trim()).map((r) => ({ reviewId: r.id, text: r.thank_this_week!.trim(), submitter: names[r.submitted_by ?? ""] ?? "Unknown" }))}
+            />
             </div>
           </div>
 
@@ -499,6 +506,12 @@ export function SundayReviewSection({ meetingId, meetingDate }: { meetingId: str
                 <li className="text-muted-foreground italic list-none">None logged</li>
               )}
             </ul>
+            <ReviewTaskAssigner
+              meetingId={meetingId}
+              kind="followup"
+              names={names}
+              items={latest.filter((r) => r.follow_up_needed?.trim()).map((r) => ({ reviewId: r.id, text: r.follow_up_needed!.trim(), submitter: names[r.submitted_by ?? ""] ?? "Unknown" }))}
+            />
           </div>
 
           <div className="flex items-center justify-between">
