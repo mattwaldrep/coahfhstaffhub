@@ -737,9 +737,9 @@ function buildSectionBlocks(p: SortableBodyProps): SectionBlock[] {
   return [
     { id: "devotional", node: <DevotionalSection meetingId={meeting.id} /> },
     { id: "divider:recurring", isDivider: true, node: <SectionDivider label="Recurring Agenda Items" /> },
-    { id: "sunday-review", node: <SundayReviewSection meetingId={meeting.id} /> },
+    { id: "sunday-review", node: <SundayReviewSection meetingId={meeting.id} meetingDate={meeting.meeting_date} /> },
     { id: "sunday-ops", node: <SundayOpsSection meetingId={meeting.id} meetingDate={meeting.meeting_date} /> },
-    { id: "last-week-events", node: <LastWeekEventsSection meetingId={meeting.id} /> },
+    { id: "last-week-events", node: <LastWeekEventsSection meetingId={meeting.id} meetingDate={meeting.meeting_date} /> },
     {
       id: "first-step-cards",
       node: (
@@ -818,7 +818,7 @@ function buildSectionBlocks(p: SortableBodyProps): SectionBlock[] {
       ),
     },
     { id: "this-sunday", node: <ThisSundaySection meetingDate={meeting.meeting_date} /> },
-    { id: "upcoming-events", node: <UpcomingEventsSection meetingId={meeting.id} /> },
+    { id: "upcoming-events", node: <UpcomingEventsSection meetingId={meeting.id} meetingDate={meeting.meeting_date} /> },
     { id: "classes-attention", node: <ClassesNeedingAttentionSection /> },
     { id: "divider:capture", isDivider: true, node: <SectionDivider label="Capture" /> },
     {
