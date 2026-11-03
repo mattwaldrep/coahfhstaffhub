@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { format, subDays, addDays, startOfDay } from "date-fns";
+import { format, addDays, startOfDay } from "date-fns";
+import { meetingDateRanges } from "@/lib/meeting-date-ranges";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -313,22 +314,26 @@ function RatingPill({ label, value }: { label: string; value: number | null }) {
   );
 }
 
-export function SundayReviewSection({ meetingId }: { meetingId: string }) {
+export function SundayReviewSection({ meetingId, meetingDate }: { meetingId: string; meetingDate: string }) {
   const [reviews, setReviews] = useState<SundayReview[]>([]);
   const [names, setNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const { sundayDate: latestDate, reviewStart: windowStart, reviewEnd: windowEnd } = meetingDateRanges(meetingDate);
 
   useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
     (async () => {
-      const since = format(subDays(new Date(), 14), "yyyy-MM-dd");
       const [{ data }, { data: profs }] = await Promise.all([
         supabase
           .from("sunday_reviews")
           .select("*")
-          .gte("service_date", since)
+          .gte("service_date", windowStart)
+          .lte("service_date", windowEnd)
           .order("service_date", { ascending: false }),
         supabase.from("profiles").select("id,full_name,email"),
       ]);
+      if (cancelled) return;
       setReviews((data ?? []) as SundayReview[]);
       const map: Record<string, string> = {};
       (profs ?? []).forEach((p: any) => {
@@ -337,21 +342,10 @@ export function SundayReviewSection({ meetingId }: { meetingId: string }) {
       setNames(map);
       setLoading(false);
     })();
-  }, []);
+    return () => { cancelled = true; };
+  }, [meetingId, windowStart, windowEnd]);
 
-
-  // Anchor to the most recent Sunday (today if Sunday), not the max submitted
-  // date — otherwise a stray off-by-one submission hides everyone else's.
-  const lastSunday = (() => {
-    const d = new Date();
-    d.setDate(d.getDate() - d.getDay());
-    return format(d, "yyyy-MM-dd");
-  })();
-  const latestDate = lastSunday;
-  // Accept reviews dated the day before through the week after that Sunday,
-  // so a review saved with an off-by-one date still counts for this service.
-  const windowStart = format(subDays(new Date(lastSunday + "T12:00"), 1), "yyyy-MM-dd");
-  const windowEnd = format(subDays(new Date(lastSunday + "T12:00"), -6), "yyyy-MM-dd");
+  // Preserve the existing off-by-one submission tolerance for this meeting's Sunday.
   const latest = reviews.filter((r) => r.service_date >= windowStart && r.service_date <= windowEnd);
 
   return (
@@ -564,14 +558,18 @@ function EventList({
   }, [excluded, filterStorageKey]);
 
   useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
     (async () => {
       try {
         const res = await fetchCal({
           data: { from: rangeStart.toISOString(), to: rangeEnd.toISOString() },
         });
+        if (cancelled) return;
         setEvents(res.instances);
         setTagGroups(res.tagGroups);
       } catch {
+        if (cancelled) return;
         setEvents([]);
       }
 
@@ -579,6 +577,7 @@ function EventList({
         .from("meeting_event_notes")
         .select("event_id,pco_instance_id,occurrence_date,notes")
         .eq("meeting_id", meetingId);
+      if (cancelled) return;
       const map: Record<string, string> = {};
       (notes ?? []).forEach((n: any) => {
         map[`${n.pco_instance_id ?? n.event_id}__${n.occurrence_date}`] = n.notes ?? "";
@@ -586,6 +585,7 @@ function EventList({
       setEventNotes(map);
       setLoading(false);
     })();
+    return () => { cancelled = true; };
   }, [meetingId, rangeStart.getTime(), rangeEnd.getTime()]);
 
   const tagById = useMemo(() => {
@@ -726,9 +726,8 @@ function EventList({
   );
 }
 
-export function LastWeekEventsSection({ meetingId }: { meetingId: string }) {
-  const rangeEnd = useMemo(() => new Date(), []);
-  const rangeStart = useMemo(() => subDays(startOfDay(rangeEnd), 7), [rangeEnd]);
+export function LastWeekEventsSection({ meetingId, meetingDate }: { meetingId: string; meetingDate: string }) {
+  const { previousStart: rangeStart, previousEnd: rangeEnd } = useMemo(() => meetingDateRanges(meetingDate), [meetingDate]);
   return (
     <StandingSection
       title="Last Week's Events"
@@ -746,9 +745,8 @@ export function LastWeekEventsSection({ meetingId }: { meetingId: string }) {
   );
 }
 
-export function UpcomingEventsSection({ meetingId }: { meetingId: string }) {
-  const rangeStart = useMemo(() => new Date(), []);
-  const rangeEnd = useMemo(() => addDays(rangeStart, 90), [rangeStart]);
+export function UpcomingEventsSection({ meetingId, meetingDate }: { meetingId: string; meetingDate: string }) {
+  const { upcomingStart: rangeStart, upcomingEnd: rangeEnd } = useMemo(() => meetingDateRanges(meetingDate), [meetingDate]);
   return (
     <StandingSection
       title="Upcoming Events"

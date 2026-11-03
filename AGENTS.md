@@ -8,3 +8,4 @@
 - Store PCO room exemptions and childcare requirements as occurrence-level workspace flags; an explicit room selection clears the exemption so the two states cannot conflict, and PCO locations/bookings stay unchanged.
 - PCO feed filtering must resolve event IDs via /events?where[feed_id]= and filter instances by event_id; where[feed_id] on /event_instances returns 200 but is silently ignored.
 - Meeting event note upserts require a non-partial unique index on their conflict columns, because PostgREST cannot infer a partial index from a column-only onConflict target; surface save failures to the user.
+- Staff meeting event and Sunday review windows must use the selected meeting_date via meeting-date-ranges, never today's date, so historical notes stay paired with their occurrences.
