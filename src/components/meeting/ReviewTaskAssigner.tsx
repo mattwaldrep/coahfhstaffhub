@@ -168,6 +168,3 @@ export function ReviewTaskAssigner({
     </div>
   );
 }
-
-/** Small badge shown next to a response in the review list once assigned. */
-export function useAssignedBadges() { return null; }
