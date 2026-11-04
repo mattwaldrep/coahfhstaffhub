@@ -333,11 +333,26 @@ export async function listGroupEvents(
             : loc?.attributes?.name ?? loc?.attributes?.full_formatted_address ?? null,
         description: e.attributes?.description ?? null,
         canceled: Boolean(e.attributes?.canceled),
-        attendance_submitted: Boolean(e.attributes?.attendance_requests_enabled && e.attributes?.attendance_submitted),
+        attendance_submitted: false,
       });
     }
     next = json.links?.next ?? null;
     pages += 1;
+  }
+  // PCO has no "submitted" attribute; attendance exists as Attendance records.
+  const now = Date.now();
+  const past = out.filter((e) => !e.canceled && e.starts_at && Date.parse(e.starts_at) < now);
+  for (let i = 0; i < past.length; i += 10) {
+    await Promise.all(
+      past.slice(i, i + 10).map(async (e) => {
+        try {
+          const att: any = await pcoFetch(`${PCO_GROUPS_BASE}/events/${encodeURIComponent(e.id)}/attendances?per_page=1`);
+          e.attendance_submitted = (att.meta?.total_count ?? att.data?.length ?? 0) > 0;
+        } catch {
+          /* leave as not submitted */
+        }
+      }),
+    );
   }
   out.sort((a, b) => String(a.starts_at ?? "").localeCompare(String(b.starts_at ?? "")));
   eventsCache.set(groupId, { at: Date.now(), data: out });
