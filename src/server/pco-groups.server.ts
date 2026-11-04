@@ -356,7 +356,9 @@ export function invalidateGroupDetailCache(groupId?: string) {
 
 /**
  * Non-canceled events for a group whose America/Chicago date falls in
- * [start, end] (YYYY-MM-DD) and that have no attendance submitted.
+ * [start, end] (YYYY-MM-DD) and that have no attendance records.
+ * PCO events expose no "submitted" attribute; submitted attendance shows up
+ * as Attendance records on the event.
  */
 export async function listMissingAttendanceEvents(
   groupId: string,
@@ -364,25 +366,22 @@ export async function listMissingAttendanceEvents(
   end: string,
 ): Promise<{ id: string; name: string; starts_at: string | null }[]> {
   const { chicagoDate } = await import("@/lib/cg-attendance-window");
+  // Pad the UTC query by a day each side, then filter by Chicago date.
+  const from = new Date(start + "T00:00:00Z"); from.setUTCDate(from.getUTCDate() - 1);
+  const to = new Date(end + "T00:00:00Z"); to.setUTCDate(to.getUTCDate() + 2);
+  const json: any = await pcoFetch(
+    `${PCO_GROUPS_BASE}/groups/${encodeURIComponent(groupId)}/events?where[starts_at][gte]=${from.toISOString()}&where[starts_at][lte]=${to.toISOString()}&per_page=25`,
+  );
   const out: { id: string; name: string; starts_at: string | null }[] = [];
-  let next: string | null = `${PCO_GROUPS_BASE}/groups/${encodeURIComponent(groupId)}/events?order=-starts_at&per_page=25`;
-  let pages = 0;
-  while (next && pages < 4) {
-    const json: any = await pcoFetch(next);
-    let reachedOlder = false;
-    for (const e of json.data ?? []) {
-      const s = e.attributes?.starts_at;
-      if (!s) continue;
-      const day = chicagoDate(s);
-      if (day > end) continue;
-      if (day < start) { reachedOlder = true; break; }
-      if (e.attributes?.canceled) continue;
-      if (e.attributes?.attendance_submitted) continue;
-      out.push({ id: String(e.id), name: e.attributes?.name ?? "Group meeting", starts_at: s });
-    }
-    if (reachedOlder) break;
-    next = json.links?.next ?? null;
-    pages += 1;
+  for (const e of json.data ?? []) {
+    const s = e.attributes?.starts_at;
+    if (!s || e.attributes?.canceled) continue;
+    const day = chicagoDate(s);
+    if (day < start || day > end) continue;
+    const att: any = await pcoFetch(`${PCO_GROUPS_BASE}/events/${encodeURIComponent(e.id)}/attendances?per_page=1`);
+    const total = att.meta?.total_count ?? (att.data?.length ?? 0);
+    if (total > 0) continue;
+    out.push({ id: String(e.id), name: e.attributes?.name ?? "Group meeting", starts_at: s });
   }
   return out;
 }
