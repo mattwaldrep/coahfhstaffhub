@@ -14,6 +14,7 @@ export const getPcoCalendar = createServerFn({ method: "POST" })
         to: z.string().datetime(),
         feedIds: z.array(z.string().regex(/^[a-z0-9]+$/i)).max(25).optional(),
         excludeFeedIds: z.array(z.string().regex(/^[a-z0-9]+$/i)).optional(),
+        excludeFeedNames: z.array(z.string().min(1).max(100)).max(25).optional(),
       })
       .parse(d),
   )
@@ -32,8 +33,19 @@ export const getPcoCalendar = createServerFn({ method: "POST" })
 
     const { fetchEventInstances, fetchFeeds, fetchTagGroups } = await import("@/server/pco-calendar.server");
     try {
+      // Resolve feeds by name (case-insensitive) so callers can hide whole
+      // feeds — e.g. Community Groups gatherings — without knowing IDs.
+      let excludeFeedIds = data.excludeFeedIds;
+      if (data.excludeFeedNames?.length) {
+        const wanted = data.excludeFeedNames.map((n) => n.toLowerCase());
+        const feeds = await fetchFeeds();
+        const byName = feeds
+          .filter((f) => wanted.includes(f.name.toLowerCase()))
+          .map((f) => f.id);
+        excludeFeedIds = [...(excludeFeedIds ?? []), ...byName];
+      }
       const [instances, tagGroups, feeds] = await Promise.all([
-        fetchEventInstances(from.toISOString(), to.toISOString(), data.feedIds, data.excludeFeedIds),
+        fetchEventInstances(from.toISOString(), to.toISOString(), data.feedIds, excludeFeedIds),
         fetchTagGroups(),
         fetchFeeds(),
       ]);

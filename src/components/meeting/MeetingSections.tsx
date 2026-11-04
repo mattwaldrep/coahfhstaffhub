@@ -990,7 +990,14 @@ function SlotRow({
       const from = new Date();
       const to = addDays(from, 120);
       try {
-        const res = await fetchCal({ data: { from: from.toISOString(), to: to.toISOString() } });
+        // Community group gatherings never belong on an announcement slot.
+        const res = await fetchCal({
+          data: {
+            from: from.toISOString(),
+            to: to.toISOString(),
+            excludeFeedNames: ["Community Groups"],
+          },
+        });
         if (!mounted) return;
         const q = eventSearch.trim().toLowerCase();
         const matches = res.instances
