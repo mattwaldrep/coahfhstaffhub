@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
+import { CgAttendanceGapsButton } from "@/components/cg/CgAttendanceGapsButton";
+import type React from "react";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
@@ -211,6 +213,7 @@ function Dashboard() {
             hint={(cgParticipationPct(headline?.avg_community_groups, headline?.avg_cg_members) != null
               ? `${cgParticipationPct(headline?.avg_community_groups, headline?.avg_cg_members)}% of members · `
               : "") + deltaHint(headline?.avg_community_groups, prevHeadline?.avg_community_groups, statsRange ?? "latest week")}
+            footer={<CgAttendanceGapsButton />}
           />
           <Link to="/missions" className="contents">
             <Stat
@@ -379,7 +382,7 @@ function deltaHint(curr?: number, prev?: number, fallback = "") {
   return `${sign}${pct.toFixed(1)}% vs prev week`;
 }
 
-function Stat({ label, value, hint, accent, badge }: { label: string; value: string; hint: string; accent?: boolean; badge?: string }) {
+function Stat({ label, value, hint, accent, badge, footer }: { label: string; value: string; hint: string; accent?: boolean; badge?: string; footer?: React.ReactNode }) {
   return (
     <div className="bg-surface border border-border rounded-2xl p-5 shadow-card relative">
       <div className="flex items-start justify-between gap-2">
@@ -392,6 +395,7 @@ function Stat({ label, value, hint, accent, badge }: { label: string; value: str
       </div>
       <div className={`mt-3 text-3xl font-display font-bold ${accent ? "text-primary" : ""}`}>{value}</div>
       <div className="text-xs text-muted-foreground mt-1">{hint}</div>
+      {footer && <div className="mt-2">{footer}</div>}
     </div>
   );
 }

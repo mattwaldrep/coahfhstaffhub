@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { format, addDays, startOfDay } from "date-fns";
+import { CgAttendanceGapsButton } from "@/components/cg/CgAttendanceGapsButton";
 import { meetingDateRanges } from "@/lib/meeting-date-ranges";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -1262,6 +1263,7 @@ function LiveTrendsCard({ meetingDate }: { meetingDate: string }) {
       </div>
 
       <HeadlineTiles m={m} pm={pm} />
+      <CgAttendanceGapsButton refDate={meetingDate} />
 
       {showTable && (
         <div>

@@ -353,3 +353,36 @@ export function invalidateGroupDetailCache(groupId?: string) {
     eventsCache.clear();
   }
 }
+
+/**
+ * Non-canceled events for a group whose America/Chicago date falls in
+ * [start, end] (YYYY-MM-DD) and that have no attendance submitted.
+ */
+export async function listMissingAttendanceEvents(
+  groupId: string,
+  start: string,
+  end: string,
+): Promise<{ id: string; name: string; starts_at: string | null }[]> {
+  const { chicagoDate } = await import("@/lib/cg-attendance-window");
+  const out: { id: string; name: string; starts_at: string | null }[] = [];
+  let next: string | null = `${PCO_GROUPS_BASE}/groups/${encodeURIComponent(groupId)}/events?order=-starts_at&per_page=25`;
+  let pages = 0;
+  while (next && pages < 4) {
+    const json: any = await pcoFetch(next);
+    let reachedOlder = false;
+    for (const e of json.data ?? []) {
+      const s = e.attributes?.starts_at;
+      if (!s) continue;
+      const day = chicagoDate(s);
+      if (day > end) continue;
+      if (day < start) { reachedOlder = true; break; }
+      if (e.attributes?.canceled) continue;
+      if (e.attributes?.attendance_submitted) continue;
+      out.push({ id: String(e.id), name: e.attributes?.name ?? "Group meeting", starts_at: s });
+    }
+    if (reachedOlder) break;
+    next = json.links?.next ?? null;
+    pages += 1;
+  }
+  return out;
+}
