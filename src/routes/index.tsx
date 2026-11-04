@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertTriangle, ArrowUpRight, CalendarDays, CheckCircle2, Circle, AlertCircle, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fetchRecentWeeks, summarizeWeeks, type MetricsHeadline } from "@/integrations/metrics/client";
+import { cgParticipationPct, fetchRecentWeeks, summarizeWeeks, type MetricsHeadline } from "@/integrations/metrics/client";
 import { useMetricsSession } from "@/integrations/metrics/use-session";
 import { expandEvents, type EventRowLike } from "@/lib/calendar-expand";
 import { classGaps } from "@/lib/class-gaps";
@@ -203,8 +203,14 @@ function Dashboard() {
           />
           <Stat
             label="CG Participation"
-            value={fmtNum(headline?.avg_community_groups)}
-            hint={deltaHint(headline?.avg_community_groups, prevHeadline?.avg_community_groups, statsRange ?? "latest week")}
+            value={
+              headline?.avg_community_groups != null && headline?.avg_cg_members
+                ? `${fmtNum(headline.avg_community_groups)} / ${fmtNum(headline.avg_cg_members)}`
+                : fmtNum(headline?.avg_community_groups)
+            }
+            hint={(cgParticipationPct(headline?.avg_community_groups, headline?.avg_cg_members) != null
+              ? `${cgParticipationPct(headline?.avg_community_groups, headline?.avg_cg_members)}% of members · `
+              : "") + deltaHint(headline?.avg_community_groups, prevHeadline?.avg_community_groups, statsRange ?? "latest week")}
           />
           <Link to="/missions" className="contents">
             <Stat

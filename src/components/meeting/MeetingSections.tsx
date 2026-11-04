@@ -39,7 +39,7 @@ import { toast } from "sonner";
 import { expandEvents, type EventRowLike } from "@/lib/calendar-expand";
 import { classGaps } from "@/lib/class-gaps";
 import { InlineClassFixer } from "@/components/inline/InlineClassFixer";
-import { fetchWeeksInRange, summarizeWeeks, type WeeklyMetric, type MetricsHeadline } from "@/integrations/metrics/client";
+import { cgParticipationPct, fetchWeeksInRange, summarizeWeeks, type WeeklyMetric, type MetricsHeadline } from "@/integrations/metrics/client";
 import { useMetricsSession } from "@/integrations/metrics/use-session";
 import { cn } from "@/lib/utils";
 import { pushSundaySlotsToPco, type PushSlotResult } from "@/lib/pco-services.functions";
@@ -1287,7 +1287,7 @@ function LiveTrendsCard({ meetingDate }: { meetingDate: string }) {
                     <td className="text-right tabular-nums">{fmtN(w.sanctuary_attendance)}</td>
                     <td className="text-right tabular-nums">{fmtN(w.kids_attendance)}</td>
                     <td className="text-right tabular-nums">{fmtMoneyN(w.internal_giving)}</td>
-                    <td className="text-right tabular-nums">{fmtN(w.community_group_attendance)}</td>
+                    <td className="text-right tabular-nums">{fmtN(w.community_group_attendance)}{w.cg_members_total ? <span className="text-muted-foreground"> / {fmtN(w.cg_members_total)} · {cgParticipationPct(w.community_group_attendance, w.cg_members_total) ?? "—"}%</span> : null}</td>
                     <td className="text-right tabular-nums">{fmtN(w.prayer_count)}</td>
                   </tr>
                 ))}
@@ -1337,7 +1337,12 @@ function HeadlineTiles({ m, pm }: { m: MetricsHeadline; pm: MetricsHeadline | nu
           return (
             <div key={String(t.key)} className="bg-surface rounded-md px-2 py-1.5">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{t.label}</div>
-              <div className="text-sm font-semibold tabular-nums">{t.fmt(val)}</div>
+              <div className="text-sm font-semibold tabular-nums">
+                {t.fmt(val)}
+                {t.key === "avg_community_groups" && m.avg_cg_members ? (
+                  <span className="text-muted-foreground font-normal"> / {Math.round(m.avg_cg_members).toLocaleString()} · {cgParticipationPct(val, m.avg_cg_members)}%</span>
+                ) : null}
+              </div>
               {delta !== null && (
                 <div className={cn(
                   "text-[10px] tabular-nums",

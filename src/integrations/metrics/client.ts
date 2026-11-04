@@ -11,6 +11,7 @@ export type WeeklyMetric = {
   total_attendance: number | null;
   internal_giving: number | null;
   community_group_attendance: number | null;
+  cg_members_total?: number | null;
   volunteers_added: number | null;
   kids_volunteers: number | null;
   prayer_count: number | null;
@@ -32,6 +33,7 @@ export type MetricsHeadline = {
   avg_kids?: number;
   avg_weekly_giving?: number;
   avg_community_groups?: number;
+  avg_cg_members?: number;
   prayer_interactions?: number;
   first_step_cards?: number;
   next_step_cards?: number;
@@ -60,6 +62,7 @@ export function summarizeWeeks(rows: WeeklyMetric[]): MetricsHeadline {
     avg_kids: avg(live.map((r) => r.kids_attendance)),
     avg_weekly_giving: avg(live.map((r) => r.internal_giving)),
     avg_community_groups: avg(live.map((r) => r.community_group_attendance)),
+    avg_cg_members: avg(live.map((r) => r.cg_members_total)),
     prayer_interactions: sum(live.map((r) => r.prayer_count)),
     first_step_cards: sum(live.map((r) => r.first_step_cards)),
     next_step_cards: sum(live.map((r) => r.next_step_cards)),
@@ -88,4 +91,10 @@ export async function fetchRecentWeeks(limit = 8): Promise<WeeklyMetric[]> {
 export async function fetchWeeksInRange(start: string, end: string): Promise<WeeklyMetric[]> {
   const rows = await getAll();
   return rows.filter((r) => r.week_start_date >= start && r.week_start_date <= end);
+}
+
+/** Whole-number percent of CG members who attended, or null when unknown. */
+export function cgParticipationPct(att?: number | null, members?: number | null): number | null {
+  if (att == null || !members) return null;
+  return Math.round((att / members) * 100);
 }

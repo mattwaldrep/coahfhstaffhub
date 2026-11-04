@@ -12,6 +12,7 @@ export type WeeklyMetricRow = {
   total_attendance: number | null;
   internal_giving: number | null;
   community_group_attendance: number | null;
+  cg_members_total?: number | null;
   volunteers_added: number | null;
   kids_volunteers: number | null;
   prayer_count: number | null;
