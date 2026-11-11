@@ -48,6 +48,7 @@ import { pushSundaySlotsToPco, type PushSlotResult } from "@/lib/pco-services.fu
 import { getPcoCalendar, type PcoCalendarInstance, type PcoTagGroup } from "@/lib/pco-calendar.functions";
 import { useSubCals } from "@/lib/use-sub-cals";
 import { ReviewTaskAssigner } from "@/components/meeting/ReviewTaskAssigner";
+import { SpotifySyncButton } from "@/components/meeting/SpotifySyncButton";
 
 /* ---------- shared collapsible card ---------- */
 
@@ -947,10 +948,13 @@ export function ThisSundaySection({ meetingDate }: { meetingDate: string }) {
               ? "All slots filled. Push to write into the PCO plan."
               : `${openCount} slot${openCount === 1 ? "" : "s"} still open.`}
           </div>
+          <div className="flex items-center gap-2">
+            <SpotifySyncButton sundayIso={sundayIso} />
           <Button size="sm" onClick={pushToPco} disabled={pushing || filledCount === 0}>
             {pushing && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
             Push to PCO
           </Button>
+          </div>
         </div>
       </div>
     </StandingSection>

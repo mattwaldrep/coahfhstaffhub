@@ -116,3 +116,31 @@ export async function createPlanItem(
     body: JSON.stringify({ data: { type: "Item", attributes } }),
   });
 }
+
+export type PcoPlanSong = { title: string; author: string | null; arrangement: string | null };
+
+// Songs in plan order, with the song's author and the chosen arrangement name.
+export async function listPlanSongs(serviceTypeId: string, planId: string): Promise<PcoPlanSong[]> {
+  const songs: Array<PcoPlanSong & { seq: number }> = [];
+  let next: string | null = `/service_types/${serviceTypeId}/plans/${planId}/items?per_page=100&include=song,arrangement`;
+  while (next) {
+    const json: any = await pcoFetch(next);
+    const included = new Map<string, any>();
+    for (const inc of json.included ?? []) included.set(`${inc.type}:${inc.id}`, inc);
+    for (const it of json.data ?? []) {
+      if (it.attributes?.item_type !== "song") continue;
+      const songRel = it.relationships?.song?.data;
+      const arrRel = it.relationships?.arrangement?.data;
+      const song = songRel ? included.get(`Song:${songRel.id}`) : null;
+      const arr = arrRel ? included.get(`Arrangement:${arrRel.id}`) : null;
+      songs.push({
+        title: song?.attributes?.title ?? it.attributes?.title ?? "",
+        author: song?.attributes?.author ?? null,
+        arrangement: arr?.attributes?.name ?? null,
+        seq: typeof it.attributes?.sequence === "number" ? it.attributes.sequence : 0,
+      });
+    }
+    next = json.links?.next ?? null;
+  }
+  return songs.filter((s) => s.title).sort((a, b) => a.seq - b.seq).map(({ seq: _s, ...s }) => s);
+}

@@ -11,3 +11,4 @@
 - Staff meeting event and Sunday review windows must use the selected meeting_date via meeting-date-ranges, never today's date, so historical notes stay paired with their occurrences.
 - Use the shared server-only Google task completion reconciler for scheduled and staff-meeting refreshes, including hidden completed tasks; this keeps every action_items consumer on the same completion state.
 - Scheduler credential initialization is service-role-only and writes directly to the vault without returning credentials; scheduled requests must target the published app.
+- Spotify playlist sync stores one shared church connection (user_integrations provider spotify) and only works on the published URL because Spotify's redirect URI is fixed there.

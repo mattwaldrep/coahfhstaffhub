@@ -74,6 +74,7 @@ import { Route as ApiPublicHooksSendWeeklyDigestRouteImport } from './routes/api
 import { Route as ApiPublicHooksSundayReviewNudgeRouteImport } from './routes/api/public/hooks.sunday-review-nudge'
 import { Route as ApiPublicHooksSyncGoogleTasksRouteImport } from './routes/api/public/hooks/sync-google-tasks'
 import { Route as ApiPublicHooksWeeklyDigestMondayRouteImport } from './routes/api/public/hooks.weekly-digest-monday'
+import { Route as ApiPublicSpotifyCallbackRouteImport } from './routes/api/public/spotify/callback'
 import { Route as ApiPublicMissionsInquiryTokenRouteImport } from './routes/api/public/missions/inquiry.$token'
 
 const IndexRoute = IndexRouteImport.update({
@@ -418,6 +419,12 @@ const ApiPublicHooksWeeklyDigestMondayRoute =
     path: '/api/public/hooks/weekly-digest-monday',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicSpotifyCallbackRoute =
+  ApiPublicSpotifyCallbackRouteImport.update({
+    id: '/api/public/spotify/callback',
+    path: '/api/public/spotify/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicMissionsInquiryTokenRoute =
   ApiPublicMissionsInquiryTokenRouteImport.update({
     id: '/api/public/missions/inquiry/$token',
@@ -491,6 +498,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
   '/api/public/hooks/sync-google-tasks': typeof ApiPublicHooksSyncGoogleTasksRoute
   '/api/public/hooks/weekly-digest-monday': typeof ApiPublicHooksWeeklyDigestMondayRoute
+  '/api/public/spotify/callback': typeof ApiPublicSpotifyCallbackRoute
   '/api/public/missions/inquiry/$token': typeof ApiPublicMissionsInquiryTokenRoute
 }
 export interface FileRoutesByTo {
@@ -555,6 +563,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
   '/api/public/hooks/sync-google-tasks': typeof ApiPublicHooksSyncGoogleTasksRoute
   '/api/public/hooks/weekly-digest-monday': typeof ApiPublicHooksWeeklyDigestMondayRoute
+  '/api/public/spotify/callback': typeof ApiPublicSpotifyCallbackRoute
   '/api/public/missions/inquiry/$token': typeof ApiPublicMissionsInquiryTokenRoute
 }
 export interface FileRoutesById {
@@ -624,6 +633,7 @@ export interface FileRoutesById {
   '/api/public/hooks/sunday-review-nudge': typeof ApiPublicHooksSundayReviewNudgeRoute
   '/api/public/hooks/sync-google-tasks': typeof ApiPublicHooksSyncGoogleTasksRoute
   '/api/public/hooks/weekly-digest-monday': typeof ApiPublicHooksWeeklyDigestMondayRoute
+  '/api/public/spotify/callback': typeof ApiPublicSpotifyCallbackRoute
   '/api/public/missions/inquiry/$token': typeof ApiPublicMissionsInquiryTokenRoute
 }
 export interface FileRouteTypes {
@@ -694,6 +704,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sunday-review-nudge'
     | '/api/public/hooks/sync-google-tasks'
     | '/api/public/hooks/weekly-digest-monday'
+    | '/api/public/spotify/callback'
     | '/api/public/missions/inquiry/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -758,6 +769,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sunday-review-nudge'
     | '/api/public/hooks/sync-google-tasks'
     | '/api/public/hooks/weekly-digest-monday'
+    | '/api/public/spotify/callback'
     | '/api/public/missions/inquiry/$token'
   id:
     | '__root__'
@@ -826,6 +838,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sunday-review-nudge'
     | '/api/public/hooks/sync-google-tasks'
     | '/api/public/hooks/weekly-digest-monday'
+    | '/api/public/spotify/callback'
     | '/api/public/missions/inquiry/$token'
   fileRoutesById: FileRoutesById
 }
@@ -880,6 +893,7 @@ export interface RootRouteChildren {
   ApiPublicHooksSundayReviewNudgeRoute: typeof ApiPublicHooksSundayReviewNudgeRoute
   ApiPublicHooksSyncGoogleTasksRoute: typeof ApiPublicHooksSyncGoogleTasksRoute
   ApiPublicHooksWeeklyDigestMondayRoute: typeof ApiPublicHooksWeeklyDigestMondayRoute
+  ApiPublicSpotifyCallbackRoute: typeof ApiPublicSpotifyCallbackRoute
   ApiPublicMissionsInquiryTokenRoute: typeof ApiPublicMissionsInquiryTokenRoute
 }
 
@@ -1340,6 +1354,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksWeeklyDigestMondayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/spotify/callback': {
+      id: '/api/public/spotify/callback'
+      path: '/api/public/spotify/callback'
+      fullPath: '/api/public/spotify/callback'
+      preLoaderRoute: typeof ApiPublicSpotifyCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/missions/inquiry/$token': {
       id: '/api/public/missions/inquiry/$token'
       path: '/api/public/missions/inquiry/$token'
@@ -1491,6 +1512,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSundayReviewNudgeRoute: ApiPublicHooksSundayReviewNudgeRoute,
   ApiPublicHooksSyncGoogleTasksRoute: ApiPublicHooksSyncGoogleTasksRoute,
   ApiPublicHooksWeeklyDigestMondayRoute: ApiPublicHooksWeeklyDigestMondayRoute,
+  ApiPublicSpotifyCallbackRoute: ApiPublicSpotifyCallbackRoute,
   ApiPublicMissionsInquiryTokenRoute: ApiPublicMissionsInquiryTokenRoute,
 }
 export const routeTree = rootRouteImport
