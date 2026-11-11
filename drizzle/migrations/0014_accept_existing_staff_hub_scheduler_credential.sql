@@ -1,0 +1,3 @@
+CREATE OR REPLACE FUNCTION public.ensure_staff_hub_cron_secret(secret_value text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$ BEGIN IF secret_value IS NULL OR length(secret_value) = 0 THEN RAISE EXCEPTION 'Missing scheduler credential'; END IF; IF NOT EXISTS (SELECT 1 FROM vault.secrets WHERE name = 'CRON_SHARED_SECRET') THEN PERFORM vault.create_secret(secret_value, 'CRON_SHARED_SECRET', 'Staff Hub scheduler authentication'); END IF; END; $$;
+REVOKE ALL ON FUNCTION public.ensure_staff_hub_cron_secret(text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.ensure_staff_hub_cron_secret(text) TO service_role;
