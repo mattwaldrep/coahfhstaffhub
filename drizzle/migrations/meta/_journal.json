@@ -106,6 +106,13 @@
       "when": 1794424720329,
       "tag": "0014_accept_existing_staff_hub_scheduler_credential",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1794426242033,
+      "tag": "0015_ministry_plan_annual_calendar",
+      "breakpoints": true
     }
   ]
 }

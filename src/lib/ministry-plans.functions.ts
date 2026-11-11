@@ -30,6 +30,14 @@ export type GoalEntry = {
   execution_steps: { id: string; text: string }[];
 };
 
+export type AnnualCalendarEntry = {
+  id: string;
+  month: number;
+  title: string;
+  timeframe: string;
+  notes: string;
+};
+
 export type MinistryPlan = {
   id: string;
   user_id: string;
@@ -46,6 +54,7 @@ export type MinistryPlan = {
   opportunities: string[];
   threats: string[];
   goals: GoalEntry[];
+  annual_calendar: AnnualCalendarEntry[];
   status: PlanStatus;
   submitted_at: string | null;
   reviewed_by: string | null;
@@ -73,6 +82,7 @@ function normalize(row: any): MinistryPlan {
     opportunities: Array.isArray(row.opportunities) ? row.opportunities : [],
     threats: Array.isArray(row.threats) ? row.threats : [],
     goals: Array.isArray(row.goals) ? row.goals : [],
+    annual_calendar: Array.isArray(row.annual_calendar) ? row.annual_calendar : [],
   };
 }
 
@@ -223,6 +233,18 @@ const patchSchema = z
     opportunities: z.array(z.string()).optional(),
     threats: z.array(z.string()).optional(),
     goals: z.array(z.any()).optional(),
+    annual_calendar: z
+      .array(
+        z.object({
+          id: z.string().max(64),
+          month: z.number().int().min(1).max(12),
+          title: z.string().max(200),
+          timeframe: z.string().max(100),
+          notes: z.string().max(1000),
+        }),
+      )
+      .max(300)
+      .optional(),
   })
   .strict();
 

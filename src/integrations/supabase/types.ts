@@ -2273,6 +2273,7 @@ export type Database = {
       }
       ministry_action_plans: {
         Row: {
+          annual_calendar: Json
           calendar_year: number
           campus: string
           created_at: string
@@ -2298,6 +2299,7 @@ export type Database = {
           weaknesses: Json
         }
         Insert: {
+          annual_calendar?: Json
           calendar_year?: number
           campus?: string
           created_at?: string
@@ -2323,6 +2325,7 @@ export type Database = {
           weaknesses?: Json
         }
         Update: {
+          annual_calendar?: Json
           calendar_year?: number
           campus?: string
           created_at?: string

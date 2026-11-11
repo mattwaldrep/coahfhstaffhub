@@ -197,6 +197,38 @@ export function ReviewDocument({
           </div>
         )}
       </Section>
+
+      <Section
+        title="VIII. Annual Calendar"
+        onEdit={onEditStep ? () => onEditStep(6) : undefined}
+      >
+        {(plan.annual_calendar ?? []).filter((e) => e.title).length === 0 ? (
+          <p className="text-sm italic text-muted-foreground">No calendar items yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
+              const items = (plan.annual_calendar ?? []).filter((e) => e.month === m && e.title);
+              if (!items.length) return null;
+              return (
+                <div key={m}>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                    {format(new Date(2000, m - 1, 1), "MMMM")}
+                  </p>
+                  <ul className="list-disc pl-5 text-sm space-y-1">
+                    {items.map((e) => (
+                      <li key={e.id}>
+                        <span className="font-medium">{e.title}</span>
+                        {e.timeframe && <span className="text-muted-foreground"> · {e.timeframe}</span>}
+                        {e.notes && <span className="block text-muted-foreground">{e.notes}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Section>
     </div>
   );
 }

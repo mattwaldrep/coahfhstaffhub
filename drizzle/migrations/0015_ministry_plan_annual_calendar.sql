@@ -1,0 +1,1 @@
+ALTER TABLE public.ministry_action_plans ADD COLUMN IF NOT EXISTS annual_calendar jsonb NOT NULL DEFAULT '[]'::jsonb;

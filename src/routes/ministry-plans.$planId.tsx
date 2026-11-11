@@ -11,6 +11,7 @@ import {
   type MinistryPlan,
   type ProgramEntry,
   type GoalEntry,
+  type AnnualCalendarEntry,
 } from "@/lib/ministry-plans.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -59,6 +60,7 @@ const STEPS = [
   { key: "structure", label: "III. Structure" },
   { key: "swot", label: "IV. SWOT" },
   { key: "goals", label: "V–VII. Goals" },
+  { key: "calendar", label: "VIII. Annual Calendar" },
   { key: "review", label: "Review" },
 ];
 
@@ -170,7 +172,8 @@ function PlanEditor() {
             {step === 3 && <StructureStep plan={plan} patch={patch} />}
             {step === 4 && <SwotStep plan={plan} patch={patch} />}
             {step === 5 && <GoalsStep plan={plan} patch={patch} />}
-            {step === 6 && (
+            {step === 6 && <AnnualCalendarStep plan={plan} patch={patch} />}
+            {step === 7 && (
               <ReviewDocument plan={plan} onEditStep={(s) => setStep(s)} />
             )}
           </CardContent>
@@ -431,6 +434,93 @@ function SwotStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
             />
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+function AnnualCalendarStep({ plan, patch }: { plan: MinistryPlan; patch: PatchFn }) {
+  const entries = plan.annual_calendar ?? [];
+  const update = (next: AnnualCalendarEntry[], debounce = 600) =>
+    patch("annual_calendar", next, { debounce });
+  const edit = (id: string, field: keyof AnnualCalendarEntry, value: string) =>
+    update(entries.map((e) => (e.id === id ? { ...e, [field]: value } : e)));
+  return (
+    <div className="space-y-4">
+      <div>
+        <h3 className="font-medium">VIII. Annual Calendar</h3>
+        <p className="text-sm text-muted-foreground">
+          Sketch your ministry's year for {plan.calendar_year}. This stays in your plan only —
+          it does not add anything to Planning Center or the church calendar.
+        </p>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {MONTHS.map((name, idx) => {
+          const month = idx + 1;
+          const items = entries.filter((e) => e.month === month);
+          return (
+            <div key={name} className="rounded-md border p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="font-medium text-sm">{name}</p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() =>
+                    update(
+                      [...entries, { id: uid(), month, title: "", timeframe: "", notes: "" }],
+                      0,
+                    )
+                  }
+                >
+                  <Plus className="h-4 w-4" /> Add
+                </Button>
+              </div>
+              {items.length === 0 && (
+                <p className="text-xs italic text-muted-foreground">Nothing planned yet.</p>
+              )}
+              {items.map((e) => (
+                <div key={e.id} className="space-y-1.5 rounded bg-muted/40 p-2">
+                  <div className="flex gap-1.5">
+                    <Input
+                      aria-label="Event or activity"
+                      placeholder="Event or activity"
+                      value={e.title}
+                      onChange={(ev) => edit(e.id, "title", ev.target.value)}
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      aria-label="Remove item"
+                      onClick={() => update(entries.filter((x) => x.id !== e.id), 0)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <Input
+                    aria-label="Date or timeframe"
+                    placeholder="Date or timeframe (e.g. Oct 15, Late June)"
+                    value={e.timeframe}
+                    onChange={(ev) => edit(e.id, "timeframe", ev.target.value)}
+                  />
+                  <Textarea
+                    aria-label="Notes"
+                    placeholder="Notes (optional)"
+                    rows={2}
+                    value={e.notes}
+                    onChange={(ev) => edit(e.id, "notes", ev.target.value)}
+                  />
+                </div>
+              ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
