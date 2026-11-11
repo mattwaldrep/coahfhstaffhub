@@ -32,6 +32,7 @@ import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { getLatestLeadLikeJesusPost, getLatestSolidJoysPost, getLatestTruthForLifeDevotional, type LLJPost } from "@/lib/lead-like-jesus.functions";
 import { pushActionItemToGoogleTasks, pushActionItemsBulk, autoPushIfEnabled, setActionItemCompleted } from "@/lib/google-tasks.functions";
+import { syncStaffGoogleTaskCompletions } from "@/lib/google-task-completion.functions";
 import { TaskSourceButton } from "@/components/tasks/TaskSourceButton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -1469,6 +1470,11 @@ export function DueDatePicker({ value, onChange }: { value: string | null; onCha
 type ProfileLite = { id: string; full_name: string | null; email: string | null };
 
 export function ReviewTasksSection() {
+  const { user, hasAnyRole } = useAuth();
+  const canSync = hasAnyRole(['core', 'meeting']);
+  const syncCompletions = useServerFn(syncStaffGoogleTaskCompletions);
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
   const [actions, setActions] = useState<OpenAction[]>([]);
   const [profiles, setProfiles] = useState<ProfileLite[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1505,6 +1511,34 @@ export function ReviewTasksSection() {
       supabase.removeChannel(ch);
     };
   }, []);
+
+  useEffect(() => {
+    if (!user || !canSync) return;
+    let active = true;
+    let busy = false;
+    async function refresh() {
+      if (busy) return;
+      busy = true;
+      setSyncing(true);
+      try {
+        const result = await syncCompletions();
+        if (active) {
+          setSyncError(result.failed ? `Google Tasks could not sync for ${result.failed} staff account(s).` : null);
+          await load();
+        }
+      } catch {
+        if (active) setSyncError('Google Tasks completion sync failed. Try refreshing.');
+      } finally {
+        busy = false;
+        if (active) setSyncing(false);
+      }
+    }
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 60_000);
+    const onFocus = () => void refresh();
+    window.addEventListener('focus', onFocus);
+    return () => { active = false; window.clearInterval(timer); window.removeEventListener('focus', onFocus); };
+  }, [user?.id, canSync, syncCompletions]);
 
   async function complete(id: string) {
     // Use server fn so completion is mirrored to Google Tasks; otherwise the
@@ -1591,10 +1625,12 @@ export function ReviewTasksSection() {
       subtitle="All open action items, grouped by who owns them."
       badge={
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-normal">
+          {syncing && <Loader2 aria-label="Syncing Google Tasks" className="inline w-3 h-3 mr-1 animate-spin" />}
           {actions.length} open
         </span>
       }
     >
+      {syncError && <p role="alert" className="text-sm text-destructive">{syncError}</p>}
       {loading ? (
         <div className="text-sm text-muted-foreground py-4">Loading…</div>
       ) : actions.length === 0 ? (

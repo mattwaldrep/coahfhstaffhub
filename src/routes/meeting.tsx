@@ -38,7 +38,7 @@ import {
   DueDatePicker,
 } from "@/components/meeting/MeetingSections";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { autoPushIfEnabled } from "@/lib/google-tasks.functions";
+import { autoPushIfEnabled, setActionItemCompleted } from "@/lib/google-tasks.functions";
 import { SundayOpsSection } from "@/components/meeting/SundayOpsSection";
 import { PcoFormSection } from "@/components/meeting/PcoFormSection";
 import { ConnectCardsSection } from "@/components/meeting/ConnectCardsSection";
@@ -96,6 +96,7 @@ function MeetingPage() {
   const fetchFirstStepSubmissions = useServerFn(listFirstStepSubmissions);
   const fetchNextStepSubmissions = useServerFn(listNextStepSubmissions);
   const fetchConnectCardSubmissions = useServerFn(listConnectCardSubmissions);
+  const completeAction = useServerFn(setActionItemCompleted);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [agenda, setAgenda] = useState<AgendaItem[]>([]);
   const [actions, setActions] = useState<ActionItem[]>([]);
@@ -321,7 +322,7 @@ function MeetingPage() {
   const toggleAction = (item: ActionItem) => {
     if (item.completed) {
       // un-completing is non-destructive — just write
-      supabase.from("action_items").update({ completed: false }).eq("id", item.id);
+      void completeAction({ data: { actionItemId: item.id, completed: false } }).catch((error) => toast.error(error.message));
       return;
     }
     undo({
@@ -332,8 +333,7 @@ function MeetingPage() {
       rollback: (snap) =>
         setActions((prev) => prev.map((a) => (a.id === snap.id ? { ...a, completed: false } : a))),
       commit: async () => {
-        const { error } = await supabase.from("action_items").update({ completed: true }).eq("id", item.id);
-        if (error) throw new Error(error.message);
+        await completeAction({ data: { actionItemId: item.id, completed: true } });
       },
       message: "Marked complete",
     });

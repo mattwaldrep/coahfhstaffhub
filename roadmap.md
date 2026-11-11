@@ -1,4 +1,5 @@
 # Tasks
+- [ ] Restore Google Tasks completion sync in staff meetings and correct the scheduled sync destination.
 - [x] Correct past/future meeting event and Sunday review windows; 21 tests passed, build OK, signed-in navigation verified date subtitles and actual calendar request windows with private meeting content shielded. Existing live notes were not read or changed.
 - [x] Fix staff meeting event note saving; reproduced 42P10, added a non-partial conflict index, verified signed-in save/reload and visible failure message, restored original note; 24 tests passed and build OK.
 - [x] Add PCO-style Feeds filter to the beta calendar (collapsible, grouped by feed type with sub-arrows); signed-in preview verified Community Groups filtering shows only CG events. Seven server tests passed; build OK.

@@ -9,3 +9,4 @@
 - PCO feed filtering must resolve event IDs via /events?where[feed_id]= and filter instances by event_id; where[feed_id] on /event_instances returns 200 but is silently ignored.
 - Meeting event note upserts require a non-partial unique index on their conflict columns, because PostgREST cannot infer a partial index from a column-only onConflict target; surface save failures to the user.
 - Staff meeting event and Sunday review windows must use the selected meeting_date via meeting-date-ranges, never today's date, so historical notes stay paired with their occurrences.
+- Use the shared server-only Google task completion reconciler for scheduled and staff-meeting refreshes, including hidden completed tasks; this keeps every action_items consumer on the same completion state.
