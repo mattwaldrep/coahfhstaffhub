@@ -41,7 +41,7 @@ export const Route = createFileRoute("/api/public/hooks/sunday-review-nudge")({
             "Sunday Review reminder",
             `<p>Hi ${escapeHtml(p.full_name || p.email.split("@")[0])} — just a nudge to log your reflection on yesterday's service before tomorrow's staff meeting.</p>
              <p style="margin-top:20px;">
-               <a href="https://staffhub.coahforesthills.org/sunday-review" style="display:inline-block;background:#0c0a09;color:#fafaf9;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;">Submit your review</a>
+               <a href="https://coahfhstaffhub.lovable.app/sunday-review" style="display:inline-block;background:#0c0a09;color:#fafaf9;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;">Submit your review</a>
              </p>
              <p style="color:#78716c;font-size:12px;margin-top:24px;">Service date: ${escapeHtml(format(lastSunday, "EEEE, MMM d"))}</p>`,
           );
