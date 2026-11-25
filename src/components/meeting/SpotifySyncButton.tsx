@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getSpotifyAuthUrl, getSpotifyStatus, previewSpotifySync, replaceSpotifyPlaylist, type SpotifyPreviewSong } from "@/lib/spotify.functions";
+import { SpotifyVersionSearch } from "@/components/meeting/SpotifyVersionSearch";
 
 export function SpotifySyncButton({ sundayIso }: { sundayIso: string }) {
   const statusFn = useServerFn(getSpotifyStatus);
@@ -33,12 +34,12 @@ export function SpotifySyncButton({ sundayIso }: { sundayIso: string }) {
   }
 
   async function openReview() {
-    setOpen(true); setLoading(true); setError(null); setSongs([]);
+    setOpen(true); setLoading(true); setError(null); setSongs([]); setChoice({});
     const r = await previewFn({ data: { sundayIso } }).catch((e) => ({ ok: false, error: String(e?.message ?? e) }) as const);
     setLoading(false);
     if (!r.ok || !("songs" in r) || !r.songs) { setError(r.error ?? "Couldn't load songs."); return; }
     setSongs(r.songs);
-    setMeta({ plan: r.planTitle, playlist: r.playlist });
+    setMeta({ ...(r.planTitle ? { plan: r.planTitle } : {}), ...(r.playlist ? { playlist: r.playlist } : {}) });
     setChoice(Object.fromEntries(r.songs.map((s, i) => [i, s.matches[0]?.uri ?? ""])));
   }
 
@@ -88,12 +89,17 @@ export function SpotifySyncButton({ sundayIso }: { sundayIso: string }) {
                     aria-label={`Spotify match for ${s.title}`}
                     className="w-full rounded-md border bg-background px-2 py-1.5 text-sm"
                     value={choice[i] ?? ""}
+                    disabled={saving}
                     onChange={(e) => setChoice((c) => ({ ...c, [i]: e.target.value }))}
                   >
                     {s.matches.map((m) => <option key={m.uri} value={m.uri}>{m.name} — {m.artists} ({m.album})</option>)}
                     <option value="">Skip this song</option>
                   </select>
                 ) : <p className="text-xs text-destructive">Not found on Spotify — will be skipped.</p>}
+                <SpotifyVersionSearch title={s.title} selectedUri={choice[i] ?? ""} disabled={saving} onSelect={(track) => {
+                  setSongs((current) => current.map((song, index) => index === i && !song.matches.some((match) => match.uri === track.uri) ? { ...song, matches: [...song.matches, track] } : song));
+                  setChoice((current) => ({ ...current, [i]: track.uri }));
+                }} />
               </li>
             ))}
           </ol>

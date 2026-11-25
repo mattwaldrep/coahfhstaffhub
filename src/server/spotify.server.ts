@@ -80,6 +80,11 @@ export async function searchTracks(title: string, artist: string | null): Promis
   return [];
 }
 
+export async function searchTrackVersions(query: string): Promise<SpotifyTrack[]> {
+  const json = await api(`/search?type=track&limit=10&q=${encodeURIComponent(query.trim())}`);
+  return (json?.tracks?.items ?? []).map(mapTrack);
+}
+
 export async function replacePlaylist(uris: string[]) {
   await api(`/playlists/${SPOTIFY_PLAYLIST_ID}/items`, { method: "PUT", body: JSON.stringify({ uris: uris.slice(0, 100) }) });
 }

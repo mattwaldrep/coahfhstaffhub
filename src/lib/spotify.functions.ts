@@ -40,6 +40,19 @@ export type SpotifyPreviewSong = {
   matches: Array<{ uri: string; name: string; artists: string; album: string; url: string }>;
 };
 
+export const searchSpotifyVersions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ query: z.string().trim().min(1).max(200) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertCoreOrMeeting(context.supabase, context.userId);
+    try {
+      const sp = await import("@/server/spotify.server");
+      return { ok: true as const, tracks: await sp.searchTrackVersions(data.query) };
+    } catch {
+      return { ok: false as const, error: "Couldn't search Spotify. Please try again or reconnect Spotify." };
+    }
+  });
+
 export const previewSpotifySync = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ sundayIso: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
